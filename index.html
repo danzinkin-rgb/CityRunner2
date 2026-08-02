@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CityRunner2</title>
+<style>
+  :root{
+    --gold:#ffd166; --ink:#0b1020; --glass:rgba(10,14,30,.55);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:"Segoe UI",system-ui,sans-serif;color:#fff}
+  #app{position:fixed;inset:0}
+  canvas{display:block}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;pointer-events:none;display:none}
+  #hud.on{display:block}
+  .hud-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:14px 18px}
+  .pill{background:var(--glass);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);
+    border-radius:999px;padding:7px 16px;font-weight:700;font-size:17px;letter-spacing:.4px;
+    display:flex;align-items:center;gap:8px;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+  .coin-dot{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff2b3,var(--gold) 55%,#b8860b);box-shadow:0 0 8px var(--gold)}
+  #hud-city{position:absolute;top:60px;left:50%;transform:translateX(-50%);font-size:13px;font-weight:600;
+    letter-spacing:3px;text-transform:uppercase;opacity:.85;text-shadow:0 2px 8px #000}
+  #hud-timer{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:34px;font-weight:800;
+    text-shadow:0 2px 12px rgba(0,0,0,.6);font-variant-numeric:tabular-nums;display:none}
+  #hud-timer.low{color:#ff5a5a;animation:pulse .5s infinite alternate}
+  @keyframes pulse{from{transform:translateX(-50%) scale(1)}to{transform:translateX(-50%) scale(1.12)}}
+  #hud-progress{position:absolute;top:0;left:0;height:4px;background:linear-gradient(90deg,var(--gold),#ff9e42);width:0%;transition:width .3s;box-shadow:0 0 10px var(--gold)}
+  #hud-hint{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);font-size:15px;opacity:0;
+    transition:opacity .4s;background:var(--glass);padding:8px 20px;border-radius:999px;backdrop-filter:blur(8px)}
+
+  /* ---------- Screens ---------- */
+  .screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
+    background:radial-gradient(ellipse at 50% 30%,rgba(20,30,70,.92),rgba(4,6,16,.97));z-index:10}
+  .screen.on{display:flex}
+  .title{font-size:clamp(44px,9vw,84px);font-weight:900;letter-spacing:2px;
+    background:linear-gradient(180deg,#fff,#ffd166 60%,#ff9e42);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 6px 24px rgba(255,190,80,.35))}
+  .subtitle{font-size:15px;letter-spacing:6px;text-transform:uppercase;opacity:.7;margin:6px 0 40px}
+  .btn{pointer-events:auto;cursor:pointer;border:none;font:inherit;color:var(--ink);font-weight:800;font-size:19px;
+    padding:16px 52px;border-radius:999px;background:linear-gradient(180deg,#ffe9a8,var(--gold) 55%,#f0a832);
+    box-shadow:0 8px 28px rgba(255,190,80,.4),inset 0 1px 0 #fff8;letter-spacing:1px;transition:transform .12s}
+  .btn:hover{transform:scale(1.05)}
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.35);box-shadow:none;font-size:15px;padding:12px 34px;margin-top:14px}
+  .big-num{font-size:64px;font-weight:900;color:var(--gold);text-shadow:0 4px 20px rgba(255,190,80,.4)}
+  .label{font-size:13px;letter-spacing:4px;text-transform:uppercase;opacity:.65}
+  #city-select{display:flex;gap:14px;margin-bottom:36px;flex-wrap:wrap;justify-content:center;pointer-events:auto}
+  .city-card{width:150px;padding:18px 10px;border-radius:18px;background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.14);text-align:center;cursor:pointer;transition:.15s}
+  .city-card:hover{background:rgba(255,255,255,.13);transform:translateY(-4px)}
+  .city-card.locked{opacity:.35;cursor:default}
+  .city-card .flag{font-size:34px}
+  .city-card .name{font-weight:800;margin-top:6px}
+  .city-card .stars{color:var(--gold);font-size:13px;margin-top:4px;letter-spacing:2px}
+  #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .5s;z-index:50}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="hud">
+  <div id="hud-progress"></div>
+  <div class="hud-top">
+    <div class="pill"><span class="coin-dot"></span><span id="hud-coins">0</span></div>
+    <div class="pill"><span id="hud-score">0</span></div>
+  </div>
+  <div id="hud-city">NEW YORK · LEVEL 1</div>
+  <div id="hud-timer">60</div>
+  <div id="hud-hint"></div>
+</div>
+
+<div id="screen-menu" class="screen on">
+  <div class="title">CITYRUNNER</div>
+  <div class="subtitle">Run the world's greatest streets</div>
+  <div id="city-select"></div>
+  <button class="btn" id="btn-play">RUN</button>
+</div>
+
+<div id="screen-over" class="screen">
+  <div class="label">Run over</div>
+  <div class="big-num" id="over-score">0</div>
+  <div class="label" style="margin:10px 0 30px"><span id="over-coins">0</span> coins collected</div>
+  <button class="btn" id="btn-retry">RUN AGAIN</button>
+  <button class="btn ghost" id="btn-menu">CITY SELECT</button>
+</div>
+
+<div id="screen-puzzle-win" class="screen">
+  <div class="label">Monument complete</div>
+  <div class="big-num" id="pw-name" style="font-size:40px">—</div>
+  <div class="label" style="margin:10px 0 30px"><span id="pw-bonus">0</span> bonus · <span id="pw-time">0</span>s left</div>
+  <button class="btn" id="btn-next">NEXT LEVEL</button>
+  <button class="btn ghost" id="btn-menu2">CITY SELECT</button>
+</div>
+
+<div id="fade"></div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
