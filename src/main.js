@@ -44,13 +44,15 @@ function buildCitySelect() {
     const unlocked = i === 0 || (save.stars[CITIES[i - 1].id] || 0) >= 1;
     const el = document.createElement('div');
     el.className = 'city-card' + (unlocked ? '' : ' locked');
-    el.innerHTML = `<div class="flag">${flagFix[c.id] || c.flag}</div><div class="name">${c.name}</div>
+    el.innerHTML = `<div class="thumb" style="background-image:url(assets/thumbs/${c.id}.png)">
+        <span class="thumb-flag">${flagFix[c.id] || c.flag}</span></div>
+      <div class="name">${c.name}</div>
       <div class="stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>`;
     if (unlocked) el.onclick = () => { cityIdx = i; level = Math.min(3, (save.stars[c.id] || 0) + 1); startRun(); };
     wrap.appendChild(el);
   });
   const stats = document.getElementById('menu-stats');
-  if (stats) stats.textContent = `BEST ${Math.round(save.best)}   ·   ${save.coins} COINS BANKED`;
+  if (stats) stats.textContent = `BEST ${Math.round(save.best)}   ·   ${save.coins} SOUVENIRS BANKED`;
 }
 
 function doFade(fn) {
@@ -143,13 +145,14 @@ function finishPuzzle(won) {
     save.best = Math.max(save.best, score);
     save.coins += coins;
     persist();
+    // Let the celebration play out un-dimmed before the modal appears.
     setTimeout(() => {
       $('pw-name').textContent = LANDMARK_NAMES[lm];
       $('pw-bonus').textContent = puzzleBonus;
       $('pw-time').textContent = Math.round(puzzle.time);
       showScreen('pwin');
       state = 'pwin';
-    }, 1400);
+    }, 4300);
     state = 'pwin-wait';
   } else {
     save.coins += coins; persist();
