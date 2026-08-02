@@ -1,6 +1,6 @@
 import * as THREE from '../../vendor/three.module.js';
 import { LANES } from './player.js';
-import { roadTexture, sidewalkTexture, makeBuilding, makeProp, makeVehicle, makeBillboard } from '../cities/builders.js';
+import { roadTexture, sidewalkTexture, makeBuilding, makeProp, makeVehicle, makeBillboard, makeParkedCar, makeStreetSpan } from '../cities/builders.js';
 
 const CHUNK_LEN = 36;
 const CHUNKS = 7;          // visible chunks ahead
@@ -62,38 +62,77 @@ export class Track {
         const d = 8 + Math.random() * 4;
         const hBase = t.id === 'paris' || t.id === 'rome' ? 14 : 22;
         const h = hBase + Math.random() * (t.id === 'nyc' ? 34 : 14);
-        const b = makeBuilding(t, w, h, d);
+        const b = makeBuilding(t, w, h, d, Math.random, side);
         b.position.set(side * (ROAD_W / 2 + 4.4 + d / 2 - 1), 0, -bz - d / 2);
         g.add(b);
 
         // distant second row for skyline depth
-        if (Math.random() < 0.7) {
-          const b2 = makeBuilding(t, w * 1.3, h * (0.8 + Math.random() * 0.7), d);
+        if (Math.random() < 0.8) {
+          const b2 = makeBuilding(t, w * 1.3, h * (0.9 + Math.random() * 0.8), d);
           b2.position.set(side * (ROAD_W / 2 + 16 + Math.random() * 8), 0, -bz - d / 2);
           g.add(b2);
         }
         bz += w + 0.5;
       }
 
-      // props along the curb
+      // parked decorative cars hugging the curb (placed first so props avoid them)
+      const carZs = [];
+      if (Math.random() < 0.85) {
+        const n = 1 + (Math.random() < 0.4 ? 1 : 0);
+        for (let i = 0; i < n; i++) {
+          const cz = 5 + Math.random() * (CHUNK_LEN - 12);
+          if (carZs.some((z) => Math.abs(z - cz) < 5)) continue;
+          carZs.push(cz);
+          const car = makeParkedCar(t);
+          car.position.set(side * (ROAD_W / 2 + 1.35), 0.3, -cz);
+          car.rotation.y = side > 0 ? Math.PI : 0;
+          g.add(car);
+        }
+      }
+
+      // props along the curb — denser for a lived-in street
       const propKinds = t.props;
-      for (let pz = 3; pz < CHUNK_LEN; pz += 8 + Math.random() * 5) {
+      for (let pz = 3; pz < CHUNK_LEN; pz += 5.5 + Math.random() * 4) {
         const kind = propKinds[(Math.random() * propKinds.length) | 0];
+        if (kind !== 'billboard' && kind !== 'awning' && carZs.some((z) => Math.abs(z - pz) < 3.2)) continue;
         const p = makeProp(kind, t);
         p.position.set(side * (ROAD_W / 2 + 1.1 + Math.random() * 1.6), 0.3, -pz);
         if (kind === 'billboard') {
           p.position.x = side * (ROAD_W / 2 + 4.2);
+          p.position.y = 5 + Math.random() * 3;   // keep it up on the facade line
           p.rotation.y = side > 0 ? -Math.PI / 2.3 : Math.PI / 2.3;
+        }
+        if (kind === 'awning') {
+          // snap to the building face so it reads as a shop awning
+          p.position.x = side * (ROAD_W / 2 + 3.35);
+          p.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+        }
+        if (kind === 'newsstand' || kind === 'kiosk' || kind === 'hotdog') {
+          p.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+          p.position.x = side * (ROAD_W / 2 + 2.4);
         }
         g.add(p);
       }
     }
 
-    // Times Square special: overhead banner billboards spanning the street (NYC L3 flavor everywhere at low rate)
-    if (this.theme.id === 'nyc' && Math.random() < 0.35) {
-      const banner = makeBillboard(t, 9, 2.2);
-      banner.position.set(0, 7.5, -CHUNK_LEN * (0.3 + Math.random() * 0.5));
+    // Times Square special: overhead banner billboards spanning the street
+    if (this.theme.id === 'nyc' && Math.random() < 0.5) {
+      const bz = -CHUNK_LEN * (0.3 + Math.random() * 0.5);
+      const banner = makeBillboard(t, 9, 2.4);
+      banner.position.set(0, 7.5, bz);
       g.add(banner);
+      const postMat = new THREE.MeshStandardMaterial({ color: 0x2a2a32, metalness: 0.5, roughness: 0.5 });
+      for (const px of [-5.1, 5.1]) {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 8.7, 8), postMat);
+        post.position.set(px, 4.35, bz);
+        g.add(post);
+      }
+    }
+    // Rome string lights / London & Paris bunting lines across the street
+    if (this.theme.id !== 'nyc' && Math.random() < 0.75) {
+      const span = makeStreetSpan(t, ROAD_W + 4.5);
+      span.position.set(0, 5.6 + Math.random() * 0.8, -CHUNK_LEN * (0.2 + Math.random() * 0.6));
+      g.add(span);
     }
 
     if (!safe) this.populateObstacles(g, z);
@@ -133,19 +172,21 @@ export class Track {
           y0 = 0; y1 = 1.2;
         } else { // high
           mesh = new THREE.Group();
-          const beam = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.5, 0.6),
-            new THREE.MeshStandardMaterial({ color: 0x8a6a3a, roughness: 0.8 }));
+          const beam = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.45, 0.6),
+            new THREE.MeshStandardMaterial({ color: t.accent, roughness: 0.55 }));
           beam.position.y = 1.55; beam.castShadow = true;
           mesh.add(beam);
+          const beamStripe = new THREE.Mesh(new THREE.BoxGeometry(2.22, 0.16, 0.62),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55 }));
+          beamStripe.position.y = 1.55; mesh.add(beamStripe);
           for (const lx of [-1.0, 1.0]) {
             const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.2, 6),
-              new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.6, roughness: 0.4 }));
+              new THREE.MeshStandardMaterial({ color: 0x8a9099, metalness: 0.6, roughness: 0.4 }));
             post.position.set(lx, 1.6, 0);
             mesh.add(post);
           }
-          const sign = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.7, 0.08),
-            new THREE.MeshStandardMaterial({ color: 0x1d6b3a, roughness: 0.5 }));
-          sign.position.y = 2.4; mesh.add(sign);
+          const sign = makeBillboard(t, 1.9, 0.8);
+          sign.position.y = 2.5; mesh.add(sign);
           y0 = 1.3; y1 = 3.4;   // gap below 1.3 → roll under
         }
         mesh.position.set(LANES[lane], 0, -zRow);

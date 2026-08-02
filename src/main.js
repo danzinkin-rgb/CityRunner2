@@ -38,16 +38,19 @@ const city = () => CITIES[cityIdx];
 function buildCitySelect() {
   const wrap = $('city-select');
   wrap.innerHTML = '';
+  const flagFix = { london: '💂' };   // 🇬🇧 renders as plain "GB" on Windows
   CITIES.forEach((c, i) => {
     const stars = save.stars[c.id] || 0;
     const unlocked = i === 0 || (save.stars[CITIES[i - 1].id] || 0) >= 1;
     const el = document.createElement('div');
     el.className = 'city-card' + (unlocked ? '' : ' locked');
-    el.innerHTML = `<div class="flag">${c.flag}</div><div class="name">${c.name}</div>
+    el.innerHTML = `<div class="flag">${flagFix[c.id] || c.flag}</div><div class="name">${c.name}</div>
       <div class="stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>`;
     if (unlocked) el.onclick = () => { cityIdx = i; level = Math.min(3, (save.stars[c.id] || 0) + 1); startRun(); };
     wrap.appendChild(el);
   });
+  const stats = document.getElementById('menu-stats');
+  if (stats) stats.textContent = `BEST ${Math.round(save.best)}   ·   ${save.coins} COINS BANKED`;
 }
 
 function doFade(fn) {
@@ -85,6 +88,7 @@ function hint(text) {
 }
 
 function crash() {
+  if (GOD) return;
   sfx.crash();
   stopMusic();
   shake = 0.7;
@@ -234,3 +238,18 @@ function frame() {
 
 buildCitySelect();
 frame();
+
+// ---------- automated screenshot / test harness ----------
+// ?view=run|puzzle&city=nyc|paris|london|rome&level=1..3&god=1
+// Used by headless-browser visual review; harmless in normal play.
+const q = new URLSearchParams(location.search);
+const GOD = q.has('god');
+if (q.get('view')) {
+  const ci = CITIES.findIndex((c) => c.id === (q.get('city') || 'nyc'));
+  cityIdx = ci >= 0 ? ci : 0;
+  level = Math.min(3, Math.max(1, +(q.get('level') || 1)));
+  if (q.get('view') === 'puzzle') startPuzzle();
+  else startRun();
+} else {
+  window.GOD = false;
+}
