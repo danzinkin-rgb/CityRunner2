@@ -15,10 +15,15 @@ const persist = () => localStorage.setItem('cityrunner2', JSON.stringify(save));
 // ---------- dom ----------
 const $ = (id) => document.getElementById(id);
 const hud = $('hud'), fade = $('fade');
-const screens = { menu: $('screen-menu'), over: $('screen-over'), pwin: $('screen-puzzle-win'), facts: $('screen-facts') };
+const screens = {
+  menu: $('screen-menu'), over: $('screen-over'), pwin: $('screen-puzzle-win'),
+  facts: $('screen-facts'), paused: $('screen-paused'),
+};
 function showScreen(name) {
   for (const k in screens) screens[k].classList.toggle('on', k === name);
-  hud.classList.toggle('on', !name);
+  // The HUD stays up behind the pause overlay so the run reads as "frozen".
+  hud.classList.toggle('on', !name || name === 'paused');
+  $('btn-pause').style.display = (!name && (state === 'run' || state === 'puzzle')) ? 'flex' : 'none';
 }
 
 // ---------- three ----------
@@ -76,6 +81,7 @@ function startRun() {
     $('hud-timer').style.display = 'none';
     const SOUVENIR_ICON = { nyc: '❤️', paris: '🥐', london: '☎️', rome: '🏛️' };
     $('hud-coin-icon').textContent = SOUVENIR_ICON[city().id] || '🪙';
+    state = 'run';
     showScreen(null);
     hint('⬅️➡️ move · ⬆️ jump · ⬇️ roll — or swipe');
     setTimeout(() => {
@@ -146,9 +152,9 @@ function startPuzzle() {
     $('hud-city').textContent = `BUILD: ${LANDMARK_NAMES[lm].toUpperCase()}`;
     const SOUVENIR_ICON = { nyc: '❤️', paris: '🥐', london: '☎️', rome: '🏛️' };
     $('hud-coin-icon').textContent = SOUVENIR_ICON[city().id] || '🪙';
+    state = 'puzzle';
     showScreen(null);
     hint('Tap the glowing blocks — build from the ground up!');
-    state = 'puzzle';
   });
 }
 
@@ -200,6 +206,36 @@ createInput((action, px, py) => {
 
 $('btn-play').onclick = () => { cityIdx = 0; level = Math.min(3, (save.stars.nyc || 0) + 1); startRun(); };
 $('btn-build').onclick = () => startPuzzle();
+
+// ---------- pause ----------
+let pausedFrom = null;
+function pauseGame() {
+  if (state !== 'run' && state !== 'puzzle') return;
+  pausedFrom = state;
+  state = 'paused';
+  stopMusic();
+  showScreen('paused');
+}
+function resumeGame() {
+  if (state !== 'paused' || !pausedFrom) return;
+  state = pausedFrom;
+  pausedFrom = null;
+  clock.getDelta();                 // discard the paused interval
+  showScreen(null);
+  if (state === 'run') startMusic(city().id);
+}
+$('btn-pause').onclick = pauseGame;
+$('btn-resume').onclick = resumeGame;
+$('btn-quit').onclick = () => {
+  pausedFrom = null;
+  doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; });
+};
+window.addEventListener('keydown', (e) => {
+  if (e.code !== 'Escape' && e.code !== 'KeyP') return;
+  if (state === 'paused') resumeGame(); else pauseGame();
+});
+// Auto-pause when the tab/app is backgrounded — expected behaviour on phones.
+document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
 $('btn-retry').onclick = () => startRun();
 $('btn-menu').onclick = $('btn-menu2').onclick = () => doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; });
 $('btn-next').onclick = () => {

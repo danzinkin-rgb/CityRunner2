@@ -84,9 +84,14 @@
     #hud-city{top:calc(58px + env(safe-area-inset-top));font-size:11px;letter-spacing:2px}
     #hud-hint{font-size:13px;padding:7px 14px;bottom:calc(70px + env(safe-area-inset-bottom))}
     #hud-timer{font-size:28px;top:calc(10px + env(safe-area-inset-top))}
+    #btn-pause{top:calc(56px + env(safe-area-inset-top));right:12px;width:40px;height:40px}
     .facts-list li{font-size:14px;padding-left:28px}
     .facts-list{margin-bottom:22px}
   }
+  #btn-pause{pointer-events:auto;position:absolute;top:60px;right:16px;width:44px;height:44px;
+    border-radius:50%;border:1px solid rgba(255,255,255,.18);background:var(--glass);backdrop-filter:blur(8px);
+    color:#fff;font-size:14px;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  #btn-pause:active{transform:scale(.93)}
   .facts-list{list-style:none;max-width:560px;text-align:left;margin:0 0 30px}
   .facts-list li{position:relative;padding:9px 0 9px 34px;font-size:16px;line-height:1.45;color:#e8ecf8}
   .facts-list li::before{content:"✦";position:absolute;left:6px;color:var(--gold);text-shadow:0 0 8px rgba(255,209,102,.6)}
@@ -109,6 +114,14 @@
   <div id="hud-city">NEW YORK · LEVEL 1</div>
   <div id="hud-timer">60</div>
   <div id="hud-hint"></div>
+  <button id="btn-pause" aria-label="Pause">❚❚</button>
+</div>
+
+<div id="screen-paused" class="screen">
+  <div class="title" style="font-size:clamp(28px,7vw,56px)">PAUSED</div>
+  <div class="label" style="margin:6px 0 34px">Take a breath</div>
+  <button class="btn" id="btn-resume">RESUME</button>
+  <button class="btn ghost" id="btn-quit">QUIT TO CITIES</button>
 </div>
 
 <div id="screen-menu" class="screen on">

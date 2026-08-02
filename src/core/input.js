@@ -21,10 +21,16 @@ export function createInput(onAction) {
     const dx = t.clientX - sx, dy = t.clientY - sy;
     const dt = performance.now() - st;
     if (dt > 600) return;
-    if (Math.abs(dx) < 24 && Math.abs(dy) < 24) { onAction('tap', t.clientX, t.clientY); return; }
+    if (Math.abs(dx) < 24 && Math.abs(dy) < 24) {
+      if (!(e.target && e.target.closest && e.target.closest('button'))) onAction('tap', t.clientX, t.clientY);
+      return;
+    }
     if (Math.abs(dx) > Math.abs(dy)) onAction(dx > 0 ? 'right' : 'left');
     else onAction(dy > 0 ? 'down' : 'up');
   }, { passive: true });
 
-  window.addEventListener('mousedown', (e) => onAction('tap', e.clientX, e.clientY));
+  // Ignore taps that land on UI controls (pause button, menu buttons) so they
+  // don't also register as gameplay input.
+  const onUI = (e) => !!(e.target && e.target.closest && e.target.closest('button'));
+  window.addEventListener('mousedown', (e) => { if (!onUI(e)) onAction('tap', e.clientX, e.clientY); });
 }
