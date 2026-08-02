@@ -149,10 +149,14 @@ export class Track {
 
       const addObstacle = (lane, kind) => {
         usedLanes.add(lane);
-        let mesh, y0 = 0, y1 = 0;
+        let mesh, y0 = 0, y1 = 0, halfLen = 0.35;
         if (kind === 'full') {
           mesh = makeVehicle(t);
-          y0 = 0; y1 = 3.4;
+          // Honest hitboxes: buses are walls you must dodge; cars/taxis/vespas
+          // are low enough that a well-timed jump clears them.
+          const isBus = t.vehicle === 'bus';
+          y0 = 0; y1 = isBus ? 3.2 : 1.6;
+          halfLen = isBus ? 2.6 : t.vehicle === 'vespa' ? 1.1 : 2.1;
         } else if (kind === 'low') {
           mesh = new THREE.Group();
           const bar = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.9, 0.3),
@@ -189,7 +193,7 @@ export class Track {
         }
         mesh.position.set(LANES[lane], 0, -zRow);
         chunkGroup.add(mesh);
-        this.obstacles.push({ mesh, lane, kind, y0, y1, chunk: chunkGroup, localZ: -zRow });
+        this.obstacles.push({ mesh, lane, kind, y0, y1, halfLen, chunk: chunkGroup, localZ: -zRow });
       };
 
       if (pattern < 0.3) {
@@ -253,10 +257,11 @@ export class Track {
       }
     }
 
-    // obstacles
+    // obstacles — z window matches each obstacle's true length
     for (const o of this.obstacles) {
       const wz = o.localZ + o.chunk.position.z + this.group.position.z;
-      if (wz > -0.55 && wz < 0.55 && Math.abs(LANES[o.lane] - hb.x) < 1.15) {
+      const zw = (o.halfLen || 0.35) + 0.45;
+      if (wz > -zw && wz < zw && Math.abs(LANES[o.lane] - hb.x) < 1.15) {
         const overlap = hb.y0 < o.y1 && hb.y1 > o.y0;
         if (overlap) { onHit(); return; }
       }

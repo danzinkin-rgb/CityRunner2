@@ -126,6 +126,8 @@ function startPuzzle() {
     camera.lookAt(0, 6, 0);
     $('hud-timer').style.display = 'block';
     $('hud-city').textContent = `BUILD: ${LANDMARK_NAMES[lm].toUpperCase()}`;
+    const SOUVENIR_ICON = { nyc: '❤️', paris: '🥐', london: '☎️', rome: '🏛️' };
+    $('hud-coin-icon').textContent = SOUVENIR_ICON[city().id] || '🪙';
     showScreen(null);
     hint('Tap the glowing blocks — build from the ground up!');
     state = 'puzzle';

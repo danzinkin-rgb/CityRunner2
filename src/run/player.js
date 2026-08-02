@@ -139,7 +139,7 @@ export class Player {
 
   jump(sfx) {
     if (this.grounded && this.rolling <= 0) {
-      this.vy = 11.5;
+      this.vy = 12.6;   // apex ~2.5m, ~0.79s airtime — clears a 1.6m-tall car comfortably
       this.grounded = false;
       sfx.jump();
     }
