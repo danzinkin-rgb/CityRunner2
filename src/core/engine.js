@@ -21,11 +21,15 @@ export function makeCamera() {
 }
 
 export function handleResize(renderer, camera) {
-  window.addEventListener('resize', () => {
+  const apply = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    // Re-read DPR: it changes when a phone rotates or a window moves screens.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
-  });
+  };
+  window.addEventListener('resize', apply);
+  window.addEventListener('orientationchange', () => setTimeout(apply, 120));
 }
 
 // Canvas-driven gradient sky dome — cheap, beautiful, per-city colors.
