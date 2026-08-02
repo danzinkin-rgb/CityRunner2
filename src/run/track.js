@@ -1,6 +1,13 @@
 import * as THREE from '../../vendor/three.module.js';
 import { LANES } from './player.js';
-import { roadTexture, sidewalkTexture, makeBuilding, makeProp, makeVehicle, makeBillboard, makeParkedCar, makeStreetSpan } from '../cities/builders.js';
+import { makeSky } from '../core/engine.js';
+import { resolveStreet } from '../cities/themes.js';
+import {
+  roadTexture, sidewalkTexture, makeBuilding, makeProp, makeVehicle,
+  makeBillboard, makeParkedCar, makeStreetSpan, makeGardenWall,
+  makeArcade, makeGardenRail, makeWindmill, makeObeliskFountain,
+  makeEquestrian, makeErosFountain, makeCurvedLED, makeZebra, makeCameo,
+} from '../cities/builders.js';
 import { makeCollectible } from '../cities/souvenirs.js';
 
 const CHUNK_LEN = 36;
@@ -15,7 +22,10 @@ const ROAD_W = 8.6;
 export class Track {
   constructor(scene, theme, level) {
     this.scene = scene;
-    this.theme = theme;
+    // Resolve the per-street identity (facade style, palette, mood, props...)
+    // over the city base — this is what makes Broadway ≠ 5th Ave ≠ Times Sq.
+    this.baseTheme = theme;
+    this.theme = resolveStreet(theme, level);
     this.level = level;            // 1..3, drives density + speed
     this.group = new THREE.Group();
     scene.add(this.group);
@@ -25,6 +35,13 @@ export class Track {
     this.distance = 0;
     this.goal = 900 + (level - 1) * 350;   // meters to the monument
     this.coinSpin = 0;
+    this.chunkCount = 0;           // drives set-piece cadence per street
+
+    this.applyStreetMood(scene, theme);
+
+    // static skyline cameo far beyond the last chunk (haze baked in)
+    this.backdrop = makeCameo(this.theme);
+    if (this.backdrop) scene.add(this.backdrop);
 
     // per-city souvenir collectible, cloned for every pickup
     this.souvenirProto = makeCollectible(theme);
@@ -32,10 +49,38 @@ export class Track {
     for (let i = 0; i < CHUNKS; i++) this.spawnChunk(-i * CHUNK_LEN, i < 2);
   }
 
+  // Streets can override fog, sky and light mood over the city base
+  // (dressScene has already applied the city defaults to this scene).
+  applyStreetMood(scene, baseTheme) {
+    const t = this.theme;
+    if (scene.fog) {
+      scene.fog.color.set(t.fog);
+      scene.fog.density = t.fogDensity;
+    }
+    if (t.sky !== baseTheme.sky) {
+      // swap the sky dome for the street's own gradient (dusk streets etc.)
+      const old = scene.children.find((c) => c.isMesh && c.renderOrder === -10);
+      if (old) {
+        scene.remove(old);
+        if (old.material.map) old.material.map.dispose();
+        old.material.dispose();
+        old.geometry.dispose();
+      }
+      scene.add(makeSky(t));
+    }
+    if (t.mood) {
+      scene.traverse((o) => {
+        if (o.isDirectionalLight) o.intensity *= (o.castShadow ? t.mood.sun : t.mood.fill) ?? 1;
+        else if (o.isHemisphereLight) o.intensity *= t.mood.hemi ?? 1;
+      });
+    }
+  }
+
   spawnChunk(z, safe) {
     const t = this.theme;
     const g = new THREE.Group();
     g.position.z = z;
+    const nChunk = this.chunkCount++;
 
     // road
     const road = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_W, CHUNK_LEN),
@@ -46,6 +91,7 @@ export class Track {
     g.add(road);
 
     // curbs + sidewalks
+    const setback = t.setback ?? 4.4;
     for (const side of [-1, 1]) {
       const sw = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.3, CHUNK_LEN),
         new THREE.MeshStandardMaterial({ map: sidewalkTexture(t), roughness: 0.95 }));
@@ -53,33 +99,89 @@ export class Track {
       sw.receiveShadow = true;
       g.add(sw);
 
-      // buildings — packed shoulder to shoulder, varied heights
-      let bz = 0;
-      while (bz < CHUNK_LEN - 4) {
-        const w = 7 + Math.random() * 6;
-        const d = 8 + Math.random() * 4;
-        const hBase = t.id === 'paris' || t.id === 'rome' ? 14 : 22;
-        const h = hBase + Math.random() * (t.id === 'nyc' ? 34 : 14);
-        const b = makeBuilding(t, w, h, d, Math.random, side);
-        b.position.set(side * (ROAD_W / 2 + 4.4 + d / 2 - 1), 0, -bz - d / 2);
-        g.add(b);
-
-        // distant second row for skyline depth
-        if (Math.random() < 0.8) {
-          const b2 = makeBuilding(t, w * 1.3, h * (0.9 + Math.random() * 0.8), d);
-          b2.position.set(side * (ROAD_W / 2 + 16 + Math.random() * 8), 0, -bz - d / 2);
-          g.add(b2);
+      // Rue de Rivoli: the left side is the formal garden — railings, hedges
+      // and trees instead of a building wall.
+      if (t.garden && side < 0) {
+        const rail = makeGardenRail(t, CHUNK_LEN);
+        rail.position.set(side * (ROAD_W / 2 + 3.9), 0.3, 0);
+        g.add(rail);
+        for (let tz = 4; tz < CHUNK_LEN; tz += 8) {
+          const tree = makeProp('chestnut', t);
+          tree.position.set(side * (ROAD_W / 2 + 6.5 + Math.random() * 3), 0.3, -tz);
+          g.add(tree);
         }
-        bz += w + 0.5;
+        // gilded equestrian statue cameo rising over the garden
+        if (nChunk % 3 === 1) {
+          const eq = makeEquestrian();
+          eq.position.set(side * (ROAD_W / 2 + 7.5), 0.3, -CHUNK_LEN * 0.5);
+          eq.rotation.y = side * Math.PI / 2.5;
+          g.add(eq);
+        }
+      } else {
+        // buildings — packed shoulder to shoulder, varied heights
+        let bz = 0;
+        while (bz < CHUNK_LEN - 4) {
+          const w = 7 + Math.random() * 6;
+          const d = 8 + Math.random() * 4;
+          const hBase = t.hBase ?? (t.id === 'paris' || t.id === 'rome' ? 14 : 22);
+          const hVar = t.hVar ?? (t.id === 'nyc' ? 34 : 14);
+          const h = hBase + Math.random() * hVar;
+          // Piccadilly: the giant curved stacked-LED corner building
+          if (t.curvedLED && side > 0 && nChunk % 4 === 2 && bz === 0) {
+            const led = makeCurvedLED(t);
+            led.position.set(side * (ROAD_W / 2 + 10.5), 0, -8);
+            led.rotation.y = Math.PI * 1.05;
+            g.add(led);
+            bz += 15;
+            continue;
+          }
+          const b = makeBuilding(t, w, h, d, Math.random, side);
+          b.position.set(side * (ROAD_W / 2 + setback + d / 2 - 1), 0, -bz - d / 2);
+          g.add(b);
+
+          // Abbey Road: villas sit behind a continuous low wall + hedge
+          if (t.facade === 'georgian') {
+            const wall = makeGardenWall(t, w + 0.5);
+            wall.rotation.y = Math.PI / 2;
+            wall.position.set(side * (ROAD_W / 2 + setback - 1.6), 0.3, -bz - w / 2);
+            g.add(wall);
+          }
+
+          // distant second row for skyline depth
+          const rowP = t.secondRow ?? 0.8;
+          if (Math.random() < rowP) {
+            const b2 = makeBuilding(t, w * 1.3, h * (0.9 + Math.random() * 0.8), d);
+            b2.position.set(side * (ROAD_W / 2 + 16 + Math.random() * 8), 0, -bz - d / 2);
+            g.add(b2);
+          }
+          bz += w + (t.facade === 'georgian' ? 2.5 : 0.5);
+        }
+      }
+
+      // Rue de Rivoli: continuous arcade colonnade over the arcade side
+      if (t.arcade && side > 0) {
+        const arc = makeArcade(t, CHUNK_LEN, side);
+        arc.position.set(side * (ROAD_W / 2 + 2.4), 0.3, 0);
+        g.add(arc);
+      }
+
+      // Champs-Élysées: disciplined double row of clipped chestnuts
+      if (t.treeline && !(t.garden && side < 0)) {
+        for (let tz = 3; tz < CHUNK_LEN; tz += 6) {
+          const tree = makeProp(t.treeline, t);
+          tree.position.set(side * (ROAD_W / 2 + 1.4), 0.3, -tz);
+          g.add(tree);
+        }
       }
 
       // parked decorative cars hugging the curb (placed first so props avoid them)
       const carZs = [];
-      if (Math.random() < 0.85) {
+      const parkP = t.facade === 'georgian' ? 0.95 : t.arcade ? 0.3 : 0.85;
+      if (Math.random() < parkP) {
         const n = 1 + (Math.random() < 0.4 ? 1 : 0);
         for (let i = 0; i < n; i++) {
           const cz = 5 + Math.random() * (CHUNK_LEN - 12);
-          if (carZs.some((z) => Math.abs(z - cz) < 5)) continue;
+          if (carZs.some((zz) => Math.abs(zz - cz) < 5)) continue;
           carZs.push(cz);
           const car = makeParkedCar(t);
           car.position.set(side * (ROAD_W / 2 + 1.35), 0.3, -cz);
@@ -90,9 +192,12 @@ export class Track {
 
       // props along the curb — denser for a lived-in street
       const propKinds = t.props;
+      const wallProps = new Set(['billboard', 'awning', 'flagbanner']);
       for (let pz = 3; pz < CHUNK_LEN; pz += 5.5 + Math.random() * 4) {
         const kind = propKinds[(Math.random() * propKinds.length) | 0];
-        if (kind !== 'billboard' && kind !== 'awning' && carZs.some((z) => Math.abs(z - pz) < 3.2)) continue;
+        if (!wallProps.has(kind) && carZs.some((zz) => Math.abs(zz - pz) < 3.2)) continue;
+        // under the arcade only stalls + lamps make sense
+        if (t.arcade && side > 0 && kind !== 'souvenirstall' && kind !== 'lamp_paris') continue;
         const p = makeProp(kind, t);
         p.position.set(side * (ROAD_W / 2 + 1.1 + Math.random() * 1.6), 0.3, -pz);
         if (kind === 'billboard') {
@@ -101,20 +206,72 @@ export class Track {
           p.rotation.y = side > 0 ? -Math.PI / 2.3 : Math.PI / 2.3;
         }
         if (kind === 'awning') {
-          // snap to the building face so it reads as a shop awning
-          p.position.x = side * (ROAD_W / 2 + 3.35);
+          p.position.x = side * (ROAD_W / 2 + setback - 1.05);
           p.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2;
         }
-        if (kind === 'newsstand' || kind === 'kiosk' || kind === 'hotdog') {
+        if (kind === 'flagbanner') {
+          p.position.x = side * (ROAD_W / 2 + setback - 1.2);
+          p.position.y = 6 + Math.random() * 2.5;
+          p.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+        }
+        if (kind === 'newsstand' || kind === 'kiosk' || kind === 'hotdog' || kind === 'artstall'
+          || kind === 'souvenirstall' || kind === 'playbill') {
           p.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
           p.position.x = side * (ROAD_W / 2 + 2.4);
         }
+        if (kind === 'terrace_cafe' || kind === 'terrace_white' || kind === 'bistro') {
+          p.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+          p.position.x = side * (ROAD_W / 2 + 3.0);
+        }
+        if (kind === 'stagedoor' || kind === 'streetsign') {
+          p.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+          p.position.x = side * (ROAD_W / 2 + 1.4);
+        }
+        if (kind === 'hedge') {
+          p.rotation.y = Math.PI / 2;
+          p.position.x = side * (ROAD_W / 2 + 3.2);
+        }
+        if (kind === 'barrier') {
+          p.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+          p.position.x = side * (ROAD_W / 2 + 0.9);
+        }
+        if (kind === 'easel') p.rotation.y = Math.random() * Math.PI * 2;
         g.add(p);
       }
     }
 
-    // Times Square special: overhead banner billboards spanning the street
-    if (this.theme.id === 'nyc' && Math.random() < 0.5) {
+    // ---- road-wide + one-off street set pieces ----
+
+    // Abbey Road: THE zebra crossing, a recurring road set piece
+    if (t.zebra && nChunk % 2 === 0) {
+      const zb = makeZebra(t, ROAD_W);
+      zb.position.z = -CHUNK_LEN * 0.55;
+      g.add(zb);
+    }
+    // Montmartre: the red CABARET windmill on a corner
+    if (t.windmill && nChunk % 3 === 1) {
+      const wm = makeWindmill();
+      const side = nChunk % 6 === 1 ? 1 : -1;
+      wm.position.set(side * (ROAD_W / 2 + 7), 0, -CHUNK_LEN * 0.5);
+      wm.rotation.y = -side * Math.PI / 2;
+      g.add(wm);
+    }
+    // Piazza Navona: obelisk-over-rocky-fountain set pieces
+    if (t.obelisk && nChunk % 2 === 1) {
+      const ob = makeObeliskFountain();
+      const side = nChunk % 4 === 1 ? 1 : -1;
+      ob.position.set(side * (ROAD_W / 2 + 2.6), 0.3, -CHUNK_LEN * 0.45);
+      g.add(ob);
+    }
+    // Piccadilly: winged-archer fountain on the sidewalk
+    if (t.eros && nChunk % 5 === 3) {
+      const er = makeErosFountain();
+      er.position.set(-(ROAD_W / 2 + 2.6), 0.3, -CHUNK_LEN * 0.35);
+      g.add(er);
+    }
+
+    // Times Square: overhead banner billboards spanning the street
+    if (t.banners && Math.random() < 0.75) {
       const bz = -CHUNK_LEN * (0.3 + Math.random() * 0.5);
       const banner = makeBillboard(t, 9, 2.4);
       banner.position.set(0, 7.5, bz);
@@ -126,8 +283,8 @@ export class Track {
         g.add(post);
       }
     }
-    // Rome string lights / London & Paris bunting lines across the street
-    if (this.theme.id !== 'nyc' && Math.random() < 0.75) {
+    // festoons / string lights / bunting lines across the street
+    if (t.span && Math.random() < (t.spanFreq ?? 0.75)) {
       const span = makeStreetSpan(t, ROAD_W + 4.5);
       span.position.set(0, 5.6 + Math.random() * 0.8, -CHUNK_LEN * (0.2 + Math.random() * 0.6));
       g.add(span);
@@ -274,6 +431,11 @@ export class Track {
   dispose() {
     this.scene.remove(this.group);
     disposeGroup(this.group);
+    if (this.backdrop) {
+      this.scene.remove(this.backdrop);
+      disposeGroup(this.backdrop);
+      this.backdrop = null;
+    }
   }
 }
 

@@ -2,6 +2,11 @@
 // props, obstacles, puzzle landmarks) is driven from this table.
 // Design bar: bright, saturated, golden-hour mobile-game look (Subway Surfers).
 // fog color === sky glow color so distant geometry melts into the horizon glow.
+//
+// Each city also carries a `levels` array — one entry per street — of visual
+// overrides (facade style, palette, prop mix, road style, sky/fog mood,
+// skyline cameo, recurring set pieces). resolveStreet(city, level) merges an
+// entry over the city base so every street gets its own unmistakable look.
 export const CITIES = [
   {
     id: 'nyc', name: 'NEW YORK', flag: '🗽',
@@ -20,6 +25,37 @@ export const CITIES = [
     props: ['lamp', 'hydrant', 'billboard', 'newsstand', 'hotdog'],
     vehicle: 'taxi',
     landmarks: ['empire', 'chrysler', 'brooklyn'],
+    levels: [
+      { // Broadway — theatre district: bulb marquees, playbills, stage doors
+        key: 'broadway', facade: 'theatre', marquee: true,
+        palette: ['#8a4a3a', '#a05a42', '#6e5a6a', '#7a6652', '#94564a', '#6a6a78'],
+        storefront: ['#b01030', '#8a1626', '#c89018', '#4a2a7a', '#20304e'],
+        props: ['lamp', 'hydrant', 'playbill', 'stagedoor', 'newsstand'],
+        ads: ['STARDUST', 'MOONGLOW', 'RUNAWAY!', 'CITY LIGHTS', 'ONE MORE NIGHT', 'THE BIG TOWN'],
+        lit: 0.24,
+      },
+      { // 5th Avenue — prestige retail: limestone flagships, gold awnings
+        key: 'fifth', facade: 'flagship', goldAwnings: true,
+        palette: ['#ddd6c6', '#d0c9b8', '#c6bfae', '#d8d0be', '#cfc5ae', '#e2dbcb'],
+        trim: '#efe8d6',
+        storefront: ['#1a2a44', '#3a2a1c', '#4a1a2e', '#14342c', '#2a2038'],
+        props: ['lamp', 'topiary', 'hydrant', 'flagbanner'],
+        ads: ['MAISON LUMIÈRE', 'ASTOR & SONS', 'LA PERLE', 'VERRE & OR'],
+        cameo: 'cathedral', lit: 0.15,
+      },
+      { // Times Square — dusk neon overload, stacked LED, tickers, crowds
+        key: 'timessq', facade: 'neon', banners: true, cornerLED: true,
+        palette: ['#4e5462', '#5a606e', '#3e4452', '#565064', '#4a5668', '#605a6e'],
+        sky: { top: '#161e4a', mid: '#3a4488', horizon: '#9a5cc0', glow: '#c66ad4' },
+        fog: 0xb866c8, fogDensity: 0.0104,
+        mood: { sun: 0.4, hemi: 0.6, fill: 0.85 },
+        road: '#3c3c46', sidewalk: '#8e8a92',
+        storefront: ['#e3128a', '#12c4e3', '#f2e216', '#8a2ae8', '#ff5a1e'],
+        props: ['lamp', 'barrier', 'newsstand', 'hotdog'],
+        ads: ['CITY RUN', 'NEON NITES', 'MEGA COLA', 'GO! GO! GO!', 'LIVE 24H', 'BIG APPLE FM'],
+        cameo: 'balltower', lit: 0.6,
+      },
+    ],
   },
   {
     id: 'paris', name: 'PARIS', flag: '🗼',
@@ -38,6 +74,32 @@ export const CITIES = [
     props: ['lamp_paris', 'awning', 'tree', 'kiosk', 'fountain'],
     vehicle: 'citroen',
     landmarks: ['eiffel', 'arc', 'louvre'],
+    levels: [
+      { // Champs-Élysées — chestnut tree rows, glass showrooms, Arc ahead
+        key: 'champs', facade: 'showroom', treeline: 'chestnut',
+        props: ['lamp_paris', 'terrace_cafe', 'kiosk'],
+        ads: ['MAISON LUMIÈRE', 'MODE 8', 'PARFUM ROSE', 'CAFÉ RIVE'],
+        cameo: 'arc', lit: 0.14,
+      },
+      { // Rue de Rivoli — endless stone arcade colonnade, garden railings
+        key: 'rivoli', facade: 'arcade', arcade: true, garden: true,
+        palette: ['#eee3c8', '#eadfc4', '#f0e6cc', '#e8ddc0', '#f2e8d0', '#ecdfc2'],
+        props: ['lamp_paris', 'souvenirstall'],
+        ads: ['GALERIE DORÉE', 'CARTES & CO', 'SOUVENIRS'],
+        lit: 0.14,
+      },
+      { // Montmartre — cobbles, ivy village walls, easels, red windmill
+        key: 'montmartre', facade: 'village', windmill: true,
+        palette: ['#f4efe2', '#efe6d4', '#e8ddca', '#f6f1e6', '#e2d5c0', '#f0e8d8'],
+        roadStyle: 'cobble', road: '#7a7268', lane: '#7a7268', sidewalk: '#c0b49e',
+        hBase: 8, hVar: 5, secondRow: 0.35,
+        storefront: ['#a02438', '#2d6b3f', '#1f4a8a', '#8a5a1e'],
+        props: ['lamp_paris', 'easel', 'bistro'],
+        ads: ['CABARET', 'LA PALETTE', 'BISTRO LUNE', 'CRÊPES'],
+        span: 'festoon', spanFreq: 0.45,
+        cameo: 'sacre', lit: 0.2,
+      },
+    ],
   },
   {
     id: 'london', name: 'LONDON', flag: '🇬🇧',
@@ -56,6 +118,34 @@ export const CITIES = [
     props: ['lamp_london', 'phonebox', 'postbox', 'tree', 'bunting'],
     vehicle: 'bus',
     landmarks: ['bigben', 'towerbridge', 'eye'],
+    levels: [
+      { // Oxford Street — columned department stores, festoon lights, buses
+        key: 'oxford', facade: 'deptstore',
+        palette: ['#d8d2c2', '#b4553c', '#cfc9b9', '#c26445', '#ddd7c7', '#b86a50'],
+        props: ['lamp_london', 'beacon', 'phonebox', 'postbox'],
+        ads: ['ASTOR & SONS', 'GRAND STORES', 'TEA & CO', 'MARLOW & CO'],
+        span: 'festoon', spanFreq: 0.95, lit: 0.16,
+      },
+      { // Abbey Road — leafy Georgian villas, THE zebra crossing, NW8 signs
+        key: 'abbey', facade: 'georgian', zebra: true, parked: 'beetle',
+        roadStyle: 'plain', fogDensity: 0.008,
+        palette: ['#f2efe6', '#ece7da', '#b46848', '#f6f3ea', '#c07a58', '#efe9dc'],
+        props: ['lamp_london', 'planetree', 'streetsign', 'hedge'],
+        secondRow: 0, lit: 0.1,
+      },
+      { // Piccadilly — dusk, curved stacked-LED corner, theatre glow, Eros
+        key: 'piccadilly', facade: 'theatre', marquee: true, curvedLED: true, eros: true,
+        palette: ['#c9c2b2', '#bfb8a8', '#b5ae9e', '#d0c9b9', '#c4bcac', '#cbc3b3'],
+        sky: { top: '#1c2456', mid: '#42509a', horizon: '#ff9a5c', glow: '#ff8050' },
+        fog: 0xff8a55, fogDensity: 0.0098,
+        mood: { sun: 0.5, hemi: 0.65, fill: 0.9 },
+        road: '#44444c',
+        storefront: ['#c8102e', '#d0851c', '#1c5aa8', '#8a2ae8', '#12b4c4'],
+        props: ['lamp_london', 'phonebox', 'barrier'],
+        ads: ['WEST END', 'REVUE ROYALE', 'GINGER SNAP', 'PICCADILLY LITES'],
+        lit: 0.55,
+      },
+    ],
   },
   {
     id: 'rome', name: 'ROME', flag: '🏛️',
@@ -74,6 +164,36 @@ export const CITIES = [
     props: ['lamp_rome', 'column', 'arch', 'cypress', 'fountain'],
     vehicle: 'vespa',
     landmarks: ['colosseum', 'trevi', 'pantheon'],
+    levels: [
+      { // Via del Corso — tight ochre canyon, shutters, mopeds, church vista
+        key: 'corso', facade: 'ochre', parked: 'vespa',
+        palette: ['#d9903f', '#c87f3a', '#e0a050', '#b06a34', '#d29a58', '#c4763a'],
+        setback: 2.6, hBase: 15, hVar: 9, secondRow: 0,
+        fogDensity: 0.0095,
+        props: ['lamp_rome'],
+        ads: ['MODA VIA', 'ORO FINO', 'GELATERIA', 'LIBRI'],
+        cameo: 'churchtwin', lit: 0.16,
+      },
+      { // Via Veneto — grand hotels, flags, white umbrella cafés, city gate
+        key: 'veneto', facade: 'hotel',
+        palette: ['#efe4cc', '#e9dcc2', '#f3ead6', '#e2d2b4', '#ece0c6', '#f0e6d0'],
+        props: ['lamp_rome', 'planetree', 'terrace_white'],
+        ads: ['GRAND AURORA', 'HOTEL SPLENDIDO', 'PALAZZO STELLA', 'CAFFÈ AURORA'],
+        cameo: 'gate', lit: 0.16,
+      },
+      { // Piazza Navona — baroque evening festival: obelisk fountains, stalls
+        key: 'navona', facade: 'baroque', obelisk: true,
+        palette: ['#eadbb8', '#e2cfa8', '#f0e2c4', '#d8c298', '#eed9b2', '#e6d2ac'],
+        roadStyle: 'travertine', road: '#b8a684', lane: '#b8a684', sidewalk: '#c8b492',
+        sky: { top: '#332e78', mid: '#8862a8', horizon: '#ffab5e', glow: '#ff9848' },
+        fog: 0xff9848, fogDensity: 0.0095,
+        mood: { sun: 0.6, hemi: 0.8, fill: 1.0 },
+        props: ['lamp_rome', 'artstall', 'easel'],
+        ads: ['ARTE', 'CAFFÈ AURORA', 'TRATTORIA SOLE', 'MASCHERE'],
+        span: 'string', spanFreq: 0.85,
+        cameo: 'navona', lit: 0.5,
+      },
+    ],
   },
 ];
 
@@ -83,3 +203,10 @@ export const LANDMARK_NAMES = {
   bigben: 'Big Ben', towerbridge: 'Tower Bridge', eye: 'London Eye',
   colosseum: 'Colosseum', trevi: 'Trevi Fountain', pantheon: 'Pantheon',
 };
+
+// Merge a street's overrides over its city base. `streetKey` uniquely tags
+// textures/materials in the builder caches so streets never share facades.
+export function resolveStreet(city, level) {
+  const ov = (city.levels && city.levels[level - 1]) || {};
+  return { ...city, ...ov, streetKey: ov.key || `${city.id}${level}` };
+}
