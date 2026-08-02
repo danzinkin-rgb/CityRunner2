@@ -1,6 +1,7 @@
 import * as THREE from '../../vendor/three.module.js';
 import { LANES } from './player.js';
 import { roadTexture, sidewalkTexture, makeBuilding, makeProp, makeVehicle, makeBillboard, makeParkedCar, makeStreetSpan } from '../cities/builders.js';
+import { makeCollectible } from '../cities/souvenirs.js';
 
 const CHUNK_LEN = 36;
 const CHUNKS = 7;          // visible chunks ahead
@@ -25,11 +26,8 @@ export class Track {
     this.goal = 900 + (level - 1) * 350;   // meters to the monument
     this.coinSpin = 0;
 
-    this.coinGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.09, 18);
-    this.coinMat = new THREE.MeshStandardMaterial({
-      color: 0xffd166, emissive: 0xcc8a1e, emissiveIntensity: 0.55,
-      metalness: 0.9, roughness: 0.25,
-    });
+    // per-city souvenir collectible, cloned for every pickup
+    this.souvenirProto = makeCollectible(theme);
 
     for (let i = 0; i < CHUNKS; i++) this.spawnChunk(-i * CHUNK_LEN, i < 2);
   }
@@ -213,11 +211,9 @@ export class Track {
         const lane = freeLanes[(Math.random() * freeLanes.length) | 0];
         const arc = Math.random() < 0.3;
         for (let i = 0; i < 5; i++) {
-          const coin = new THREE.Mesh(this.coinGeo, this.coinMat);
-          coin.rotation.x = Math.PI / 2;
+          const coin = this.souvenirProto.clone();
           const yy = arc ? 1.2 + Math.sin((i / 4) * Math.PI) * 1.3 : 1.1;
           coin.position.set(LANES[lane], yy, -zRow - i * 1.6);
-          coin.castShadow = true;
           chunkGroup.add(coin);
           this.coins.push({ mesh: coin, chunk: chunkGroup, taken: false });
         }
@@ -247,7 +243,7 @@ export class Track {
     // coins
     for (const c of this.coins) {
       if (c.taken) continue;
-      c.mesh.rotation.z = this.coinSpin;
+      c.mesh.rotation.y = this.coinSpin;   // souvenirs spin about vertical axis
       const wz = c.mesh.position.z + c.chunk.position.z + this.group.position.z;
       if (Math.abs(wz) < 0.9 && Math.abs(c.mesh.position.x - hb.x) < 0.9 &&
           c.mesh.position.y > hb.y0 - 0.6 && c.mesh.position.y < hb.y1 + 0.6) {

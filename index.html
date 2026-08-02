@@ -56,6 +56,15 @@
   .city-card .name{font-weight:800;margin-top:6px}
   .city-card .stars{color:var(--gold);font-size:13px;margin-top:4px;letter-spacing:2px}
   #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .5s;z-index:50}
+  @media (max-width:520px){
+    .title{font-size:13vw;letter-spacing:1px}
+    .subtitle{letter-spacing:3px;font-size:12px;margin-bottom:26px}
+    #city-select{gap:10px;padding:0 12px}
+    .city-card{width:calc(50% - 12px);max-width:150px;padding:12px 8px}
+    .btn{font-size:17px;padding:14px 44px}
+    .screen{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+    .hud-top{padding:calc(10px + env(safe-area-inset-top)) 12px 0}
+  }
   .skyline{position:absolute;left:0;right:0;bottom:0;height:180px;pointer-events:none;opacity:.55;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 180' preserveAspectRatio='none'%3E%3Cpath fill='%23070b1a' d='M0 180V120h30V80h20v40h25V60h18l6-25 6 25h14v50h30V95h35v-35h12V40h16v20h12v35h28v25h40V70h10l5-40 5 40h10v50h26V85h30v35h22V55h8l4-30 4 30h8v65h36v-25h24V70h30v50h20V90h26v30h34V45h10l6-35 6 35h10v75h30v-30h26v30h24V80h30v40h28V95h20v-20h24v45h30v-60h14l8-30 8 30h12v60h32v-40h26v40h22v-25h28v25h28V85h24v35h30v-45h12V50h14v25h10v45h36v-30h22v30H1200v60z'/%3E%3C/svg%3E");
     background-size:100% 100%;
@@ -68,7 +77,7 @@
 <div id="hud">
   <div id="hud-progress"></div>
   <div class="hud-top">
-    <div class="pill"><span class="coin-dot"></span><span id="hud-coins">0</span></div>
+    <div class="pill"><span id="hud-coin-icon" style="font-size:18px">🪙</span><span id="hud-coins">0</span></div>
     <div class="pill"><span id="hud-score">0</span></div>
   </div>
   <div id="hud-city">NEW YORK · LEVEL 1</div>
@@ -81,14 +90,16 @@
   <div class="subtitle">Run the world's greatest streets</div>
   <div id="city-select"></div>
   <button class="btn" id="btn-play">RUN</button>
-  <div id="menu-stats" class="label" style="margin-top:26px"></div>
+  <div class="label" style="margin-top:24px;font-size:14px;letter-spacing:2px">
+    ⬅️ ➡️ MOVE &nbsp;·&nbsp; ⬆️ JUMP &nbsp;·&nbsp; ⬇️ ROLL &nbsp;·&nbsp; OR SWIPE</div>
+  <div id="menu-stats" class="label" style="margin-top:14px"></div>
   <div class="skyline"></div>
 </div>
 
 <div id="screen-over" class="screen">
   <div class="label">Run over</div>
   <div class="big-num" id="over-score">0</div>
-  <div class="label" style="margin:10px 0 30px"><span id="over-coins">0</span> coins collected</div>
+  <div class="label" style="margin:10px 0 30px"><span id="over-coins">0</span> souvenirs collected</div>
   <button class="btn" id="btn-retry">RUN AGAIN</button>
   <button class="btn ghost" id="btn-menu">CITY SELECT</button>
 </div>

@@ -71,8 +71,17 @@ function startRun() {
     camera.position.set(0, 5.2, 8.5);
     $('hud-city').textContent = `${city().name} · ${city().streets[level - 1].toUpperCase()}`;
     $('hud-timer').style.display = 'none';
+    const SOUVENIR_ICON = { nyc: '❤️', paris: '🥐', london: '☎️', rome: '🏛️' };
+    $('hud-coin-icon').textContent = SOUVENIR_ICON[city().id] || '🪙';
     showScreen(null);
-    hint(`${city().streets[level - 1]} — run to the ${LANDMARK_NAMES[city().landmarks[level - 1]]}!`);
+    hint('⬅️➡️ move · ⬆️ jump · ⬇️ roll — or swipe');
+    setTimeout(() => {
+      if (state === 'run') {
+        const lm = city().landmarks[level - 1];
+        const article = lm === 'bigben' ? '' : 'the ';   // "Big Ben", but "the Colosseum"
+        hint(`${city().streets[level - 1]} — run to ${article}${LANDMARK_NAMES[lm]}!`);
+      }
+    }, 3000);
     startMusic(city().id);
     state = 'run';
   });
