@@ -3,6 +3,7 @@ import { createRenderer, makeCamera, handleResize, dressScene } from './core/eng
 import { createInput } from './core/input.js';
 import { sfx, startMusic, stopMusic } from './core/audio.js';
 import { CITIES, LANDMARK_NAMES } from './cities/themes.js';
+import { STREET_FACTS, MONUMENT_FACTS } from './facts.js';
 import { Player } from './run/player.js';
 import { Track } from './run/track.js';
 import { Puzzle } from './puzzle/puzzle.js';
@@ -14,7 +15,7 @@ const persist = () => localStorage.setItem('cityrunner2', JSON.stringify(save));
 // ---------- dom ----------
 const $ = (id) => document.getElementById(id);
 const hud = $('hud'), fade = $('fade');
-const screens = { menu: $('screen-menu'), over: $('screen-over'), pwin: $('screen-puzzle-win') };
+const screens = { menu: $('screen-menu'), over: $('screen-over'), pwin: $('screen-puzzle-win'), facts: $('screen-facts') };
 function showScreen(name) {
   for (const k in screens) screens[k].classList.toggle('on', k === name);
   hud.classList.toggle('on', !name);
@@ -80,7 +81,7 @@ function startRun() {
     setTimeout(() => {
       if (state === 'run') {
         const lm = city().landmarks[level - 1];
-        const article = lm === 'bigben' ? '' : 'the ';   // "Big Ben", but "the Colosseum"
+        const article = (lm === 'bigben' || lm === 'towerbridge') ? '' : 'the ';   // "Big Ben", but "the Colosseum"
         hint(`${city().streets[level - 1]} — run to ${article}${LANDMARK_NAMES[lm]}!`);
       }
     }, 3000);
@@ -113,6 +114,21 @@ function crash() {
     showScreen('over');
     state = 'over';
   }, 900);
+}
+
+// ---------- street facts interstitial (run complete → facts → puzzle) ----------
+function showStreetFacts() {
+  stopMusic();
+  state = 'facts';
+  $('facts-title').textContent = city().streets[level - 1];
+  const list = $('facts-list');
+  list.innerHTML = '';
+  for (const f of (STREET_FACTS[city().id]?.[level - 1] || [])) {
+    const li = document.createElement('li');
+    li.textContent = f;
+    list.appendChild(li);
+  }
+  showScreen('facts');
 }
 
 // ---------- puzzle mode ----------
@@ -150,6 +166,13 @@ function finishPuzzle(won) {
       $('pw-name').textContent = LANDMARK_NAMES[lm];
       $('pw-bonus').textContent = puzzleBonus;
       $('pw-time').textContent = Math.round(puzzle.time);
+      const pf = $('pw-facts');
+      pf.innerHTML = '';
+      for (const f of (MONUMENT_FACTS[lm] || [])) {
+        const li = document.createElement('li');
+        li.textContent = f;
+        pf.appendChild(li);
+      }
       showScreen('pwin');
       state = 'pwin';
     }, 4300);
@@ -176,6 +199,7 @@ createInput((action, px, py) => {
 });
 
 $('btn-play').onclick = () => { cityIdx = 0; level = Math.min(3, (save.stars.nyc || 0) + 1); startRun(); };
+$('btn-build').onclick = () => startPuzzle();
 $('btn-retry').onclick = () => startRun();
 $('btn-menu').onclick = $('btn-menu2').onclick = () => doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; });
 $('btn-next').onclick = () => {
@@ -212,7 +236,7 @@ function frame() {
         () => { coins++; sfx.coin(); score += 25; },
         () => crash());
       player.update(dt, speed);
-      if (track.done()) startPuzzle();
+      if (track.done()) showStreetFacts();
     }
     // camera follow + speed shake
     const targetFov = 62 + Math.min(14, (speed - 14) * 0.5);
@@ -264,6 +288,9 @@ if (q.get('view')) {
   level = Math.min(3, Math.max(1, +(q.get('level') || 1)));
   if (q.get('view') === 'puzzle') startPuzzle();
   else startRun();
+  // &goal=120 shortens the run for automated review of the facts screen
+  const tg = +(q.get('goal') || 0);
+  if (tg) setTimeout(() => { if (track) track.goal = tg; }, 900);
 } else {
   window.GOD = false;
 }

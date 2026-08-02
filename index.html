@@ -74,6 +74,10 @@
     .screen{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
     .hud-top{padding:calc(10px + env(safe-area-inset-top)) 12px 0}
   }
+  .facts-list{list-style:none;max-width:560px;text-align:left;margin:0 0 30px}
+  .facts-list li{position:relative;padding:9px 0 9px 34px;font-size:16px;line-height:1.45;color:#e8ecf8}
+  .facts-list li::before{content:"✦";position:absolute;left:6px;color:var(--gold);text-shadow:0 0 8px rgba(255,209,102,.6)}
+  #screen-facts{background:radial-gradient(ellipse at 50% 30%,rgba(20,30,70,.86),rgba(4,6,16,.94))}
   .skyline{position:absolute;left:0;right:0;bottom:0;height:180px;pointer-events:none;opacity:.55;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 180' preserveAspectRatio='none'%3E%3Cpath fill='%23070b1a' d='M0 180V120h30V80h20v40h25V60h18l6-25 6 25h14v50h30V95h35v-35h12V40h16v20h12v35h28v25h40V70h10l5-40 5 40h10v50h26V85h30v35h22V55h8l4-30 4 30h8v65h36v-25h24V70h30v50h20V90h26v30h34V45h10l6-35 6 35h10v75h30v-30h26v30h24V80h30v40h28V95h20v-20h24v45h30v-60h14l8-30 8 30h12v60h32v-40h26v40h22v-25h28v25h28V85h24v35h30v-45h12V50h14v25h10v45h36v-30h22v30H1200v60z'/%3E%3C/svg%3E");
     background-size:100% 100%;
@@ -105,6 +109,14 @@
   <div class="skyline"></div>
 </div>
 
+<div id="screen-facts" class="screen">
+  <div class="label">You made it!</div>
+  <div class="big-num" id="facts-title" style="font-size:34px;margin-bottom:8px">—</div>
+  <div class="label" style="margin-bottom:18px">Did you know?</div>
+  <ul class="facts-list" id="facts-list"></ul>
+  <button class="btn" id="btn-build">BUILD THE MONUMENT</button>
+</div>
+
 <div id="screen-over" class="screen">
   <div class="label">Run over</div>
   <div class="big-num" id="over-score">0</div>
@@ -116,7 +128,8 @@
 <div id="screen-puzzle-win" class="screen">
   <div class="label">Monument complete</div>
   <div class="big-num" id="pw-name" style="font-size:40px">—</div>
-  <div class="label" style="margin:10px 0 30px"><span id="pw-bonus">0</span> bonus · <span id="pw-time">0</span>s left</div>
+  <div class="label" style="margin:10px 0 14px"><span id="pw-bonus">0</span> bonus · <span id="pw-time">0</span>s left</div>
+  <ul class="facts-list" id="pw-facts" style="margin-bottom:26px"></ul>
   <button class="btn" id="btn-next">NEXT LEVEL</button>
   <button class="btn ghost" id="btn-menu2">CITY SELECT</button>
 </div>
