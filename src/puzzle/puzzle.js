@@ -14,14 +14,17 @@ const CITY_OF = {
   bigben: 'london', towerbridge: 'london', eye: 'london',
   colosseum: 'rome', trevi: 'rome', pantheon: 'rome',
 };
-// Plaza floors deliberately contrast their monuments: cool stone under the
-// warm NYC/Rome landmarks, warmer or cooler per city so the hero always
-// separates from its background.
+// Plaza floors deliberately contrast their monuments. Every landmark in the
+// game is a warm stone/limestone/bronze hero, and every city theme lights the
+// scene with a warm sunset key — so all four plazas are pushed well into cool
+// blue-grey. They have to be over-corrected: a "neutral" hex reads tan once
+// the warm sun and hemi light hit it.
+// `sil` is the distant-skyline silhouette hue (drawn unfogged, see buildSkyline).
 const PLAZA = {
-  nyc: { stone: '#767e8e', dark: '#59606e', trim: '#9aa3b4', ground: '#343945', sky: '#2a3450', win: '#ffd98a' },
-  paris: { stone: '#9aa2b2', dark: '#7a8292', trim: '#c3cad8', ground: '#4a4f5e', sky: '#3e466e', win: '#ffe6b0' },
-  london: { stone: '#a08a70', dark: '#7d6a54', trim: '#c8b596', ground: '#43392f', sky: '#2c3348', win: '#ffedbe' },
-  rome: { stone: '#8b9088', dark: '#6b7068', trim: '#aeb4a8', ground: '#3d4240', sky: '#4c3e56', win: '#ffdda0' },
+  nyc: { stone: '#767e8e', dark: '#59606e', trim: '#9aa3b4', ground: '#343945', sky: '#2a3450', sil: '#4d5877', win: '#ffd98a' },
+  paris: { stone: '#9aa2b2', dark: '#7a8292', trim: '#c3cad8', ground: '#4a4f5e', sky: '#3e466e', sil: '#6d6c9a', win: '#ffe6b0' },
+  london: { stone: '#6e7b8c', dark: '#525f70', trim: '#9db0c4', ground: '#39414c', sky: '#2c3348', sil: '#4b5468', win: '#ffedbe' },
+  rome: { stone: '#6e7d84', dark: '#54646c', trim: '#a3b6bc', ground: '#38423f', sky: '#4c3e56', sil: '#655a78', win: '#ffdda0' },
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 
@@ -68,42 +71,76 @@ function makeBlockTexture(def) {
   const { tex, c } = def;
   const tx = def.tx || {};
   const key = `${tex}|${c}|${JSON.stringify(tx)}`;
-  return cachedTex(key, 256, 256, (g, S) => {
+  // the pyramid's mullion grid needs the extra resolution — a cylinder UV
+  // gives each of the four faces only a quarter of the texture width
+  const SZ = tex === 'glass' ? 512 : 256;
+  return cachedTex(key, SZ, SZ, (g, S) => {
     if (tex === 'lattice') {
-      // high-contrast painted iron lattice: dark field, bright girders
+      // Painted iron lattice. The girder highlight is deliberately restrained:
+      // lifting it far above the base hue turned the Eiffel tan under Paris'
+      // warm sun, which is what made it read as varnished wood. Contrast comes
+      // from a very dark field behind bright-but-still-bronze members.
       const grad = g.createLinearGradient(0, 0, 0, S);
-      grad.addColorStop(0, shade(c, -0.18));
-      grad.addColorStop(1, shade(c, -0.34));
+      grad.addColorStop(0, shade(c, -0.42));
+      grad.addColorStop(1, shade(c, -0.58));
       g.fillStyle = grad; g.fillRect(0, 0, S, S);
-      g.strokeStyle = shade(c, 0.55); g.lineWidth = 4;
+      g.strokeStyle = shade(c, 0.30); g.lineWidth = 4;
       g.beginPath();
       for (let i = -6; i <= 6; i++) {
         g.moveTo(i * S / 4, 0); g.lineTo(i * S / 4 + S / 2, S);
         g.moveTo(i * S / 4 + S / 2, 0); g.lineTo(i * S / 4, S);
       }
       g.stroke();
-      g.strokeStyle = shade(c, -0.55); g.lineWidth = 3;
+      g.strokeStyle = 'rgba(10,8,6,0.75)'; g.lineWidth = 3;
       for (let j = 1; j < 4; j++) {
         g.beginPath(); g.moveTo(0, j * S / 4); g.lineTo(S, j * S / 4); g.stroke();
       }
-      g.strokeStyle = shade(c, 0.45); g.lineWidth = 9;
-      g.strokeRect(2, -20, S - 4, S + 40);
+      // horizontal belt girders + the vertical corner posts that frame it
+      g.strokeStyle = shade(c, 0.20); g.lineWidth = 7;
+      for (let j = 1; j < 4; j++) {
+        g.beginPath(); g.moveTo(0, j * S / 4 - 3); g.lineTo(S, j * S / 4 - 3); g.stroke();
+      }
+      g.strokeStyle = shade(c, 0.24); g.lineWidth = 10;
+      g.strokeRect(3, -20, S - 6, S + 40);
       return;
     }
     if (tex === 'glass') {
-      // the Louvre icon: a REGULAR diamond grid over warm-sky reflective glass
+      // The Louvre icon. Deep teal-blue glass (NOT pale) so the pyramid holds
+      // a silhouette against a bright sky, a warm sky reflection raking down
+      // from the apex, and a strictly REGULAR diamond mullion grid in bright
+      // white — the diamond lattice is the thing everyone recognises.
       const grad = g.createLinearGradient(0, 0, 0, S);
-      grad.addColorStop(0, '#ffe2b8'); grad.addColorStop(0.42, '#cfe6f4');
-      grad.addColorStop(1, '#7fa8c8');
+      grad.addColorStop(0, '#f0b878');            // warm sunset caught up top
+      grad.addColorStop(0.12, '#3f7ba0');
+      grad.addColorStop(0.5, '#1d5578');
+      grad.addColorStop(1, '#0d3a5c');            // deep at the base
       g.fillStyle = grad; g.fillRect(0, 0, S, S);
-      g.strokeStyle = 'rgba(255,255,255,0.95)'; g.lineWidth = 3;
-      const step = S / 6;
+      // a restrained warm bloom near the base — enough to suggest the lit hall
+      // underneath without bleaching the glass to white
+      const lantern = g.createRadialGradient(S / 2, S * 0.95, 4, S / 2, S * 0.95, S * 0.44);
+      lantern.addColorStop(0, 'rgba(255,190,110,0.42)');
+      lantern.addColorStop(1, 'rgba(255,170,90,0)');
+      g.fillStyle = lantern; g.fillRect(0, 0, S, S);
+      // regular diamond grid: both diagonal sets on the SAME pitch, plus the
+      // horizontal purlins that make it read as a real space-frame
+      const N = 16;                               // 4 rhombi per pyramid face
+      const step = S / N;
+      g.strokeStyle = 'rgba(255,255,255,0.30)'; g.lineWidth = 2;
       g.beginPath();
-      for (let i = -6; i <= 12; i++) {
+      for (let j = 1; j < N; j++) { g.moveTo(0, j * step); g.lineTo(S, j * step); }
+      g.stroke();
+      g.strokeStyle = 'rgba(255,255,255,0.95)'; g.lineWidth = 4;
+      g.beginPath();
+      for (let i = -N; i <= 2 * N; i++) {
         g.moveTo(i * step, 0); g.lineTo(i * step - S, S);       // \ set
         g.moveTo(i * step - S, 0); g.lineTo(i * step, S);       // / set
       }
       g.stroke();
+      // node beads where the mullions cross
+      g.fillStyle = 'rgba(255,246,226,0.95)';
+      for (let j = 0; j <= N; j++) for (let i = -N; i <= 2 * N; i++) {
+        g.beginPath(); g.arc((i - j) * step, j * step, 3.2, 0, Math.PI * 2); g.fill();
+      }
       return;
     }
     if (tex === 'ashlar') {
@@ -253,37 +290,87 @@ function makeBlockTexture(def) {
         g.strokeStyle = shade(c, 0.22); g.lineWidth = 4; g.stroke();
       }
     } else if (tex === 'gothic') {
+      // Lancet openings. These used to be near-black caves that dominated the
+      // Brooklyn / Tower Bridge / Big Ben towers; now they are warm shadowed
+      // recesses with a stone mullion and a hint of lamplight deep inside.
       for (let i = 0; i < 2; i++) {
-        const cx = S * (0.28 + i * 0.44), aw = S * 0.24, top = S * 0.14, bot = S * 0.96;
-        g.fillStyle = '#241f1c';
-        g.beginPath();
-        g.moveTo(cx - aw / 2, bot);
-        g.lineTo(cx - aw / 2, top + aw * 0.9);
-        g.quadraticCurveTo(cx - aw / 2, top, cx, top - aw * 0.25);
-        g.quadraticCurveTo(cx + aw / 2, top, cx + aw / 2, top + aw * 0.9);
-        g.lineTo(cx + aw / 2, bot);
-        g.closePath(); g.fill();
-        g.strokeStyle = shade(c, 0.25); g.lineWidth = 5; g.stroke();
+        const cx = S * (0.29 + i * 0.42), aw = S * 0.21, top = S * 0.18, bot = S * 0.90;
+        const lancet = () => {
+          g.beginPath();
+          g.moveTo(cx - aw / 2, bot);
+          g.lineTo(cx - aw / 2, top + aw * 0.9);
+          g.quadraticCurveTo(cx - aw / 2, top, cx, top - aw * 0.25);
+          g.quadraticCurveTo(cx + aw / 2, top, cx + aw / 2, top + aw * 0.9);
+          g.lineTo(cx + aw / 2, bot);
+          g.closePath();
+        };
+        const rg = g.createLinearGradient(0, top, 0, bot);
+        rg.addColorStop(0, '#4c3a26'); rg.addColorStop(0.45, '#5c452c');
+        rg.addColorStop(1, '#3d2f20');
+        g.fillStyle = rg; lancet(); g.fill();
+        // warm lamplight glow low in the opening
+        const lit = g.createRadialGradient(cx, bot - aw * 0.5, 2, cx, bot - aw * 0.5, aw * 1.1);
+        lit.addColorStop(0, 'rgba(255,196,116,0.5)');
+        lit.addColorStop(1, 'rgba(255,180,100,0)');
+        g.save(); lancet(); g.clip();
+        g.fillStyle = lit; g.fillRect(cx - aw, top, aw * 2, bot - top);
+        g.restore();
+        // central stone mullion + tracery bar
+        g.fillStyle = shade(c, 0.06);
+        g.fillRect(cx - S * 0.011, top + aw * 0.42, S * 0.022, bot - top - aw * 0.42);
+        g.fillRect(cx - aw / 2, top + aw * 1.1, aw, S * 0.014);
+        // crisp lit surround
+        g.strokeStyle = shade(c, 0.3); g.lineWidth = 6; lancet(); g.stroke();
+        g.strokeStyle = shade(c, -0.24); g.lineWidth = 2;
+        lancet(); g.stroke();
       }
-      g.fillStyle = shade(c, 0.18); g.fillRect(0, 0, S, S * 0.06);
+      g.fillStyle = shade(c, 0.2); g.fillRect(0, 0, S, S * 0.07);
+      g.fillStyle = shade(c, -0.2); g.fillRect(0, S * 0.07, S, 4);
     } else if (tex === 'relief') {
-      // higher-contrast carved relief panels with warm AO in the recesses
+      // Carved figurative panels. The old version read as filing-cabinet
+      // drawers; these are arch-topped recesses with a deep warm AO wash and
+      // a robed figure catching the light, which is what a monumental frieze
+      // actually looks like from twenty metres.
       const cols = 3, rows = 2;
+      const pw = S * 0.26, ph = S * 0.36;
       for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
-        const x = S * 0.08 + i * S * 0.3, y = S * 0.1 + j * S * 0.44;
-        g.fillStyle = 'rgba(58,40,22,0.55)'; g.fillRect(x, y, S * 0.24, S * 0.34);
-        g.fillStyle = shade(c, 0.18); g.fillRect(x + 6, y + 6, S * 0.24 - 12, S * 0.34 - 12);
-        g.fillStyle = shade(c, -0.22);
-        g.beginPath(); g.arc(x + S * 0.12, y + S * 0.18, S * 0.07, 0, Math.PI * 2); g.fill();
-        g.fillStyle = shade(c, 0.3);
-        g.beginPath(); g.arc(x + S * 0.105, y + S * 0.165, S * 0.045, 0, Math.PI * 2); g.fill();
-        g.fillStyle = shade(c, -0.18);
-        g.fillRect(x + 6, y + S * 0.24, S * 0.24 - 12, S * 0.07);
+        const x = S * 0.07 + i * S * 0.302, y = S * 0.09 + j * S * 0.45;
+        const cx = x + pw / 2;
+        const panel = () => {
+          g.beginPath();
+          g.moveTo(x, y + ph);
+          g.lineTo(x, y + pw * 0.5);
+          g.arc(cx, y + pw * 0.5, pw / 2, Math.PI, 0);
+          g.lineTo(x + pw, y + ph);
+          g.closePath();
+        };
+        // recess + warm occlusion
+        const rg = g.createLinearGradient(0, y, 0, y + ph);
+        rg.addColorStop(0, 'rgba(40,26,12,0.72)');
+        rg.addColorStop(1, 'rgba(70,48,24,0.5)');
+        g.fillStyle = rg; panel(); g.fill();
+        // figure catching the light
+        g.fillStyle = shade(c, 0.34);
+        g.beginPath(); g.arc(cx, y + ph * 0.33, pw * 0.12, 0, Math.PI * 2); g.fill();
+        g.beginPath();
+        g.moveTo(cx - pw * 0.19, y + ph * 0.93);
+        g.quadraticCurveTo(cx - pw * 0.23, y + ph * 0.5, cx, y + ph * 0.45);
+        g.quadraticCurveTo(cx + pw * 0.23, y + ph * 0.5, cx + pw * 0.19, y + ph * 0.93);
+        g.closePath(); g.fill();
+        g.fillStyle = shade(c, 0.14);          // outflung arm
+        g.beginPath();
+        g.moveTo(cx + pw * 0.08, y + ph * 0.48);
+        g.lineTo(cx + pw * 0.33, y + ph * 0.34);
+        g.lineTo(cx + pw * 0.35, y + ph * 0.42);
+        g.lineTo(cx + pw * 0.10, y + ph * 0.56);
+        g.closePath(); g.fill();
+        // crisp lit surround + shadow line
+        g.strokeStyle = shade(c, 0.34); g.lineWidth = 5; panel(); g.stroke();
+        g.strokeStyle = shade(c, -0.34); g.lineWidth = 2; panel(); g.stroke();
       }
-      g.strokeStyle = shade(c, -0.3); g.lineWidth = 4;
-      g.strokeRect(3, 3, S - 6, S - 6);
-      g.strokeStyle = shade(c, 0.24); g.lineWidth = 2;
-      g.strokeRect(8, 8, S - 16, S - 16);
+      g.fillStyle = shade(c, 0.24); g.fillRect(0, 0, S, S * 0.05);
+      g.fillStyle = shade(c, -0.3); g.fillRect(0, S * 0.05, S, 4);
+      g.fillStyle = shade(c, -0.16); g.fillRect(0, S * 0.955, S, S * 0.045);
     } else if (tex === 'crown') {
       // chrome sunburst: mirror gradient + crisp dark triangular cutouts
       const grad = g.createLinearGradient(0, 0, 0, S);
@@ -366,8 +453,8 @@ function skylineTex(cityId) {
     london: { cols: 8, rows: 14, p: 0.3, w: 7, h: 9, col: '255,236,190' },
     rome: { cols: 6, rows: 8, p: 0.3, w: 9, h: 13, col: '255,214,150' },
   }[cityId] || { cols: 10, rows: 22, p: 0.24, w: 5, h: 6, col: '255,220,150' };
-  return cachedTex(`skyline2|${cityId}`, 128, 256, (g, W, H) => {
-    g.fillStyle = shade(P.sky, 0.1); g.fillRect(0, 0, W, H);
+  return cachedTex(`skyline3|${cityId}`, 128, 256, (g, W, H) => {
+    g.fillStyle = shade(P.sil, -0.08); g.fillRect(0, 0, W, H);
     const cw = W / cfg.cols, chh = H / cfg.rows;
     for (let i = 0; i < cfg.cols; i++) for (let j = 0; j < cfg.rows; j++) {
       if (dRand(i, j) < cfg.p) {
@@ -391,9 +478,15 @@ function blockMaterial(def, isGhost) {
   const seeThru = def.tex === 'archcut';
   const wet = def.shape === 'water' || def.wet;
   const mat = new THREE.MeshStandardMaterial({
-    color: def.tex ? new THREE.Color('#ffffff') : color,
-    roughness: def.glass ? 0.1 : wet ? 0.15 : def.metal ? 0.3 : 0.72,
-    metalness: def.metal ? 0.55 : def.glass ? 0.25 : 0.05,
+    // textured blocks paint their colour into the map, so the material tints
+    // white — except glass, where the block colour multiplies the map so the
+    // pyramid keeps a saturated teal under this scene's very warm key light
+    color: def.tex ? new THREE.Color(def.glass ? def.c : '#ffffff') : color,
+    // glass stays fairly rough: at 0.1 the sun's specular blew the Louvre
+    // pyramid and the Eye's capsules out to flat white, which is exactly the
+    // "invisible icon" the critic called out
+    roughness: def.glass ? 0.34 : wet ? 0.15 : def.metal ? 0.3 : 0.72,
+    metalness: def.metal ? 0.55 : def.glass ? 0.06 : 0.05,
     transparent: !!def.glass || wet || seeThru,
     opacity: def.glass ? (def.op || 0.88) : wet ? 0.85 : 1,
     emissive: def.em ? new THREE.Color(def.em)
@@ -558,28 +651,27 @@ function makeBlockMesh(def, isGhost = false) {
       break;
     }
     case 'archvault': {
-      out = new THREE.Group();
-      const r = w * 0.31, sw = (w - 2 * r) / 2;
-      const top = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.32, d), mat);
-      top.position.y = h * 0.34;
-      const ceilGeo = new THREE.CylinderGeometry(r, r, d * 0.96, 18, 1, true, 0, Math.PI);
-      ceilGeo.rotateX(Math.PI / 2); ceilGeo.rotateZ(Math.PI / 2);
-      const ceilMat = isGhost ? mat : mat.clone();
-      if (!isGhost) ceilMat.side = THREE.DoubleSide;
-      const ceil = new THREE.Mesh(ceilGeo, ceilMat);
-      ceil.position.y = h * 0.18 - r * 0.0;
-      const rimGeo = new THREE.TorusGeometry(r, w * 0.045, 8, 24, Math.PI);
-      for (const zz of [d / 2 - w * 0.05, -(d / 2 - w * 0.05)]) {
-        const rim = new THREE.Mesh(rimGeo, mat);
-        rim.position.set(0, h * 0.18, zz);
-        out.add(rim);
-      }
-      for (const xx of [-(w - sw) / 2, (w - sw) / 2]) {
-        const side = new THREE.Mesh(new THREE.BoxGeometry(sw, h * 0.68, d), mat);
-        side.position.set(xx, -h * 0.16, 0);
-        out.add(side);
-      }
-      out.add(top, ceil);
+      // One extruded solid: a slab with a rounded-arch opening punched clean
+      // through it. Extruding the hole gives the tunnel real inner walls and a
+      // real barrel ceiling, so the arch carries its own shadow instead of
+      // reading as a painted cutout on cardboard — and, unlike a lintel box,
+      // the arch CURVE is visible head-on.
+      const v = def.vault || {};
+      const r = w * (v.r || 0.31);              // half the opening width
+      const spring = h * (v.spring || 0.68);    // springing height off the base
+      const sh = new THREE.Shape();
+      sh.moveTo(-w / 2, -h / 2); sh.lineTo(w / 2, -h / 2);
+      sh.lineTo(w / 2, h / 2); sh.lineTo(-w / 2, h / 2); sh.closePath();
+      const hole = new THREE.Path();
+      hole.moveTo(-r, -h / 2);
+      hole.lineTo(-r, -h / 2 + spring);
+      hole.absarc(0, -h / 2 + spring, r, Math.PI, 0, true);
+      hole.lineTo(r, -h / 2);
+      hole.closePath();
+      sh.holes.push(hole);
+      geo = new THREE.ExtrudeGeometry(sh, { depth: d, bevelEnabled: false, curveSegments: 18 });
+      geo.translate(0, 0, -d / 2);
+      geo.computeVertexNormals();
       break;
     }
     case 'cable': {
@@ -641,14 +733,35 @@ function makeBlockMesh(def, isGhost = false) {
       break;
     }
     case 'statue': {
+      // A single robed figure by default; `figs: 3` makes it a sculpture group
+      // (the Arc's pier reliefs). Each figure gets a flared robe, shoulders and
+      // a raised arm so the silhouette reads as carved marble, not a bollard.
       out = new THREE.Group();
-      const ped = new THREE.Mesh(new THREE.BoxGeometry(w * 0.95, h * 0.26, d * 0.95), mat);
-      ped.position.y = -h * 0.37;
-      const body = new THREE.Mesh(new THREE.CapsuleGeometry(w * 0.26, h * 0.3, 4, 10), mat);
-      body.position.y = h * 0.05;
-      const head = new THREE.Mesh(new THREE.SphereGeometry(w * 0.2, 12, 10), mat);
-      head.position.y = h * 0.38;
-      out.add(ped, body, head);
+      const n = def.figs || 1;
+      const ph = h * 0.22;
+      const ped = new THREE.Mesh(new THREE.BoxGeometry(w * 0.98, ph, d * 0.98), mat);
+      ped.position.y = -h / 2 + ph / 2;
+      out.add(ped);
+      const fh = h - ph;                          // figure height above plinth
+      for (let i = 0; i < n; i++) {
+        const fx = n === 1 ? 0 : (-w / 2 + (i + 0.5) * (w / n)) * 0.82;
+        const sc = n === 1 ? 1 : (i === (n - 1) >> 1 ? 1 : 0.82);
+        const r = (n === 1 ? w * 0.24 : (w / n) * 0.44);
+        const y0 = -h / 2 + ph;
+        const robe = new THREE.Mesh(
+          new THREE.CylinderGeometry(r * 0.72, r * 1.15, fh * 0.52 * sc, 9), mat);
+        robe.position.set(fx, y0 + fh * 0.26 * sc, 0);
+        const torso = new THREE.Mesh(
+          new THREE.CapsuleGeometry(r * 0.66, fh * 0.24 * sc, 4, 10), mat);
+        torso.position.set(fx, y0 + fh * 0.64 * sc, 0);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(r * 0.46, 12, 10), mat);
+        head.position.set(fx, y0 + fh * 0.90 * sc, 0);
+        const arm = new THREE.Mesh(
+          new THREE.CapsuleGeometry(r * 0.20, fh * 0.34 * sc, 3, 8), mat);
+        arm.position.set(fx + r * 0.78, y0 + fh * 0.70 * sc, d * 0.12);
+        arm.rotation.z = -0.5;
+        out.add(robe, torso, head, arm);
+      }
       break;
     }
     case 'rock': {
@@ -767,14 +880,19 @@ export class Puzzle {
         this.placedCount++;
         this.collectShimmer(mesh);
       } else {
-        // art-directed scatter: two fans left/right of the camera's center
-        // sightline so the monument silhouette always stays clear
+        // Art-directed scatter. The camera sits on +z looking down -z, so
+        // pieces are fanned around the ±x WINGS (angle near 0 and PI) and
+        // never around PI/2, which is exactly between the camera and the
+        // build site. Big pieces are pushed further out so a wide slab (the
+        // Trevi facade, a Louvre wing) can't fill the foreground.
         const j = order - preplaced;
         const side = j % 2 ? 1 : -1;
         const rank = Math.floor(j / 2);
-        const row = Math.floor(rank / 4), col = rank % 4;
-        const a = Math.PI / 2 + side * (0.45 + col * 0.3 + dRand(j, 11) * 0.1);
-        const r = 12.2 + row * 3.4 + dRand(j, 12) * 1.4;
+        const row = rank % 3, col = Math.floor(rank / 3) % 4;
+        const off = (col - 1.5) * 0.30 + dRand(j, 11) * 0.08;
+        const a = side > 0 ? off : Math.PI - off;
+        const bulk = Math.max(entry.def.s[0], entry.def.s[2]);
+        const r = Math.min(21.5, 12.6 + row * 3.3 + bulk * 0.34 + dRand(j, 12) * 0.9);
         mesh.position.set(Math.cos(a) * r, restingY(entry.def), Math.sin(a) * r);
         mesh.rotation.y = Math.random() * Math.PI * 2;
         desaturate(mesh);
@@ -941,9 +1059,13 @@ export class Puzzle {
 
   // ---------- per-city skyline backdrops ----------
   buildSkyline(g, P, cityId, boxGeo) {
-    const winMat = new THREE.MeshBasicMaterial({ map: skylineTex(cityId), color: 0xffffff });
-    const silMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(shade(P.sky, 0.13)) });
-    const darkMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(shade(P.sky, -0.12)) });
+    // fog:false — the scene's warm FogExp2 washed every city's backdrop to the
+    // same beige at this distance, which is what made all four skylines look
+    // like one retinted Manhattan. Unfogged, each city keeps its own silhouette
+    // hue and its lit windows actually read.
+    const winMat = new THREE.MeshBasicMaterial({ map: skylineTex(cityId), color: 0xffffff, fog: false });
+    const silMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(shade(P.sil, -0.16)), fog: false });
+    const darkMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(shade(P.sil, -0.34)), fog: false });
     const domeGeo = new THREE.SphereGeometry(1, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2);
     const cylGeo = new THREE.CylinderGeometry(1, 1, 1, 10);
     const coneGeo = new THREE.CylinderGeometry(0.04, 1, 1, 4);
@@ -995,7 +1117,7 @@ export class Puzzle {
         put(boxGeo, silMat, x, 8.5, z, 2.6, 17, 2.6);
         put(boxGeo, darkMat, x, 15.5, z, 3.2, 1.6, 3.2);
       }
-      const pineMat = new THREE.MeshBasicMaterial({ color: 0x1c2a1e });
+      const pineMat = new THREE.MeshBasicMaterial({ color: 0x23352a, fog: false });
       for (let i = 0; i < 6; i++) {
         const a = (i / 6) * Math.PI * 2 + 0.35;
         const r = 44 + dRand(i, 8) * 10;
@@ -1335,8 +1457,8 @@ export class Puzzle {
         it.mesh.rotation.y += dt * 0.4;
       }
       // ghost hint: warm-gold silhouette, next block breathes brighter
-      it.ghost.userData.blockMat.opacity = i === 0 ? 0.24 + Math.sin(T * 5) * 0.08
-        : pickNow ? 0.15 : 0.09;
+      it.ghost.userData.blockMat.opacity = i === 0 ? 0.30 + Math.sin(T * 5) * 0.09
+        : pickNow ? 0.19 : 0.11;
     }
 
     // built pieces that rotate (the Eye's wheel)

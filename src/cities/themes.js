@@ -75,8 +75,9 @@ export const CITIES = [
     vehicle: 'citroen',
     landmarks: ['eiffel', 'arc', 'louvre'],
     levels: [
-      { // Champs-Élysées — chestnut tree rows, glass showrooms, Arc ahead
+      { // Champs-Élysées — pollarded plane rows, glass showrooms, Arc ahead
         key: 'champs', facade: 'showroom', treeline: 'chestnut',
+        setback: 6.2,          // the widest avenue in the game
         props: ['lamp_paris', 'terrace_cafe', 'kiosk'],
         ads: ['MAISON LUMIÈRE', 'MODE 8', 'PARFUM ROSE', 'CAFÉ RIVE'],
         cameo: 'arc', lit: 0.14,
@@ -88,11 +89,13 @@ export const CITIES = [
         ads: ['GALERIE DORÉE', 'CARTES & CO', 'SOUVENIRS'],
         lit: 0.14,
       },
-      { // Montmartre — cobbles, ivy village walls, easels, red windmill
-        key: 'montmartre', facade: 'village', windmill: true,
-        palette: ['#f4efe2', '#efe6d4', '#e8ddca', '#f6f1e6', '#e2d5c0', '#f0e8d8'],
+      { // Montmartre — cobbles, ivy village walls, stepped streets, easels
+        key: 'montmartre', facade: 'village', windmill: true, steps: true,
+        palette: ['#f2e2cc', '#e8d2b4', '#f6ecd8', '#dcc4a6', '#eedcc0', '#e2cdb0'],
         roadStyle: 'cobble', road: '#7a7268', lane: '#7a7268', sidewalk: '#c0b49e',
-        hBase: 8, hVar: 5, secondRow: 0.35,
+        trim: '#fdf6e4', roof: '#6b5a54',
+        setback: 3.4,          // a hill village lane, tight and low
+        hBase: 7.5, hVar: 4, secondRow: 0.3,
         storefront: ['#a02438', '#2d6b3f', '#1f4a8a', '#8a5a1e'],
         props: ['lamp_paris', 'easel', 'bistro'],
         ads: ['CABARET', 'LA PALETTE', 'BISTRO LUNE', 'CRÊPES'],
@@ -168,8 +171,8 @@ export const CITIES = [
       { // Via del Corso — tight ochre canyon, shutters, mopeds, church vista
         key: 'corso', facade: 'ochre', parked: 'vespa',
         palette: ['#d9903f', '#c87f3a', '#e0a050', '#b06a34', '#d29a58', '#c4763a'],
-        setback: 2.6, hBase: 15, hVar: 9, secondRow: 0,
-        fogDensity: 0.0095,
+        setback: 2.2, hBase: 17, hVar: 10, secondRow: 0,
+        fogDensity: 0.0102,
         props: ['lamp_rome'],
         ads: ['MODA VIA', 'ORO FINO', 'GELATERIA', 'LIBRI'],
         cameo: 'churchtwin', lit: 0.16,
@@ -177,6 +180,8 @@ export const CITIES = [
       { // Via Veneto — grand hotels, flags, white umbrella cafés, city gate
         key: 'veneto', facade: 'hotel',
         palette: ['#efe4cc', '#e9dcc2', '#f3ead6', '#e2d2b4', '#ece0c6', '#f0e6d0'],
+        setback: 5.6, hBase: 13, hVar: 6,     // broad, low, elegant
+        fogDensity: 0.0078,
         props: ['lamp_rome', 'planetree', 'terrace_white'],
         ads: ['GRAND AURORA', 'HOTEL SPLENDIDO', 'PALAZZO STELLA', 'CAFFÈ AURORA'],
         cameo: 'gate', lit: 0.16,
@@ -184,7 +189,8 @@ export const CITIES = [
       { // Piazza Navona — baroque evening festival: obelisk fountains, stalls
         key: 'navona', facade: 'baroque', obelisk: true,
         palette: ['#eadbb8', '#e2cfa8', '#f0e2c4', '#d8c298', '#eed9b2', '#e6d2ac'],
-        roadStyle: 'travertine', road: '#b8a684', lane: '#b8a684', sidewalk: '#c8b492',
+        setback: 7.4, hBase: 9.5, hVar: 4, secondRow: 0.2,   // a square, not a canyon
+        roadStyle: 'travertine', road: '#b8a684', lane: '#b8a684', sidewalk: '#bfad8b',
         sky: { top: '#332e78', mid: '#8862a8', horizon: '#ffab5e', glow: '#ff9848' },
         fog: 0xff9848, fogDensity: 0.0095,
         mood: { sun: 0.6, hemi: 0.8, fill: 1.0 },

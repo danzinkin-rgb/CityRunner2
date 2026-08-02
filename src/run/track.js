@@ -7,12 +7,43 @@ import {
   makeBillboard, makeParkedCar, makeStreetSpan, makeGardenWall,
   makeArcade, makeGardenRail, makeWindmill, makeObeliskFountain,
   makeEquestrian, makeErosFountain, makeCurvedLED, makeZebra, makeCameo,
+  makeGardenParterre, makeStepStreet, makeArtistPitch, makeSquareStalls,
+  SHARED_GEO,
 } from '../cities/builders.js';
 import { makeCollectible } from '../cities/souvenirs.js';
 
 const CHUNK_LEN = 36;
 const CHUNKS = 7;          // visible chunks ahead
 const ROAD_W = 8.6;
+
+// ---- overhead dressing, tuned for a 9:19.5 portrait frame ----
+// three.js FOV is vertical, so portrait keeps the same vertical framing but
+// loses two thirds of the horizontal view: anything spanning the road reads
+// much wider there. These heights keep spans clear of the vanishing point.
+const SPAN_Y = 7.9;        // festoon / string-light wire height
+const BANNER_Y = 10.0;     // road-spanning billboard centre
+const BANNER_W = 7.0;
+const BANNER_H = 1.8;
+
+// Obstacle materials are shared: the track recycles a chunk every few seconds
+// and would otherwise allocate a fresh material per barrier leg.
+const OB = {
+  post: new THREE.MeshStandardMaterial({ color: 0x8a9099, metalness: 0.6, roughness: 0.4 }),
+  leg: new THREE.MeshStandardMaterial({ color: 0x333333 }),
+  stripe: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 }),
+  beamStripe: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55 }),
+  bannerPost: new THREE.MeshStandardMaterial({ color: 0x2a2a32, metalness: 0.5, roughness: 0.5 }),
+};
+const OB_GEO = {
+  bar: new THREE.BoxGeometry(2.0, 0.9, 0.3),
+  barStripe: new THREE.BoxGeometry(2.02, 0.28, 0.32),
+  leg: new THREE.BoxGeometry(0.12, 0.6, 0.12),
+  beam: new THREE.BoxGeometry(2.2, 0.45, 0.6),
+  beamStripe: new THREE.BoxGeometry(2.22, 0.16, 0.62),
+  post: new THREE.CylinderGeometry(0.07, 0.07, 3.2, 6),
+  bannerPost: new THREE.CylinderGeometry(0.12, 0.16, BANNER_Y + 1.2, 8),
+};
+for (const g of Object.values(OB_GEO)) SHARED_GEO.add(g);
 
 // Obstacle kinds:
 //   'low'  — barrier, jump over
@@ -38,13 +69,27 @@ export class Track {
     this.chunkCount = 0;           // drives set-piece cadence per street
 
     this.applyStreetMood(scene, theme);
+    // one accent material for every barrier/beam on this street
+    this.accentMat = new THREE.MeshStandardMaterial({ color: this.theme.accent, roughness: 0.52 });
+
+    // road + pavement are identical in every chunk: build the geometry and
+    // materials once and let all 7 live chunks share them.
+    const setback = this.theme.setback ?? 4.4;
+    this.swW = Math.max(4.4, setback + 2.2);
+    this.roadGeo = new THREE.PlaneGeometry(ROAD_W, CHUNK_LEN);
+    this.sidewalkGeo = new THREE.BoxGeometry(this.swW, 0.3, CHUNK_LEN);
+    SHARED_GEO.add(this.roadGeo); SHARED_GEO.add(this.sidewalkGeo);
+    this.roadMat = new THREE.MeshStandardMaterial({ map: roadTexture(this.theme), roughness: 0.92 });
+    this.sidewalkMat = new THREE.MeshStandardMaterial({ map: sidewalkTexture(this.theme), roughness: 0.95 });
 
     // static skyline cameo far beyond the last chunk (haze baked in)
     this.backdrop = makeCameo(this.theme);
     if (this.backdrop) scene.add(this.backdrop);
 
-    // per-city souvenir collectible, cloned for every pickup
+    // per-city souvenir collectible, cloned for every pickup. Clones share the
+    // prototype's geometry, so it must never be disposed with a chunk.
     this.souvenirProto = makeCollectible(theme);
+    this.souvenirProto.traverse((n) => { if (n.geometry) SHARED_GEO.add(n.geometry); });
 
     for (let i = 0; i < CHUNKS; i++) this.spawnChunk(-i * CHUNK_LEN, i < 2);
   }
@@ -83,19 +128,20 @@ export class Track {
     const nChunk = this.chunkCount++;
 
     // road
-    const road = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_W, CHUNK_LEN),
-      new THREE.MeshStandardMaterial({ map: roadTexture(t), roughness: 0.92 }));
+    const road = new THREE.Mesh(this.roadGeo, this.roadMat);
     road.rotation.x = -Math.PI / 2;
     road.position.z = -CHUNK_LEN / 2;
     road.receiveShadow = true;
     g.add(road);
 
-    // curbs + sidewalks
+    // curbs + sidewalks. The pavement always reaches at least to the building
+    // line, so streets with a wide setback (Navona's square, the Champs) don't
+    // leave a strip of void between kerb and facade.
     const setback = t.setback ?? 4.4;
+    const swW = this.swW;
     for (const side of [-1, 1]) {
-      const sw = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.3, CHUNK_LEN),
-        new THREE.MeshStandardMaterial({ map: sidewalkTexture(t), roughness: 0.95 }));
-      sw.position.set(side * (ROAD_W / 2 + 2.2), 0.15, -CHUNK_LEN / 2);
+      const sw = new THREE.Mesh(this.sidewalkGeo, this.sidewalkMat);
+      sw.position.set(side * (ROAD_W / 2 + swW / 2), 0.15, -CHUNK_LEN / 2);
       sw.receiveShadow = true;
       g.add(sw);
 
@@ -103,17 +149,16 @@ export class Track {
       // and trees instead of a building wall.
       if (t.garden && side < 0) {
         const rail = makeGardenRail(t, CHUNK_LEN);
-        rail.position.set(side * (ROAD_W / 2 + 3.9), 0.3, 0);
+        rail.position.set(side * (ROAD_W / 2 + 3.4), 0.3, 0);
         g.add(rail);
-        for (let tz = 4; tz < CHUNK_LEN; tz += 8) {
-          const tree = makeProp('chestnut', t);
-          tree.position.set(side * (ROAD_W / 2 + 6.5 + Math.random() * 3), 0.3, -tz);
-          g.add(tree);
-        }
+        // gravel walk, box parterres, urns and a back line of trees
+        const par = makeGardenParterre(t, CHUNK_LEN);
+        par.position.set(-(ROAD_W / 2 + 3.4), 0.3, 0);
+        g.add(par);
         // gilded equestrian statue cameo rising over the garden
         if (nChunk % 3 === 1) {
           const eq = makeEquestrian();
-          eq.position.set(side * (ROAD_W / 2 + 7.5), 0.3, -CHUNK_LEN * 0.5);
+          eq.position.set(side * (ROAD_W / 2 + 8.5), 0.3, -CHUNK_LEN * 0.5);
           eq.rotation.y = side * Math.PI / 2.5;
           g.add(eq);
         }
@@ -165,12 +210,18 @@ export class Track {
         g.add(arc);
       }
 
-      // Champs-Élysées: disciplined double row of clipped chestnuts
+      // Champs-Élysées: disciplined double row of pollarded plane trees.
+      // Widely spaced and set back off the kerb so they frame the avenue
+      // rather than walling it in.
       if (t.treeline && !(t.garden && side < 0)) {
-        for (let tz = 3; tz < CHUNK_LEN; tz += 6) {
+        for (let tz = 3; tz < CHUNK_LEN; tz += 9) {
           const tree = makeProp(t.treeline, t);
-          tree.position.set(side * (ROAD_W / 2 + 1.4), 0.3, -tz);
+          tree.position.set(side * (ROAD_W / 2 + 2.1), 0.3, -tz);
           g.add(tree);
+          const back = makeProp(t.treeline, t);   // second, further row
+          back.scale.setScalar(0.88);
+          back.position.set(side * (ROAD_W / 2 + 5.4), 0.3, -tz - 4.5);
+          g.add(back);
         }
       }
 
@@ -196,8 +247,8 @@ export class Track {
       for (let pz = 3; pz < CHUNK_LEN; pz += 5.5 + Math.random() * 4) {
         const kind = propKinds[(Math.random() * propKinds.length) | 0];
         if (!wallProps.has(kind) && carZs.some((zz) => Math.abs(zz - pz) < 3.2)) continue;
-        // under the arcade only stalls + lamps make sense
-        if (t.arcade && side > 0 && kind !== 'souvenirstall' && kind !== 'lamp_paris') continue;
+        // under the arcade only the stalls fit (lamps would pierce the vault)
+        if (t.arcade && side > 0 && kind !== 'souvenirstall') continue;
         const p = makeProp(kind, t);
         p.position.set(side * (ROAD_W / 2 + 1.1 + Math.random() * 1.6), 0.3, -pz);
         if (kind === 'billboard') {
@@ -256,12 +307,40 @@ export class Track {
       wm.rotation.y = -side * Math.PI / 2;
       g.add(wm);
     }
-    // Piazza Navona: obelisk-over-rocky-fountain set pieces
-    if (t.obelisk && nChunk % 2 === 1) {
-      const ob = makeObeliskFountain();
-      const side = nChunk % 4 === 1 ? 1 : -1;
-      ob.position.set(side * (ROAD_W / 2 + 2.6), 0.3, -CHUNK_LEN * 0.45);
-      g.add(ob);
+    // Montmartre: the signature stepped street climbing off the road, plus
+    // painters pitched along the pavement.
+    if (t.steps) {
+      if (nChunk % 2 === 0) {
+        const side = nChunk % 4 === 0 ? -1 : 1;
+        const st = makeStepStreet(t);
+        st.position.set(side * (ROAD_W / 2 + 3.0), 0.3, -CHUNK_LEN * (0.3 + (nChunk % 3) * 0.16));
+        st.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+        g.add(st);
+      }
+      for (const side of [-1, 1]) {
+        if (Math.random() > 0.6) continue;
+        const ap = makeArtistPitch(t);
+        ap.position.set(side * (ROAD_W / 2 + 2.6), 0.3, -4 - Math.random() * (CHUNK_LEN - 10));
+        ap.rotation.y = side > 0 ? -1.2 : 1.2;
+        g.add(ap);
+      }
+    }
+    // Piazza Navona: obelisk-over-rocky-fountain set pieces down the middle of
+    // the square, with artists' stalls edging it.
+    if (t.obelisk) {
+      if (nChunk % 2 === 1) {
+        // clear of every lane — the square is paved right up to it, so it
+        // still reads as standing in the middle of the piazza
+        const obSide = nChunk % 4 === 1 ? 1 : -1;
+        const ob = makeObeliskFountain();
+        ob.position.set(obSide * (ROAD_W / 2 + 1.4), 0.3, -CHUNK_LEN * 0.45);
+        g.add(ob);
+      }
+      const side = nChunk % 2 === 0 ? -1 : 1;
+      const stalls = makeSquareStalls(t, 3);
+      stalls.position.set(side * (ROAD_W / 2 + 4.2), 0.3, -CHUNK_LEN * 0.25);
+      stalls.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+      g.add(stalls);
     }
     // Piccadilly: winged-archer fountain on the sidewalk
     if (t.eros && nChunk % 5 === 3) {
@@ -270,23 +349,24 @@ export class Track {
       g.add(er);
     }
 
-    // Times Square: overhead banner billboards spanning the street
+    // Times Square: overhead banner billboards spanning the street. Sized and
+    // lifted so that in portrait the board sits above the vanishing point
+    // instead of walling off the road ahead.
     if (t.banners && Math.random() < 0.75) {
       const bz = -CHUNK_LEN * (0.3 + Math.random() * 0.5);
-      const banner = makeBillboard(t, 9, 2.4);
-      banner.position.set(0, 7.5, bz);
+      const banner = makeBillboard(t, BANNER_W, BANNER_H);
+      banner.position.set(0, BANNER_Y, bz);
       g.add(banner);
-      const postMat = new THREE.MeshStandardMaterial({ color: 0x2a2a32, metalness: 0.5, roughness: 0.5 });
-      for (const px of [-5.1, 5.1]) {
-        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 8.7, 8), postMat);
-        post.position.set(px, 4.35, bz);
+      for (const px of [-BANNER_W / 2 - 0.6, BANNER_W / 2 + 0.6]) {
+        const post = new THREE.Mesh(OB_GEO.bannerPost, OB.bannerPost);
+        post.position.set(px, (BANNER_Y + 1.2) / 2, bz);
         g.add(post);
       }
     }
     // festoons / string lights / bunting lines across the street
     if (t.span && Math.random() < (t.spanFreq ?? 0.75)) {
       const span = makeStreetSpan(t, ROAD_W + 4.5);
-      span.position.set(0, 5.6 + Math.random() * 0.8, -CHUNK_LEN * (0.2 + Math.random() * 0.6));
+      span.position.set(0, SPAN_Y + Math.random() * 0.5, -CHUNK_LEN * (0.2 + Math.random() * 0.6));
       g.add(span);
     }
 
@@ -316,31 +396,25 @@ export class Track {
           halfLen = isBus ? 2.6 : t.vehicle === 'vespa' ? 1.1 : 2.1;
         } else if (kind === 'low') {
           mesh = new THREE.Group();
-          const bar = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.9, 0.3),
-            new THREE.MeshStandardMaterial({ color: t.accent, roughness: 0.5 }));
+          const bar = new THREE.Mesh(OB_GEO.bar, this.accentMat);
           bar.position.y = 0.75; bar.castShadow = true;
           mesh.add(bar);
-          const stripes = new THREE.Mesh(new THREE.BoxGeometry(2.02, 0.28, 0.32),
-            new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 }));
+          const stripes = new THREE.Mesh(OB_GEO.barStripe, OB.stripe);
           stripes.position.y = 0.75; mesh.add(stripes);
           for (const lx of [-0.8, 0.8]) {
-            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.12),
-              new THREE.MeshStandardMaterial({ color: 0x333333 }));
+            const leg = new THREE.Mesh(OB_GEO.leg, OB.leg);
             leg.position.set(lx, 0.3, 0); mesh.add(leg);
           }
           y0 = 0; y1 = 1.2;
         } else { // high
           mesh = new THREE.Group();
-          const beam = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.45, 0.6),
-            new THREE.MeshStandardMaterial({ color: t.accent, roughness: 0.55 }));
+          const beam = new THREE.Mesh(OB_GEO.beam, this.accentMat);
           beam.position.y = 1.55; beam.castShadow = true;
           mesh.add(beam);
-          const beamStripe = new THREE.Mesh(new THREE.BoxGeometry(2.22, 0.16, 0.62),
-            new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55 }));
+          const beamStripe = new THREE.Mesh(OB_GEO.beamStripe, OB.beamStripe);
           beamStripe.position.y = 1.55; mesh.add(beamStripe);
           for (const lx of [-1.0, 1.0]) {
-            const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.2, 6),
-              new THREE.MeshStandardMaterial({ color: 0x8a9099, metalness: 0.6, roughness: 0.4 }));
+            const post = new THREE.Mesh(OB_GEO.post, OB.post);
             post.position.set(lx, 1.6, 0);
             mesh.add(post);
           }
@@ -436,6 +510,10 @@ export class Track {
       disposeGroup(this.backdrop);
       this.backdrop = null;
     }
+    this.accentMat.dispose();
+    SHARED_GEO.delete(this.roadGeo); SHARED_GEO.delete(this.sidewalkGeo);
+    this.roadGeo.dispose(); this.sidewalkGeo.dispose();
+    this.roadMat.dispose(); this.sidewalkMat.dispose();
   }
 }
 
@@ -444,8 +522,12 @@ function pick3(used) {
   return free[(Math.random() * free.length) | 0] ?? 1;
 }
 
+// Free only geometry this chunk actually owns. Shared/cached geometry (boxes,
+// spheres, the souvenir prototype) is registered in SHARED_GEO by the builders
+// and is reused by every future chunk — disposing it would force a GPU
+// re-upload on every recycle.
 function disposeGroup(g) {
   g.traverse((n) => {
-    if (n.geometry) n.geometry.dispose();
+    if (n.geometry && !SHARED_GEO.has(n.geometry)) n.geometry.dispose();
   });
 }

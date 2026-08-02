@@ -23,12 +23,17 @@ function ring(cx, y, r, n, size, c, shape, extra = {}) {
   return out;
 }
 
-// vertical ring in the x/y plane (for the Eye's capsules on its rim)
+// vertical ring in the x/y plane (for the Eye's capsules on its rim).
+// Each capsule is rolled so its long axis lies tangent to the rim, which is
+// what makes them read as mounted gondolas rather than floating lozenges.
 function vring(cy, r, n, size, c, shape, extra = {}) {
   const out = [];
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 + Math.PI / n;
-    out.push({ p: [Math.cos(a) * r, cy + Math.sin(a) * r, 0], s: size, c, shape, ...extra });
+    out.push({
+      p: [Math.cos(a) * r, cy + Math.sin(a) * r, 0], s: size, c, shape,
+      rotZ: a + Math.PI / 2, ...extra,
+    });
   }
   return out;
 }
@@ -133,176 +138,205 @@ const defs = {
   // Eiffel: dark iron-bronze, +30% height, thin curved legs flowing
   // continuously into a thin trussed first platform, high-contrast lattice.
   eiffel: [
-    eifleg(-3.4, -3.4, -1.62, -1.62, 6.0, 0.3, '#4a3c30'),
-    eifleg(3.4, -3.4, 1.62, -1.62, 6.0, 0.3, '#4a3c30'),
-    eifleg(-3.4, 3.4, -1.62, 1.62, 6.0, 0.3, '#4a3c30'),
-    eifleg(3.4, 3.4, 1.62, 1.62, 6.0, 0.3, '#4a3c30'),
+    eifleg(-3.4, -3.4, -1.62, -1.62, 6.0, 0.28, '#3f342c'),
+    eifleg(3.4, -3.4, 1.62, -1.62, 6.0, 0.28, '#3f342c'),
+    eifleg(-3.4, 3.4, -1.62, 1.62, 6.0, 0.28, '#3f342c'),
+    eifleg(3.4, 3.4, 1.62, 1.62, 6.0, 0.28, '#3f342c'),
     // thin connecting arches tucked between the legs
-    B([0, 3.1, 2.35], [4.8, 4.8, 0.24], '#55463a', 'arch'),
-    B([0, 3.1, -2.35], [4.8, 4.8, 0.24], '#55463a', 'arch'),
-    B([2.35, 3.1, 0], [4.8, 4.8, 0.24], '#55463a', 'arch', { rotY: Math.PI / 2 }),
-    B([-2.35, 3.1, 0], [4.8, 4.8, 0.24], '#55463a', 'arch', { rotY: Math.PI / 2 }),
-    // first platform: thin truss
-    B([0, 6.1, 0], [4.7, 0.26, 4.7], '#5a4a3a', 'box', { tex: 'lattice', em: '#ffb96a', emI: 0.14 }),
-    B([0, 9.15, 0], [3.1, 6.0, 3.1], '#4e4034', 'cone4', { tex: 'lattice', em: '#ff9d5a', emI: 0.08 }),
-    B([0, 12.3, 0], [2.4, 0.2, 2.4], '#5a4a3a', 'box', { tex: 'lattice', em: '#ffb96a', emI: 0.14 }),
-    B([0, 15.9, 0], [1.85, 7.0, 1.85], '#4e4034', 'cone4', { tex: 'lattice', em: '#ff9d5a', emI: 0.08 }),
-    B([0, 19.5, 0], [1.05, 0.16, 1.05], '#5a4a3a', 'box', { em: '#ffb96a', emI: 0.18 }),
-    B([0, 20.05, 0], [0.68, 0.55, 0.68], '#55463a', 'box', { tex: 'lattice' }),
-    B([0, 22.0, 0], [0.09, 3.4, 0.09], '#6a5a48', 'cyl', { em: '#ffd9a0', emI: 0.5 }),
+    B([0, 3.1, 2.35], [4.8, 4.8, 0.22], '#453a31', 'arch'),
+    B([0, 3.1, -2.35], [4.8, 4.8, 0.22], '#453a31', 'arch'),
+    B([2.35, 3.1, 0], [4.8, 4.8, 0.22], '#453a31', 'arch', { rotY: Math.PI / 2 }),
+    B([-2.35, 3.1, 0], [4.8, 4.8, 0.22], '#453a31', 'arch', { rotY: Math.PI / 2 }),
+    // first platform: thin truss, gold-lit underside so the deck separates
+    B([0, 6.1, 0], [4.9, 0.3, 4.9], '#54463a', 'box', { tex: 'lattice', em: '#ffb96a', emI: 0.3 }),
+    B([0, 9.15, 0], [3.1, 6.0, 3.1], '#463b32', 'cone4', { tex: 'lattice', em: '#ff9d5a', emI: 0.1 }),
+    B([0, 12.3, 0], [2.5, 0.24, 2.5], '#54463a', 'box', { tex: 'lattice', em: '#ffb96a', emI: 0.3 }),
+    B([0, 15.9, 0], [1.85, 7.0, 1.85], '#463b32', 'cone4', { tex: 'lattice', em: '#ff9d5a', emI: 0.1 }),
+    B([0, 19.5, 0], [1.1, 0.18, 1.1], '#54463a', 'box', { em: '#ffb96a', emI: 0.36 }),
+    B([0, 20.1, 0], [0.7, 0.6, 0.7], '#4c4036', 'box', { tex: 'lattice', em: '#ffd9a0', emI: 0.16 }),
+    B([0, 22.0, 0], [0.09, 3.4, 0.09], '#8a7458', 'cyl', { metal: 1, em: '#ffd9a0', emI: 0.7 }),
   ],
 
   // Arc de Triomphe: attic flush with the legs, inset vault for shadow
   // depth, grander arch opening, sculpture groups at the leg bases.
   arc: [
-    B([-3.45, 1.2, 2.2], [1.9, 2.4, 0.55], '#e4d6b4', 'statue'),
-    B([3.45, 1.2, 2.2], [1.9, 2.4, 0.55], '#e4d6b4', 'statue'),
-    B([-3.45, 1.2, -2.2], [1.9, 2.4, 0.55], '#e4d6b4', 'statue'),
-    B([3.45, 1.2, -2.2], [1.9, 2.4, 0.55], '#e4d6b4', 'statue'),
-    B([-3.45, 3.7, 0], [2.1, 7.4, 3.6], '#ded0ae', 'box', { tex: 'relief' }),
-    B([3.45, 3.7, 0], [2.1, 7.4, 3.6], '#ded0ae', 'box', { tex: 'relief' }),
-    // vault panel inset 0.5 each side for shadow depth; grand open arch
-    B([0, 7.0, 0], [4.85, 4.8, 2.6], '#e6d8b6', 'box', { tex: 'archcut', tx: { n: 1, open: 1 } }),
-    B([0, 9.9, 0], [9.0, 1.6, 3.9], '#d8caa8'),
-    B([0, 11.05, 0], [9.0, 0.7, 3.9], '#c9ba96', 'box', { tex: 'relief' }),
-    // attic flush with the legs (outer edge ±4.5)
-    B([0, 11.9, 0], [9.0, 1.0, 3.6], '#e0d3b2', 'box', { tex: 'relief' }),
-    B([0, 12.55, 0], [9.0, 0.3, 3.8], '#cfc09c'),
+    // sculpture groups (La Marseillaise etc.) standing proud of the pier faces
+    B([-3.45, 1.6, 2.2], [2.0, 3.2, 0.85], '#f2e6c4', 'statue', { figs: 3, em: '#ffd9a0', emI: 0.14 }),
+    B([3.45, 1.6, 2.2], [2.0, 3.2, 0.85], '#f2e6c4', 'statue', { figs: 3, em: '#ffd9a0', emI: 0.14 }),
+    B([-3.45, 1.6, -2.2], [2.0, 3.2, 0.85], '#e8dab8', 'statue', { figs: 3 }),
+    B([3.45, 1.6, -2.2], [2.0, 3.2, 0.85], '#e8dab8', 'statue', { figs: 3 }),
+    // outer piers, full height so the attic sits flush on them (outer ±4.5)
+    B([-3.45, 4.7, 0], [2.1, 9.4, 3.8], '#ded0ae', 'box', { tex: 'relief' }),
+    B([3.45, 4.7, 0], [2.1, 9.4, 3.8], '#ded0ae', 'box', { tex: 'relief' }),
+    // the vault itself: real barrel geometry, inset 0.5 behind the piers so
+    // the opening carries genuine shadow depth instead of reading as a
+    // painted cardboard cutout
+    B([0, 4.7, 0], [4.9, 9.4, 2.8], '#e6d8b6', 'archvault'),
+    // entablature / frieze / attic, all matched to the pier depth
+    B([0, 10.15, 0], [9.0, 1.5, 3.9], '#d8caa8'),
+    B([0, 11.15, 0], [9.0, 0.5, 3.95], '#c2b28c', 'box', { tex: 'relief' }),
+    B([0, 12.0, 0], [9.0, 1.2, 3.8], '#e4d7b6', 'box', { tex: 'relief', em: '#ffd9a0', emI: 0.12 }),
+    B([0, 12.75, 0], [9.3, 0.3, 4.05], '#cfc09c', 'box', { em: '#ffd9a0', emI: 0.16 }),
   ],
 
   // Louvre: regular diamond-grid glass pyramid lit from within, slate
   // blue-grey palace roofs with dormer hints, warm light pools.
   louvre: [
-    B([0, 0.22, 0.6], [17, 0.44, 14], '#bcac8c'),
-    B([0, 2.55, -5.6], [17, 4.7, 2.4], '#d2c29c', 'box', { tex: 'win', tx: { cols: 15, rows: 3 } }),
-    B([0, 5.45, -5.6], [17, 1.1, 2.6], '#525b74', 'box', { tex: 'win', tx: { cols: 11, rows: 1 } }),
-    B([-8.1, 2.55, 0.4], [2.4, 4.7, 9.6], '#d2c29c', 'box', { tex: 'win', tx: { cols: 3, rows: 3 } }),
-    B([8.1, 2.55, 0.4], [2.4, 4.7, 9.6], '#d2c29c', 'box', { tex: 'win', tx: { cols: 3, rows: 3 } }),
-    B([-8.1, 5.35, 0.4], [2.6, 0.9, 9.8], '#525b74'),
-    B([8.1, 5.35, 0.4], [2.6, 0.9, 9.8], '#525b74'),
-    B([0, 3.0, 1.2], [7.6, 5.6, 7.6], '#cfe6f4', 'pyramid', { glass: 1, op: 0.55, tex: 'glass', em: '#ffd9a0', emI: 0.3 }),
-    B([-5.3, 1.15, 1.2], [2.0, 1.9, 2.0], '#cfe6f4', 'pyramid', { glass: 1, op: 0.55, tex: 'glass', em: '#ffd9a0', emI: 0.25 }),
-    B([5.3, 1.15, 1.2], [2.0, 1.9, 2.0], '#cfe6f4', 'pyramid', { glass: 1, op: 0.55, tex: 'glass', em: '#ffd9a0', emI: 0.25 }),
-    B([0, 1.15, 5.9], [2.0, 1.9, 2.0], '#cfe6f4', 'pyramid', { glass: 1, op: 0.55, tex: 'glass', em: '#ffd9a0', emI: 0.25 }),
-    B([-4.9, 0.55, 4.6], [3.0, 0.26, 3.0], '#3fa8c8', 'water', { em: '#ffd9a0', emI: 0.45 }),
-    B([4.9, 0.55, 4.6], [3.0, 0.26, 3.0], '#3fa8c8', 'water', { em: '#ffd9a0', emI: 0.45 }),
+    // warm travertine Cour Napoleon paving — its own warm pool of ground
+    // inside the cool blue-grey plaza, so the teal pyramid has both a warm
+    // floor and a cool surround to read against
+    B([0, 0.22, 0.4], [17.2, 0.44, 12.6], '#c0b498'),
+    // palace windows deliberately dimmer than the pyramid's glow so the icon
+    // stays the brightest thing in frame
+    B([0, 2.55, -5.9], [17, 4.7, 2.4], '#cbbb95', 'box', { tex: 'win', tx: { cols: 15, rows: 3, lit: '#d9a866' } }),
+    B([0, 5.45, -5.9], [17, 1.1, 2.6], '#465070', 'box', { tex: 'win', tx: { cols: 11, rows: 1, lit: '#d9a866' } }),
+    B([-8.3, 2.55, 0.4], [2.4, 4.7, 10.2], '#cbbb95', 'box', { tex: 'win', tx: { cols: 3, rows: 3, lit: '#d9a866' } }),
+    B([8.3, 2.55, 0.4], [2.4, 4.7, 10.2], '#cbbb95', 'box', { tex: 'win', tx: { cols: 3, rows: 3, lit: '#d9a866' } }),
+    B([-8.3, 5.35, 0.4], [2.6, 0.9, 10.4], '#465070', 'box', { tex: 'win', tx: { cols: 6, rows: 1, lit: '#d9a866' } }),
+    B([8.3, 5.35, 0.4], [2.6, 0.9, 10.4], '#465070', 'box', { tex: 'win', tx: { cols: 6, rows: 1, lit: '#d9a866' } }),
+    // the icon: bigger, deep-teal reflective glass on a regular diamond grid,
+    // with an opaque warm lantern inside so it glows from within
+    B([0, 1.7, 1.3], [3.6, 3.0, 3.6], '#ffcf94', 'pyramid', { em: '#ffbc70', emI: 0.7, sortY: 0.6 }),
+    B([0, 3.6, 1.3], [9.6, 7.0, 9.6], '#8fc6e2', 'pyramid', { glass: 1, op: 0.9, tex: 'glass', em: '#6fc0e0', emI: 0.1, sortY: 9 }),
+    B([-6.0, 1.2, 4.4], [2.4, 2.1, 2.4], '#8fc6e2', 'pyramid', { glass: 1, op: 0.9, tex: 'glass', em: '#6fc0e0', emI: 0.1 }),
+    B([6.0, 1.2, 4.4], [2.4, 2.1, 2.4], '#8fc6e2', 'pyramid', { glass: 1, op: 0.9, tex: 'glass', em: '#6fc0e0', emI: 0.1 }),
+    B([-4.9, 0.55, 5.4], [3.2, 0.26, 3.2], '#2c6f96', 'water', { em: '#54b6d8', emI: 0.28 }),
+    B([4.9, 0.55, 5.4], [3.2, 0.26, 3.2], '#2c6f96', 'water', { em: '#54b6d8', emI: 0.28 }),
   ],
 
   // ================= LONDON =================
   // Big Ben: limestone ashlar panels with gothic ribs, glowing warm-ivory
   // clock faces with bold hands and a gold ring, stretched belfry.
   bigben: [
-    B([0, 2.3, 0], [3.4, 4.6, 3.4], '#cfc4a4', 'box', { tex: 'ashlar' }),
-    B([0, 6.75, 0], [3.15, 4.3, 3.15], '#c6ba9a', 'box', { tex: 'ashlar' }),
-    B([0, 10.9, 0], [3.15, 4.0, 3.15], '#cfc4a4', 'box', { tex: 'ashlar' }),
-    B([0, 13.95, 0], [3.6, 2.3, 3.6], '#d8cdac', 'box', { tex: 'relief' }),
-    B([0, 13.95, 1.87], [2.4, 2.4, 0.2], '#f6eed6', 'clock'),
-    B([0, 13.95, -1.87], [2.4, 2.4, 0.2], '#f6eed6', 'clock'),
-    B([1.87, 13.95, 0], [2.4, 2.4, 0.2], '#f6eed6', 'clock', { rotY: Math.PI / 2 }),
-    B([-1.87, 13.95, 0], [2.4, 2.4, 0.2], '#f6eed6', 'clock', { rotY: Math.PI / 2 }),
+    B([0, 0.35, 0], [4.0, 0.7, 4.0], '#b6ab8d'),                 // plinth
+    B([0, 2.9, 0], [3.5, 4.4, 3.5], '#d4c9a8', 'box', { tex: 'ashlar' }),
+    B([0, 7.2, 0], [3.25, 4.2, 3.25], '#cbbf9e', 'box', { tex: 'ashlar' }),
+    B([0, 11.3, 0], [3.25, 4.0, 3.25], '#d4c9a8', 'box', { tex: 'ashlar' }),
+    B([0, 14.35, 0], [3.7, 2.4, 3.7], '#ded3b0', 'box', { tex: 'relief', em: '#ffd9a0', emI: 0.14 }),
+    B([0, 14.35, 1.93], [2.55, 2.55, 0.22], '#f8f1da', 'clock'),
+    B([0, 14.35, -1.93], [2.55, 2.55, 0.22], '#f8f1da', 'clock'),
+    B([1.93, 14.35, 0], [2.55, 2.55, 0.22], '#f8f1da', 'clock', { rotY: Math.PI / 2 }),
+    B([-1.93, 14.35, 0], [2.55, 2.55, 0.22], '#f8f1da', 'clock', { rotY: Math.PI / 2 }),
     // belfry stretched ~20%
-    B([0, 16.0, 0], [3.0, 1.85, 3.0], '#c6ba9a', 'box', { tex: 'arch', tx: { n: 3 } }),
-    B([0, 18.5, 0], [2.7, 3.15, 2.7], '#5e7258', 'cone4'),
-    B([0, 20.6, 0], [1.1, 1.7, 1.1], '#cfae6c', 'cone4', { metal: 1, em: '#ffd9a0', emI: 0.3 }),
-    B([0, 21.9, 0], [0.18, 1.3, 0.18], '#e6d29e', 'cyl', { metal: 1, em: '#ffd9a0', emI: 0.35 }),
+    B([0, 16.5, 0], [3.05, 1.95, 3.05], '#cbbf9e', 'box', { tex: 'arch', tx: { n: 3 } }),
+    B([0, 19.05, 0], [2.75, 3.2, 2.75], '#5e7258', 'cone4'),
+    B([0, 21.15, 0], [1.15, 1.75, 1.15], '#cfae6c', 'cone4', { metal: 1, em: '#ffd9a0', emI: 0.45 }),
+    B([0, 22.5, 0], [0.18, 1.3, 0.18], '#e6d29e', 'cyl', { metal: 1, em: '#ffd9a0', emI: 0.55 }),
   ],
 
   // Tower Bridge: pale stone towers with corner turrets, saturated
   // steel-blue raised walkways with white rails + suspender rods, and
   // suspension chains that sweep up from the anchors to tower mid-height.
   towerbridge: [
-    B([0, 1.35, 0], [18, 0.6, 3.2], '#7a8090'),
-    B([-8.7, 1.7, 0], [1.9, 2.8, 3.6], '#e6dec8', 'box', { tex: 'relief' }),
-    B([8.7, 1.7, 0], [1.9, 2.8, 3.6], '#e6dec8', 'box', { tex: 'relief' }),
-    B([-4.6, 4.9, 0], [3.2, 6.9, 3.2], '#eae2cc', 'box', { tex: 'gothic' }),
-    B([4.6, 4.9, 0], [3.2, 6.9, 3.2], '#eae2cc', 'box', { tex: 'gothic' }),
-    B([-4.6, 8.7, 0], [3.6, 0.7, 3.6], '#f0e9d4'),
-    B([4.6, 8.7, 0], [3.6, 0.7, 3.6], '#f0e9d4'),
-    B([-4.6, 10.15, 0], [3.4, 2.7, 3.4], '#ede5cf', 'turrets'),
-    B([4.6, 10.15, 0], [3.4, 2.7, 3.4], '#ede5cf', 'turrets'),
+    B([0, 1.55, 0], [20.7, 0.7, 3.7], '#5f6878'),
+    B([-10.0, 1.95, 0], [2.2, 3.2, 4.1], '#e9e1cb', 'box', { tex: 'relief' }),
+    B([10.0, 1.95, 0], [2.2, 3.2, 4.1], '#e9e1cb', 'box', { tex: 'relief' }),
+    B([-5.3, 5.65, 0], [3.7, 7.9, 3.7], '#efe7d1', 'box', { tex: 'gothic' }),
+    B([5.3, 5.65, 0], [3.7, 7.9, 3.7], '#efe7d1', 'box', { tex: 'gothic' }),
+    B([-5.3, 10.0, 0], [4.15, 0.8, 4.15], '#f6efda', 'box', { em: '#ffd9a0', emI: 0.14 }),
+    B([5.3, 10.0, 0], [4.15, 0.8, 4.15], '#f6efda', 'box', { em: '#ffd9a0', emI: 0.14 }),
+    B([-5.3, 11.7, 0], [3.9, 3.1, 3.9], '#f2ead3', 'turrets', { em: '#ffd9a0', emI: 0.12 }),
+    B([5.3, 11.7, 0], [3.9, 3.1, 3.9], '#f2ead3', 'turrets', { em: '#ffd9a0', emI: 0.12 }),
     // raised steel-blue walkways with white rails + suspender rods
-    B([0, 7.45, 0], [6.2, 0.55, 1.6], '#5a8fc0', 'walkway', { walk: { rods: 7, drop: 1.1 }, em: '#8fb8e0', emI: 0.1, sortY: 9.6 }),
-    B([0, 8.7, 0], [6.2, 0.55, 1.6], '#5a8fc0', 'walkway', { walk: { rods: 0, drop: 0 }, em: '#8fb8e0', emI: 0.1, sortY: 9.7 }),
+    B([0, 8.6, 0], [7.1, 0.6, 1.8], '#4e8bc6', 'walkway', { walk: { rods: 7, drop: 1.3 }, em: '#8fb8e0', emI: 0.16, sortY: 9.6 }),
+    B([0, 10.0, 0], [7.1, 0.6, 1.8], '#4e8bc6', 'walkway', { walk: { rods: 0, drop: 0 }, em: '#8fb8e0', emI: 0.16, sortY: 9.7 }),
     // suspension chains sweeping UP from anchors to tower mid-height
-    B([-6.6, 5.3, 0], [4.6, 4.6, 2.9], '#5a8fc0', 'chain',
-      { sortY: 10, chain: { x0: -8.75, y0: 3.15, x1: -4.5, y1: 7.35, sag: 0.9, z: 1.25, r: 0.15, deckY: 1.65, rods: 3 } }),
-    B([6.6, 5.3, 0], [4.6, 4.6, 2.9], '#5a8fc0', 'chain',
-      { sortY: 10, chain: { x0: 8.75, y0: 3.15, x1: 4.5, y1: 7.35, sag: 0.9, z: 1.25, r: 0.15, deckY: 1.65, rods: 3 } }),
+    B([-7.6, 6.1, 0], [5.3, 5.3, 3.3], '#4e8bc6', 'chain',
+      { sortY: 10, chain: { x0: -10.05, y0: 3.6, x1: -5.2, y1: 8.45, sag: 1.0, z: 1.45, r: 0.17, deckY: 1.9, rods: 3 } }),
+    B([7.6, 6.1, 0], [5.3, 5.3, 3.3], '#4e8bc6', 'chain',
+      { sortY: 10, chain: { x0: 10.05, y0: 3.6, x1: 5.2, y1: 8.45, sag: 1.0, z: 1.45, r: 0.17, deckY: 1.9, rods: 3 } }),
   ],
 
   // London Eye: A-frame back-leaning legs, warm gold rim-light + hub glow,
   // big readable ovoid capsules mounted outboard of the rim, slow rotation.
   eye: [
-    B([0, 0.7, 2.4], [5.8, 0.6, 2.4], '#8b95a2'),
+    B([0, 0.7, 2.4], [6.4, 0.7, 2.6], '#767f8d'),
     // A-frame front legs (base splayed wide + forward, meeting at the hub)
-    B([-1.27, 4.1, 1.25], [0.48, 8.9, 0.48], '#dde2ea', 'cyl', { rotZ: -0.3, rotX: -0.25 }),
-    B([1.27, 4.1, 1.25], [0.48, 8.9, 0.48], '#dde2ea', 'cyl', { rotZ: 0.3, rotX: -0.25 }),
-    // rear stay struts
-    B([-0.55, 4.15, -1.05], [0.26, 8.5, 0.26], '#c9cfd9', 'cyl', { rotZ: -0.13, rotX: 0.26 }),
-    B([0.55, 4.15, -1.05], [0.26, 8.5, 0.26], '#c9cfd9', 'cyl', { rotZ: 0.13, rotX: 0.26 }),
-    B([0, 8.2, 0], [13.0, 13.0, 0.34], '#eef1f6', 'torus', { em: '#ffd9a0', emI: 0.3 }),
-    B([0, 8.2, 0], [12.4, 0.13, 0.13], '#ccd3dd', 'spokes', { n: 10, spin: 0.12, em: '#ffd9a0', emI: 0.16 }),
-    B([0, 8.2, 0], [1.5, 1.3, 1.5], '#9aa4b2', 'cyl', { rotX: Math.PI / 2, em: '#ffc97a', emI: 0.55 }),
-    ...vring(8.2, 7.1, 10, [1.7, 1.05, 1.05], '#bfe0f2', 'pod', { glass: 1, op: 0.85, em: '#ffe2b0', emI: 0.3, sortY: 9.5 }),
+    B([-1.27, 4.1, 1.25], [0.62, 8.9, 0.62], '#f0ece2', 'cyl', { rotZ: -0.3, rotX: -0.25, em: '#ffd9a0', emI: 0.16 }),
+    B([1.27, 4.1, 1.25], [0.62, 8.9, 0.62], '#f0ece2', 'cyl', { rotZ: 0.3, rotX: -0.25, em: '#ffd9a0', emI: 0.16 }),
+    // A-frame cross-brace + rear back-leaning stay struts
+    B([0, 5.6, 1.0], [2.6, 0.24, 0.24], '#e0dcd2', 'box', { rotX: -0.25 }),
+    B([-0.62, 4.15, -1.35], [0.34, 8.6, 0.34], '#c5ccd6', 'cyl', { rotZ: -0.14, rotX: 0.3 }),
+    B([0.62, 4.15, -1.35], [0.34, 8.6, 0.34], '#c5ccd6', 'cyl', { rotZ: 0.14, rotX: 0.3 }),
+    // rim + a warm gold rim-light ring just inside it
+    B([0, 8.2, 0], [13.0, 13.0, 0.40], '#f4f6fa', 'torus', { em: '#ffd9a0', emI: 0.55 }),
+    B([0, 8.2, 0], [12.1, 12.1, 0.16], '#e8b45e', 'torus', { metal: 1, em: '#ffc46a', emI: 0.95 }),
+    B([0, 8.2, 0], [12.4, 0.13, 0.13], '#d6dbe4', 'spokes', { n: 12, spin: 0.11, em: '#ffd9a0', emI: 0.3 }),
+    B([0, 8.2, 0], [1.9, 1.5, 1.9], '#8d97a6', 'cyl', { rotX: Math.PI / 2, em: '#ffc266', emI: 1.0 }),
+    // capsules: big readable ovoids mounted outboard of the rim
+    ...vring(8.2, 7.35, 10, [3.0, 1.6, 1.6], '#2b93c4', 'pod', { glass: 1, op: 0.96, em: '#ffb85a', emI: 0.16, sortY: 9.5 }),
   ],
 
   // ================= ROME =================
   // Colosseum: travertine white-grey, warm AO inside darker arches,
   // dramatic broken-rim height jump, scaled up ~20%.
   colosseum: [
-    B([0, 0.45, 0], [15.4, 0.9, 15.4], '#b9a98c', 'cyl'),
-    ...arcade(2.5, 6.85, 3.0, 8, '#ded7c8', 'archcut', 3),
-    ...arcade(5.5, 6.65, 3.0, 8, '#d4cdbc', 'archcut', 3),
-    ...arcade(8.7, 6.5, 3.4, 5, '#c8c1b0', 'archcut', 2, 0.62, -0.35),
-    B([5.9, 1.3, 3.4], [1.5, 1.0, 1.3], '#cfc8b8', 'rock'),
-    B([-4.9, 1.25, -4.5], [1.3, 0.9, 1.2], '#c4bdac', 'rock'),
+    B([0, 0.5, 0], [17.4, 1.0, 17.4], '#a9a08e', 'cyl'),
+    // dark inner drum: what you see through every arch, so the arcade reads
+    // as pierced stone instead of a lace curtain
+    B([0, 4.1, 0], [12.4, 7.2, 12.4], '#5e5347', 'cyl', { sortY: 0.6 }),
+    ...arcade(2.75, 7.7, 3.3, 8, '#e2dbcb', 'archcut', 3),
+    ...arcade(6.15, 7.5, 3.3, 8, '#d6cfbd', 'archcut', 3),
+    ...arcade(9.9, 7.35, 3.9, 5, '#c9c2b0', 'archcut', 2, 0.62, -0.35),
+    B([6.6, 1.5, 3.8], [1.8, 1.2, 1.5], '#cfc8b8', 'rock'),
+    B([-5.5, 1.4, -5.0], [1.5, 1.0, 1.4], '#c4bdac', 'rock'),
   ],
 
   // Trevi Fountain: arched statue niches + central triumphal arch,
   // Oceanus figure, cascading travertine rock shelf spilling into a pool
   // with stepped falls and foam rings.
   trevi: [
-    B([0, 3.3, -1.5], [12.5, 6.6, 1.7], '#e6d9b6', 'box', { tex: 'niche', tx: { n: 5 } }),
-    B([0, 7.25, -1.5], [12.5, 1.2, 1.9], '#d6c7a2', 'box', { tex: 'relief' }),
-    B([0, 8.45, -1.5], [0.8, 1.4, 0.6], '#eee3c8', 'statue'),
-    B([-3.1, 8.4, -1.5], [0.7, 1.3, 0.55], '#eee3c8', 'statue'),
-    B([3.1, 8.4, -1.5], [0.7, 1.3, 0.55], '#eee3c8', 'statue'),
+    B([0, 3.6, -1.7], [13.4, 7.2, 1.8], '#eadcb6', 'box', { tex: 'niche', tx: { n: 5 } }),
+    B([0, 7.85, -1.7], [13.4, 1.3, 2.1], '#d2c299', 'box', { tex: 'relief' }),
+    B([0, 9.25, -1.7], [0.95, 1.7, 0.75], '#f6eed6', 'statue', { em: '#ffd9a0', emI: 0.16 }),
+    B([-3.5, 9.1, -1.7], [0.85, 1.45, 0.65], '#f2e9d0', 'statue'),
+    B([3.5, 9.1, -1.7], [0.85, 1.45, 0.65], '#f2e9d0', 'statue'),
     // central triumphal-arch bay, projecting forward
-    B([0, 3.5, -0.7], [4.4, 6.6, 1.4], '#f2e8ca', 'box', { tex: 'archcut', tx: { n: 1 } }),
-    B([-3.0, 3.3, -0.5], [2.3, 4.4, 0.9], '#ecdfc0', 'colonnade', { cols: 2 }),
-    B([3.0, 3.3, -0.5], [2.3, 4.4, 0.9], '#ecdfc0', 'colonnade', { cols: 2 }),
-    // Oceanus commanding the central niche
-    B([0, 3.15, -0.25], [1.6, 3.3, 1.0], '#f6eed8', 'statue', { em: '#ffd9a0', emI: 0.12 }),
-    // cascading travertine rock shelf across the facade width
-    B([-4.3, 1.05, 0.5], [1.7, 1.3, 1.4], '#cdb890', 'rock'),
-    B([-2.2, 1.25, 0.75], [1.9, 1.5, 1.5], '#d5c098', 'rock'),
-    B([0, 1.0, 1.0], [2.1, 1.3, 1.6], '#cdb890', 'rock'),
-    B([2.2, 1.25, 0.75], [1.9, 1.5, 1.5], '#d5c098', 'rock'),
-    B([4.3, 1.05, 0.5], [1.7, 1.3, 1.4], '#cdb890', 'rock'),
-    // stepped water falls
-    B([0, 1.7, 0.45], [3.2, 0.3, 1.2], '#63c8de', 'box', { wet: 1, sortY: 2.1 }),
-    B([0, 1.0, 1.25], [5.4, 0.28, 1.7], '#54bcd6', 'box', { wet: 1, sortY: 2.2 }),
+    B([0, 3.8, -0.8], [4.9, 7.2, 1.5], '#f7edd0', 'box', { tex: 'archcut', tx: { n: 1 } }),
+    B([0, 7.95, -0.8], [5.6, 1.1, 1.9], '#dfd0a8', 'box', { tex: 'relief', em: '#ffd9a0', emI: 0.12 }),
+    B([-3.3, 3.5, -0.55], [2.5, 5.0, 1.0], '#efe2c2', 'colonnade', { cols: 2 }),
+    B([3.3, 3.5, -0.55], [2.5, 5.0, 1.0], '#efe2c2', 'colonnade', { cols: 2 }),
+    // Oceanus commanding the central niche, gold rim-lit
+    B([0, 3.5, -0.1], [2.1, 4.2, 1.3], '#fdf6e4', 'statue', { em: '#ffd9a0', emI: 0.34 }),
+    // cascading travertine rock shelf: wide interlocking slabs running the
+    // full facade width and spilling forward into the basin
+    B([-4.9, 1.0, 0.3], [4.0, 2.0, 2.2], '#c6b189', 'rock'),
+    B([-1.9, 1.35, 0.75], [3.6, 2.7, 2.4], '#d3bf97', 'rock'),
+    B([1.9, 1.3, 0.75], [3.6, 2.6, 2.4], '#cdb891', 'rock'),
+    B([4.9, 1.0, 0.3], [4.0, 2.0, 2.2], '#c6b189', 'rock'),
+    B([0, 1.95, 1.0], [3.0, 1.8, 2.0], '#dcc9a2', 'rock', { em: '#ffd9a0', emI: 0.08 }),
+    // stepped falls tumbling shelf → ledge → basin, each step tipped forward
+    // so they read as running water rather than stacked glass sheets
+    B([0, 2.35, 1.35], [2.2, 0.9, 0.9], '#b4f0fc', 'box', { wet: 1, rotX: -0.5, em: '#d8faff', emI: 0.8, sortY: 2.6 }),
+    B([-1.9, 1.75, 1.7], [1.3, 0.8, 0.8], '#9ce8f8', 'box', { wet: 1, rotX: -0.45, em: '#c8f6ff', emI: 0.7, sortY: 2.65 }),
+    B([1.9, 1.75, 1.7], [1.3, 0.8, 0.8], '#9ce8f8', 'box', { wet: 1, rotX: -0.45, em: '#c8f6ff', emI: 0.7, sortY: 2.65 }),
+    B([0, 1.35, 2.15], [4.6, 0.7, 0.9], '#7fd8ee', 'box', { wet: 1, rotX: -0.35, em: '#a8ecff', emI: 0.55, sortY: 2.7 }),
+    B([0, 0.8, 2.7], [7.0, 0.35, 0.9], '#5fc9e2', 'box', { wet: 1, rotX: -0.2, em: '#8fe4f6', emI: 0.4, sortY: 2.8 }),
     // basin rim, pool, foam rings
-    B([0, 0.55, 1.5], [10.2, 0.6, 0.6], '#dbcea8', 'arch', { rotX: Math.PI / 2 }),
-    B([0, 0.42, 1.5], [8.6, 0.26, 8.6], '#3fa8c8', 'water'),
-    B([-1.6, 0.58, 1.9], [2.0, 0, 0.1], '#e8f6fa', 'torus', { rotX: Math.PI / 2, wet: 1, sortY: 2.3 }),
-    B([1.7, 0.58, 2.3], [1.5, 0, 0.09], '#e8f6fa', 'torus', { rotX: Math.PI / 2, wet: 1, sortY: 2.3 }),
+    B([0, 0.6, 2.3], [11.6, 0.75, 0.75], '#ded1a8', 'arch', { rotX: Math.PI / 2 }),
+    B([0, 0.42, 2.3], [9.8, 0.28, 9.8], '#2f9fc0', 'water', { em: '#4fd0ea', emI: 0.5 }),
+    B([-2.0, 0.6, 2.7], [2.6, 0, 0.11], '#eafaff', 'torus', { rotX: Math.PI / 2, wet: 1, em: '#ffffff', emI: 0.8, sortY: 2.9 }),
+    B([2.1, 0.6, 3.3], [1.9, 0, 0.10], '#eafaff', 'torus', { rotX: Math.PI / 2, wet: 1, em: '#ffffff', emI: 0.8, sortY: 2.9 }),
+    B([0.2, 0.6, 4.5], [3.2, 0, 0.09], '#eafaff', 'torus', { rotX: Math.PI / 2, wet: 1, em: '#ffffff', emI: 0.7, sortY: 2.9 }),
   ],
 
   // Pantheon: unified grey-brown Roman concrete dome + rotunda with a
   // merged junction, glowing warm oculus, fluted (faceted) columns.
   pantheon: [
-    B([0, 0.5, 2.8], [9.2, 1.0, 4.2], '#b3a48e'),
-    B([0, 3.4, -2.2], [8.4, 6.8, 8.4], '#96887a', 'cyl'),
-    B([-2.2, 2.9, 3.9], [3.9, 3.8, 0.8], '#d2c5aa', 'colonnade', { cols: 4 }),
-    B([2.2, 2.9, 3.9], [3.9, 3.8, 0.8], '#d2c5aa', 'colonnade', { cols: 4 }),
-    B([0, 2.9, 2.3], [7.2, 3.8, 0.8], '#c8bb9e', 'colonnade', { cols: 5 }),
-    B([0, 5.35, 3.1], [8.8, 1.1, 3.2], '#b3a48e'),
-    B([0, 6.9, 3.1], [9.2, 2.0, 3.2], '#bcae96', 'prism'),
-    // merged junction ring, same concrete as the dome
-    B([0, 7.15, -2.2], [8.2, 0.9, 8.2], '#8f8274', 'cyl'),
-    B([0, 8.05, -2.2], [7.4, 3.7, 7.4], '#8f8274', 'dome'),
-    B([0, 11.6, -2.2], [1.5, 0.55, 1.5], '#d8c090', 'cyl', { em: '#ffce8a', emI: 0.9 }),
+    B([0, 0.55, 3.0], [10.0, 1.1, 4.6], '#b8ab93'),
+    B([0, 3.7, -2.4], [9.1, 7.4, 9.1], '#9d9081', 'cyl'),
+    // portico in warm travertine so it separates from the grey concrete drum
+    B([-2.4, 3.15, 4.2], [4.2, 4.2, 0.9], '#e0d3b4', 'colonnade', { cols: 4 }),
+    B([2.4, 3.15, 4.2], [4.2, 4.2, 0.9], '#e0d3b4', 'colonnade', { cols: 4 }),
+    B([0, 3.15, 2.5], [7.8, 4.2, 0.9], '#d5c8a8', 'colonnade', { cols: 5 }),
+    B([0, 5.8, 3.4], [9.6, 1.2, 3.5], '#c4b79b', 'box', { em: '#ffd9a0', emI: 0.1 }),
+    B([0, 7.5, 3.4], [10.0, 2.2, 3.5], '#cdc0a2', 'prism', { tex: 'relief' }),
+    // stepped junction rings blending drum into dome (the real Pantheon's
+    // stacked concrete offsets), all one Roman-concrete family
+    B([0, 7.75, -2.4], [9.0, 1.0, 9.0], '#948779', 'cyl'),
+    B([0, 8.5, -2.4], [8.2, 0.75, 8.2], '#8f8b80', 'cyl'),
+    B([0, 8.9, -2.4], [7.6, 3.9, 7.6], '#8f8b80', 'dome', { em: '#ffd9a0', emI: 0.07 }),
+    B([0, 12.4, -2.4], [1.9, 0.7, 1.9], '#e6cd9a', 'cyl', { metal: 1, em: '#ffce8a', emI: 1.3 }),
   ],
 };
 

@@ -3,8 +3,16 @@ import { canvasTexture } from '../core/engine.js';
 
 // ---------- shared texture cache (per street) ----------
 const cache = new Map();
+// Every geometry that is reused across spawns lands here. The track recycles a
+// chunk every couple of seconds and disposes what it owns; without this set it
+// would also dispose the shared geometries, forcing a GPU re-upload each time.
+export const SHARED_GEO = new Set();
 function cached(key, make) {
-  if (!cache.has(key)) cache.set(key, make());
+  if (!cache.has(key)) {
+    const v = make();
+    if (v && v.isBufferGeometry) SHARED_GEO.add(v);
+    cache.set(key, v);
+  }
   return cache.get(key);
 }
 const sKey = (t) => t.streetKey || t.id;
@@ -17,6 +25,7 @@ const bulbGeo = new THREE.SphereGeometry(0.09, 8, 6);
 const ballGeo = new THREE.SphereGeometry(1, 10, 8);
 const coneGeo = new THREE.ConeGeometry(1, 1, 10);
 const cylGeo = new THREE.CylinderGeometry(1, 1, 1, 12);
+for (const gg of [boxGeo, poleGeo, wheelGeo, bulbGeo, ballGeo, coneGeo, cylGeo]) SHARED_GEO.add(gg);
 
 function hex(c) { return '#' + c.toString(16).padStart(6, '0'); }
 // mix a hex number color toward a css color, return css string
@@ -647,11 +656,16 @@ export function makeBuilding(theme, w, h, d, rng = Math.random, side = 0) {
   const floors = Math.max(4, Math.round(h / 3.2));
   const cols = Math.max(3, Math.round(w / 2.2));
   const variant = (rng() * 4) | 0;
-  const mat = new THREE.MeshStandardMaterial({
-    map: facadeTexture(theme, color, floors, cols, variant),
-    roughness: 0.85, metalness: 0.04,
+  // one material per (street, colour, floors, cols, variant) — buildings that
+  // share a facade texture share the material too, so chunk churn allocates none.
+  const mat = cached(`facMat:${sKey(theme)}:${color}:${floors}:${cols}:${variant}`, () => {
+    const m = new THREE.MeshStandardMaterial({
+      map: facadeTexture(theme, color, floors, cols, variant),
+      roughness: 0.85, metalness: 0.04,
+    });
+    if (theme.facade === 'neon') { m.emissive = new THREE.Color(0xffffff); m.emissiveMap = m.map; m.emissiveIntensity = 0.55; }
+    return m;
   });
-  if (theme.facade === 'neon') { mat.emissive = new THREE.Color(0xffffff); mat.emissiveMap = mat.map; mat.emissiveIntensity = 0.55; }
   const topMat = cached(`btop:${theme.id}:${color}`, () =>
     new THREE.MeshStandardMaterial({ color: new THREE.Color(color).multiplyScalar(0.6), roughness: 0.95 }));
   const b = new THREE.Mesh(boxGeo, [mat, mat, topMat, topMat, mat, mat]);
@@ -697,12 +711,20 @@ export function makeBuilding(theme, w, h, d, rng = Math.random, side = 0) {
   if (theme.marquee && side !== 0) {
     group.add(makeMarquee(theme, Math.min(5.4, w * 0.7), side, w, d));
   }
-  // 5th Avenue: scalloped gold awnings + doorway topiary
+  // 5th Avenue: full prestige shopfront — granite base, limestone piers, lit
+  // display windows with spotlit figures, gold awnings, topiary, flags.
   if (theme.goldAwnings && side !== 0) {
-    const awn = makeGoldAwning(theme, Math.min(3.2, w * 0.5));
-    awn.position.set(-side * (w / 2 + 0.75), 3.3, (rng() - 0.5) * d * 0.3);
-    awn.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
-    group.add(awn);
+    const front = makeLuxeFront(theme, Math.min(d - 0.4, 8.5));
+    front.position.set(-side * (w / 2 + 0.5), 0, 0);
+    front.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+    group.add(front);
+  }
+  // Oxford Street: columned department-store flagship front
+  if (theme.facade === 'deptstore' && side !== 0) {
+    const front = makeDeptFront(theme, Math.min(d - 0.3, 11));
+    front.position.set(-side * (w / 2 + 0.55), 0, 0);
+    front.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+    group.add(front);
   }
   // Via Veneto: entrance canopy + national flags over the door
   if (theme.facade === 'hotel' && side !== 0) {
@@ -799,7 +821,8 @@ export function makeVilla(theme, w, d, rng = Math.random, side = 0) {
   const brick = rng() < 0.4;
   const color = brick ? (rng() < 0.5 ? '#b46848' : '#c07a58') : (rng() < 0.5 ? '#f2efe6' : '#ece7da');
   const h = 7.5 + rng() * 2.5;
-  const mat = new THREE.MeshStandardMaterial({ map: villaTexture(theme, color, brick), roughness: 0.9 });
+  const mat = cached(`villaMat:${color}:${brick}`, () =>
+    new THREE.MeshStandardMaterial({ map: villaTexture(theme, color, brick), roughness: 0.9 }));
   const sideMat = cached(`villaSide:${color}`, () =>
     new THREE.MeshStandardMaterial({ color, roughness: 0.9 }));
   const body = new THREE.Mesh(boxGeo, [sideMat, sideMat, sideMat, sideMat, mat, mat]);
@@ -860,22 +883,25 @@ export function makeGardenWall(theme, len) {
 // ---------- signature street furniture ----------
 
 // Bulb-chase marquee canopy with a fictional show name.
-function marqueeTexture(theme) {
-  const text = pickR(theme.ads || BRANDS.show);
-  return canvasTexture(256, 64, (g) => {
-    g.fillStyle = '#14101a'; g.fillRect(0, 0, 256, 64);
-    g.fillStyle = '#fff4c8';
-    g.font = '900 30px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(text, 128, 32, 216);
-    g.fillStyle = '#ffe27a';
-    for (let x = 8; x < 256; x += 16) { g.beginPath(); g.arc(x, 8, 4, 0, 7); g.fill(); }
-    for (let x = 8; x < 256; x += 16) { g.beginPath(); g.arc(x, 56, 4, 0, 7); g.fill(); }
+function marqueeFace(theme) {
+  const words = theme.ads || BRANDS.show;
+  const wi = (Math.random() * words.length) | 0;
+  return cached(`marqMat:${sKey(theme)}:${wi}`, () => {
+    const tex = canvasTexture(256, 64, (g) => {
+      g.fillStyle = '#14101a'; g.fillRect(0, 0, 256, 64);
+      g.fillStyle = '#fff4c8';
+      g.font = '900 30px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(words[wi], 128, 32, 216);
+      g.fillStyle = '#ffe27a';
+      for (let x = 8; x < 256; x += 16) { g.beginPath(); g.arc(x, 8, 4, 0, 7); g.fill(); }
+      for (let x = 8; x < 256; x += 16) { g.beginPath(); g.arc(x, 56, 4, 0, 7); g.fill(); }
+    });
+    return new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 1.5 });
   });
 }
 export function makeMarquee(theme, w, side, bw, bd) {
   const g = new THREE.Group();
-  const tex = marqueeTexture(theme);
-  const faceMat = new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 1.5 });
+  const faceMat = marqueeFace(theme);
   const darkMat = cached('mat:marqDark', () => new THREE.MeshStandardMaterial({ color: 0x1a1420, roughness: 0.6 }));
   const canopy = new THREE.Mesh(boxGeo, [darkMat, darkMat, darkMat, darkMat, faceMat, darkMat]);
   canopy.scale.set(w, 1.1, 1.7);
@@ -920,6 +946,185 @@ function makeGoldAwning(theme, w) {
   awn.rotation.x = 0.24;
   awn.castShadow = true;
   g.add(awn);
+  return g;
+}
+
+// Oxford Street: a columned flagship front bolted onto the building — giant
+// order of columns over two-storey lit display bays with an entablature.
+// Local frame matches makeMarquee: length along local X, +Z points at the road.
+function makeDeptFront(theme, w) {
+  const g = new THREE.Group();
+  const stoneMat = mats.limestone;
+  const nB = Math.max(2, Math.round(w / 3.4));
+  const bayW = w / nB;
+  const plinth = new THREE.Mesh(boxGeo, cached('mat:deptPlinth', () =>
+    new THREE.MeshStandardMaterial({ color: 0x4a4640, roughness: 0.8 })));
+  plinth.scale.set(w, 0.45, 1.5);
+  plinth.position.set(0, 0.22, -0.05);
+  g.add(plinth);
+  const colGeo = cached('geo:deptCol', () => new THREE.CylinderGeometry(0.32, 0.37, 5.5, 12));
+  const capGeo = cached('geo:deptCap', () => new THREE.BoxGeometry(0.95, 0.26, 0.95));
+  for (let i = 0; i <= nB; i++) {
+    const cx = -w / 2 + i * bayW;
+    const col = new THREE.Mesh(colGeo, stoneMat);
+    col.position.set(cx, 3.2, 0.18);
+    col.castShadow = true;
+    g.add(col);
+    const cap = new THREE.Mesh(capGeo, stoneMat);
+    cap.position.set(cx, 6.05, 0.18);
+    g.add(cap);
+    const base = new THREE.Mesh(capGeo, stoneMat);
+    base.position.set(cx, 0.55, 0.18);
+    g.add(base);
+  }
+  // entablature + cornice over the giant order
+  const ent = new THREE.Mesh(boxGeo, stoneMat);
+  ent.scale.set(w + 0.6, 0.8, 1.2);
+  ent.position.set(0, 6.6, 0.1);
+  ent.castShadow = true;
+  g.add(ent);
+  const cornice = new THREE.Mesh(boxGeo, stoneMat);
+  cornice.scale.set(w + 1.0, 0.3, 1.15);
+  cornice.position.set(0, 7.12, 0.15);
+  g.add(cornice);
+  // recessed lit display bays between the columns
+  for (let i = 0; i < nB; i++) {
+    const cx = -w / 2 + (i + 0.5) * bayW;
+    const darkMat = cached('mat:deptMull', () =>
+      new THREE.MeshStandardMaterial({ color: 0x1c1913, roughness: 0.6 }));
+    // Everything is kept shallow: at the grazing angle you see a shopfront
+    // from, anything recessed more than ~30cm simply disappears.
+    const reveal = new THREE.Mesh(boxGeo, darkMat);
+    reveal.scale.set(bayW - 0.5, 4.7, 0.12);
+    reveal.position.set(cx, 2.7, -0.36);
+    g.add(reveal);
+    const glass = new THREE.Mesh(boxGeo, mats.warmGlass);
+    glass.scale.set(bayW - 0.8, 4.2, 0.1);
+    glass.position.set(cx, 2.65, -0.28);
+    g.add(glass);
+    for (let k = 0; k < 2; k++) {     // mannequins on a plinth, lit from behind
+      const plin = new THREE.Mesh(boxGeo, darkMat);
+      plin.scale.set(0.55, 0.6, 0.32);
+      plin.position.set(cx - 0.6 + k * 1.2, 0.85, -0.16);
+      g.add(plin);
+      const body = new THREE.Mesh(cached('geo:mannequin', () =>
+        new THREE.CapsuleGeometry(0.2, 0.95, 4, 7)), mats.bronze);
+      body.position.set(cx - 0.6 + k * 1.2, 1.85, -0.16);
+      g.add(body);
+      const head = new THREE.Mesh(ballGeo, mats.bronze);
+      head.scale.setScalar(0.17);
+      head.position.set(cx - 0.6 + k * 1.2, 2.55, -0.16);
+      g.add(head);
+    }
+    // dark shopfront framing: transom rail and jambs read against the glow
+    const mull = new THREE.Mesh(boxGeo, darkMat);
+    mull.scale.set(bayW - 0.5, 0.22, 0.24);
+    mull.position.set(cx, 3.5, -0.1);
+    g.add(mull);
+    for (const s of [-1, 1]) {
+      const jamb = new THREE.Mesh(boxGeo, darkMat);
+      jamb.scale.set(0.2, 4.7, 0.24);
+      jamb.position.set(cx + s * (bayW - 0.5) / 2, 2.7, -0.1);
+      g.add(jamb);
+    }
+    const fascia = new THREE.Mesh(boxGeo, cached('mat:deptFascia', () =>
+      new THREE.MeshStandardMaterial({ color: 0x16324c, roughness: 0.55 })));
+    fascia.scale.set(bayW - 0.35, 0.65, 0.2);
+    fascia.position.set(cx, 5.4, -0.05);
+    g.add(fascia);
+  }
+  return g;
+}
+
+// 5th Avenue: polished granite pier + limestone flagship front, gold scalloped
+// awning, lit display window with spotlit figures, doorway topiary, flags.
+function makeLuxeFront(theme, w) {
+  const g = new THREE.Group();
+  const w2 = Math.min(w - 0.5, 8.0);
+  // polished dark granite backing wall — sits BEHIND the lit windows so the
+  // display reads as a bright box cut into dark stone
+  const base = new THREE.Mesh(boxGeo, mats.granite);
+  base.scale.set(w2, 4.2, 0.18);
+  base.position.set(0, 2.1, -0.72);
+  base.castShadow = true;
+  g.add(base);
+  const nB = 2;
+  const bayW = w2 / nB;
+  const pierGeo = cached('geo:luxePier', () => new THREE.BoxGeometry(0.9, 4.2, 0.95));
+  for (let i = 0; i <= nB; i++) {
+    const p = new THREE.Mesh(pierGeo, mats.limestone);
+    p.position.set(-w2 / 2 + i * bayW, 2.1, 0.1);
+    p.castShadow = true;
+    g.add(p);
+  }
+  // limestone entablature + gilded string course
+  const ent = new THREE.Mesh(boxGeo, mats.limestone);
+  ent.scale.set(w2 + 0.8, 0.8, 1.15);
+  ent.position.set(0, 4.6, 0.05);
+  ent.castShadow = true;
+  g.add(ent);
+  const gild = new THREE.Mesh(boxGeo, mats.gold);
+  gild.scale.set(w2 + 0.85, 0.12, 1.22);
+  gild.position.set(0, 4.14, 0.06);
+  g.add(gild);
+  for (let i = 0; i < nB; i++) {
+    const cx = -w2 / 2 + (i + 0.5) * bayW;
+    // lit backdrop of the window, then the figure, then the brass frame
+    const glass = new THREE.Mesh(boxGeo, mats.warmGlass);
+    glass.scale.set(bayW - 0.95, 3.05, 0.08);
+    glass.position.set(cx, 2.4, -0.58);
+    g.add(glass);
+    const riser = new THREE.Mesh(boxGeo, mats.granite);   // stall riser
+    riser.scale.set(bayW - 0.9, 0.85, 0.45);
+    riser.position.set(cx, 0.42, -0.45);
+    g.add(riser);
+    // mannequin standing in the window under a warm spotlight cone
+    const fig = new THREE.Mesh(cached('geo:luxeFig', () =>
+      new THREE.CapsuleGeometry(0.16, 0.85, 4, 7)), mats.bronze);
+    fig.position.set(cx, 1.55, -0.45);
+    g.add(fig);
+    const head = new THREE.Mesh(ballGeo, mats.bronze);
+    head.scale.setScalar(0.14);
+    head.position.set(cx, 2.22, -0.45);
+    g.add(head);
+    const spot = new THREE.Mesh(coneGeo, cached('mat:luxeSpot', () =>
+      new THREE.MeshStandardMaterial({
+        color: 0xffe8b4, emissive: 0xffdc94, emissiveIntensity: 1.4,
+        transparent: true, opacity: 0.28, depthWrite: false })));
+    spot.scale.set(0.5, 1.9, 0.42);
+    spot.rotation.x = Math.PI;
+    spot.position.set(cx, 2.5, -0.45);
+    g.add(spot);
+    // brass frame in front of the whole bay
+    const frame = new THREE.Mesh(boxGeo, mats.gold);
+    frame.scale.set(bayW - 0.72, 0.14, 0.16);
+    frame.position.set(cx, 3.95, -0.28);
+    g.add(frame);
+    for (const s of [-1, 1]) {
+      const jamb = new THREE.Mesh(boxGeo, mats.gold);
+      jamb.scale.set(0.14, 3.4, 0.16);
+      jamb.position.set(cx + s * (bayW - 0.72) / 2, 2.3, -0.28);
+      g.add(jamb);
+    }
+    // gold scalloped awning over the bay
+    const awn = makeGoldAwning(theme, bayW - 0.6);
+    awn.position.set(cx, 3.95, 0.55);
+    g.add(awn);
+    // doorway topiary flanking each bay
+    for (const s of [-1, 1]) {
+      const tp = makeTopiary();
+      tp.scale.setScalar(0.85);
+      tp.position.set(cx + s * (bayW / 2 - 0.45), 0, 0.75);
+      g.add(tp);
+    }
+  }
+  // vertical luxury flags on gilded rods above the entablature
+  for (let i = 0; i < 2; i++) {
+    const fb = makeFlagBanner(theme);
+    fb.scale.setScalar(0.95);
+    fb.position.set(-w2 / 4 + i * (w2 / 2), 7.3, 0.85);
+    g.add(fb);
+  }
   return g;
 }
 
@@ -978,6 +1183,12 @@ const mats = {
   white: new THREE.MeshStandardMaterial({ color: 0xf4f2ec, roughness: 0.7 }),
   orangeGlow: new THREE.MeshStandardMaterial({ color: 0xffa02a, emissive: 0xff8400, emissiveIntensity: 2.4 }),
   bronze: new THREE.MeshStandardMaterial({ color: 0x4a4640, roughness: 0.5, metalness: 0.6 }),
+  planeTrunk: new THREE.MeshStandardMaterial({ color: 0x9a8a6a, roughness: 0.95 }),
+  gravel: new THREE.MeshStandardMaterial({ color: 0xc8b48c, roughness: 1 }),
+  ivy: new THREE.MeshStandardMaterial({ color: 0x3c7038, roughness: 0.95 }),
+  limestone: new THREE.MeshStandardMaterial({ color: 0xe6e0d0, roughness: 0.8 }),
+  granite: new THREE.MeshStandardMaterial({ color: 0x3a3a44, roughness: 0.35, metalness: 0.35 }),
+  warmGlass: new THREE.MeshStandardMaterial({ color: 0xffd88e, emissive: 0xffc35a, emissiveIntensity: 1.9, roughness: 0.3 }),
 };
 
 export function makeLamp(theme) {
@@ -1007,15 +1218,29 @@ export function makeTree(kind = 'round') {
     const fol = new THREE.Mesh(new THREE.ConeGeometry(0.75, 4.4, 9), mats.leafDark);
     fol.position.y = 2.9; fol.castShadow = true; g.add(fol);
   } else if (kind === 'chestnut') {
-    // clipped, boxy crown — the Champs-Élysées signature
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.19, 1.9, 7), mats.trunk);
-    trunk.position.y = 0.95; trunk.castShadow = true; g.add(trunk);
-    const crown = new THREE.Mesh(boxGeo, mats.leaf);
-    crown.scale.set(2.2, 2.0, 2.2);
-    crown.position.y = 2.9; crown.castShadow = true; g.add(crown);
-    const crown2 = new THREE.Mesh(boxGeo, mats.leafDark);
-    crown2.scale.set(2.3, 0.3, 2.3);
-    crown2.position.y = 1.95; g.add(crown2);
+    // Champs-Élysées pollarded plane tree: tall bare trunk you can see the
+    // street through, then a compact clipped-round crown well above head height.
+    const trunk = new THREE.Mesh(cached('geo:chestTrunk', () =>
+      new THREE.CylinderGeometry(0.16, 0.26, 3.7, 8)), mats.planeTrunk);
+    trunk.position.y = 1.85; trunk.castShadow = true; g.add(trunk);
+    for (const s of [-1, 1]) {                       // two stubby pollard boughs
+      const b = new THREE.Mesh(cached('geo:chestBough', () =>
+        new THREE.CylinderGeometry(0.07, 0.11, 0.95, 6)), mats.planeTrunk);
+      b.position.set(s * 0.3, 3.6, 0);
+      b.rotation.z = s * 0.6;
+      g.add(b);
+    }
+    const skirt = new THREE.Mesh(coneGeo, mats.leafDark);   // clipped underside
+    skirt.scale.set(1.22, 0.75, 1.22);
+    skirt.rotation.x = Math.PI;
+    skirt.position.y = 4.12;
+    g.add(skirt);
+    const crown = new THREE.Mesh(ballGeo, mats.leaf);
+    crown.scale.set(1.24, 0.95, 1.24);
+    crown.position.y = 4.55; crown.castShadow = true; g.add(crown);
+    const cap = new THREE.Mesh(ballGeo, mats.leafDark);
+    cap.scale.set(0.92, 0.68, 0.92);
+    cap.position.y = 5.12; g.add(cap);
   } else if (kind === 'plane') {
     // big mature plane tree — Abbey Road / Veneto
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.32, 2.8, 8),
@@ -1095,24 +1320,29 @@ const ADS = {
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
   const words = theme.ads || ADS[theme.id] || ADS.nyc;
-  const text = words[(Math.random() * words.length) | 0];
-  const hue = (Math.random() * 360) | 0;
-  const tex = canvasTexture(256, 128, (g) => {
-    const bg = g.createLinearGradient(0, 0, 256, 128);
-    bg.addColorStop(0, `hsl(${hue},90%,58%)`);
-    bg.addColorStop(1, `hsl(${(hue + 60) % 360},90%,46%)`);
-    g.fillStyle = bg; g.fillRect(0, 0, 256, 128);
-    g.fillStyle = 'rgba(255,255,255,.96)';
-    g.font = '900 42px Arial';
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(text, 128, 64, 236);
-    g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 6; g.strokeRect(5, 5, 246, 118);
-    g.strokeStyle = 'rgba(0,0,0,.45)'; g.lineWidth = 4; g.strokeRect(0, 0, 256, 128);
+  // Pool the board faces per street: one texture+material per ad word x hue
+  // bucket. Same variety on screen, but nothing new allocated per chunk.
+  const wi = (Math.random() * words.length) | 0;
+  const hi = (Math.random() * 5) | 0;
+  const faceMat = cached(`bbMat:${sKey(theme)}:${wi}:${hi}`, () => {
+    const text = words[wi];
+    const hue = (hi * 71 + wi * 37) % 360;
+    const tex = canvasTexture(256, 128, (g) => {
+      const bg = g.createLinearGradient(0, 0, 256, 128);
+      bg.addColorStop(0, `hsl(${hue},90%,58%)`);
+      bg.addColorStop(1, `hsl(${(hue + 60) % 360},90%,46%)`);
+      g.fillStyle = bg; g.fillRect(0, 0, 256, 128);
+      g.fillStyle = 'rgba(255,255,255,.96)';
+      g.font = '900 42px Arial';
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(text, 128, 64, 236);
+      g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 6; g.strokeRect(5, 5, 246, 118);
+      g.strokeStyle = 'rgba(0,0,0,.45)'; g.lineWidth = 4; g.strokeRect(0, 0, 256, 128);
+    });
+    return new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 1.35 });
   });
   const board = new THREE.Mesh(boxGeo,
-    [mats.black, mats.black, mats.black, mats.black,
-      new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 1.35 }),
-      mats.black]);
+    [mats.black, mats.black, mats.black, mats.black, faceMat, mats.black]);
   board.scale.set(w, h, 0.2);
   board.castShadow = true;
   return board;
@@ -1121,15 +1351,17 @@ export function makeBillboard(theme, w = 5, h = 2.6) {
 export function makeAwning(theme) {
   const g = new THREE.Group();
   const shops = theme.storefront || ['#b03030', '#306b40'];
-  const c = shops[(Math.random() * shops.length) | 0];
-  const tex = canvasTexture(128, 64, (g2) => {
-    g2.fillStyle = c; g2.fillRect(0, 0, 128, 64);
-    g2.fillStyle = 'rgba(255,255,255,.9)';
-    for (let x = 0; x < 128; x += 24) g2.fillRect(x, 0, 12, 64);
-    g2.fillStyle = 'rgba(0,0,0,.15)'; g2.fillRect(0, 56, 128, 8);
+  const ci = (Math.random() * shops.length) | 0;
+  const awnMat = cached(`awnMat:${sKey(theme)}:${ci}`, () => {
+    const tex = canvasTexture(128, 64, (g2) => {
+      g2.fillStyle = shops[ci]; g2.fillRect(0, 0, 128, 64);
+      g2.fillStyle = 'rgba(255,255,255,.9)';
+      for (let x = 0; x < 128; x += 24) g2.fillRect(x, 0, 12, 64);
+      g2.fillStyle = 'rgba(0,0,0,.15)'; g2.fillRect(0, 56, 128, 8);
+    });
+    return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 });
   });
-  const awn = new THREE.Mesh(boxGeo,
-    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }));
+  const awn = new THREE.Mesh(boxGeo, awnMat);
   awn.scale.set(3.4, 0.12, 1.5);
   awn.rotation.x = 0.28;
   awn.position.y = 3.0;
@@ -1272,20 +1504,24 @@ function makeBeacon() {
 // Standing playbill poster board (Broadway).
 function makePlaybill(theme) {
   const g = new THREE.Group();
-  const tex = canvasTexture(128, 192, (c) => {
-    c.fillStyle = '#17141c'; c.fillRect(0, 0, 128, 192);
-    c.fillStyle = '#f4eede'; c.fillRect(10, 10, 108, 172);
-    c.fillStyle = `hsl(${(Math.random() * 360) | 0},72%,46%)`;
-    c.fillRect(16, 16, 96, 96);
-    c.fillStyle = '#f8e8a0';
-    c.beginPath(); c.arc(64, 60, 26, 0, 7); c.fill();
-    c.fillStyle = '#222'; c.font = '900 17px Arial'; c.textAlign = 'center';
-    c.fillText(pickR(theme.ads || BRANDS.show), 64, 132, 100);
-    c.fillStyle = '#8a1626';
-    c.fillRect(20, 146, 88, 6); c.fillRect(28, 160, 72, 6);
+  const words = theme.ads || BRANDS.show;
+  const wi = (Math.random() * words.length) | 0;
+  const boardMat = cached(`playbillMat:${sKey(theme)}:${wi}`, () => {
+    const tex = canvasTexture(128, 192, (c) => {
+      c.fillStyle = '#17141c'; c.fillRect(0, 0, 128, 192);
+      c.fillStyle = '#f4eede'; c.fillRect(10, 10, 108, 172);
+      c.fillStyle = `hsl(${(wi * 67) % 360},72%,46%)`;
+      c.fillRect(16, 16, 96, 96);
+      c.fillStyle = '#f8e8a0';
+      c.beginPath(); c.arc(64, 60, 26, 0, 7); c.fill();
+      c.fillStyle = '#222'; c.font = '900 17px Arial'; c.textAlign = 'center';
+      c.fillText(words[wi], 64, 132, 100);
+      c.fillStyle = '#8a1626';
+      c.fillRect(20, 146, 88, 6); c.fillRect(28, 160, 72, 6);
+    });
+    return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 });
   });
-  const board = new THREE.Mesh(boxGeo,
-    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }));
+  const board = new THREE.Mesh(boxGeo, boardMat);
   board.scale.set(1.0, 1.5, 0.12);
   board.position.y = 1.05;
   board.castShadow = true;
@@ -1359,16 +1595,19 @@ function makeFlagBanner(theme) {
   rod.rotation.z = Math.PI / 2;
   g.add(rod);
   const cols = theme.storefront || ['#1a2a44'];
-  const c = cols[(Math.random() * cols.length) | 0];
-  const tex = canvasTexture(64, 128, (g2) => {
-    g2.fillStyle = c; g2.fillRect(0, 0, 64, 128);
-    g2.strokeStyle = 'rgba(232,200,120,.9)'; g2.lineWidth = 4;
-    g2.strokeRect(6, 6, 52, 116);
-    g2.fillStyle = 'rgba(232,200,120,.95)';
-    g2.beginPath(); g2.arc(32, 52, 14, 0, 7); g2.fill();
-    g2.fillRect(18, 84, 28, 5);
+  const ci = (Math.random() * cols.length) | 0;
+  const flagMat = cached(`flagMat:${sKey(theme)}:${ci}`, () => {
+    const tex = canvasTexture(64, 128, (g2) => {
+      g2.fillStyle = cols[ci]; g2.fillRect(0, 0, 64, 128);
+      g2.strokeStyle = 'rgba(232,200,120,.9)'; g2.lineWidth = 4;
+      g2.strokeRect(6, 6, 52, 116);
+      g2.fillStyle = 'rgba(232,200,120,.95)';
+      g2.beginPath(); g2.arc(32, 52, 14, 0, 7); g2.fill();
+      g2.fillRect(18, 84, 28, 5);
+    });
+    return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.75 });
   });
-  const flag = new THREE.Mesh(boxGeo, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.75 }));
+  const flag = new THREE.Mesh(boxGeo, flagMat);
   flag.scale.set(1.0, 2.0, 0.04);
   flag.position.set(0, -1.15, 0);
   g.add(flag);
@@ -1453,16 +1692,20 @@ function makeEasel() {
     leg.rotation.x = rz;
     g.add(leg);
   }
-  const tex = canvasTexture(64, 48, (c) => {
-    c.fillStyle = '#f8f4ea'; c.fillRect(0, 0, 64, 48);
-    // tiny impressionist scene
-    c.fillStyle = '#9ec4e8'; c.fillRect(4, 4, 56, 22);
-    c.fillStyle = '#e8b25c'; c.fillRect(4, 26, 56, 18);
-    c.fillStyle = '#f4f4f4';
-    c.beginPath(); c.arc(46, 12, 6, 0, 7); c.fill();
-    c.fillStyle = '#b0472e'; c.fillRect(10, 18, 14, 12);
+  const vi = (Math.random() * 4) | 0;
+  const canvMat = cached(`easelMat:${vi}`, () => {
+    const tex = canvasTexture(64, 48, (c) => {
+      c.fillStyle = '#f8f4ea'; c.fillRect(0, 0, 64, 48);
+      // tiny impressionist scene, one per variant
+      c.fillStyle = ['#9ec4e8', '#c8a8e0', '#f0c890', '#a8d8c0'][vi]; c.fillRect(4, 4, 56, 22);
+      c.fillStyle = ['#e8b25c', '#8ab86a', '#d88a6a', '#c8b060'][vi]; c.fillRect(4, 26, 56, 18);
+      c.fillStyle = '#f4f4f4';
+      c.beginPath(); c.arc(46, 12, 6, 0, 7); c.fill();
+      c.fillStyle = '#b0472e'; c.fillRect(10 + vi * 4, 18, 14, 12);
+    });
+    return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
   });
-  const canv = new THREE.Mesh(boxGeo, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 }));
+  const canv = new THREE.Mesh(boxGeo, canvMat);
   canv.scale.set(0.75, 0.55, 0.04);
   canv.position.set(0, 1.1, 0.14);
   canv.rotation.x = 0.12;
@@ -1719,7 +1962,9 @@ export function makeStreetSpan(theme, width = 13) {
   g.add(wire);
   const n = 11;
   if (style === 'string' || style === 'festoon') {
-    const sag = style === 'string' ? 0.55 : 0.35;
+    // shallow sag: a deep catenary dips straight through the vanishing point
+    // on a narrow portrait frame
+    const sag = style === 'string' ? 0.3 : 0.2;
     const bulbMat = cached('mat:bulb', () =>
       new THREE.MeshStandardMaterial({ color: 0xfff0c0, emissive: 0xffdf90, emissiveIntensity: 2.6 }));
     for (let i = 0; i < n; i++) {
@@ -1734,11 +1979,11 @@ export function makeStreetSpan(theme, width = 13) {
       : [0x1f4a8a, 0xffffff, 0xd41f38];
     for (let i = 0; i < n; i++) {
       const t = i / (n - 1);
-      const f = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.36, 4),
+      const f = new THREE.Mesh(cached('geo:buntFlag', () => new THREE.ConeGeometry(0.16, 0.36, 4)),
         cached(`mat:flag:${style}:${i % 3}`, () =>
           new THREE.MeshStandardMaterial({ color: cols[i % 3], roughness: 0.8 })));
       f.rotation.x = Math.PI;
-      f.position.set((t - 0.5) * width, -0.24 - Math.sin(t * Math.PI) * 0.45, 0);
+      f.position.set((t - 0.5) * width, -0.24 - Math.sin(t * Math.PI) * 0.28, 0);
       g.add(f);
     }
   }
@@ -1854,33 +2099,90 @@ export function makeVehicle(theme) {
 // ---------- large set pieces (spawned by the track per street) ----------
 
 // Rivoli: one chunk-length of arcade colonnade for one side of the street.
+// Real semicircular arches on square piers, deeply shadowed, with a lantern
+// hung in every bay. This colonnade is the whole point of Rue de Rivoli.
 export function makeArcade(theme, len, side) {
   const g = new THREE.Group();
+  const inner = -side;                   // local +x direction toward the road
   const stoneMat = cached('mat:arcadeStone', () =>
-    new THREE.MeshStandardMaterial({ color: 0xe6dcc0, roughness: 0.85 }));
+    new THREE.MeshStandardMaterial({ color: 0xe8dfc6, roughness: 0.85 }));
+  const shadeMat = cached('mat:arcadeShade', () =>   // recessed, in shadow
+    new THREE.MeshStandardMaterial({ color: 0x8f8266, roughness: 0.95 }));
+
   const roof = new THREE.Mesh(boxGeo, stoneMat);
-  roof.scale.set(3.8, 0.55, len);
-  roof.position.set(0, 4.75, -len / 2);
+  roof.scale.set(3.8, 0.7, len);
+  roof.position.set(0, 4.95, -len / 2);
   roof.castShadow = true;
   g.add(roof);
-  // warm glowing ceiling under the arcade
+  // string course under the roof slab
+  const band = new THREE.Mesh(boxGeo, shadeMat);
+  band.scale.set(3.9, 0.16, len);
+  band.position.set(0, 4.52, -len / 2);
+  g.add(band);
+  // warm glowing vault ceiling
   const ceil = new THREE.Mesh(boxGeo, cached('mat:arcadeCeil', () =>
-    new THREE.MeshStandardMaterial({ color: 0xffe6b0, emissive: 0xffd98a, emissiveIntensity: 0.55 })));
-  ceil.scale.set(3.6, 0.06, len - 0.2);
-  ceil.position.set(0, 4.44, -len / 2);
+    new THREE.MeshStandardMaterial({ color: 0xffe6b0, emissive: 0xffd98a, emissiveIntensity: 0.7 })));
+  ceil.scale.set(3.4, 0.06, len - 0.2);
+  ceil.position.set(0, 4.34, -len / 2);
   g.add(ceil);
-  // square piers along the road edge
-  const pierGeo = cached('geo:pier', () => new THREE.BoxGeometry(0.55, 4.5, 0.55));
-  for (let z = 1.6; z < len; z += 3.2) {
+
+  const BAY = 3.0, R = 1.16, SPRING = 2.5, PX = inner * 1.55;
+  const pierGeo = cached('geo:arcPier', () => new THREE.BoxGeometry(0.62, SPRING, 0.72));
+  const capGeo = cached('geo:arcCap', () => new THREE.BoxGeometry(0.76, 0.2, 0.9));
+  const baseGeo = cached('geo:arcBase', () => new THREE.BoxGeometry(0.8, 0.24, 0.94));
+  const ringGeo = cached('geo:arcRing', () =>
+    new THREE.TorusGeometry(R, 0.16, 6, 14, Math.PI));
+  const softGeo = cached('geo:arcSoffit', () =>   // shadowed reveal behind the ring
+    new THREE.TorusGeometry(R, 0.3, 5, 12, Math.PI));
+  const spandrelGeo = cached('geo:arcSpandrel', () => new THREE.BoxGeometry(0.52, 0.9, BAY));
+  const hauncGeo = cached('geo:arcHaunch', () => new THREE.BoxGeometry(0.52, 0.95, 0.62));
+
+  for (let z = 1.5; z < len; z += BAY) {
     const pier = new THREE.Mesh(pierGeo, stoneMat);
-    pier.position.set(-side * 1.65, 2.25, -z);
+    pier.position.set(PX, SPRING / 2 + 0.12, -z);
     pier.castShadow = true;
     g.add(pier);
-    // arch shoulder between piers (simple curve suggestion)
-    const shoulder = new THREE.Mesh(boxGeo, stoneMat);
-    shoulder.scale.set(0.5, 0.9, 2.7);
-    shoulder.position.set(-side * 1.65, 4.05, -z - 1.6);
-    g.add(shoulder);
+    const cap = new THREE.Mesh(capGeo, stoneMat);
+    cap.position.set(PX, SPRING + 0.2, -z);
+    g.add(cap);
+    const base = new THREE.Mesh(baseGeo, stoneMat);
+    base.position.set(PX, 0.12, -z);
+    g.add(base);
+    if (z + BAY > len) continue;
+    const az = -z - BAY / 2;
+    // shadowed reveal first, bright archivolt in front of it
+    const soffit = new THREE.Mesh(softGeo, shadeMat);
+    soffit.position.set(PX - inner * 0.16, SPRING + 0.22, az);
+    soffit.rotation.y = Math.PI / 2;
+    g.add(soffit);
+    const ring = new THREE.Mesh(ringGeo, stoneMat);
+    ring.position.set(PX + inner * 0.18, SPRING + 0.22, az);
+    ring.rotation.y = Math.PI / 2;
+    ring.castShadow = true;
+    g.add(ring);
+    // keystone
+    const key = new THREE.Mesh(boxGeo, stoneMat);
+    key.scale.set(0.6, 0.42, 0.3);
+    key.position.set(PX + inner * 0.06, SPRING + R + 0.26, az);
+    g.add(key);
+    // masonry above the arch
+    const sp = new THREE.Mesh(spandrelGeo, stoneMat);
+    sp.position.set(PX, SPRING + R + 0.85, az);
+    g.add(sp);
+    for (const s of [-1, 1]) {           // haunch fills beside the arch crown
+      const h = new THREE.Mesh(hauncGeo, stoneMat);
+      h.position.set(PX, SPRING + 0.72, az + s * (BAY / 2 - 0.31));
+      g.add(h);
+    }
+    // hanging lantern in the bay
+    const rod = new THREE.Mesh(cached('geo:arcRod', () =>
+      new THREE.CylinderGeometry(0.028, 0.028, 0.5, 5)), mats.black);
+    rod.position.set(PX - inner * 0.55, 4.05, az);
+    g.add(rod);
+    const lant = new THREE.Mesh(cached('geo:arcLant', () =>
+      new THREE.CylinderGeometry(0.2, 0.15, 0.38, 6)), mats.glow);
+    lant.position.set(PX - inner * 0.55, 3.66, az);
+    g.add(lant);
   }
   return g;
 }
@@ -1909,11 +2211,12 @@ export function makeGardenRail(theme, len) {
       g.add(fin);
     }
   }
-  // hedge + trees behind
+  // low clipped hedge tucked behind the railing (the garden itself is built
+  // by makeGardenParterre, so this stays below the top rail)
   const hedge = new THREE.Mesh(boxGeo, cached('mat:hedge', () =>
     new THREE.MeshStandardMaterial({ color: 0x2f5c30, roughness: 0.95 })));
-  hedge.scale.set(1.4, 1.3, len);
-  hedge.position.set(-1.3, 0.65, -len / 2);
+  hedge.scale.set(0.9, 0.85, len);
+  hedge.position.set(-0.85, 0.42, -len / 2);
   g.add(hedge);
   return g;
 }
@@ -2104,8 +2407,8 @@ export function makeCurvedLED(theme) {
       c.fillText(text, 256, 50, 480);
       c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 6; c.strokeRect(0, 0, 512, 96);
     }));
-    const board = new THREE.Mesh(boardGeo,
-      new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 1.5, side: THREE.DoubleSide }));
+    const board = new THREE.Mesh(boardGeo, cached(`ledMat:${sKey(theme)}:${i}`, () =>
+      new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 1.5, side: THREE.DoubleSide })));
     board.position.y = 4 + i * 4.6;
     g.add(board);
   }
@@ -2140,12 +2443,371 @@ export function makeZebra(theme, roadW) {
   return g;
 }
 
+// Rue de Rivoli garden side: raked gravel walk, clipped box parterres, stone
+// urns and a back line of trees — content behind the railing instead of void.
+// Local origin sits at the railing; the garden lays out toward -x.
+export function makeGardenParterre(theme, len) {
+  const g = new THREE.Group();
+  // ground the garden sits on (the pavement box stops at the railing)
+  const lawn = new THREE.Mesh(boxGeo, mats.gravel);
+  lawn.scale.set(15, 0.3, len);
+  lawn.position.set(-7.4, -0.15, -len / 2);
+  lawn.receiveShadow = true;
+  g.add(lawn);
+  const walk = new THREE.Mesh(boxGeo,
+    cached('mat:gravelWalk', () => new THREE.MeshStandardMaterial({ color: 0xd8c8a4, roughness: 1 })));
+  walk.scale.set(3.0, 0.06, len);
+  walk.position.set(-4.3, 0.03, -len / 2);
+  walk.receiveShadow = true;
+  g.add(walk);
+  // low clipped box hedges in pairs, with a gravel gap between them
+  const bedGeo = cached('geo:parterreBed', () => new THREE.BoxGeometry(1.5, 0.75, 3.0));
+  const kerbGeo = cached('geo:parterreKerb', () => new THREE.BoxGeometry(1.75, 0.22, 3.25));
+  for (let z = 2.5; z < len - 2; z += 6.4) {
+    for (const ox of [-2.4, -6.2]) {
+      const kerb = new THREE.Mesh(kerbGeo, mats.stone);
+      kerb.position.set(ox, 0.26, -z);
+      g.add(kerb);
+      const bed = new THREE.Mesh(bedGeo, mats.leafDark);
+      bed.position.set(ox, 0.55, -z);
+      bed.castShadow = true;
+      g.add(bed);
+    }
+    // stone urn on the axis between the beds
+    const urn = new THREE.Mesh(cached('geo:urn', () => new THREE.CylinderGeometry(0.34, 0.16, 0.62, 10)), mats.stone);
+    urn.position.set(-4.3, 0.55, -z - 3.2);
+    urn.castShadow = true;
+    g.add(urn);
+    const plinth = new THREE.Mesh(boxGeo, mats.stone);
+    plinth.scale.set(0.5, 0.3, 0.5);
+    plinth.position.set(-4.3, 0.31, -z - 3.2);
+    g.add(plinth);
+    const bloom = new THREE.Mesh(ballGeo, mats.leaf);
+    bloom.scale.setScalar(0.3);
+    bloom.position.set(-4.3, 0.95, -z - 3.2);
+    g.add(bloom);
+  }
+  // back line of trees closing the garden
+  for (let z = 5; z < len; z += 9) {
+    const t = makeTree('plane');
+    t.position.set(-8.6 - Math.random() * 2.6, 0, -z);
+    t.scale.setScalar(0.8);
+    g.add(t);
+  }
+  return g;
+}
+
+// Montmartre: the signature stepped street running off the road between two
+// buildings — lamp-lit flights climbing into the dark with an iron handrail.
+export function makeStepStreet(theme) {
+  const g = new THREE.Group();
+  const stepGeo = cached('geo:step', () => new THREE.BoxGeometry(4.6, 0.34, 0.85));
+  const N = 22;
+  for (let i = 0; i < N; i++) {
+    const s = new THREE.Mesh(stepGeo, mats.stone);
+    s.position.set(0, 0.17 + i * 0.3, -i * 0.8);
+    s.receiveShadow = true;
+    g.add(s);
+    // half-landing every 7 steps reads as a real Montmartre flight
+    if (i % 7 === 6) {
+      const land = new THREE.Mesh(stepGeo, mats.stone);
+      land.scale.z = 1.9;
+      land.position.set(0, 0.17 + i * 0.3, -i * 0.8 - 1.1);
+      g.add(land);
+    }
+  }
+  // iron handrail up the middle
+  const railMat = cached('mat:stepRail', () =>
+    new THREE.MeshStandardMaterial({ color: 0x22302a, roughness: 0.5, metalness: 0.5 }));
+  const postGeo = cached('geo:stepPost', () => new THREE.CylinderGeometry(0.04, 0.04, 1.0, 6));
+  for (let i = 0; i < N; i += 3) {
+    const p = new THREE.Mesh(postGeo, railMat);
+    p.position.set(0, 0.8 + i * 0.3, -i * 0.8);
+    g.add(p);
+  }
+  const rail = new THREE.Mesh(boxGeo, railMat);
+  rail.scale.set(0.07, 0.07, N * 0.86);
+  rail.position.set(0, 1.3 + (N * 0.3) / 2, -(N * 0.8) / 2);
+  rail.rotation.x = -Math.atan(0.3 / 0.8);
+  g.add(rail);
+  // two lamps flanking the foot of the stair, one halfway up
+  for (const [lx, lz, ly] of [[-1.9, -0.6, 0], [1.9, -0.6, 0], [-1.9, -8.8, 3.3]]) {
+    const lamp = makeLamp(theme);
+    lamp.position.set(lx, ly, lz);
+    lamp.scale.setScalar(0.85);
+    g.add(lamp);
+  }
+  // side walls the stair is cut between
+  for (const sx of [-2.9, 2.9]) {
+    const wall = new THREE.Mesh(boxGeo, cached('mat:stepWall', () =>
+      new THREE.MeshStandardMaterial({ color: 0xe0d6c2, roughness: 0.95 })));
+    wall.scale.set(0.7, 6.5, N * 0.85);
+    wall.position.set(sx, 3.2, -(N * 0.8) / 2);
+    wall.rotation.x = -0.12;
+    wall.castShadow = true;
+    g.add(wall);
+    // ivy tumbling over the wall
+    for (let i = 0; i < 7; i++) {
+      const iv = new THREE.Mesh(ballGeo, mats.ivy);
+      const s = 0.35 + Math.random() * 0.4;
+      iv.scale.set(s, s * 0.8, s * 1.3);
+      iv.position.set(sx - Math.sign(sx) * 0.3, 5.2 + Math.random() * 1.4 + i * 0.32, -1.5 - i * 2.4);
+      g.add(iv);
+    }
+  }
+  return g;
+}
+
+// A painter at work: easel, stool, a leaning stack of finished canvases.
+export function makeArtistPitch(theme) {
+  const g = new THREE.Group();
+  const easel = makeEasel();
+  easel.rotation.y = 0.5;
+  g.add(easel);
+  const stool = new THREE.Mesh(cached('geo:stool', () => new THREE.CylinderGeometry(0.22, 0.22, 0.1, 8)), mats.trunk);
+  stool.position.set(0.75, 0.62, -0.7);
+  g.add(stool);
+  for (const lz of [-0.12, 0.12]) {
+    const leg = new THREE.Mesh(cached('geo:stoolLeg', () => new THREE.CylinderGeometry(0.03, 0.03, 0.6, 5)), mats.black);
+    leg.position.set(0.75, 0.3, -0.7 + lz);
+    g.add(leg);
+  }
+  // finished canvases stacked against the easel
+  const stackMat = cached('mat:canvasStack', () =>
+    new THREE.MeshStandardMaterial({ color: 0xf2ece0, roughness: 0.9 }));
+  for (let i = 0; i < 3; i++) {
+    const c = new THREE.Mesh(boxGeo, i === 1 ? mats.leaf : stackMat);
+    c.scale.set(0.62, 0.48, 0.05);
+    c.position.set(-0.7 + i * 0.07, 0.3, 0.35 + i * 0.06);
+    c.rotation.z = 0.18;
+    g.add(c);
+  }
+  return g;
+}
+
+// Piazza Navona: a run of canvas-roofed market stalls edging the square.
+export function makeSquareStalls(theme, n = 3) {
+  const g = new THREE.Group();
+  const roofMat = cached('mat:stallRoof', () =>
+    new THREE.MeshStandardMaterial({ color: 0xf2ece0, roughness: 0.9 }));
+  const legGeo = cached('geo:stallLeg', () => new THREE.CylinderGeometry(0.045, 0.045, 2.3, 6));
+  for (let i = 0; i < n; i++) {
+    const z = -i * 3.4;
+    const roof = new THREE.Mesh(boxGeo, roofMat);
+    roof.scale.set(2.1, 0.09, 3.1);
+    roof.position.set(0, 2.35, z);
+    roof.castShadow = true;
+    g.add(roof);
+    const ridge = new THREE.Mesh(coneGeo, roofMat);
+    ridge.scale.set(1.5, 0.42, 2.2);
+    ridge.position.set(0, 2.55, z);
+    g.add(ridge);
+    for (const [lx, lz] of [[-0.9, -1.4], [0.9, -1.4], [-0.9, 1.4], [0.9, 1.4]]) {
+      const leg = new THREE.Mesh(legGeo, mats.black);
+      leg.position.set(lx, 1.15, z + lz);
+      g.add(leg);
+    }
+    const counter = new THREE.Mesh(boxGeo, mats.trunk);
+    counter.scale.set(1.9, 0.1, 2.7);
+    counter.position.set(0, 1.0, z);
+    g.add(counter);
+    // wares: framed prints and little masks
+    if (i % 2 === 0) {
+      const board = makeArtStall();
+      board.scale.setScalar(0.8);
+      board.position.set(-0.15, 0.25, z);
+      g.add(board);
+    } else {
+      for (let k = 0; k < 4; k++) {
+        const mask = new THREE.Mesh(ballGeo, k % 2 ? mats.gold : mats.white);
+        mask.scale.set(0.16, 0.2, 0.09);
+        mask.position.set(-0.5 + (k % 2) * 0.9, 1.2, z - 0.9 + ((k / 2) | 0) * 1.4);
+        g.add(mask);
+      }
+    }
+  }
+  return g;
+}
+
 // ---------- skyline cameo backdrops ----------
 // A flat canvas-drawn silhouette placed beyond the last chunk with fog
 // disabled — the haze is baked into the colors, so it always reads as a
 // distant landmark closing the vista.
+// Every city gets its own far horizon silhouette — the layer you still see on
+// a narrow portrait frame after the sidewalks have fallen outside the view.
+// Haze is baked into the colours (these materials ignore fog).
+function skylineTexture(theme) {
+  const fogC = theme.fog;
+  const dark = (f) => mixc(fogC, '#2c3454', f);
+  const light = (f) => mixc(fogC, '#ffffff', f);
+  return cached(`skyline:${theme.id}:${fogC}`, () => canvasTexture(1600, 320, (g) => {
+    g.clearRect(0, 0, 1600, 320);
+    const GY = 300, CX = 800;
+    const box = (x, w, h, f) => { g.fillStyle = dark(f); g.fillRect(x, GY - h, w, h); };
+
+    if (theme.id === 'nyc') {
+      // a wall of setback towers, spires and water tanks
+      const seed = [
+        [-760, 90, 120, .16], [-660, 70, 175, .2], [-580, 110, 130, .14],
+        [-450, 80, 215, .24], [-360, 60, 150, .17], [-290, 95, 255, .27],
+        [-180, 70, 185, .2], [-100, 120, 145, .15], [40, 85, 235, .26],
+        [140, 65, 165, .18], [215, 105, 125, .14], [330, 75, 205, .23],
+        [420, 90, 155, .17], [520, 70, 245, .28], [600, 110, 135, .15],
+        [720, 80, 190, .21],
+      ];
+      for (const [x, w, h, f] of seed) {
+        box(CX + x, w, h, f);
+        if (h > 200) {                       // stepped crown + mast
+          box(CX + x + w * 0.2, w * 0.6, h + 34, f + 0.04);
+          box(CX + x + w * 0.44, w * 0.12, h + 78, f + 0.06);
+        } else if (h > 160) {
+          box(CX + x + w * 0.3, w * 0.4, h + 20, f + 0.04);
+        } else if (w > 90) {                 // rooftop water tank
+          box(CX + x + w * 0.55, 16, h + 20, f + 0.05);
+        }
+      }
+      // a few lit window columns for depth
+      g.fillStyle = light(0.13);
+      for (let i = 0; i < 90; i++) {
+        const x = CX - 780 + Math.random() * 1560;
+        const y = GY - 30 - Math.random() * 190;
+        g.fillRect(x, y, 3, 6);
+      }
+    } else if (theme.id === 'paris') {
+      // uniform Haussmann roofline, chimney pots, the basilica on its hill,
+      // and the lattice tower far right
+      g.fillStyle = dark(0.14);
+      g.beginPath();                          // Montmartre hill
+      g.moveTo(CX - 620, GY);
+      g.quadraticCurveTo(CX - 330, GY - 118, CX - 40, GY);
+      g.fill();
+      const bx = CX - 330, by = GY - 96;      // basilica domes on the hill
+      g.fillStyle = light(0.4);
+      g.fillRect(bx - 46, by - 44, 92, 44);
+      g.beginPath(); g.arc(bx, by - 44, 46, Math.PI, 0); g.fill();
+      g.fillRect(bx - 6, by - 108, 12, 24);
+      g.beginPath(); g.arc(bx, by - 108, 8, Math.PI, 0); g.fill();
+      for (const sx of [-78, 78]) {
+        g.fillRect(bx + sx - 20, by - 26, 40, 26);
+        g.beginPath(); g.arc(bx + sx, by - 26, 20, Math.PI, 0); g.fill();
+      }
+      // continuous six-storey roofline with mansards
+      for (let x = CX - 800; x < CX + 800; x += 84) {
+        const h = 42 + ((x / 84) % 3) * 7;
+        box(x, 82, h, 0.3);
+        g.fillStyle = dark(0.42);             // mansard slope
+        g.beginPath();
+        g.moveTo(x + 4, GY - h); g.lineTo(x + 20, GY - h - 17);
+        g.lineTo(x + 62, GY - h - 17); g.lineTo(x + 78, GY - h);
+        g.fill();
+        for (const cx2 of [x + 14, x + 46, x + 70]) g.fillRect(cx2, GY - h - 25, 6, 9);
+      }
+      // lattice tower, right of centre
+      const tx = CX + 520;
+      g.fillStyle = dark(0.26);
+      g.beginPath();
+      g.moveTo(tx - 62, GY); g.lineTo(tx - 20, GY - 128);
+      g.lineTo(tx - 8, GY - 240); g.lineTo(tx + 8, GY - 240);
+      g.lineTo(tx + 20, GY - 128); g.lineTo(tx + 62, GY);
+      g.fill();
+      g.fillStyle = light(0.1);
+      g.beginPath();
+      g.moveTo(tx - 44, GY); g.lineTo(tx - 22, GY - 58);
+      g.lineTo(tx + 22, GY - 58); g.lineTo(tx + 44, GY); g.fill();
+      g.fillStyle = dark(0.26);
+      g.fillRect(tx - 30, GY - 132, 60, 9);
+      g.fillRect(tx - 20, GY - 196, 40, 7);
+    } else if (theme.id === 'london') {
+      // low brick roofline, a cathedral dome, a clock tower and two moderns
+      for (let x = CX - 800; x < CX + 800; x += 68) {
+        const h = 40 + ((x / 68) % 4) * 11;
+        box(x, 66, h, 0.17);
+        g.fillStyle = dark(0.27);
+        for (const cx2 of [x + 10, x + 44]) g.fillRect(cx2, GY - h - 14, 9, 14);
+      }
+      const dx = CX - 250;                    // cathedral dome + peristyle
+      g.fillStyle = dark(0.3);
+      g.fillRect(dx - 66, GY - 92, 132, 92);
+      g.fillRect(dx - 44, GY - 130, 88, 42);
+      g.beginPath();
+      g.moveTo(dx - 46, GY - 128);
+      g.quadraticCurveTo(dx, GY - 232, dx + 46, GY - 128);
+      g.fill();
+      g.fillRect(dx - 8, GY - 226, 16, 22);
+      g.beginPath(); g.arc(dx, GY - 226, 11, Math.PI, 0); g.fill();
+      for (const sx of [-92, 92]) {           // west towers
+        g.fillRect(dx + sx - 20, GY - 138, 40, 138);
+        g.fillRect(dx + sx - 24, GY - 150, 48, 14);
+      }
+      const cx3 = CX + 120;                   // clock tower
+      g.fillStyle = dark(0.34);
+      g.fillRect(cx3 - 20, GY - 196, 40, 196);
+      g.fillRect(cx3 - 25, GY - 214, 50, 22);
+      g.beginPath();
+      g.moveTo(cx3 - 23, GY - 214); g.lineTo(cx3, GY - 268); g.lineTo(cx3 + 23, GY - 214);
+      g.fill();
+      g.fillStyle = light(0.3);
+      g.beginPath(); g.arc(cx3, GY - 178, 12, 0, 7); g.fill();
+      g.fillStyle = dark(0.26);               // tapering glass sliver
+      g.beginPath();
+      g.moveTo(CX + 400, GY); g.lineTo(CX + 424, GY - 268);
+      g.lineTo(CX + 436, GY - 268); g.lineTo(CX + 464, GY);
+      g.fill();
+      g.beginPath();                          // rounded bullet tower
+      g.moveTo(CX + 560, GY);
+      g.bezierCurveTo(CX + 548, GY - 130, CX + 566, GY - 196, CX + 596, GY - 200);
+      g.bezierCurveTo(CX + 626, GY - 196, CX + 644, GY - 130, CX + 632, GY);
+      g.fill();
+    } else {
+      // Rome: dome after dome over a soft ridge, framed by umbrella pines
+      g.fillStyle = dark(0.12);
+      g.beginPath();
+      g.moveTo(CX - 800, GY);
+      g.quadraticCurveTo(CX - 300, GY - 76, CX + 200, GY - 30);
+      g.quadraticCurveTo(CX + 560, GY - 8, CX + 800, GY);
+      g.lineTo(CX + 800, GY); g.fill();
+      for (let x = CX - 780; x < CX + 780; x += 62) box(x, 60, 34 + ((x / 62) % 3) * 10, 0.16);
+      const domes = [[-430, 34, 0.24], [-150, 62, 0.3], [180, 40, 0.25], [430, 28, 0.2]];
+      for (const [ox, r, f] of domes) {
+        const x = CX + ox;
+        g.fillStyle = dark(f);
+        g.fillRect(x - r * 1.5, GY - r * 1.4, r * 3, r * 1.4);   // block below
+        g.fillRect(x - r, GY - r * 2.1, r * 2, r * 0.8);         // drum
+        g.beginPath();
+        g.moveTo(x - r, GY - r * 2.05);
+        g.quadraticCurveTo(x, GY - r * 4.2, x + r, GY - r * 2.05);
+        g.fill();
+        g.fillRect(x - r * 0.12, GY - r * 4.3, r * 0.24, r * 0.5);
+        g.beginPath(); g.arc(x, GY - r * 4.3, r * 0.17, Math.PI, 0); g.fill();
+      }
+      // umbrella pines: bare trunk, flat spreading canopy
+      for (const [ox, s] of [[-640, 1.1], [-540, 0.85], [-40, 0.95], [300, 1.15], [620, 0.9], [700, 1.0]]) {
+        const x = CX + ox, hT = 74 * s;
+        g.fillStyle = dark(0.3);
+        g.fillRect(x - 4 * s, GY - hT, 8 * s, hT);
+        g.beginPath();
+        g.ellipse(x, GY - hT - 12 * s, 46 * s, 20 * s, 0, 0, Math.PI * 2);
+        g.fill();
+        g.beginPath();
+        g.ellipse(x - 18 * s, GY - hT + 2 * s, 26 * s, 12 * s, 0, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+  }));
+}
+
 export function makeCameo(theme) {
-  if (!theme.cameo) return null;
+  const group = new THREE.Group();
+  // far city horizon (all streets)
+  const skyMat = new THREE.MeshBasicMaterial({
+    map: skylineTexture(theme), transparent: true, fog: false, depthWrite: false,
+  });
+  const skyPlane = new THREE.Mesh(new THREE.PlaneGeometry(800, 160), skyMat);
+  skyPlane.position.set(0, 70, -340);
+  skyPlane.renderOrder = -9.5;
+  group.add(skyPlane);
+  if (!theme.cameo) return group;
+
   const key = theme.cameo;
   const fogC = theme.fog;
   const dark = (f) => mixc(fogC, '#2c3454', f);
@@ -2208,29 +2870,76 @@ export function makeCameo(theme) {
       g.fillRect(bx - 130, GY - 180, 70, 180);
       g.fillRect(bx + 60, GY - 150, 80, 150);
     } else if (key === 'sacre') {
-      // white domes on the hill above the village
-      g.fillStyle = dark(0.22);           // the hill
+      // The white basilica crowning the hill — the thing you are running
+      // toward, so it is drawn big, bright and high-contrast.
+      g.fillStyle = dark(0.26);           // the hill
       g.beginPath();
-      g.moveTo(cx - 400, GY);
-      g.quadraticCurveTo(cx, GY - 150, cx + 400, GY);
+      g.moveTo(cx - 470, GY);
+      g.quadraticCurveTo(cx, GY - 190, cx + 470, GY);
       g.fill();
-      const by = GY - 128;
-      g.fillStyle = light(0.5);
-      // main dome
-      g.fillRect(cx - 55, by - 55, 110, 55);
-      g.beginPath(); g.arc(cx, by - 55, 55, Math.PI, 0); g.fill();
-      g.fillRect(cx - 7, by - 135, 14, 30);
-      g.beginPath(); g.arc(cx, by - 135, 9, Math.PI, 0); g.fill();
-      // side domes
-      for (const sx of [-95, 95]) {
-        g.fillRect(cx + sx - 24, by - 30, 48, 30);
-        g.beginPath(); g.arc(cx + sx, by - 30, 24, Math.PI, 0); g.fill();
+      g.fillStyle = mixc(fogC, '#b9ac96', 0.5);   // the long stair up the hill
+      g.beginPath();
+      g.moveTo(cx - 34, GY); g.lineTo(cx - 15, GY - 148);
+      g.lineTo(cx + 15, GY - 148); g.lineTo(cx + 34, GY); g.fill();
+      g.fillStyle = mixc(fogC, '#8e836f', 0.45);
+      for (let i = 0; i < 9; i++) g.fillRect(cx - 33 + i * 2, GY - 12 - i * 15, 66 - i * 4, 3);
+
+      const by = GY - 150;
+      const stone = light(0.72), shade = mixc(fogC, '#c9c2b4', 0.62);
+      // podium the church sits on
+      g.fillStyle = shade;
+      g.fillRect(cx - 150, by - 26, 300, 30);
+      g.fillStyle = stone;
+      // main dome: tall drum, ribbed ogee dome, lantern, cross
+      g.fillRect(cx - 62, by - 116, 124, 92);
+      g.fillStyle = shade;
+      for (let i = 0; i < 5; i++) g.fillRect(cx - 56 + i * 26, by - 110, 9, 80);
+      g.fillStyle = stone;
+      g.beginPath();
+      g.moveTo(cx - 66, by - 112);
+      g.bezierCurveTo(cx - 74, by - 200, cx - 26, by - 236, cx, by - 236);
+      g.bezierCurveTo(cx + 26, by - 236, cx + 74, by - 200, cx + 66, by - 112);
+      g.fill();
+      g.fillStyle = shade;
+      g.beginPath();
+      g.moveTo(cx + 22, by - 118);
+      g.bezierCurveTo(cx + 34, by - 196, cx + 22, by - 226, cx, by - 234);
+      g.bezierCurveTo(cx + 40, by - 228, cx + 70, by - 190, cx + 66, by - 112);
+      g.fill();
+      g.fillStyle = stone;
+      g.fillRect(cx - 15, by - 282, 30, 50);      // lantern
+      g.beginPath(); g.arc(cx, by - 282, 17, Math.PI, 0); g.fill();
+      g.fillRect(cx - 3, by - 322, 6, 24);        // cross
+      g.fillRect(cx - 13, by - 312, 26, 6);
+      // two side domes
+      for (const sx of [-124, 124]) {
+        g.fillRect(cx + sx - 40, by - 70, 80, 74);
+        g.beginPath();
+        g.moveTo(cx + sx - 42, by - 68);
+        g.bezierCurveTo(cx + sx - 46, by - 122, cx + sx - 16, by - 140, cx + sx, by - 140);
+        g.bezierCurveTo(cx + sx + 16, by - 140, cx + sx + 46, by - 122, cx + sx + 42, by - 68);
+        g.fill();
+        g.fillRect(cx + sx - 8, by - 168, 16, 30);
+        g.beginPath(); g.arc(cx + sx, by - 168, 10, Math.PI, 0); g.fill();
       }
-      // campanile
-      g.fillRect(cx + 165, by - 88, 30, 88);
+      // campanile off to the right
+      g.fillRect(cx + 214, by - 158, 42, 162);
+      g.fillStyle = shade;
+      g.fillRect(cx + 220, by - 130, 30, 46);
+      g.fillStyle = stone;
+      g.fillRect(cx + 208, by - 174, 58, 18);
       g.beginPath();
-      g.moveTo(cx + 162, by - 88); g.lineTo(cx + 180, by - 120); g.lineTo(cx + 198, by - 88);
+      g.moveTo(cx + 210, by - 172); g.lineTo(cx + 235, by - 216); g.lineTo(cx + 260, by - 172);
       g.fill();
+      // arcaded front
+      g.fillStyle = shade;
+      for (let i = 0; i < 5; i++) {
+        const ax = cx - 110 + i * 46;
+        g.beginPath();
+        g.moveTo(ax, by + 4); g.lineTo(ax, by - 12);
+        g.arc(ax + 16, by - 12, 16, Math.PI, 0);
+        g.lineTo(ax + 32, by + 4); g.fill();
+      }
     } else if (key === 'churchtwin') {
       // twin bell-tower church closing the narrow vista
       g.fillStyle = dark(0.4);
@@ -2307,10 +3016,9 @@ export function makeCameo(theme) {
   const mat = new THREE.MeshBasicMaterial({
     map: tex, transparent: true, fog: false, depthWrite: false,
   });
-  const plane = new THREE.Mesh(cached('geo:cameo', () => new THREE.PlaneGeometry(250, 97.6)), mat);
-  plane.position.set(0, 42.5, -268);
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(300, 117), mat);
+  plane.position.set(0, 48, -268);
   plane.renderOrder = -9;
-  const g = new THREE.Group();
-  g.add(plane);
-  return g;
+  group.add(plane);
+  return group;
 }
