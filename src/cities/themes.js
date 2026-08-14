@@ -99,7 +99,9 @@ export const CITIES = [
         storefront: ['#a02438', '#2d6b3f', '#1f4a8a', '#8a5a1e'],
         props: ['lamp_paris', 'easel', 'bistro'],
         ads: ['CABARET', 'LA PALETTE', 'BISTRO LUNE', 'CRÊPES'],
-        span: 'festoon', spanFreq: 0.45,
+        // low village rooflines: string the lights below the eaves, not at the
+        // 8.8m default, or they float free of the houses they hang from
+        span: 'festoon', spanFreq: 0.45, spanY: 7.4,
         cameo: 'sacre', lit: 0.2,
       },
     ],
@@ -127,13 +129,17 @@ export const CITIES = [
         palette: ['#d8d2c2', '#b4553c', '#cfc9b9', '#c26445', '#ddd7c7', '#b86a50'],
         props: ['lamp_london', 'beacon', 'phonebox', 'postbox'],
         ads: ['ASTOR & SONS', 'GRAND STORES', 'TEA & CO', 'MARLOW & CO'],
-        span: 'festoon', spanFreq: 0.95, lit: 0.16,
+        span: 'festoon', spanFreq: 0.6, lit: 0.16,
       },
       { // Abbey Road — leafy Georgian villas, THE zebra crossing, NW8 signs
         key: 'abbey', facade: 'georgian', zebra: true, parked: 'beetle',
         roadStyle: 'plain', fogDensity: 0.008,
         palette: ['#f2efe6', '#ece7da', '#b46848', '#f6f3ea', '#c07a58', '#efe9dc'],
-        props: ['lamp_london', 'planetree', 'streetsign', 'hedge'],
+        // no 'hedge' prop: every villa already gets a makeGardenWall (wall +
+        // hedge) on the building line, and the prop added a SECOND hedge 40cm
+        // in front of it — a double green wall running the length of the
+        // pavement, which crowded the near-left of the portrait frame.
+        props: ['lamp_london', 'planetree', 'streetsign'],
         secondRow: 0, lit: 0.1,
       },
       { // Piccadilly — dusk, curved stacked-LED corner, theatre glow, Eros
@@ -173,7 +179,11 @@ export const CITIES = [
         palette: ['#d9903f', '#c87f3a', '#e0a050', '#b06a34', '#d29a58', '#c4763a'],
         setback: 2.2, hBase: 17, hVar: 10, secondRow: 0,
         fogDensity: 0.0102,
-        props: ['lamp_rome'],
+        // Striped shop awnings and vertical boutique banners hung on the
+        // building line — the canyon was bare apart from lamps, and the only
+        // colour on it was a scatter of tiny painted signboards.
+        props: ['lamp_rome', 'awning', 'flagbanner', 'lamp_rome'],
+        storefront: ['#c4553a', '#2e7d4f', '#d8961e', '#1f4a8a', '#7a2f4e'],
         ads: ['MODA VIA', 'ORO FINO', 'GELATERIA', 'LIBRI'],
         cameo: 'churchtwin', lit: 0.16,
       },
@@ -196,7 +206,7 @@ export const CITIES = [
         mood: { sun: 0.6, hemi: 0.8, fill: 1.0 },
         props: ['lamp_rome', 'artstall', 'easel'],
         ads: ['ARTE', 'CAFFÈ AURORA', 'TRATTORIA SOLE', 'MASCHERE'],
-        span: 'string', spanFreq: 0.85,
+        span: 'string', spanFreq: 0.6,
         cameo: 'navona', lit: 0.5,
       },
     ],

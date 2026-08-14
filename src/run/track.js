@@ -17,13 +17,29 @@ const CHUNKS = 7;          // visible chunks ahead
 const ROAD_W = 8.6;
 
 // ---- overhead dressing, tuned for a 9:19.5 portrait frame ----
-// three.js FOV is vertical, so portrait keeps the same vertical framing but
-// loses two thirds of the horizontal view: anything spanning the road reads
-// much wider there. These heights keep spans clear of the vanishing point.
-const SPAN_Y = 7.9;        // festoon / string-light wire height
-const BANNER_Y = 10.0;     // road-spanning billboard centre
+// three.js FOV is vertical (62°), so portrait keeps the same vertical framing
+// but loses two thirds of the horizontal view: anything spanning the road
+// reads much wider there and a board that is a harmless strip in landscape
+// becomes a wall.
+//
+// The camera sits at (0, 5.2, 8.5) looking at (0, 2.2, -14): a 7.6° downward
+// pitch, which puts the horizon — and therefore the road's vanishing point —
+// at 39% from the top of the frame in EVERY aspect ratio. The top 20% of the
+// frame ends at 12.2° above horizontal (tan ≈ 0.217).
+//
+// Anything at a fixed height sinks toward that 39% line as it recedes, so no
+// single height can satisfy the rule at all distances. What works is a pair:
+// lift the board so it clears the top-20% line over the range where it is
+// large and dominant (roughly 20–40 m), and thin the cadence so the corridor
+// never queues up a picket fence of boards marching down onto the horizon.
+const SPAN_Y = 8.8;        // festoon / string-light wire height (t.spanY wins)
+const BANNER_Y = 14.6;     // road-spanning billboard centre
 const BANNER_W = 7.0;
-const BANNER_H = 1.8;
+const BANNER_H = 1.7;
+// board bottom = 13.75, i.e. 8.55 above the eye → inside the top 20% out to
+// 39 m, and still a clear 9% of frame height above the vanishing point at the
+// 80 m mark where fog has already eaten most of its contrast.
+const BANNER_GAP = 2;      // min chunks between two spanning boards
 
 // Obstacle materials are shared: the track recycles a chunk every few seconds
 // and would otherwise allocate a fresh material per barrier leg.
@@ -34,6 +50,10 @@ const OB = {
   beamStripe: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55 }),
   bannerPost: new THREE.MeshStandardMaterial({ color: 0x2a2a32, metalness: 0.5, roughness: 0.5 }),
 };
+// The spanning board used to stand on two masts planted at x ±4.1 — 20cm
+// inside the kerb, i.e. in the road. It now hangs from a truss that runs into
+// the buildings on both sides, which is both truer to Times Square and keeps
+// the running corridor completely clear of vertical clutter.
 const OB_GEO = {
   bar: new THREE.BoxGeometry(2.0, 0.9, 0.3),
   barStripe: new THREE.BoxGeometry(2.02, 0.28, 0.32),
@@ -41,7 +61,8 @@ const OB_GEO = {
   beam: new THREE.BoxGeometry(2.2, 0.45, 0.6),
   beamStripe: new THREE.BoxGeometry(2.22, 0.16, 0.62),
   post: new THREE.CylinderGeometry(0.07, 0.07, 3.2, 6),
-  bannerPost: new THREE.CylinderGeometry(0.12, 0.16, BANNER_Y + 1.2, 8),
+  bannerTruss: new THREE.BoxGeometry(17, 0.18, 0.18),
+  bannerHanger: new THREE.BoxGeometry(0.1, 0.7, 0.1),
 };
 for (const g of Object.values(OB_GEO)) SHARED_GEO.add(g);
 
@@ -67,6 +88,7 @@ export class Track {
     this.goal = 900 + (level - 1) * 350;   // meters to the monument
     this.coinSpin = 0;
     this.chunkCount = 0;           // drives set-piece cadence per street
+    this.lastBannerChunk = -99;    // spacing guard for road-spanning boards
 
     this.applyStreetMood(scene, theme);
     // one accent material for every barrier/beam on this street
@@ -355,24 +377,35 @@ export class Track {
       g.add(er);
     }
 
-    // Times Square: overhead banner billboards spanning the street. Sized and
-    // lifted so that in portrait the board sits above the vanishing point
-    // instead of walling off the road ahead.
-    if (t.banners && Math.random() < 0.75) {
+    // Times Square: overhead banner billboards spanning the street, slung from
+    // a truss that disappears into the buildings either side. Rationed to one
+    // every few chunks: seven live chunks at the old 75% put five boards in
+    // the corridor at once, and in portrait only the furthest one read — the
+    // one sitting right on the vanishing point.
+    if (t.banners && nChunk - this.lastBannerChunk >= BANNER_GAP && Math.random() < 0.34) {
+      this.lastBannerChunk = nChunk;
       const bz = -CHUNK_LEN * (0.3 + Math.random() * 0.5);
       const banner = makeBillboard(t, BANNER_W, BANNER_H);
       banner.position.set(0, BANNER_Y, bz);
       g.add(banner);
-      for (const px of [-BANNER_W / 2 - 0.6, BANNER_W / 2 + 0.6]) {
-        const post = new THREE.Mesh(OB_GEO.bannerPost, OB.bannerPost);
-        post.position.set(px, (BANNER_Y + 1.2) / 2, bz);
-        g.add(post);
+      const trussY = BANNER_Y + BANNER_H / 2 + 0.55;
+      const truss = new THREE.Mesh(OB_GEO.bannerTruss, OB.bannerPost);
+      truss.position.set(0, trussY, bz);
+      g.add(truss);
+      for (const hx of [-BANNER_W * 0.34, BANNER_W * 0.34]) {
+        const hang = new THREE.Mesh(OB_GEO.bannerHanger, OB.bannerPost);
+        hang.position.set(hx, trussY - 0.35, bz);
+        g.add(hang);
       }
     }
-    // festoons / string lights / bunting lines across the street
+    // festoons / string lights / bunting lines across the street. Thin wires
+    // block nothing, so they only need to stay off the vanishing point at
+    // close range — streets with a low roofline (Montmartre) set their own
+    // spanY so the lights still read as strung between the houses.
     if (t.span && Math.random() < (t.spanFreq ?? 0.75)) {
       const span = makeStreetSpan(t, ROAD_W + 4.5);
-      span.position.set(0, SPAN_Y + Math.random() * 0.5, -CHUNK_LEN * (0.2 + Math.random() * 0.6));
+      span.position.set(0, (t.spanY ?? SPAN_Y) + Math.random() * 0.4,
+        -CHUNK_LEN * (0.2 + Math.random() * 0.6));
       g.add(span);
     }
 

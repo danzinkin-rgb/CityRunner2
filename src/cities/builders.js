@@ -507,12 +507,26 @@ function paintOchreGround({ g, W, H, shopY, SHOP_H, theme }) {
     // warm interior slit
     g.fillStyle = '#ffd98a';
     g.fillRect(dx + dw * 0.42, shopY + SHOP_H * 0.5, dw * 0.16, SHOP_H * 0.5);
-    // tiny hanging boutique sign
+    // Hanging boutique sign. It used to be a bare coloured rectangle floating
+    // on the wall — at a grazing angle a row of those read as unexplained red
+    // blobs down the street. Now it hangs off a visible wrought-iron bracket
+    // with a gold border and a shadow, so it reads as signage.
     const col = pickR(shops);
+    const sx = dx + dw + 6, sy = shopY + SHOP_H * 0.26, sw = 20, sh = 13;
+    g.strokeStyle = '#2a1f14'; g.lineWidth = 2;      // bracket arm + hanger
+    g.beginPath();
+    g.moveTo(sx - 5, sy - 9); g.lineTo(sx + sw + 1, sy - 9);
+    g.moveTo(sx + 3, sy - 9); g.lineTo(sx + 3, sy);
+    g.moveTo(sx + sw - 3, sy - 9); g.lineTo(sx + sw - 3, sy);
+    g.stroke();
+    g.fillStyle = 'rgba(0,0,0,.22)';
+    g.fillRect(sx + 2, sy + 2, sw, sh);
     g.fillStyle = col;
-    g.fillRect(dx + dw + 4, shopY + SHOP_H * 0.28, 22, 14);
-    g.fillStyle = 'rgba(255,255,255,.9)';
-    g.fillRect(dx + dw + 7, shopY + SHOP_H * 0.28 + 5, 16, 4);
+    g.fillRect(sx, sy, sw, sh);
+    g.strokeStyle = 'rgba(240,222,178,.95)'; g.lineWidth = 1.5;
+    g.strokeRect(sx + 1.5, sy + 1.5, sw - 3, sh - 3);
+    g.fillStyle = 'rgba(255,248,232,.92)';
+    g.fillRect(sx + 4, sy + sh * 0.42, sw - 8, 3);
   }
 }
 
@@ -719,10 +733,16 @@ export function makeBuilding(theme, w, h, d, rng = Math.random, side = 0) {
     front.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
     group.add(front);
   }
-  // Oxford Street: columned department-store flagship front
-  if (theme.facade === 'deptstore' && side !== 0) {
-    const front = makeDeptFront(theme, Math.min(d - 0.3, 11));
-    front.position.set(-side * (w / 2 + 0.55), 0, 0);
+  // Oxford Street: columned department-store flagship front. Only some of the
+  // buildings get the giant order — every building carrying one produced an
+  // unbroken colonnade down both pavements, which at landscape's 94° horizontal
+  // FOV filled the near corners of the frame with white stone. Punctuating it
+  // with plainer shopfronts also matches the real street.
+  if (theme.facade === 'deptstore' && side !== 0 && rng() < 0.55) {
+    const front = makeDeptFront(theme, Math.min(d - 0.3, 8.6));
+    // 0.55 → 0.2: the front now sits tight against the building line rather
+    // than standing 35cm proud of it.
+    front.position.set(-side * (w / 2 + 0.2), 0, 0);
     front.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
     group.add(front);
   }
@@ -977,15 +997,18 @@ function makeDeptFront(theme, w) {
     base.position.set(cx, 0.55, 0.18);
     g.add(base);
   }
-  // entablature + cornice over the giant order
+  // Entablature + cornice over the giant order. Kept shallow (1.2 → 0.7 deep)
+  // and pulled back level with the columns: the old slab oversailed the
+  // pavement by 70cm at eye height and was the single heaviest thing in the
+  // near frame.
   const ent = new THREE.Mesh(boxGeo, stoneMat);
-  ent.scale.set(w + 0.6, 0.8, 1.2);
-  ent.position.set(0, 6.6, 0.1);
+  ent.scale.set(w + 0.5, 0.7, 0.7);
+  ent.position.set(0, 6.55, 0.02);
   ent.castShadow = true;
   g.add(ent);
   const cornice = new THREE.Mesh(boxGeo, stoneMat);
-  cornice.scale.set(w + 1.0, 0.3, 1.15);
-  cornice.position.set(0, 7.12, 0.15);
+  cornice.scale.set(w + 0.8, 0.26, 0.62);
+  cornice.position.set(0, 7.0, 0.06);
   g.add(cornice);
   // recessed lit display bays between the columns
   for (let i = 0; i < nB; i++) {
@@ -2636,9 +2659,24 @@ export function makeSquareStalls(theme, n = 3) {
 // Every city gets its own far horizon silhouette — the layer you still see on
 // a narrow portrait frame after the sidewalks have fallen outside the view.
 // Haze is baked into the colours (these materials ignore fog).
+// Each city's far horizon is a distinct silhouette — NYC's setback towers,
+// Paris's Haussmann roofline under Sacré-Cœur, London's dome/clock/glass
+// towers, Rome's domes and umbrella pines. They were being drawn only 12–34%
+// away from the fog colour, which made all four read as the same generic
+// haze; SIL_TINT gives each city its own silhouette hue and SIL_GAIN lifts the
+// contrast far enough to actually be legible through the fog.
+const SIL_TINT = {
+  nyc: '#243052',        // cool slate against the warm horizon
+  paris: '#5a6486',      // soft blue-grey slate roofs
+  london: '#33455e',     // sooty blue-grey
+  rome: '#6e4632',       // warm umber stone and pine
+};
+const SIL_GAIN = 1.6;
+const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
 function skylineTexture(theme) {
   const fogC = theme.fog;
-  const dark = (f) => mixc(fogC, '#2c3454', f);
+  const tint = SIL_TINT[theme.id] || '#2c3454';
+  const dark = (f) => mixc(fogC, tint, Math.min(SIL_MAX, f * SIL_GAIN));
   const light = (f) => mixc(fogC, '#ffffff', f);
   return cached(`skyline:${theme.id}:${fogC}`, () => canvasTexture(1600, 320, (g) => {
     g.clearRect(0, 0, 1600, 320);
@@ -2691,9 +2729,12 @@ function skylineTexture(theme) {
         g.fillRect(bx + sx - 20, by - 26, 40, 26);
         g.beginPath(); g.arc(bx + sx, by - 26, 20, Math.PI, 0); g.fill();
       }
-      // continuous six-storey roofline with mansards
+      // continuous six-storey roofline with mansards. The height cycled over
+      // only 3 values, which read as a row of identical dolls' houses; a
+      // 7-step cycle with the odd taller block breaks the repeat up.
       for (let x = CX - 800; x < CX + 800; x += 84) {
-        const h = 42 + ((x / 84) % 3) * 7;
+        const k = Math.abs(Math.round(x / 84)) % 7;
+        const h = 38 + k * 4 + (k === 3 ? 14 : 0);
         box(x, 82, h, 0.3);
         g.fillStyle = dark(0.42);             // mansard slope
         g.beginPath();
@@ -2746,8 +2787,10 @@ function skylineTexture(theme) {
       g.beginPath();
       g.moveTo(cx3 - 23, GY - 214); g.lineTo(cx3, GY - 268); g.lineTo(cx3 + 23, GY - 214);
       g.fill();
-      g.fillStyle = light(0.3);
-      g.beginPath(); g.arc(cx3, GY - 178, 12, 0, 7); g.fill();
+      // Clock face kept dim: the tower behind it is usually hidden by the
+      // street walls, so a bright disc floated in the gap like a moon.
+      g.fillStyle = light(0.14);
+      g.beginPath(); g.arc(cx3, GY - 178, 10, 0, 7); g.fill();
       g.fillStyle = dark(0.26);               // tapering glass sliver
       g.beginPath();
       g.moveTo(CX + 400, GY); g.lineTo(CX + 424, GY - 268);
@@ -2767,7 +2810,10 @@ function skylineTexture(theme) {
       g.quadraticCurveTo(CX + 560, GY - 8, CX + 800, GY);
       g.lineTo(CX + 800, GY); g.fill();
       for (let x = CX - 780; x < CX + 780; x += 62) box(x, 60, 34 + ((x / 62) % 3) * 10, 0.16);
-      const domes = [[-430, 34, 0.24], [-150, 62, 0.3], [180, 40, 0.25], [430, 28, 0.2]];
+      // Dome radii were set while the silhouette was invisible; at 0.5 world
+      // units per pixel r=62 built a 130m dome that read as an orange blob
+      // hanging over the rooftops. These are basilica-scale, not hill-scale.
+      const domes = [[-430, 22, 0.24], [-150, 38, 0.3], [180, 26, 0.25], [430, 18, 0.2]];
       for (const [ox, r, f] of domes) {
         const x = CX + ox;
         g.fillStyle = dark(f);
@@ -2780,8 +2826,9 @@ function skylineTexture(theme) {
         g.fillRect(x - r * 0.12, GY - r * 4.3, r * 0.24, r * 0.5);
         g.beginPath(); g.arc(x, GY - r * 4.3, r * 0.17, Math.PI, 0); g.fill();
       }
-      // umbrella pines: bare trunk, flat spreading canopy
-      for (const [ox, s] of [[-640, 1.1], [-540, 0.85], [-40, 0.95], [300, 1.15], [620, 0.9], [700, 1.0]]) {
+      // umbrella pines: bare trunk, flat spreading canopy (halved — a 74px
+      // trunk was a 37m pine, twice the height of the real thing)
+      for (const [ox, s] of [[-640, 0.58], [-540, 0.45], [-40, 0.5], [300, 0.6], [620, 0.47], [700, 0.53]]) {
         const x = CX + ox, hT = 74 * s;
         g.fillStyle = dark(0.3);
         g.fillRect(x - 4 * s, GY - hT, 8 * s, hT);
@@ -2812,9 +2859,15 @@ export function makeCameo(theme) {
   const fogC = theme.fog;
   const dark = (f) => mixc(fogC, '#2c3454', f);
   const light = (f) => mixc(fogC, '#ffffff', f);
-  const tex = cached(`cameo:${sKey(theme)}:${key}`, () => canvasTexture(1024, 400, (g) => {
-    g.clearRect(0, 0, 1024, 400);
-    const GY = 400;              // ground line at canvas bottom
+  // 400px tall was not enough headroom: Sacré-Cœur's dome, lantern and cross
+  // reach 322px above its podium at GY-150 and were being sliced flat off the
+  // top of the texture. The canvas grows upward only — GY stays pinned to the
+  // bottom edge and the plane's bottom edge stays at the same world height,
+  // so every other cameo is framed exactly as before.
+  const CAM_H = 520;
+  const tex = cached(`cameo:${sKey(theme)}:${key}`, () => canvasTexture(1024, CAM_H, (g) => {
+    g.clearRect(0, 0, 1024, CAM_H);
+    const GY = CAM_H;            // ground line at canvas bottom
     const cx = 512;
     if (key === 'arc') {
       // Arc de Triomphe silhouette centered down the avenue
@@ -2872,6 +2925,10 @@ export function makeCameo(theme) {
     } else if (key === 'sacre') {
       // The white basilica crowning the hill — the thing you are running
       // toward, so it is drawn big, bright and high-contrast.
+      // Scaled about its base: at full size the domes swallowed the top 44%
+      // of a portrait frame and pushed the street out of the composition.
+      g.save();
+      g.translate(cx, GY); g.scale(0.82, 0.82); g.translate(-cx, -GY);
       g.fillStyle = dark(0.26);           // the hill
       g.beginPath();
       g.moveTo(cx - 470, GY);
@@ -2885,7 +2942,10 @@ export function makeCameo(theme) {
       for (let i = 0; i < 9; i++) g.fillRect(cx - 33 + i * 2, GY - 12 - i * 15, 66 - i * 4, 3);
 
       const by = GY - 150;
-      const stone = light(0.72), shade = mixc(fogC, '#c9c2b4', 0.62);
+      // stone vs shade were 30 levels apart against a pale sky, so the ribs,
+      // side domes and campanile all melted into one white blob. Widening the
+      // gap is what makes it read as a basilica rather than a cloud.
+      const stone = light(0.66), shade = mixc(fogC, '#8f8578', 0.66);
       // podium the church sits on
       g.fillStyle = shade;
       g.fillRect(cx - 150, by - 26, 300, 30);
@@ -2940,6 +3000,7 @@ export function makeCameo(theme) {
         g.arc(ax + 16, by - 12, 16, Math.PI, 0);
         g.lineTo(ax + 32, by + 4); g.fill();
       }
+      g.restore();
     } else if (key === 'churchtwin') {
       // twin bell-tower church closing the narrow vista
       g.fillStyle = dark(0.4);
@@ -2959,8 +3020,25 @@ export function makeCameo(theme) {
         g.beginPath(); g.arc(cx + sx, GY - 205, 13, 0, 7); g.fill();
         g.fillStyle = dark(0.4);
       }
-      g.fillStyle = light(0.12);
-      g.beginPath(); g.arc(cx, GY - 120, 20, 0, 7); g.fill();
+      // Rose window as a dark opening in the stone. It used to be a pale disc
+      // — sitting dead centre at the end of a narrow vista and lit by ACES at
+      // 1.22 exposure, it read as a second sun; a pale ring read as a
+      // gunsight. A window is the darkest thing on a backlit facade, so this
+      // is also the correct value.
+      g.fillStyle = dark(0.62);
+      g.beginPath(); g.arc(cx, GY - 122, 13, 0, 7); g.fill();
+      g.fillStyle = dark(0.4);
+      g.beginPath(); g.arc(cx, GY - 122, 8, 0, 7); g.fill();
+      // and a legible facade for it to sit on
+      g.fillStyle = dark(0.34);
+      g.fillRect(cx - 94, GY - 150, 188, 6);
+      for (const dxr of [-56, 0, 56]) {
+        g.fillStyle = dark(0.6);
+        g.beginPath();
+        g.moveTo(cx + dxr - 17, GY); g.lineTo(cx + dxr - 17, GY - 46);
+        g.arc(cx + dxr, GY - 46, 17, Math.PI, 0);
+        g.lineTo(cx + dxr + 17, GY); g.fill();
+      }
     } else if (key === 'gate') {
       // ancient brick city gate spanning wide across the background
       g.fillStyle = mixc(fogC, '#6a3c2e', 0.42);
@@ -3016,8 +3094,10 @@ export function makeCameo(theme) {
   const mat = new THREE.MeshBasicMaterial({
     map: tex, transparent: true, fog: false, depthWrite: false,
   });
-  const plane = new THREE.Mesh(new THREE.PlaneGeometry(300, 117), mat);
-  plane.position.set(0, 48, -268);
+  // 0.2925 world units per texture pixel, bottom edge pinned at y = -10.5
+  const PPU = 0.2925;
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(300, CAM_H * PPU), mat);
+  plane.position.set(0, -10.5 + (CAM_H * PPU) / 2, -268);
   plane.renderOrder = -9;
   group.add(plane);
   return group;
