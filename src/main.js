@@ -152,15 +152,17 @@ function startPuzzle() {
     dressScene(scene, city());
     const lm = city().landmarks[level - 1];
     puzzle = new Puzzle(scene, camera, lm, level);
-    camera.position.set(0, 14, 30);
-    camera.lookAt(0, 6, 0);
+    cam.angle = 0; cam.vel = 0; cam.userActive = 0; cam.dragging = false;
+    const d0 = fitPuzzleCamera();
+    camera.position.set(0, d0 * 0.45, d0);
+    camera.lookAt(0, cam.lookY, 0);
     $('hud-timer').style.display = 'block';
     $('hud-city').textContent = `BUILD: ${LANDMARK_NAMES[lm].toUpperCase()}`;
     const SOUVENIR_ICON = { nyc: '❤️', paris: '🥐', london: '☎️', rome: '🏛️' };
     $('hud-coin-icon').textContent = SOUVENIR_ICON[city().id] || '🪙';
     state = 'puzzle';
     showScreen(null);
-    hint('Tap the glowing blocks — build from the ground up!');
+    hint('Tap the glowing blocks — drag to look around');
   });
 }
 
@@ -208,10 +210,83 @@ createInput((action, px, py) => {
     else if (action === 'right') player.moveLane(1, sfx);
     else if (action === 'up') player.jump(sfx);
     else if (action === 'down') player.roll(sfx);
-  } else if (state === 'puzzle' && action === 'tap' && px !== undefined) {
-    puzzle.tryPick((px / window.innerWidth) * 2 - 1, -(py / window.innerHeight) * 2 + 1);
+  }
+  // Puzzle picking is handled by the pointer/drag layer below, so that a drag
+  // to rotate the view is never mistaken for a tap to place a block.
+});
+
+// ---------- puzzle camera: drag to orbit, auto-fit to portrait ----------
+const cam = {
+  angle: 0,          // orbit angle in radians
+  vel: 0,            // inertia after a flick
+  userActive: 0,     // seconds since the player last dragged
+  dragging: false,
+  moved: false,
+  lastX: 0, downX: 0, downY: 0,
+  dist: 30, lookY: 6,
+};
+
+// Fit the camera to whatever is actually on the plaza, rather than assuming a
+// distance. On a portrait phone the horizontal field of view is narrow, and a
+// fixed distance left most scattered pieces off-screen and unreachable.
+function fitPuzzleCamera() {
+  let radius = 12, height = 14;
+  if (puzzle && puzzle.items) {
+    for (const it of puzzle.items) {
+      const p = it.placed ? { x: it.def.p[0], y: it.def.p[1], z: it.def.p[2] } : it.mesh.position;
+      radius = Math.max(radius, Math.hypot(p.x, p.z) + 2);
+      height = Math.max(height, p.y + 2);
+    }
+  }
+  const vHalf = THREE.MathUtils.degToRad(camera.fov) / 2;
+  const hHalf = Math.atan(Math.tan(vHalf) * camera.aspect);
+  // Distance needed to contain the scene horizontally and vertically, with a
+  // small margin so nothing sits flush against the frame edge.
+  const dH = radius / Math.tan(hHalf);
+  const dV = (height * 0.62) / Math.tan(vHalf);
+  // Clamped: beyond ~62 the monument becomes an unreadable speck and the
+  // blocks get hard to tap. If the fit wants more than this, the scatter is
+  // too wide — pieces past the clamp are still reachable by dragging.
+  cam.dist = THREE.MathUtils.clamp(Math.max(dH, dV) * 1.08, 26, 62);
+  cam.lookY = Math.min(8, height * 0.36);
+  return cam.dist;
+}
+
+const canvasEl = renderer.domElement;
+canvasEl.style.touchAction = 'none';   // let us own drag gestures
+
+canvasEl.addEventListener('pointerdown', (e) => {
+  if (state !== 'puzzle') return;
+  cam.dragging = true;
+  cam.moved = false;
+  cam.lastX = e.clientX;
+  cam.downX = e.clientX;
+  cam.downY = e.clientY;
+  cam.vel = 0;
+  canvasEl.setPointerCapture(e.pointerId);
+});
+
+canvasEl.addEventListener('pointermove', (e) => {
+  if (!cam.dragging || state !== 'puzzle') return;
+  const dx = e.clientX - cam.lastX;
+  cam.lastX = e.clientX;
+  cam.angle -= dx * 0.006;
+  cam.vel = -dx * 0.006 * 0.3;   // gentle flick carry, not a spin
+  cam.userActive = 0;
+  if (Math.hypot(e.clientX - cam.downX, e.clientY - cam.downY) > 10) cam.moved = true;
+});
+
+canvasEl.addEventListener('pointerup', (e) => {
+  if (state !== 'puzzle') { cam.dragging = false; return; }
+  const wasDrag = cam.moved;
+  cam.dragging = false;
+  if (!wasDrag) {
+    // A clean tap — place a block.
+    puzzle.tryPick((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
   }
 });
+
+canvasEl.addEventListener('pointercancel', () => { cam.dragging = false; });
 
 $('btn-play').onclick = () => { cityIdx = 0; level = Math.min(3, (save.stars.nyc || 0) + 1); startRun(); };
 $('btn-build').onclick = () => startPuzzle();
@@ -312,10 +387,17 @@ function frame() {
     $('hud-progress').style.width = `${track.progress() * 100}%`;
   } else if (state === 'puzzle') {
     puzzle.update(dt);
-    // slow orbit
-    const a = Math.sin(clock.elapsedTime * 0.1) * 0.35;
-    camera.position.set(Math.sin(a) * 30, 15, Math.cos(a) * 30);
-    camera.lookAt(0, 6, 0);
+    // Player-controlled orbit with flick inertia; drifts gently on its own
+    // only after a few idle seconds so the scene never feels frozen.
+    cam.userActive += dt;
+    if (!cam.dragging) {
+      cam.angle += cam.vel;
+      cam.vel *= 0.88;
+      if (cam.userActive > 4) cam.angle += dt * 0.06;
+    }
+    const dist = cam.dist || fitPuzzleCamera();
+    camera.position.set(Math.sin(cam.angle) * dist, dist * 0.45, Math.cos(cam.angle) * dist);
+    camera.lookAt(0, cam.lookY || 6, 0);
     const tl = Math.ceil(puzzle.time);
     $('hud-timer').textContent = tl;
     $('hud-timer').classList.toggle('low', tl <= 10);
@@ -342,6 +424,13 @@ if (q.get('view')) {
   const ci = CITIES.findIndex((c) => c.id === (q.get('city') || 'nyc'));
   cityIdx = ci >= 0 ? ci : 0;
   level = Math.min(3, Math.max(1, +(q.get('level') || 1)));
+  // Debug handle for automated review only (never exposed in normal play).
+  window.__cr = {
+    get puzzle() { return puzzle; },
+    get camera() { return camera; },
+    get state() { return state; },
+    get cam() { return cam; },
+  };
   if (q.get('view') === 'puzzle') startPuzzle();
   else startRun();
   // &goal=120 shortens the run for automated review of the facts screen
