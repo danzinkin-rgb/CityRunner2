@@ -4,6 +4,8 @@ import { createInput } from './core/input.js';
 import { sfx, startMusic, stopMusic } from './core/audio.js';
 import { CITIES, LANDMARK_NAMES } from './cities/themes.js';
 import { STREET_FACTS, MONUMENT_FACTS } from './facts.js';
+import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
+import { startSession, submit } from './core/scores.js';
 import { Player } from './run/player.js';
 import { Track } from './run/track.js';
 import { Puzzle } from './puzzle/puzzle.js';
@@ -59,6 +61,8 @@ function buildCitySelect() {
   });
   const stats = document.getElementById('menu-stats');
   if (stats) stats.textContent = `BEST ${Math.round(save.best)}   ·   ${save.coins} SOUVENIRS BANKED`;
+  const nameEl = document.getElementById('menu-name');
+  if (nameEl) nameEl.textContent = getIdentity().name;
 }
 
 function doFade(fn) {
@@ -81,6 +85,7 @@ function startRun() {
     $('hud-timer').style.display = 'none';
     const SOUVENIR_ICON = { nyc: '❤️', paris: '🥐', london: '☎️', rome: '🏛️' };
     $('hud-coin-icon').textContent = SOUVENIR_ICON[city().id] || '🪙';
+    startSession('run', city().id, level, 0);
     state = 'run';
     showScreen(null);
     hint('⬅️➡️ move · ⬆️ jump · ⬇️ roll — or swipe');
@@ -114,6 +119,7 @@ function crash() {
   save.best = Math.max(save.best, score);
   save.coins += coins;
   persist();
+  submit(score);   // validated + recorded locally; ignores its own failures
   setTimeout(() => {
     $('over-score').textContent = Math.round(score);
     $('over-coins').textContent = coins;
@@ -167,6 +173,7 @@ function finishPuzzle(won) {
     save.best = Math.max(save.best, score);
     save.coins += coins;
     persist();
+    submit(score);
     // Let the celebration play out un-dimmed before the modal appears.
     setTimeout(() => {
       $('pw-name').textContent = LANDMARK_NAMES[lm];
@@ -184,7 +191,9 @@ function finishPuzzle(won) {
     }, 4300);
     state = 'pwin-wait';
   } else {
+    save.best = Math.max(save.best, score);
     save.coins += coins; persist();
+    submit(score);          // the run still counts even if the puzzle timed out
     $('over-score').textContent = Math.round(score);
     $('over-coins').textContent = coins;
     showScreen('over');
@@ -206,6 +215,17 @@ createInput((action, px, py) => {
 
 $('btn-play').onclick = () => { cityIdx = 0; level = Math.min(3, (save.stars.nyc || 0) + 1); startRun(); };
 $('btn-build').onclick = () => startPuzzle();
+
+// ---------- identity controls (privacy: reroll + erase are user rights) ----------
+$('btn-reroll').onclick = () => { rerollName(); buildCitySelect(); };
+$('btn-erase').onclick = () => {
+  if (!confirm('Erase your nickname, progress and scores from this device?\n\nThis is immediate and cannot be undone.')) return;
+  eraseAllData();
+  save.stars = {}; save.coins = 0; save.best = 0;
+  persist();
+  buildCitySelect();
+  alert('Erased. A fresh anonymous profile has been created.');
+};
 
 // ---------- pause ----------
 let pausedFrom = null;

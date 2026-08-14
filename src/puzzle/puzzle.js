@@ -19,12 +19,24 @@ const CITY_OF = {
 // scene with a warm sunset key — so all four plazas are pushed well into cool
 // blue-grey. They have to be over-corrected: a "neutral" hex reads tan once
 // the warm sun and hemi light hit it.
-// `sil` is the distant-skyline silhouette hue (drawn unfogged, see buildSkyline).
+// These hexes render considerably lighter than they look in source: the warm
+// sun + hemi + ACES exposure lift them a long way. Paris and London are pushed
+// darkest because their heroes (the pale Louvre wings, the near-white London
+// Eye) have the least value of their own to separate with.
 const PLAZA = {
-  nyc: { stone: '#767e8e', dark: '#59606e', trim: '#9aa3b4', ground: '#343945', sky: '#2a3450', sil: '#4d5877', win: '#ffd98a' },
-  paris: { stone: '#9aa2b2', dark: '#7a8292', trim: '#c3cad8', ground: '#4a4f5e', sky: '#3e466e', sil: '#6d6c9a', win: '#ffe6b0' },
-  london: { stone: '#6e7b8c', dark: '#525f70', trim: '#9db0c4', ground: '#39414c', sky: '#2c3348', sil: '#4b5468', win: '#ffedbe' },
-  rome: { stone: '#6e7d84', dark: '#54646c', trim: '#a3b6bc', ground: '#38423f', sky: '#4c3e56', sil: '#655a78', win: '#ffdda0' },
+  nyc: { stone: '#6b7383', dark: '#4e5563', trim: '#8f98a9', ground: '#2f3440', sky: '#2a3450' },
+  paris: { stone: '#7a8394', dark: '#5e6678', trim: '#a3abbc', ground: '#3c4150', sky: '#3e466e' },
+  london: { stone: '#5a6675', dark: '#434e5c', trim: '#8496a8', ground: '#2f3640', sky: '#2c3348' },
+  rome: { stone: '#63737a', dark: '#4a5960', trim: '#95a8ae', ground: '#323b39', sky: '#4c3e56' },
+};
+
+// Painted-panorama palette. Near layer is the darker, more saturated band the
+// eye reads as "the next few streets"; far is the hazier ridge behind it.
+const SKYPAL = {
+  nyc: { near: '#2c3350', far: '#465072', trim: '#3e4768', roof: '#23293d', win: '255,214,150', accent: '#6d7799' },
+  paris: { near: '#4f4c6e', far: '#7c7999', trim: '#726f92', roof: '#38364f', win: '255,228,176', accent: '#d8d2c6' },
+  london: { near: '#3b2b2d', far: '#565b6e', trim: '#37414f', roof: '#26262f', win: '255,236,192', accent: '#8f95a6' },
+  rome: { near: '#4a3a30', far: '#6d6055', trim: '#6b4e3a', roof: '#5c3324', win: '255,214,150', accent: '#cfc4b0' },
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 
@@ -442,27 +454,378 @@ const glowSpriteTex = () => cachedTex('glowsprite', 128, 128, (g) => {
   g.fillStyle = r; g.fillRect(0, 0, 128, 128);
 });
 
-// lit-window texture for the distant skyline silhouettes — window rhythm
-// varies per city (NYC tower grids, Paris 6-storey rows, Rome sparse warm,
-// London mixed brick)
-function skylineTex(cityId) {
-  const P = PLAZA[cityId];
-  const cfg = {
-    nyc: { cols: 10, rows: 22, p: 0.24, w: 5, h: 6, col: '255,220,150' },
-    paris: { cols: 7, rows: 6, p: 0.55, w: 8, h: 16, col: '255,226,170' },
-    london: { cols: 8, rows: 14, p: 0.3, w: 7, h: 9, col: '255,236,190' },
-    rome: { cols: 6, rows: 8, p: 0.3, w: 9, h: 13, col: '255,214,150' },
-  }[cityId] || { cols: 10, rows: 22, p: 0.24, w: 5, h: 6, col: '255,220,150' };
-  return cachedTex(`skyline3|${cityId}`, 128, 256, (g, W, H) => {
-    g.fillStyle = shade(P.sil, -0.08); g.fillRect(0, 0, W, H);
-    const cw = W / cfg.cols, chh = H / cfg.rows;
-    for (let i = 0; i < cfg.cols; i++) for (let j = 0; j < cfg.rows; j++) {
-      if (dRand(i, j) < cfg.p) {
-        g.fillStyle = `rgba(${cfg.col},${0.35 + dRand(j, i) * 0.5})`;
-        g.fillRect(i * cw + (cw - cfg.w) / 2, j * chh + (chh - cfg.h) / 2, cfg.w, cfg.h);
-      }
+// ============================================================
+// PAINTED SKYLINE PANORAMA
+// The old backdrop was a ring of unlit boxes. Because they were drawn with
+// fog disabled while the ground under them was ~70% fogged, they read as
+// crisp navy cutouts pasted onto a beige void — the "floating slabs" problem.
+// This replaces the whole ring with one painted cylinder, which lets every
+// depth cue be authored directly: two layers with different haze, roofs that
+// belong to their city, and a ground skirt tinted to the exact colour the
+// fogged plaza floor reaches at the panorama's radius, so the join is seamless.
+// ============================================================
+const PANO_R = 130;                                  // cylinder radius, world units
+const PANO_W = 4096, PANO_H = 1024;
+const PANO_U = PANO_W / (2 * Math.PI * PANO_R);      // ≈5.01 px per world unit
+const PANO_HOR = 760;                                // horizon scanline in the texture
+const PANO_HT = PANO_H / PANO_U;                     // cylinder height in world units
+
+// a scatter of lit windows inside a facade rect (all args in px)
+function panoWindows(g, x, y, w, h, seed, o) {
+  const cw = o.cw || 4, ch = o.ch || 6, gx = o.gx || 6, gy = o.gy || 7;
+  const cols = Math.floor((w + gx) / (cw + gx));
+  const rows = Math.floor((h + gy) / (ch + gy));
+  if (cols < 1 || rows < 1) return;
+  const ox = x + (w - (cols * (cw + gx) - gx)) / 2;
+  for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
+    if (dRand(seed * 3.7 + i, j * 1.9 + 2) > (o.p || 0.34)) continue;
+    g.fillStyle = `rgba(${o.win},${0.4 + dRand(i + seed, j * 2) * 0.5})`;
+    g.fillRect(ox + i * (cw + gx), y + j * (ch + gy), cw, ch);
+  }
+}
+
+// a ribbed church dome with drum and lantern
+function panoDome(g, cx, baseY, r, cLight, cDark) {
+  g.fillStyle = cDark;
+  g.fillRect(cx - r * 1.02, baseY - r * 0.62, r * 2.04, r * 0.7);
+  g.fillStyle = cLight;
+  g.beginPath();
+  g.moveTo(cx - r, baseY - r * 0.55);
+  g.bezierCurveTo(cx - r, baseY - r * 1.5, cx - r * 0.44, baseY - r * 1.86, cx, baseY - r * 1.9);
+  g.bezierCurveTo(cx + r * 0.44, baseY - r * 1.86, cx + r, baseY - r * 1.5, cx + r, baseY - r * 0.55);
+  g.closePath(); g.fill();
+  g.strokeStyle = 'rgba(0,0,0,0.14)'; g.lineWidth = Math.max(1, r * 0.05);
+  for (const t of [-0.6, -0.24, 0.24, 0.6]) {
+    g.beginPath();
+    g.moveTo(cx + r * t, baseY - r * 0.55);
+    g.quadraticCurveTo(cx + r * t * 0.72, baseY - r * 1.5, cx + r * t * 0.1, baseY - r * 1.88);
+    g.stroke();
+  }
+  g.fillStyle = cLight;
+  g.fillRect(cx - r * 0.2, baseY - r * 2.4, r * 0.4, r * 0.55);   // lantern
+  g.fillRect(cx - r * 0.06, baseY - r * 2.72, r * 0.12, r * 0.34);
+}
+
+// square bell tower with belfry openings and a pyramid cap
+function panoCampanile(g, cx, baseY, w, h, cBody, cRoof, win) {
+  g.fillStyle = cBody; g.fillRect(cx - w / 2, baseY - h, w, h + 10);
+  g.fillStyle = 'rgba(0,0,0,0.14)'; g.fillRect(cx + w * 0.16, baseY - h, w * 0.34, h + 10);
+  g.fillStyle = `rgba(${win},0.5)`;
+  for (let k = 0; k < 3; k++) {
+    g.fillRect(cx - w * 0.3, baseY - h + h * (0.12 + k * 0.22), w * 0.6, h * 0.12);
+  }
+  g.fillStyle = cRoof;
+  g.beginPath();
+  g.moveTo(cx - w * 0.66, baseY - h); g.lineTo(cx + w * 0.66, baseY - h);
+  g.lineTo(cx, baseY - h - w * 1.15); g.closePath(); g.fill();
+}
+
+// Roman umbrella pine — the flat-topped canopy is the whole point
+function panoPine(g, cx, baseY, s, col) {
+  g.fillStyle = col;
+  g.beginPath();
+  g.moveTo(cx - s * 0.05, baseY + 4);
+  g.quadraticCurveTo(cx - s * 0.02, baseY - s * 0.5, cx - s * 0.03, baseY - s * 0.78);
+  g.lineTo(cx + s * 0.05, baseY - s * 0.78);
+  g.quadraticCurveTo(cx + s * 0.05, baseY - s * 0.5, cx + s * 0.08, baseY + 4);
+  g.closePath(); g.fill();
+  g.beginPath(); g.ellipse(cx, baseY - s * 0.85, s * 0.46, s * 0.17, 0, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.ellipse(cx - s * 0.24, baseY - s * 0.75, s * 0.2, s * 0.1, 0, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.ellipse(cx + s * 0.26, baseY - s * 0.77, s * 0.18, s * 0.09, 0, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.ellipse(cx + s * 0.04, baseY - s * 0.97, s * 0.24, s * 0.1, 0, 0, Math.PI * 2); g.fill();
+}
+
+// tapering faceted spike with an open, broken crown
+function panoShard(g, cx, baseY, w, h, col, win) {
+  const facets = [-0.5, -0.15, 0.18, 0.5];
+  const tint = ['rgba(255,255,255,0)', 'rgba(255,255,255,0.10)', 'rgba(0,0,0,0.14)'];
+  for (let f = 0; f < 3; f++) {
+    const x0 = cx + w * facets[f], x1 = cx + w * facets[f + 1];
+    g.fillStyle = col;
+    g.beginPath();
+    g.moveTo(x0, baseY + 6); g.lineTo(x1, baseY + 6);
+    g.lineTo(cx + w * facets[f + 1] * 0.08, baseY - h);
+    g.lineTo(cx + w * facets[f] * 0.08, baseY - h);
+    g.closePath(); g.fill();
+    g.fillStyle = tint[f]; g.fill();
+  }
+  // floor bands thinning toward the tip
+  g.strokeStyle = `rgba(${win},0.22)`; g.lineWidth = 1.5;
+  for (let k = 1; k < 22; k++) {
+    const t = k / 22, yy = baseY - h * t;
+    const hw = w * 0.5 * (1 - t * 0.92);
+    g.beginPath(); g.moveTo(cx - hw, yy); g.lineTo(cx + hw, yy); g.stroke();
+  }
+  // the splintered open spire
+  g.fillStyle = col;
+  for (let k = 0; k < 4; k++) {
+    const sx = cx + (k - 1.5) * w * 0.045;
+    g.fillRect(sx, baseY - h - 4 - dRand(k, 3) * 16, 2.4, 20);
+  }
+}
+
+// bullet-profile tower with a diagrid skin
+function panoGherkin(g, cx, baseY, w, h, col, win) {
+  const body = () => {
+    g.beginPath();
+    g.moveTo(cx - w * 0.32, baseY + 6);
+    g.bezierCurveTo(cx - w * 0.54, baseY - h * 0.42, cx - w * 0.48, baseY - h * 0.85, cx, baseY - h);
+    g.bezierCurveTo(cx + w * 0.48, baseY - h * 0.85, cx + w * 0.54, baseY - h * 0.42, cx + w * 0.32, baseY + 6);
+    g.closePath();
+  };
+  g.fillStyle = col; body(); g.fill();
+  g.save(); body(); g.clip();
+  g.strokeStyle = `rgba(${win},0.20)`; g.lineWidth = 2;
+  for (let k = -8; k < 14; k++) {
+    g.beginPath();
+    g.moveTo(cx - w + k * w * 0.18, baseY + 8); g.lineTo(cx - w + k * w * 0.18 + h * 0.5, baseY - h - 8);
+    g.moveTo(cx + w - k * w * 0.18, baseY + 8); g.lineTo(cx + w - k * w * 0.18 - h * 0.5, baseY - h - 8);
+    g.stroke();
+  }
+  g.fillStyle = 'rgba(0,0,0,0.16)';
+  g.fillRect(cx + w * 0.14, baseY - h, w * 0.5, h + 10);
+  g.restore();
+  g.fillStyle = `rgba(${win},0.4)`;
+  g.beginPath(); g.ellipse(cx, baseY - h + 6, w * 0.08, w * 0.06, 0, 0, Math.PI * 2); g.fill();
+}
+
+function panoTex(cityId, P, fogHex, fogF) {
+  const S = SKYPAL[cityId] || SKYPAL.nyc;
+  const c = document.createElement('canvas');
+  c.width = PANO_W; c.height = PANO_H;
+  const g = c.getContext('2d');
+  const FOG = new THREE.Color(fogHex);
+  // haze a hue toward the scene's fog colour by `t` — this is baked because
+  // real three.js fog flattens all four cities to the same beige at 130 units
+  const hz = (hex, t) => `#${new THREE.Color(hex).lerp(FOG, Math.max(0, Math.min(0.96, t))).getHexString()}`;
+  const U = PANO_U, HOR = PANO_HOR, W = PANO_W;
+  // Haze budget. These are deliberately far below the physical fog factor
+  // (~0.72 at this radius): the two source-atop washes below stack on top of
+  // them, and at full strength the whole backdrop bleached to the sky colour.
+  const FAR = fogF * 0.80, NEAR = fogF * 0.24;
+  const win = S.win;
+
+  // ---- far layer: hazier, bases a touch above the horizon so they sit back
+  const farCol = hz(S.far, FAR);
+  const farRow = (minH, maxH, minW, maxW, gapMin, gapMax, seed, cap) => {
+    let x = -80, i = 0;
+    while (x < W + 90) {
+      const bw = (minW + dRand(i, seed) * (maxW - minW)) * U;
+      const bh = (minH + dRand(i, seed + 1) * (maxH - minH)) * U;
+      g.fillStyle = farCol;
+      g.fillRect(x, HOR - 6 - bh, bw, bh + 8);
+      if (cap) cap(x, HOR - 6 - bh, bw, bh, i);
+      x += bw + (gapMin + dRand(i, seed + 2) * (gapMax - gapMin)) * U;
+      i++;
     }
-  });
+  };
+
+  if (cityId === 'paris') {
+    farRow(9, 15, 14, 26, 1, 5, 21, (x, y, bw) => {
+      g.fillStyle = hz(S.roof, FAR + 0.04);
+      g.beginPath();
+      g.moveTo(x, y); g.lineTo(x + bw, y);
+      g.lineTo(x + bw * 0.86, y - 9); g.lineTo(x + bw * 0.14, y - 9);
+      g.closePath(); g.fill();
+    });
+    // Sacré-Cœur, pale travertine on its distant hill
+    const sx = W * 0.60, pale = hz(S.accent, FAR * 0.86), paleD = hz(S.accent, FAR * 0.98);
+    g.fillStyle = hz(S.far, FAR + 0.04);
+    g.beginPath(); g.ellipse(sx, HOR + 8, 460, 66, 0, Math.PI, 0); g.fill();
+    g.fillStyle = pale;
+    g.fillRect(sx - 62, HOR - 88, 124, 50);
+    panoDome(g, sx, HOR - 88, 31, pale, paleD);
+    panoDome(g, sx - 72, HOR - 74, 14, pale, paleD);
+    panoDome(g, sx + 72, HOR - 74, 14, pale, paleD);
+  } else if (cityId === 'rome') {
+    farRow(6, 11, 14, 26, 2, 7, 31);
+    const sx = W * 0.34, pale = hz(S.accent, FAR * 0.7);
+    g.fillStyle = pale; g.fillRect(sx - 74, HOR - 84, 148, 90);
+    panoDome(g, sx, HOR - 84, 52, pale, hz(S.accent, FAR * 0.85));
+  } else if (cityId === 'london') {
+    farRow(8, 20, 12, 24, 2, 6, 41);
+    const sx = W * 0.78, pale = hz(S.accent, FAR * 0.74);   // St Paul's
+    g.fillStyle = pale; g.fillRect(sx - 62, HOR - 66, 124, 72);
+    panoDome(g, sx, HOR - 66, 42, pale, hz(S.accent, FAR * 0.88));
+  } else {
+    farRow(20, 46, 10, 22, 0.5, 4, 51, (x, y, bw, bh, i) => {
+      if (dRand(i, 6) > 0.7) {
+        g.fillStyle = farCol;
+        g.fillRect(x + bw * 0.44, y - 30 - dRand(i, 7) * 26, 5, 34);
+      }
+    });
+  }
+
+  // ---- haze wash: only over what is already painted, so the sky stays clear
+  g.globalCompositeOperation = 'source-atop';
+  const fr = Math.round(FOG.r * 255), fgc = Math.round(FOG.g * 255), fb = Math.round(FOG.b * 255);
+  let hg = g.createLinearGradient(0, HOR - 150, 0, HOR + 10);
+  hg.addColorStop(0, `rgba(${fr},${fgc},${fb},0)`);
+  hg.addColorStop(1, `rgba(${fr},${fgc},${fb},0.45)`);
+  g.fillStyle = hg; g.fillRect(0, 0, W, PANO_H);
+  g.globalCompositeOperation = 'source-over';
+
+  // ---- near layer: darker, more saturated, bases overlapping the horizon
+  const nearCol = hz(S.near, NEAR);
+  const trimCol = hz(S.trim, NEAR * 0.86);
+  const roofCol = hz(S.roof, NEAR * 0.9);
+  const shade1 = 'rgba(0,0,0,0.13)';
+
+  if (cityId === 'paris') {
+    // Haussmann: 6 storeys of ashlar, a continuous cornice, a 45° zinc mansard
+    let x = -60, i = 0;
+    while (x < W + 70) {
+      // every seventh plot is a boulevard: a gap the sky shows through, which
+      // is what stops the row reading as one continuous wall
+      if (i % 7 === 5) { x += (7 + dRand(i, 8) * 9) * U; i++; continue; }
+      const bw = (15 + dRand(i, 1) * 13) * U;
+      // corner blocks and the odd church run taller than the standard six storeys
+      const tall = i % 5 === 2 ? 5.5 : i % 3 === 1 ? 2.2 : 0;
+      const bh = (9.5 + tall + dRand(i, 2) * 4.6) * U;
+      const y = HOR + 8 - bh;
+      g.fillStyle = nearCol; g.fillRect(x, y, bw, bh + 16);
+      g.fillStyle = shade1; g.fillRect(x + bw * 0.74, y, bw * 0.26, bh + 16);
+      g.fillStyle = trimCol;
+      g.fillRect(x, y + bh * 0.30, bw, 3);            // 2nd-floor balcony run
+      g.fillRect(x, y + bh * 0.70, bw, 3);            // 5th-floor balcony run
+      g.fillRect(x, y + bh * 0.84, bw, 2);
+      panoWindows(g, x + 5, y + 7, bw - 10, bh * 0.74, i, { cw: 4, ch: 10, gx: 8, gy: 7, p: 0.5, win });
+      g.fillStyle = trimCol; g.fillRect(x - 3, y - 4, bw + 6, 6);   // cornice
+      const mh = (2.4 + dRand(i, 3) * 1.0) * U, mi = bw * 0.12;
+      g.fillStyle = roofCol;
+      g.beginPath();
+      g.moveTo(x - 3, y - 3); g.lineTo(x + bw + 3, y - 3);
+      g.lineTo(x + bw - mi, y - 3 - mh); g.lineTo(x + mi, y - 3 - mh);
+      g.closePath(); g.fill();
+      const dn = Math.max(2, Math.round(bw / (7 * U)));
+      for (let d = 0; d < dn; d++) {
+        const dx = x + mi + ((d + 0.5) / dn) * (bw - 2 * mi);
+        g.fillStyle = `rgba(${win},${0.25 + dRand(i * 5 + d, 4) * 0.45})`;
+        g.fillRect(dx - 3, y - 5 - mh * 0.62, 6, mh * 0.44);
+      }
+      for (let ci = 0; ci < 3; ci++) {
+        g.fillStyle = roofCol;
+        g.fillRect(x + bw * (0.18 + ci * 0.3), y - 3 - mh - 8, 4.5, 9);
+      }
+      x += bw + 2; i++;
+    }
+  } else if (cityId === 'rome') {
+    let x = -60, i = 0;
+    while (x < W + 70) {
+      const bw = (13 + dRand(i, 1) * 11) * U;
+      const bh = (6.5 + dRand(i, 2) * 3.6) * U;
+      const y = HOR + 8 - bh;
+      g.fillStyle = nearCol; g.fillRect(x, y, bw, bh + 16);
+      g.fillStyle = shade1; g.fillRect(x + bw * 0.76, y, bw * 0.24, bh + 16);
+      panoWindows(g, x + 6, y + 9, bw - 12, bh - 16, i, { cw: 5, ch: 9, gx: 11, gy: 9, p: 0.36, win });
+      g.fillStyle = roofCol; g.fillRect(x - 4, y - 5, bw + 8, 6);   // pantile eaves
+      if (i % 4 === 1) panoDome(g, x + bw / 2, y - 5, (4.6 + dRand(i, 5) * 2.2) * U, trimCol, roofCol);
+      else if (i % 4 === 3) {
+        panoCampanile(g, x + bw * 0.5, y - 5, (2.2 + dRand(i, 6) * 0.9) * U,
+          (10 + dRand(i, 7) * 6) * U, nearCol, roofCol, win);
+      }
+      x += bw + 2; i++;
+    }
+    const pineCol = hz('#26382b', NEAR * 0.8);
+    for (let k = 0; k < 11; k++) {
+      panoPine(g, (0.037 + k * 0.0905) * W + dRand(k, 8) * 90, HOR + 6,
+        (7 + dRand(k, 9) * 4) * U, pineCol);
+    }
+  } else if (cityId === 'london') {
+    const brick = nearCol, office = hz(S.trim, NEAR * 0.92);
+    let x = -60, i = 0;
+    while (x < W + 70) {
+      const isOffice = dRand(i, 9) > 0.66;
+      const bw = ((isOffice ? 11 + dRand(i, 1) * 9 : 8 + dRand(i, 1) * 7)) * U;
+      const bh = ((isOffice ? 13 + dRand(i, 2) * 9 : 7 + dRand(i, 2) * 3)) * U;
+      const y = HOR + 8 - bh;
+      g.fillStyle = isOffice ? office : brick;
+      g.fillRect(x, y, bw, bh + 16);
+      g.fillStyle = shade1; g.fillRect(x + bw * 0.74, y, bw * 0.26, bh + 16);
+      if (isOffice) {
+        g.fillStyle = 'rgba(0,0,0,0.16)';
+        for (let b = 10; b < bh - 6; b += 13) g.fillRect(x + 3, y + b, bw - 6, 5);
+        panoWindows(g, x + 5, y + 9, bw - 10, bh - 18, i, { cw: 5, ch: 5, gx: 8, gy: 8, p: 0.32, win });
+      } else {
+        panoWindows(g, x + 6, y + 10, bw - 12, bh - 20, i, { cw: 4, ch: 7, gx: 9, gy: 8, p: 0.42, win });
+        g.fillStyle = roofCol; g.fillRect(x - 3, y - 4, bw + 6, 5);
+        const cn = 1 + Math.round(dRand(i, 4) * 2);
+        for (let k = 0; k < cn; k++) {
+          const cx2 = x + bw * (0.16 + k * 0.31);
+          g.fillStyle = roofCol; g.fillRect(cx2, y - 13, 8, 10);
+          g.fillStyle = trimCol;
+          for (let p2 = 0; p2 < 3; p2++) g.fillRect(cx2 + 1 + p2 * 2.6, y - 17, 1.8, 4);
+        }
+      }
+      x += bw + 2; i++;
+    }
+    panoShard(g, W * 0.30, HOR + 8, 12 * U, 44 * U, hz(S.trim, NEAR * 0.78), win);
+    panoGherkin(g, W * 0.63, HOR + 8, 9.5 * U, 25 * U, hz(S.trim, NEAR * 0.84), win);
+  } else {
+    // Manhattan: every tower is a stack of setbacks, never a single slab
+    let x = -60, i = 0;
+    while (x < W + 70) {
+      const bw0 = (9 + dRand(i, 1) * 10) * U;
+      const bh = (17 + dRand(i, 2) * 27) * U;
+      const cx = x + bw0 / 2;
+      const nSt = 2 + Math.round(dRand(i, 3) * 2);
+      let by = HOR + 8, bw = bw0;
+      for (let s = 0; s < nSt; s++) {
+        const sh = bh * (s === 0 ? 0.46 : 0.54 / (nSt - 1)) * (1 - s * 0.06);
+        g.fillStyle = nearCol; g.fillRect(cx - bw / 2, by - sh, bw, sh + 6);
+        g.fillStyle = shade1; g.fillRect(cx + bw * 0.2, by - sh, bw * 0.3, sh + 6);
+        panoWindows(g, cx - bw / 2 + 4, by - sh + 7, bw - 8, sh - 12, i * 7 + s,
+          { cw: 4, ch: 5, gx: 6, gy: 7, p: 0.3, win });
+        g.fillStyle = trimCol; g.fillRect(cx - bw / 2 - 2.5, by - sh - 4, bw + 5, 5);
+        by -= sh; bw *= 0.62 + dRand(i, s + 4) * 0.14;
+      }
+      const crown = dRand(i, 8);
+      if (crown > 0.62) {                       // deco spire
+        g.fillStyle = trimCol;
+        g.beginPath();
+        g.moveTo(cx - bw * 0.3, by); g.lineTo(cx + bw * 0.3, by);
+        g.lineTo(cx, by - bw * 1.5); g.closePath(); g.fill();
+        g.fillRect(cx - 1.5, by - bw * 2.1, 3, bw * 0.7);
+      } else if (crown > 0.34) {                // rooftop water tank
+        g.fillStyle = roofCol;
+        g.fillRect(cx - bw * 0.16, by - 15, bw * 0.32, 13);
+        g.beginPath();
+        g.moveTo(cx - bw * 0.19, by - 15); g.lineTo(cx + bw * 0.19, by - 15);
+        g.lineTo(cx, by - 23); g.closePath(); g.fill();
+      }
+      x += bw0 + (0.6 + dRand(i, 5) * 2.4) * U; i++;
+    }
+  }
+
+  // ---- base haze + contact shadow on the near layer, then the ground skirt
+  g.globalCompositeOperation = 'source-atop';
+  hg = g.createLinearGradient(0, HOR - 62, 0, HOR + 6);
+  hg.addColorStop(0, `rgba(${fr},${fgc},${fb},0)`);
+  hg.addColorStop(1, `rgba(${fr},${fgc},${fb},0.30)`);
+  g.fillStyle = hg; g.fillRect(0, 0, W, PANO_H);
+  // a whisper of occlusion right where the near layer meets the street, so the
+  // silhouette has a contact edge instead of sitting on the horizon like a decal
+  hg = g.createLinearGradient(0, HOR - 16, 0, HOR + 4);
+  hg.addColorStop(0, 'rgba(24,16,24,0)');
+  hg.addColorStop(1, 'rgba(24,16,24,0.24)');
+  g.fillStyle = hg; g.fillRect(0, 0, W, PANO_H);
+  g.globalCompositeOperation = 'source-over';
+
+  // The skirt has to match what the fogged plaza ground reaches at PANO_R, or
+  // a bright ring appears exactly on the horizon. The ground hex is lifted
+  // first because the hemi + sun render it much lighter than its raw value.
+  const litGround = new THREE.Color(P.ground).lerp(new THREE.Color('#ffffff'), 0.26);
+  const skirt = litGround.clone().lerp(FOG, fogF);
+  const sg = g.createLinearGradient(0, HOR - 14, 0, HOR + 90);
+  sg.addColorStop(0, `#${skirt.getHexString()}`);
+  sg.addColorStop(1, `#${skirt.clone().lerp(litGround, 0.45).getHexString()}`);
+  g.fillStyle = sg;
+  g.fillRect(0, HOR - 1, W, PANO_H - HOR + 1);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
 }
 
 // ---------- material + geometry construction ----------
@@ -939,10 +1302,10 @@ export class Puzzle {
     this.ring = ringM;
     g.add(ringM);
 
-    // city-specific skyline ring (silhouette + lit windows)
+    // city-specific painted skyline panorama
     const boxGeo = new THREE.BoxGeometry(1, 1, 1);
     this.sharedGeos = [boxGeo];
-    this.buildSkyline(g, P, cityId, boxGeo);
+    this.buildSkyline(g, P, cityId);
 
     // hedges ring
     const hedgeMat = new THREE.MeshStandardMaterial({ color: '#2f6b3a', roughness: 0.95 });
@@ -1057,93 +1420,26 @@ export class Puzzle {
     g.add(warm);
   }
 
-  // ---------- per-city skyline backdrops ----------
-  buildSkyline(g, P, cityId, boxGeo) {
-    // fog:false — the scene's warm FogExp2 washed every city's backdrop to the
-    // same beige at this distance, which is what made all four skylines look
-    // like one retinted Manhattan. Unfogged, each city keeps its own silhouette
-    // hue and its lit windows actually read.
-    const winMat = new THREE.MeshBasicMaterial({ map: skylineTex(cityId), color: 0xffffff, fog: false });
-    const silMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(shade(P.sil, -0.16)), fog: false });
-    const darkMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(shade(P.sil, -0.34)), fog: false });
-    const domeGeo = new THREE.SphereGeometry(1, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2);
-    const cylGeo = new THREE.CylinderGeometry(1, 1, 1, 10);
-    const coneGeo = new THREE.CylinderGeometry(0.04, 1, 1, 4);
-    const pillGeo = new THREE.SphereGeometry(1, 12, 10);
-    this.sharedGeos.push(domeGeo, cylGeo, coneGeo, pillGeo);
-    const put = (geo, mat, x, y, z, sx, sy, sz, ry = 0) => {
-      const m = new THREE.Mesh(geo, mat);
-      m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.y = ry;
-      g.add(m);
-      return m;
-    };
-    const ringPos = (i, n, spread = 0.2) => {
-      const a = (i / n) * Math.PI * 2 + dRand(i, 7) * spread;
-      const r = 62 + dRand(i, 2) * 26;
-      return [Math.cos(a) * r, Math.sin(a) * r, a];
-    };
-
-    if (cityId === 'paris') {
-      // Haussmann 6-storey mansard blocks + a distant Sacré-Cœur dome
-      for (let i = 0; i < 24; i++) {
-        const [x, z, a] = ringPos(i, 24);
-        const hgt = 9 + dRand(i, 3) * 3;
-        const wid = 9 + dRand(i, 4) * 7;
-        put(boxGeo, winMat, x, hgt / 2 - 0.1, z, wid, hgt, 6 + dRand(i, 5) * 4, dRand(i, 6) * Math.PI);
-        // mansard roof: darker inset cap
-        put(boxGeo, darkMat, x, hgt + 0.9, z, wid * 0.86, 1.9, (6 + dRand(i, 5) * 4) * 0.8, dRand(i, 6) * Math.PI);
-      }
-      // Sacré-Cœur on its distant hill
-      put(boxGeo, silMat, -58, 8, -86, 14, 16, 10);
-      put(domeGeo, silMat, -58, 16, -86, 5.2, 6.5, 5.2);
-      put(domeGeo, silMat, -63.5, 14, -83, 2.2, 3, 2.2);
-      put(domeGeo, silMat, -52.5, 14, -83, 2.2, 3, 2.2);
-      put(cylGeo, silMat, -58, 24, -86, 0.5, 4, 0.5);
-    } else if (cityId === 'rome') {
-      // low blocks, church domes, bell towers, umbrella pines
-      for (let i = 0; i < 16; i++) {
-        const [x, z, a] = ringPos(i, 16);
-        const hgt = 6 + dRand(i, 3) * 5;
-        put(boxGeo, winMat, x, hgt / 2 - 0.1, z, 8 + dRand(i, 4) * 6, hgt, 6 + dRand(i, 5) * 4, dRand(i, 6) * Math.PI);
-      }
-      for (let i = 0; i < 3; i++) {
-        const [x, z] = ringPos(i * 5 + 1, 16, 0.5);
-        put(cylGeo, silMat, x, 8, z, 5, 5, 5);
-        put(domeGeo, silMat, x, 10.5, z, 5, 6, 5);
-        put(cylGeo, silMat, x, 17.5, z, 0.7, 2.4, 0.7);
-      }
-      for (let i = 0; i < 2; i++) {
-        const [x, z] = ringPos(i * 7 + 3, 16, 0.5);
-        put(boxGeo, silMat, x, 8.5, z, 2.6, 17, 2.6);
-        put(boxGeo, darkMat, x, 15.5, z, 3.2, 1.6, 3.2);
-      }
-      const pineMat = new THREE.MeshBasicMaterial({ color: 0x23352a, fog: false });
-      for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * Math.PI * 2 + 0.35;
-        const r = 44 + dRand(i, 8) * 10;
-        const x = Math.cos(a) * r, z = Math.sin(a) * r;
-        put(cylGeo, pineMat, x, 2.4, z, 0.35, 4.8, 0.35);
-        put(pillGeo, pineMat, x, 5.6, z, 3.4, 1.7, 3.4);
-      }
-    } else if (cityId === 'london') {
-      // mixed brick + Shard-like spike + Gherkin-like pill cameos
-      for (let i = 0; i < 22; i++) {
-        const [x, z, a] = ringPos(i, 22);
-        const hgt = 8 + dRand(i, 3) * 12;
-        put(boxGeo, winMat, x, hgt / 2 - 0.1, z, 6 + dRand(i, 4) * 7, hgt, 6 + dRand(i, 5) * 6, dRand(i, 6) * Math.PI);
-      }
-      put(coneGeo, silMat, 52, 17, -68, 7, 34, 7, Math.PI / 4);       // the Shard
-      put(pillGeo, silMat, -60, 9, -60, 4.2, 10, 4.2);                // the Gherkin
-      put(cylGeo, silMat, -60, 1.5, -60, 2.2, 3, 2.2);
-    } else {
-      // NYC keeps its towers, with a couple of spires
-      for (let i = 0; i < 30; i++) {
-        const [x, z, a] = ringPos(i, 30);
-        const hgt = 9 + dRand(i, 3) * 24;
-        put(boxGeo, winMat, x, hgt / 2 - 0.1, z, 6 + dRand(i, 4) * 8, hgt, 6 + dRand(i, 5) * 8, dRand(i, 6) * Math.PI);
-        if (i % 9 === 2) put(boxGeo, silMat, x, hgt + 2.4, z, 1.1, 5, 1.1);
-      }
-    }
+  // ---------- per-city skyline backdrop ----------
+  buildSkyline(g, P, cityId) {
+    // The panorama is drawn unfogged and bakes its own haze instead. Real fog
+    // at 130 units is ~70% opaque, which flattened all four cities to the same
+    // beige; baking it lets each keep its identity AND stay atmospheric.
+    const fog = this.scene.fog;
+    const fogHex = fog ? `#${fog.color.getHexString()}` : '#ffd0a0';
+    const dens = fog ? fog.density : 0.009;
+    const fogF = 1 - Math.exp(-Math.pow(dens * PANO_R, 2));
+    const geo = new THREE.CylinderGeometry(PANO_R, PANO_R, PANO_HT, 96, 1, true);
+    const mat = new THREE.MeshBasicMaterial({
+      map: panoTex(cityId, P, fogHex, fogF),
+      transparent: true, side: THREE.BackSide, fog: false, depthWrite: false,
+    });
+    const cyl = new THREE.Mesh(geo, mat);
+    // seat the painted horizon line exactly on y=0, where the fogged ground
+    // disc reaches the cylinder — that join is what stops it reading as float
+    cyl.position.y = PANO_HT / 2 - (PANO_H - PANO_HOR) / PANO_U;
+    cyl.renderOrder = -5;
+    g.add(cyl);
   }
 
   makeFloorTex(P, cityId) {

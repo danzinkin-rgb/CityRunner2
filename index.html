@@ -88,6 +88,10 @@
     .facts-list li{font-size:14px;padding-left:28px}
     .facts-list{margin-bottom:22px}
   }
+  .linkbtn{pointer-events:auto;background:none;border:none;font:inherit;color:inherit;opacity:.75;
+    text-decoration:underline;cursor:pointer;letter-spacing:inherit;text-transform:inherit;padding:0}
+  .linkbtn:hover{opacity:1;color:var(--gold)}
+  #menu-identity{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:12px}
   #btn-pause{pointer-events:auto;position:absolute;top:60px;right:16px;width:44px;height:44px;
     border-radius:50%;border:1px solid rgba(255,255,255,.18);background:var(--glass);backdrop-filter:blur(8px);
     color:#fff;font-size:14px;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -132,6 +136,14 @@
   <div class="label" style="margin-top:24px;font-size:14px;letter-spacing:2px">
     ⬅️ ➡️ MOVE &nbsp;·&nbsp; ⬆️ JUMP &nbsp;·&nbsp; ⬇️ ROLL &nbsp;·&nbsp; OR SWIPE</div>
   <div id="menu-stats" class="label" style="margin-top:14px"></div>
+  <div id="menu-identity" class="label" style="margin-top:8px">
+    <span id="menu-name">—</span>
+    <button class="linkbtn" id="btn-reroll">reroll</button>
+    ·
+    <a class="linkbtn" href="privacy.html">privacy</a>
+    ·
+    <button class="linkbtn" id="btn-erase">erase my data</button>
+  </div>
   <div class="skyline"></div>
 </div>
 

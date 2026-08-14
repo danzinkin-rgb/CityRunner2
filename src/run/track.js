@@ -181,7 +181,13 @@ export class Track {
             continue;
           }
           const b = makeBuilding(t, w, h, d, Math.random, side);
-          b.position.set(side * (ROAD_W / 2 + setback + d / 2 - 1), 0, -bz - d / 2);
+          // The road-facing face (the box's ±X face) is pinned to a single
+          // building line at `setback - 1` behind the kerb. Placing by centre
+          // used to let the facade wander ±2.5m, so a random building — and
+          // any shopfront bolted to it — could jut into the running corridor
+          // (Oxford Street's colonnade was the worst offender). Pinning the
+          // face keeps the mean position identical but kills the jitter.
+          b.position.set(side * (ROAD_W / 2 + setback - 1 + w / 2), 0, -bz - d / 2);
           g.add(b);
 
           // Abbey Road: villas sit behind a continuous low wall + hedge
