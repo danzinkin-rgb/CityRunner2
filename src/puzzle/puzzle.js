@@ -602,7 +602,11 @@ function panoTex(cityId, P, fogHex, fogF) {
   // Haze budget. These are deliberately far below the physical fog factor
   // (~0.72 at this radius): the two source-atop washes below stack on top of
   // them, and at full strength the whole backdrop bleached to the sky colour.
-  const FAR = fogF * 0.80, NEAR = fogF * 0.24;
+  // The far band was previously hazed so hard (0.80) that it bleached into the
+  // sky in every city but New York, leaving one flat cut-out silhouette instead
+  // of two depth layers. 0.63 keeps it clearly behind the near band while the
+  // source-atop washes below still stack on top of it.
+  const FAR = fogF * 0.63, NEAR = fogF * 0.24;
   const win = S.win;
 
   // ---- far layer: hazier, bases a touch above the horizon so they sit back
@@ -691,21 +695,83 @@ function panoTex(cityId, P, fogHex, fogF) {
       g.fillRect(x, y + bh * 0.84, bw, 2);
       panoWindows(g, x + 5, y + 7, bw - 10, bh * 0.74, i, { cw: 4, ch: 10, gx: 8, gy: 7, p: 0.5, win });
       g.fillStyle = trimCol; g.fillRect(x - 3, y - 4, bw + 6, 6);   // cornice
+      // ---- roofline. A boulevard is not one repeated block: the mansard is
+      // the common case, but the row is broken up by flat balustraded attics,
+      // steep slate pitches, corner rotundas and the occasional church flèche.
       const mh = (2.4 + dRand(i, 3) * 1.0) * U, mi = bw * 0.12;
-      g.fillStyle = roofCol;
-      g.beginPath();
-      g.moveTo(x - 3, y - 3); g.lineTo(x + bw + 3, y - 3);
-      g.lineTo(x + bw - mi, y - 3 - mh); g.lineTo(x + mi, y - 3 - mh);
-      g.closePath(); g.fill();
-      const dn = Math.max(2, Math.round(bw / (7 * U)));
-      for (let d = 0; d < dn; d++) {
-        const dx = x + mi + ((d + 0.5) / dn) * (bw - 2 * mi);
-        g.fillStyle = `rgba(${win},${0.25 + dRand(i * 5 + d, 4) * 0.45})`;
-        g.fillRect(dx - 3, y - 5 - mh * 0.62, 6, mh * 0.44);
-      }
-      for (let ci = 0; ci < 3; ci++) {
+      const roofT = i % 9 === 4 ? 3 : i % 4;
+      const dormers = (ry, rh, inset) => {
+        const dn = Math.max(2, Math.round(bw / (7 * U)));
+        for (let d = 0; d < dn; d++) {
+          const dx = x + inset + ((d + 0.5) / dn) * (bw - 2 * inset);
+          g.fillStyle = `rgba(${win},${0.25 + dRand(i * 5 + d, 4) * 0.45})`;
+          g.fillRect(dx - 3, ry, 6, rh);
+        }
+      };
+      const stacks = (ry, n) => {
+        for (let ci = 0; ci < n; ci++) {
+          g.fillStyle = roofCol;
+          g.fillRect(x + bw * (0.15 + ci * (0.7 / Math.max(1, n - 1))), ry - 9, 4.5, 10);
+        }
+      };
+      if (roofT === 0) {                             // classic zinc mansard
         g.fillStyle = roofCol;
-        g.fillRect(x + bw * (0.18 + ci * 0.3), y - 3 - mh - 8, 4.5, 9);
+        g.beginPath();
+        g.moveTo(x - 3, y - 3); g.lineTo(x + bw + 3, y - 3);
+        g.lineTo(x + bw - mi, y - 3 - mh); g.lineTo(x + mi, y - 3 - mh);
+        g.closePath(); g.fill();
+        dormers(y - 5 - mh * 0.62, mh * 0.44, mi);
+        stacks(y - 3 - mh, 3);
+      } else if (roofT === 1) {                      // flat attic + balustrade
+        g.fillStyle = roofCol;
+        g.fillRect(x - 2, y - 3 - mh * 0.5, bw + 4, mh * 0.5);
+        g.fillStyle = trimCol;
+        g.fillRect(x - 4, y - 4 - mh * 0.5, bw + 8, 4);
+        for (let b2 = 0; b2 * 9 < bw; b2++) {
+          g.fillRect(x + 2 + b2 * 9, y - 3 - mh * 0.5 - 7, 3, 7);   // balusters
+        }
+        stacks(y - 3 - mh * 0.5, 2);
+      } else if (roofT === 2) {                      // steep slate pitch
+        g.fillStyle = roofCol;
+        g.beginPath();
+        g.moveTo(x - 4, y - 3); g.lineTo(x + bw + 4, y - 3);
+        g.lineTo(x + bw * 0.5, y - 3 - mh * 1.45);
+        g.closePath(); g.fill();
+        g.fillStyle = 'rgba(255,255,255,0.06)';
+        g.beginPath();
+        g.moveTo(x + bw * 0.5, y - 3); g.lineTo(x + bw + 4, y - 3);
+        g.lineTo(x + bw * 0.5, y - 3 - mh * 1.45);
+        g.closePath(); g.fill();
+        dormers(y - 3 - mh * 0.42, mh * 0.3, bw * 0.24);
+        stacks(y - 3, 2);
+      } else {                                       // corner rotunda / pavilion
+        g.fillStyle = roofCol;
+        g.beginPath();
+        g.moveTo(x - 3, y - 3); g.lineTo(x + bw + 3, y - 3);
+        g.lineTo(x + bw - mi, y - 3 - mh * 0.72); g.lineTo(x + mi, y - 3 - mh * 0.72);
+        g.closePath(); g.fill();
+        const cx3 = x + bw * (i % 2 ? 0.22 : 0.78), cr = Math.min(bw * 0.2, 5.5 * U);
+        g.fillStyle = trimCol;
+        g.fillRect(cx3 - cr, y - 4 - mh * 0.72, cr * 2, 5);
+        g.fillStyle = roofCol;
+        g.beginPath();
+        g.moveTo(cx3 - cr, y - 3 - mh * 0.72);
+        g.bezierCurveTo(cx3 - cr, y - 3 - mh * 2.0, cx3 + cr, y - 3 - mh * 2.0,
+          cx3 + cr, y - 3 - mh * 0.72);
+        g.closePath(); g.fill();
+        g.fillRect(cx3 - 1.6, y - 3 - mh * 2.5, 3.2, mh * 0.6);     // finial
+        dormers(y - 5 - mh * 0.5, mh * 0.3, mi);
+        stacks(y - 3 - mh * 0.72, 2);
+      }
+      // a church flèche every so often, standing clear of the roofline
+      if (i % 11 === 7) {
+        const sx2 = x + bw * 0.5;
+        g.fillStyle = roofCol;
+        g.beginPath();
+        g.moveTo(sx2 - 5.5, y - 3 - mh);
+        g.lineTo(sx2 + 5.5, y - 3 - mh);
+        g.lineTo(sx2, y - 3 - mh - 26 * U);
+        g.closePath(); g.fill();
       }
       x += bw + 2; i++;
     }
@@ -759,8 +825,12 @@ function panoTex(cityId, P, fogHex, fogF) {
       }
       x += bw + 2; i++;
     }
-    panoShard(g, W * 0.30, HOR + 8, 12 * U, 44 * U, hz(S.trim, NEAR * 0.78), win);
-    panoGherkin(g, W * 0.63, HOR + 8, 9.5 * U, 25 * U, hz(S.trim, NEAR * 0.84), win);
+    // u=0.5 is dead centre of the default view and u climbs to the LEFT (the
+    // panorama is seen from inside the cylinder), so these two sit either side
+    // of the monument where the player actually sees them. A Shard parked at
+    // u=0.30 is 70° behind the camera and might as well not exist.
+    panoShard(g, W * 0.57, HOR + 8, 12 * U, 46 * U, hz(S.trim, NEAR * 0.78), win);
+    panoGherkin(g, W * 0.43, HOR + 8, 9.5 * U, 26 * U, hz(S.trim, NEAR * 0.84), win);
   } else {
     // Manhattan: every tower is a stack of setbacks, never a single slab
     let x = -60, i = 0;
@@ -1173,6 +1243,21 @@ const forEachMat = (root, fn) => root.traverse((n) => {
   for (const m of ms) fn(m);
 });
 
+// Real world-space extent of a block, which is not always what def.s says: a
+// 'spokes' hub declares its rim diameter as WIDTH but sweeps that same diameter
+// vertically, and a torus/arch laid flat by rotX sweeps it in depth. The scatter
+// layout needs the true footprint or it parks a 12m wheel half off the screen.
+function effSize(d) {
+  let [w, h, dp] = d.s;
+  const flat = Math.abs(Math.abs(d.rotX || 0) - Math.PI / 2) < 0.25;
+  if (d.shape === 'spokes' || d.shape === 'torus' || d.shape === 'arch') {
+    const sweep = d.shape === 'arch' && !flat ? w / 2 : w;
+    if (flat) { dp = Math.max(dp, sweep); h = Math.max(d.s[2], 0.3); }
+    else h = Math.max(h, sweep);
+  }
+  return [w, h, dp];
+}
+
 // scattered pieces keep their final materials, pulled to ~70% saturation
 function desaturate(mesh) {
   forEachMat(mesh, (m) => {
@@ -1220,10 +1305,130 @@ export class Puzzle {
     if (q.has('built') || q.has('celebrate')) preplaced = def.length;
     this.autoT = q.has('auto') ? 0.6 : -1;
     this.celebrateAt = q.has('celebrate') ? 0.05 : -1;
+    // &tscale=N speeds this puzzle's own clock up N times. Review-only: a
+    // headless browser driven by --virtual-time-budget only ever runs a
+    // handful of animation frames, so without this the 4.3s celebration can
+    // never be caught in a screenshot. Defaults to 1 in normal play.
+    this.tScale = Math.max(1, Math.min(60, parseFloat(q.get('tscale')) || 1));
 
     // sort blocks bottom-up (sortY lets cables etc. come after their towers)
     this.blocks = def.map((d, i) => ({ def: d, idx: i }))
       .sort((a, b) => (a.def.sortY ?? a.def.p[1]) - (b.def.sortY ?? b.def.p[1]));
+
+    // ---- build COURSES (layers) -------------------------------------------
+    // A monument is built bottom-up, but a single visual course is rarely at
+    // one exact height: the Eiffel's four legs sit at y=3.0 and the arches
+    // tucked between them at y=3.1; Big Ben's four clock faces share the belfry
+    // block's y. Forcing one strict order there feels arbitrary and punishing.
+    // So blocks are clustered into layers by their sort height (single-linkage,
+    // LAYER_TOL apart) — any order WITHIN a layer, strict bottom-up ACROSS
+    // layers. sortY overrides still work: they push cables/chains/walkways into
+    // a later layer than the towers they span.
+    const LAYER_TOL = 0.6;
+    let layer = 0, prevY = null;
+    for (const entry of this.blocks) {
+      const y = entry.def.sortY ?? entry.def.p[1];
+      if (prevY !== null && y - prevY > LAYER_TOL) layer++;
+      entry.layer = layer;
+      prevY = y;
+    }
+    this.layerCount = layer + 1;
+
+    // ---- scatter layout ----------------------------------------------------
+    // Every loose piece has to stay inside the frustum of a PORTRAIT phone,
+    // where the horizontal half-angle is only ~15.5° and the camera can only
+    // retreat so far before the monument becomes an unreadable speck. Past a
+    // radius of ~14 world units pieces fall off the sides of the frame and
+    // become unreachable, so this packs them dense rather than wide: a piece
+    // you can see and tap beats a piece with elbow room you can never reach.
+    const SCATTER_R = 13.2;                       // hard radial cap (<14)
+    const XBUD = 11.0;                            // budget for |x| + half the piece's screen width
+    let xExt = 0, zExt = 0;
+    for (const d of def) {
+      xExt = Math.max(xExt, Math.abs(d.p[0]) + d.s[0] / 2);
+      zExt = Math.max(zExt, Math.abs(d.p[2]) + d.s[2] / 2);
+    }
+    // Footprint clearance in a given direction, so nothing is parked ON the
+    // monument: the Colosseum needs 9m of elbow room all round, while the
+    // bridges are 18m wide but only 3m deep and take pieces close in front.
+    // `off` is measured off the ±x axis; positive is the camera side.
+    const clearAt = (off, sw) => {
+      const ca = Math.abs(Math.cos(off)) / Math.max(2, xExt);
+      const sa = Math.abs(Math.sin(off)) / Math.max(2, zExt);
+      return Math.min(11.6, 1 / Math.sqrt(ca * ca + sa * sa) + 1.5 + sw * 0.2);
+    };
+    // A monument that spans wide in x (the two bridges) would swallow anything
+    // parked on the ±x wings, so its fans swing round to the front and back.
+    const wide = xExt > 12;
+    // Angular slots, radians off the ±x axis; positive is the camera side.
+    // The footprint clearance below pins most pieces to a similar radius, so
+    // the spread has to come from ANGLE — pieces are seated round the plaza
+    // first and only stack into a second/third band once the arc is full.
+    const OFFS = wide ? [-1.34, -1.08, -0.82, 0.54, 0.80, 1.06]
+      : [-0.90, -0.60, -0.30, 0.02, 0.32, 0.62];
+    const RBAND = [9.0, 11.0, 12.9];
+
+    // Bulky pieces are laid out first and land in the BACK slots, where the
+    // extra distance shrinks them; the small pieces fill the camera-side slots.
+    const bulkOf = (d) => { const e = effSize(d); return Math.max(e[0], e[1], e[2]); };
+    const loose = this.blocks
+      .map((e, order) => ({ e, order }))
+      .filter((x) => x.order >= preplaced)
+      .sort((a, b) => bulkOf(b.e.def) - bulkOf(a.e.def));
+    const layout = new Map();
+    let back = 0, tallN = 0;
+    loose.forEach((x, k) => {
+      const side = k % 2 ? 1 : -1;
+      const rank = (k / 2) | 0;
+      const [w, hh, dp] = effSize(x.e.def);
+      // Tall pieces (the Eye's 9m A-frame legs) go in the far slots: near the
+      // camera they overshoot the TOP of a portrait frame, not the sides.
+      const tall = hh > 7.5;
+      const slot = tall ? tallN % 2 : rank % OFFS.length;
+      const band = tall ? ((tallN >> 1) % 2) + 1 : Math.floor(rank / OFFS.length) % 3;
+      if (tall) tallN++;
+      // Oversized pieces — a whole Louvre wing, the Eye's 13m rim — can't fit
+      // on a wing without hanging off the side of a portrait frame. They go
+      // straight to the back of the plaza instead: |x| stays small there, and
+      // the extra distance shrinks them without hiding them behind the (still
+      // half-built) monument.
+      if (Math.min(w, dp) > 8 || Math.max(w, dp) > 15 || hh > 9) {
+        const yaw = (dp < w ? 1.52 : 0.05) * (back % 2 ? 1 : -1);
+        const a = -Math.PI / 2 + (back % 2 ? 0.36 : -0.36) + (Math.floor(back / 2) % 2 ? 0.13 : -0.13);
+        layout.set(x.order, { a, r: 10.8 + (back % 3) * 0.9, yaw });
+        back++;
+        return;
+      }
+      // Wide pieces are turned toward the camera so they stop spearing out
+      // past the frame edge — but never fully edge-on, or a Louvre wing would
+      // read as a blank sliver instead of a wing you can recognise.
+      const yaw = (w > 9 ? 1.30 : w > 5 ? 0.95 : 0.42) * (side > 0 ? -1 : 1)
+        + (dRand(k, 13) - 0.5) * 0.34;
+      const sw = Math.abs(Math.cos(yaw)) * w + Math.abs(Math.sin(yaw)) * dp;
+      let off = OFFS[slot] + band * 0.06 + dRand(k, 11) * 0.05;
+      let r = Math.min(SCATTER_R,
+        Math.max(RBAND[band] + dRand(k, 12) * 0.5, clearAt(off, sw)));
+      // If standing that far out would push the piece past the side of the
+      // frame, swing it round toward the front or back rather than pulling it
+      // in on top of the monument — |x| shrinks fast as the angle opens up.
+      const capCos = Math.max(0.05, Math.min(1, (XBUD - sw / 2) / r));
+      const tMin = Math.acos(capCos);
+      if (Math.abs(off) < tMin) {
+        // Sideways is out, so it goes front or back. Back is the safe side:
+        // in landscape the camera sits much closer, and a chunky piece parked
+        // near the player overflows the BOTTOM of the frame. Only small pieces
+        // are allowed to swing forward, and never onto the centre sightline.
+        const goBack = off < 0 || sw > 6 || tMin > 1.1;
+        off = goBack ? -Math.min(1.45, tMin + 0.05) : tMin + 0.05;
+        r = Math.min(SCATTER_R, Math.max(r, clearAt(off, sw)));
+      }
+      // last resort: never let it leave the frame, even if that means crowding
+      r = Math.min(r, (XBUD - sw / 2) / Math.max(0.05, Math.abs(Math.cos(off))));
+      // and never let a big piece camp in the player's lap
+      if (Math.sin(off) * r > 9.4 - sw * 0.3) off = -off;
+      const a = side > 0 ? off : Math.PI - off;
+      layout.set(x.order, { a, r, yaw });
+    });
 
     this.items = this.blocks.map((entry, order) => {
       const mesh = makeBlockMesh(entry.def);
@@ -1232,7 +1437,7 @@ export class Puzzle {
       this.group.add(ghost);
 
       const item = {
-        def: entry.def, mesh, ghost, order,
+        def: entry.def, mesh, ghost, order, layer: entry.layer,
         placed: order < preplaced,
         bobPhase: Math.random() * Math.PI * 2,
       };
@@ -1243,21 +1448,13 @@ export class Puzzle {
         this.placedCount++;
         this.collectShimmer(mesh);
       } else {
-        // Art-directed scatter. The camera sits on +z looking down -z, so
-        // pieces are fanned around the ±x WINGS (angle near 0 and PI) and
-        // never around PI/2, which is exactly between the camera and the
-        // build site. Big pieces are pushed further out so a wide slab (the
-        // Trevi facade, a Louvre wing) can't fill the foreground.
-        const j = order - preplaced;
-        const side = j % 2 ? 1 : -1;
-        const rank = Math.floor(j / 2);
-        const row = rank % 3, col = Math.floor(rank / 3) % 4;
-        const off = (col - 1.5) * 0.30 + dRand(j, 11) * 0.08;
-        const a = side > 0 ? off : Math.PI - off;
-        const bulk = Math.max(entry.def.s[0], entry.def.s[2]);
-        const r = Math.min(21.5, 12.6 + row * 3.3 + bulk * 0.34 + dRand(j, 12) * 0.9);
-        mesh.position.set(Math.cos(a) * r, restingY(entry.def), Math.sin(a) * r);
-        mesh.rotation.y = Math.random() * Math.PI * 2;
+        // Art-directed scatter (positions worked out in the layout pass above):
+        // two wings either side of the plaza, nothing left standing on the
+        // sightline between the player and the build site.
+        const L = layout.get(order);
+        mesh.position.set(Math.cos(L.a) * L.r, restingY(entry.def), Math.sin(L.a) * L.r);
+        mesh.rotation.y = L.yaw;
+        item.rotY0 = L.yaw;
         desaturate(mesh);
       }
       this.group.add(mesh);
@@ -1501,9 +1698,21 @@ export class Puzzle {
     return this.items.find((it) => !it.placed && !this.flying.includes(it));
   }
 
+  // lowest course that still has a piece waiting to be picked; a piece already
+  // in flight counts as committed, so the next course unlocks immediately
+  currentLayer() {
+    let lo = Infinity;
+    for (const it of this.items) {
+      if (it.placed || this.flying.includes(it)) continue;
+      if (it.layer < lo) lo = it.layer;
+    }
+    return lo;
+  }
+
+  // any order within a course, strict bottom-up across courses
   pickable(item) {
-    const pending = this.items.filter((it) => !it.placed && !this.flying.includes(it));
-    return pending.slice(0, 4).includes(item);
+    if (item.placed || this.flying.includes(item)) return false;
+    return item.layer === this.currentLayer();
   }
 
   tryPick(nx, ny) {
@@ -1687,6 +1896,7 @@ export class Puzzle {
 
   // ---------- per-frame ----------
   update(dt) {
+    dt *= this.tScale;                             // 1 unless the review harness asks
     this.elapsed += dt;
     const T = this.elapsed;
     if (!this.done && !this.failed) this.time -= dt;
@@ -1737,11 +1947,13 @@ export class Puzzle {
     // shimmer on placed water / chrome
     for (const m of this.shimmer) m.emissiveIntensity = m.userData.baseEm * (0.8 + Math.sin(T * 3 + m.id) * 0.35);
 
-    // pickable highlight + bob; ghost guidance pulse
+    // pickable highlight + bob; ghost guidance pulse.
+    // The WHOLE current course glows and bobs, so the player can see every
+    // legal choice at once rather than guessing which four are unlocked.
+    const layerNow = this.currentLayer();
     const pending = this.items.filter((it) => !it.placed && !this.flying.includes(it));
-    for (let i = 0; i < pending.length; i++) {
-      const it = pending[i];
-      const pickNow = i < 4;
+    for (const it of pending) {
+      const pickNow = it.layer === layerNow;
       const target = pickNow ? 0.6 : 0;
       forEachMat(it.mesh, (m) => {
         const base = m.userData.baseEm || 0;
@@ -1750,11 +1962,15 @@ export class Puzzle {
       if (pickNow) {
         it.mesh.position.y = restingY(it.def) +
           Math.abs(Math.sin(T * 2.4 + it.bobPhase)) * 0.3;
-        it.mesh.rotation.y += dt * 0.4;
+        // sway around the parked yaw rather than spinning freely: a long piece
+        // that kept turning would eventually swing out past the frame edge
+        it.mesh.rotation.y = (it.rotY0 || 0) + Math.sin(T * 0.9 + it.bobPhase) * 0.26;
       }
-      // ghost hint: warm-gold silhouette, next block breathes brighter
-      it.ghost.userData.blockMat.opacity = i === 0 ? 0.30 + Math.sin(T * 5) * 0.09
-        : pickNow ? 0.19 : 0.11;
+      // ghost hint: warm-gold silhouette; the whole live course breathes, the
+      // courses still to come stay a faint hint of what is coming
+      it.ghost.userData.blockMat.opacity = pickNow
+        ? 0.26 + Math.sin(T * 5 + it.bobPhase) * 0.08
+        : it.layer === layerNow + 1 ? 0.15 : 0.09;
     }
 
     // built pieces that rotate (the Eye's wheel)
