@@ -1258,6 +1258,16 @@ function effSize(d) {
   return [w, h, dp];
 }
 
+// Vertical extent [base, top] of a block in world space. Every shape is
+// centred on its origin EXCEPT 'dome', which is a hemisphere whose flat face
+// sits at p[1] — the same special case restingY() makes when parking one on
+// the plaza. Course clustering needs this to know what rests on what.
+function vExtent(d) {
+  const h = effSize(d)[1];
+  const base = d.shape === 'dome' ? d.p[1] : d.p[1] - h / 2;
+  return [base, base + h];
+}
+
 // scattered pieces keep their final materials, pulled to ~70% saturation
 function desaturate(mesh) {
   forEachMat(mesh, (m) => {
@@ -1289,6 +1299,9 @@ export class Puzzle {
     this.celebT = -1;
     this.time = 60;
     this.elapsed = 0;
+    // Bob is driven by its own accumulator rather than by elapsed time, so the
+    // urgency pass can raise the rate without the sine phase jumping.
+    this.bobT = 0;
 
     const def = getLandmark(landmarkId);
     const P = PLAZA[CITY_OF[landmarkId]] || PLAZA.paris;
@@ -1310,6 +1323,10 @@ export class Puzzle {
     // handful of animation frames, so without this the 4.3s celebration can
     // never be caught in a screenshot. Defaults to 1 in normal play.
     this.tScale = Math.max(1, Math.min(60, parseFloat(q.get('tscale')) || 1));
+    // &time=N starts the clock at N seconds. Review-only: it is the only way a
+    // single headless screenshot can catch the last-10-seconds urgency pass.
+    const t0 = parseFloat(q.get('time'));
+    if (t0 > 0) this.time = Math.min(60, t0);
 
     // sort blocks bottom-up (sortY lets cables etc. come after their towers)
     this.blocks = def.map((d, i) => ({ def: d, idx: i }))
@@ -1324,12 +1341,37 @@ export class Puzzle {
     // LAYER_TOL apart) — any order WITHIN a layer, strict bottom-up ACROSS
     // layers. sortY overrides still work: they push cables/chains/walkways into
     // a later layer than the towers they span.
+    // Height proximity alone is NOT enough to prove two blocks share a course.
+    // A short ring and the tall dome resting on it have centres close together
+    // precisely BECAUSE the dome is tall — on the Pantheon the ring at y=8.50
+    // and the dome at y=8.90 are only 0.40 apart, so they clustered together
+    // and the dome became placeable before its own support. Single-linkage
+    // made it worse: a chain of blocks each within LAYER_TOL of the last can
+    // merge into one course spanning any height.
+    // So a course ALSO breaks whenever the next block's base has cleared the
+    // top of everything already in that course — i.e. it rests on the course
+    // rather than sitting alongside it. Blocks that genuinely interleave
+    // (Eiffel arches tucked between the legs, Big Ben's clock faces set into
+    // the belfry) still overlap the course band and stay interchangeable.
+    // A block carrying an explicit sortY has already been placed in the order
+    // its author wanted, and its real height deliberately disagrees with that
+    // key — the Eye's ten capsules all sort at 9.5 but physically ring the
+    // wheel from y=0.85 to y=10.47. Splitting those by physical support would
+    // scatter one interchangeable set across three courses, so sortY blocks
+    // are exempt from the support rule. They still raise the course ceiling,
+    // so anything genuinely resting on them is pushed to a later course.
     const LAYER_TOL = 0.6;
-    let layer = 0, prevY = null;
+    const SUPPORT_EPS = 0.25;
+    let layer = 0, prevY = null, courseTop = -Infinity;
     for (const entry of this.blocks) {
       const y = entry.def.sortY ?? entry.def.p[1];
-      if (prevY !== null && y - prevY > LAYER_TOL) layer++;
+      const [base, top] = vExtent(entry.def);
+      const authored = entry.def.sortY !== undefined;
+      const gapSplit = prevY !== null && y - prevY > LAYER_TOL;
+      const supportSplit = !authored && prevY !== null && base >= courseTop - SUPPORT_EPS;
+      if (gapSplit || supportSplit) { layer++; courseTop = -Infinity; }
       entry.layer = layer;
+      courseTop = Math.max(courseTop, top);
       prevY = y;
     }
     this.layerCount = layer + 1;
@@ -1611,10 +1653,17 @@ export class Puzzle {
     }));
     g.add(this.dust);
 
-    // warm celebratory key light over the build site
+    // warm celebratory key light over the build site. Kept on the instance so
+    // the last-10-seconds urgency pass can dim it and pull it towards red —
+    // that reads as the whole plaza tightening without touching block colours
+    // (which would collide with the desaturate/resaturate scatter machinery).
     const warm = new THREE.PointLight(0xffcf9a, 240, 90, 2);
     warm.position.set(0, 13, 11);
     g.add(warm);
+    this.warmLight = warm;
+    this.warmBase = new THREE.Color(0xffcf9a);
+    this.warmInt = 240;
+    this.urgentCol = new THREE.Color(0xff6a4a);
   }
 
   // ---------- per-city skyline backdrop ----------
@@ -1923,18 +1972,34 @@ export class Puzzle {
       }
     }
 
-    // build-site ring: gold normally, urgent red pulse under 10s
+    // build-site ring: gold normally, urgent red pulse under 10s.
+    // Under 10s the plaza also tightens: the warm key light dims and swings
+    // towards red, which drains the scene's warmth without ever going harsh,
+    // and the loose blocks bob faster.
     const low = !this.done && this.time <= 10;
     if (low) {
       const p = 0.5 + Math.sin(T * 9) * 0.5;
       this.ring.material.color.setHex(0xff5544);
       this.ring.material.opacity = 0.35 + p * 0.45;
       this.ring.scale.setScalar(1 + p * 0.035);
+      if (this.warmLight) {
+        // ease in over the first second so 10s doesn't arrive as a hard cut
+        const ramp = Math.min(1, (10 - this.time) / 1);
+        this.warmLight.intensity = this.warmInt * (1 - ramp * (0.42 + 0.14 * p));
+        this.warmLight.color.copy(this.warmBase)
+          .lerp(this.urgentCol, ramp * (0.46 + 0.16 * p));
+      }
     } else {
       this.ring.material.color.setHex(0xffd166);
       this.ring.material.opacity = 0.32 + Math.sin(T * 2.6) * 0.14;
       this.ring.scale.setScalar(1);
+      if (this.warmLight) {
+        this.warmLight.intensity = this.warmInt;
+        this.warmLight.color.copy(this.warmBase);
+      }
     }
+    // bob accelerates as the clock runs out (phase-continuous, see bobT)
+    this.bobT += dt * (low ? 4.2 : 2.4);
 
     // drifting dust
     const dp = this.dust.geometry.attributes.position.array;
@@ -1961,16 +2026,21 @@ export class Puzzle {
       });
       if (pickNow) {
         it.mesh.position.y = restingY(it.def) +
-          Math.abs(Math.sin(T * 2.4 + it.bobPhase)) * 0.3;
+          Math.abs(Math.sin(this.bobT + it.bobPhase)) * 0.3;
         // sway around the parked yaw rather than spinning freely: a long piece
         // that kept turning would eventually swing out past the frame edge
         it.mesh.rotation.y = (it.rotY0 || 0) + Math.sin(T * 0.9 + it.bobPhase) * 0.26;
       }
-      // ghost hint: warm-gold silhouette; the whole live course breathes, the
-      // courses still to come stay a faint hint of what is coming
+      // Ghost hint: warm-gold silhouette; the whole live course breathes, the
+      // courses still to come stay a faint hint of what is coming.
+      // Ghosts are depthWrite:false, so overlapping ones composite on top of
+      // each other — a course with ten pieces (the Eye's rim) at the old 0.09
+      // stacked up brighter than a single-piece live course at 0.26 and stole
+      // the eye. Distant courses are therefore pushed well back, and the live
+      // course pushed up, so "what to build next" always wins on contrast.
       it.ghost.userData.blockMat.opacity = pickNow
-        ? 0.26 + Math.sin(T * 5 + it.bobPhase) * 0.08
-        : it.layer === layerNow + 1 ? 0.15 : 0.09;
+        ? 0.30 + Math.sin(T * 5 + it.bobPhase) * 0.09
+        : it.layer === layerNow + 1 ? 0.13 : 0.055;
     }
 
     // built pieces that rotate (the Eye's wheel)
@@ -2024,10 +2094,15 @@ export class Puzzle {
       if (!this.effects[i].update(dt)) this.effects.splice(i, 1);
     }
 
-    // gentle ambient twinkle on the string lights
+    // gentle ambient twinkle on the string lights — but they go dull and
+    // restless in the last 10 seconds, so the party visibly loses its nerve
     if (!this.done && this.stringMats) {
+      const lampBase = low ? 0.3 : 0.9;
+      const lampAmp = low ? 0.12 : 0.2;
+      const lampRate = low ? 6.5 : 2.2;
       for (let i = 0; i < this.stringMats.length; i++) {
-        this.stringMats[i].emissiveIntensity = 0.9 + Math.sin(T * 2.2 + i * 2.1) * 0.2;
+        this.stringMats[i].emissiveIntensity =
+          lampBase + Math.sin(T * lampRate + i * 2.1) * lampAmp;
       }
     }
 
