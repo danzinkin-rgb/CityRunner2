@@ -88,6 +88,37 @@
     .facts-list li{font-size:14px;padding-left:28px}
     .facts-list{margin-bottom:22px}
   }
+  .sheet{max-width:520px;width:100%;max-height:58vh;overflow-y:auto;text-align:left;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:18px;
+    padding:20px 22px;margin:14px 0 26px;-webkit-overflow-scrolling:touch}
+  .sheet h3{color:var(--gold);font-size:15px;letter-spacing:2px;text-transform:uppercase;margin:16px 0 8px}
+  .sheet h3:first-child{margin-top:0}
+  .sheet p{font-size:14px;line-height:1.5;margin-bottom:10px;color:#dde3f2}
+  .sheet .tip{font-size:13px;opacity:.72;font-style:italic}
+  .sheet hr{border:none;border-top:1px solid rgba(255,255,255,.12);margin:14px 0}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:7px 0;font-size:14px}
+  .row .key + span{flex:1;text-align:left}
+  .row .key{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:30px;
+    padding:0 8px;border-radius:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+    font-weight:700;color:var(--gold)}
+  .muted{opacity:.6}
+  .toggle{pointer-events:auto;min-width:62px;padding:7px 14px;border-radius:999px;cursor:pointer;
+    border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#fff;
+    font:inherit;font-size:12px;font-weight:800;letter-spacing:1px}
+  .toggle.on{background:var(--gold);color:#20160a;border-color:transparent}
+  input[type=range]{pointer-events:auto;accent-color:var(--gold);width:150px}
+  .menu-links{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:18px;font-size:13px}
+  /* Optional on-screen controls for players who cannot swipe reliably. */
+  #touchpad{display:none;position:absolute;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom));
+    justify-content:center;gap:12px;padding:0 14px}
+  body.touch-controls #hud.on #touchpad{display:flex}
+  .tbtn{pointer-events:auto;width:64px;height:64px;border-radius:50%;font-size:22px;color:#fff;
+    background:rgba(12,18,38,.5);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px);cursor:pointer}
+  .tbtn:active{background:var(--gold);color:#20160a;transform:scale(.94)}
+  /* Reduced motion: damp the decorative animation, never the gameplay. */
+  body.reduced-motion .title{animation:none}
+  body.reduced-motion #hud-progress{transition:none}
+  @media (prefers-reduced-motion: reduce){ .screen,.btn,#hud-hint{transition-duration:.01ms !important} }
   .linkbtn{pointer-events:auto;background:none;border:none;font:inherit;color:inherit;opacity:.75;
     text-decoration:underline;cursor:pointer;letter-spacing:inherit;text-transform:inherit;padding:0}
   .linkbtn:hover{opacity:1;color:var(--gold)}
@@ -119,6 +150,12 @@
   <div id="hud-timer">60</div>
   <div id="hud-hint"></div>
   <button id="btn-pause" aria-label="Pause">❚❚</button>
+  <div id="touchpad" aria-hidden="true">
+    <button class="tbtn" id="t-left"  aria-label="Move left">◀</button>
+    <button class="tbtn" id="t-jump"  aria-label="Jump">▲</button>
+    <button class="tbtn" id="t-roll"  aria-label="Roll">▼</button>
+    <button class="tbtn" id="t-right" aria-label="Move right">▶</button>
+  </div>
 </div>
 
 <div id="screen-paused" class="screen">
@@ -136,15 +173,67 @@
   <div class="label" style="margin-top:24px;font-size:14px;letter-spacing:2px">
     ⬅️ ➡️ MOVE &nbsp;·&nbsp; ⬆️ JUMP &nbsp;·&nbsp; ⬇️ ROLL &nbsp;·&nbsp; OR SWIPE</div>
   <div id="menu-stats" class="label" style="margin-top:14px"></div>
-  <div id="menu-identity" class="label" style="margin-top:8px">
-    <span id="menu-name">—</span>
-    <button class="linkbtn" id="btn-reroll">reroll</button>
-    ·
-    <a class="linkbtn" href="privacy.html">privacy</a>
-    ·
-    <button class="linkbtn" id="btn-erase">erase my data</button>
+  <div class="menu-links label">
+    <button class="linkbtn" id="btn-help">How to play</button>
+    <button class="linkbtn" id="btn-scores">Best runs</button>
+    <button class="linkbtn" id="btn-settings">Settings</button>
+  </div>
+  <div id="menu-identity" class="label" style="margin-top:10px;font-size:12px">
+    playing as <span id="menu-name">—</span>
   </div>
   <div class="skyline"></div>
+</div>
+
+<div id="screen-help" class="screen">
+  <div class="title" style="font-size:clamp(26px,7vw,48px)">HOW TO PLAY</div>
+  <div class="sheet">
+    <h3>Running</h3>
+    <div class="row"><span class="key">← →</span><span>Swipe or press to change lane</span></div>
+    <div class="row"><span class="key">↑</span><span>Jump — clears barriers, cars and taxis</span></div>
+    <div class="row"><span class="key">↓</span><span>Roll — slides under overhead signs</span></div>
+    <div class="row"><span class="key">❚❚</span><span>Pause (or press P / Esc)</span></div>
+    <p class="tip">Buses are solid walls — change lane, you cannot jump those.</p>
+
+    <h3>Souvenirs</h3>
+    <p>Each city has its own collectible: <b>❤️ hearts</b> in New York, <b>🥐 croissants</b> in Paris,
+       <b>☎️ phone boxes</b> in London, <b>🏛️ Caesar busts</b> in Rome. Each is worth 25 points.</p>
+
+    <h3>Building the monument</h3>
+    <p>Reach the end of a street and you get 60 seconds to rebuild that city's landmark.
+       Tap the <b>glowing</b> blocks — they are the ones you may place next.
+       Build from the ground up: a block cannot go on before whatever it rests on.
+       Blocks in the same course glow together and may be placed in any order.</p>
+    <p class="tip">Drag anywhere to spin the view. Finishing early is worth 50 points per second left.</p>
+
+    <h3>Progress</h3>
+    <p>Complete a city's landmark to earn a star and unlock the next street. Three stars unlocks the next city.</p>
+  </div>
+  <button class="btn" id="btn-help-close">GOT IT</button>
+</div>
+
+<div id="screen-settings" class="screen">
+  <div class="title" style="font-size:clamp(26px,7vw,48px)">SETTINGS</div>
+  <div class="sheet">
+    <div class="row"><span>Music</span><button class="toggle" id="set-music">ON</button></div>
+    <div class="row"><span>Sound effects</span><button class="toggle" id="set-sfx">ON</button></div>
+    <div class="row"><span>Volume</span><input type="range" id="set-vol" min="0" max="100" step="5"></div>
+    <div class="row"><span>Reduced motion</span><button class="toggle" id="set-motion">OFF</button></div>
+    <div class="row"><span>On-screen controls</span><button class="toggle" id="set-touchbtns">OFF</button></div>
+    <hr>
+    <div class="row"><span>Player</span><span id="set-name" class="muted">—</span></div>
+    <div class="row"><span></span><button class="linkbtn" id="set-reroll">new nickname</button></div>
+    <hr>
+    <div class="row"><a class="linkbtn" href="privacy.html">Privacy policy</a>
+      <button class="linkbtn" id="set-erase">Erase my data</button></div>
+    <div class="row muted" style="font-size:12px"><span id="set-version">v—</span><span>Made with Three.js</span></div>
+  </div>
+  <button class="btn" id="btn-settings-close">DONE</button>
+</div>
+
+<div id="screen-scores" class="screen">
+  <div class="title" style="font-size:clamp(26px,7vw,48px)">BEST RUNS</div>
+  <div class="sheet" id="scores-body"></div>
+  <button class="btn" id="btn-scores-close">BACK</button>
 </div>
 
 <div id="screen-facts" class="screen">

@@ -1,18 +1,33 @@
 // Procedural WebAudio: no audio files, everything synthesized.
 let ctx = null, master = null, musicTimer = null;
 
+// ---- user preferences (persisted; every mobile game is expected to have these)
+const PREF_KEY = 'cityrunner2.audio';
+export const prefs = { music: true, sfx: true, volume: 0.8 };
+try {
+  const saved = JSON.parse(localStorage.getItem(PREF_KEY) || 'null');
+  if (saved) Object.assign(prefs, saved);
+} catch { /* unavailable storage — defaults stand */ }
+
+export function saveAudioPrefs() {
+  try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch { /* private mode */ }
+  if (master) master.gain.value = 0.35 * prefs.volume;
+  if (!prefs.music) stopMusic();
+}
+
 function ac() {
   if (!ctx) {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     master = ctx.createGain();
-    master.gain.value = 0.35;
+    master.gain.value = 0.35 * prefs.volume;
     master.connect(ctx.destination);
   }
   if (ctx.state === 'suspended') ctx.resume();
   return ctx;
 }
 
-function tone(freq, dur, type = 'sine', vol = 0.5, when = 0, slide = 0) {
+function tone(freq, dur, type = 'sine', vol = 0.5, when = 0, slide = 0, isMusic = false) {
+  if (isMusic ? !prefs.music : !prefs.sfx) return;
   const a = ac();
   const o = a.createOscillator(), g = a.createGain();
   o.type = type; o.frequency.value = freq;
@@ -46,16 +61,17 @@ const SCALES = {
 
 export function startMusic(cityId) {
   stopMusic();
+  if (!prefs.music) return;
   const a = ac();
   const scale = SCALES[cityId] || SCALES.nyc;
   const root = 110;
   let step = 0;
   musicTimer = setInterval(() => {
     const beat = step % 8;
-    if (beat % 2 === 0) tone(root / 2, 0.22, 'sine', 0.22);
+    if (beat % 2 === 0) tone(root / 2, 0.22, 'sine', 0.22, 0, 0, true);
     const n = scale[(step * 3 + ((step / 8) | 0)) % scale.length];
-    tone(root * 2 * Math.pow(2, n / 12), 0.14, 'triangle', 0.08);
-    if (beat === 4) tone(root * Math.pow(2, scale[1] / 12), 0.2, 'sine', 0.12);
+    tone(root * 2 * Math.pow(2, n / 12), 0.14, 'triangle', 0.08, 0, 0, true);
+    if (beat === 4) tone(root * Math.pow(2, scale[1] / 12), 0.2, 'sine', 0.12, 0, 0, true);
     step++;
   }, 180);
 }

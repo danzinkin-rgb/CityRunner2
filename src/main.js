@@ -1,11 +1,13 @@
 import * as THREE from '../vendor/three.module.js';
 import { createRenderer, makeCamera, handleResize, dressScene } from './core/engine.js';
 import { createInput } from './core/input.js';
-import { sfx, startMusic, stopMusic } from './core/audio.js';
+import { sfx, startMusic, stopMusic, prefs as audioPrefs, saveAudioPrefs } from './core/audio.js';
 import { CITIES, LANDMARK_NAMES } from './cities/themes.js';
 import { STREET_FACTS, MONUMENT_FACTS } from './facts.js';
 import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
-import { startSession, submit } from './core/scores.js';
+import { startSession, submit, top as topScores } from './core/scores.js';
+
+export const VERSION = '1.0.0';
 import { Player } from './run/player.js';
 import { Track } from './run/track.js';
 import { Puzzle } from './puzzle/puzzle.js';
@@ -20,6 +22,7 @@ const hud = $('hud'), fade = $('fade');
 const screens = {
   menu: $('screen-menu'), over: $('screen-over'), pwin: $('screen-puzzle-win'),
   facts: $('screen-facts'), paused: $('screen-paused'),
+  help: $('screen-help'), settings: $('screen-settings'), scores: $('screen-scores'),
 };
 function showScreen(name) {
   for (const k in screens) screens[k].classList.toggle('on', k === name);
@@ -291,16 +294,104 @@ canvasEl.addEventListener('pointercancel', () => { cam.dragging = false; });
 $('btn-play').onclick = () => { cityIdx = 0; level = Math.min(3, (save.stars.nyc || 0) + 1); startRun(); };
 $('btn-build').onclick = () => startPuzzle();
 
-// ---------- identity controls (privacy: reroll + erase are user rights) ----------
-$('btn-reroll').onclick = () => { rerollName(); buildCitySelect(); };
-$('btn-erase').onclick = () => {
+// ---------- menu shell: help, settings, scoreboard ----------
+// Each overlay remembers where it came from so Back always returns correctly.
+let overlayFrom = 'menu';
+function openOverlay(name) {
+  overlayFrom = state === 'menu' ? 'menu' : overlayFrom;
+  if (state === 'run' || state === 'puzzle') pauseGame();
+  state = `ui-${name}`;
+  showScreen(name);
+}
+function closeOverlay() {
+  if (pausedFrom) { state = 'paused'; showScreen('paused'); return; }
+  state = 'menu';
+  buildCitySelect();
+  showScreen('menu');
+}
+
+$('btn-help').onclick = () => openOverlay('help');
+$('btn-help-close').onclick = closeOverlay;
+$('btn-scores').onclick = () => { renderScores(); openOverlay('scores'); };
+$('btn-scores-close').onclick = closeOverlay;
+$('btn-settings').onclick = () => { renderSettings(); openOverlay('settings'); };
+$('btn-settings-close').onclick = closeOverlay;
+
+function renderScores() {
+  const body = $('scores-body');
+  body.innerHTML = '';
+  let any = false;
+  for (const c of CITIES) {
+    for (let lv = 1; lv <= 3; lv++) {
+      const best = topScores({ mode: 'run', cityId: c.id, level: lv }, 1)[0];
+      if (!best) continue;
+      any = true;
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `<span>${c.name} · ${c.streets[lv - 1]}</span>
+        <span style="color:var(--gold);font-weight:800">${best.score.toLocaleString()}</span>`;
+      body.appendChild(row);
+    }
+  }
+  if (!any) {
+    body.innerHTML = '<p class="tip">No runs yet. Your best score for each street will appear here.</p>';
+  } else {
+    const hr = document.createElement('hr');
+    const tot = document.createElement('div');
+    tot.className = 'row';
+    tot.innerHTML = `<span class="muted">Lifetime souvenirs</span>
+      <span class="muted">${save.coins.toLocaleString()}</span>`;
+    body.append(hr, tot);
+  }
+}
+
+function renderSettings() {
+  const setToggle = (id, on) => {
+    const el = $(id);
+    el.textContent = on ? 'ON' : 'OFF';
+    el.classList.toggle('on', on);
+  };
+  setToggle('set-music', audioPrefs.music);
+  setToggle('set-sfx', audioPrefs.sfx);
+  setToggle('set-motion', !!save.reducedMotion);
+  setToggle('set-touchbtns', !!save.touchButtons);
+  $('set-vol').value = Math.round(audioPrefs.volume * 100);
+  $('set-name').textContent = getIdentity().name;
+  $('set-version').textContent = `v${VERSION}`;
+}
+
+$('set-music').onclick = () => {
+  audioPrefs.music = !audioPrefs.music; saveAudioPrefs(); renderSettings();
+  if (audioPrefs.music && state === 'paused' && pausedFrom === 'run') startMusic(city().id);
+};
+$('set-sfx').onclick = () => { audioPrefs.sfx = !audioPrefs.sfx; saveAudioPrefs(); renderSettings(); };
+$('set-vol').oninput = (e) => { audioPrefs.volume = +e.target.value / 100; saveAudioPrefs(); };
+$('set-motion').onclick = () => {
+  save.reducedMotion = !save.reducedMotion; persist(); applyReducedMotion(); renderSettings();
+};
+$('set-touchbtns').onclick = () => {
+  save.touchButtons = !save.touchButtons; persist(); applyTouchButtons(); renderSettings();
+};
+$('set-reroll').onclick = () => { rerollName(); renderSettings(); };
+$('set-erase').onclick = () => {
   if (!confirm('Erase your nickname, progress and scores from this device?\n\nThis is immediate and cannot be undone.')) return;
   eraseAllData();
   save.stars = {}; save.coins = 0; save.best = 0;
   persist();
-  buildCitySelect();
+  renderSettings();
   alert('Erased. A fresh anonymous profile has been created.');
 };
+
+// Respect the OS setting on first run, then honour the in-game override.
+if (save.reducedMotion === undefined) {
+  save.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  persist();
+}
+export function reducedMotion() { return !!save.reducedMotion; }
+function applyReducedMotion() { document.body.classList.toggle('reduced-motion', !!save.reducedMotion); }
+function applyTouchButtons() { document.body.classList.toggle('touch-controls', !!save.touchButtons); }
+applyReducedMotion();
+applyTouchButtons();
 
 // ---------- pause ----------
 let pausedFrom = null;
@@ -320,6 +411,16 @@ function resumeGame() {
   if (state === 'run') startMusic(city().id);
 }
 $('btn-pause').onclick = pauseGame;
+
+// On-screen control pad (Settings → On-screen controls)
+const padAction = (id, fn) => {
+  const el = $(id);
+  el.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (state === 'run') fn(); });
+};
+padAction('t-left', () => player.moveLane(-1, sfx));
+padAction('t-right', () => player.moveLane(1, sfx));
+padAction('t-jump', () => player.jump(sfx));
+padAction('t-roll', () => player.roll(sfx));
 $('btn-resume').onclick = resumeGame;
 $('btn-quit').onclick = () => {
   pausedFrom = null;
@@ -377,8 +478,9 @@ function frame() {
     camera.position.y = 5.2 + player.y * 0.35 + Math.sin(clock.elapsedTime * 9) * 0.03;
     if (shake > 0) {
       shake -= dt;
-      camera.position.x += (Math.random() - 0.5) * shake * 0.9;
-      camera.position.y += (Math.random() - 0.5) * shake * 0.9;
+      const amp = save.reducedMotion ? 0.18 : 0.9;   // damped, not removed
+      camera.position.x += (Math.random() - 0.5) * shake * amp;
+      camera.position.y += (Math.random() - 0.5) * shake * amp;
     }
     camera.lookAt(player ? player.x * 0.4 : 0, 2.2, -14);
 
