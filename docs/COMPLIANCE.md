@@ -137,6 +137,13 @@ Two specific traps:
 
 Using our own renders removes this entire category of risk, keeps the art direction coherent, and costs nothing. If photographic imagery is ever wanted, the safe subset is New York and London freely, plus the Arc de Triomphe and a daytime unlit Eiffel; Rome and the Louvre Pyramid would require written permission and fees.
 
+**Photographs taken by us personally do not change any of the above.** The restrictions attach to the subject, not the photographer. Shooting it yourself secures only the photographer's copyright — the layer that was never the obstacle. An own-shot Louvre Pyramid still reproduces Pei's architectural work; an own-shot Colosseum still engages Italy's concession regime, which is administrative rather than copyright-based and applies to whoever reproduces the asset commercially. Self-shot images do help in the permitted jurisdictions (New York, London, Arc de Triomphe, daytime unlit Eiffel), where they are in fact cleaner than stock because they remove any doubt about a contributor's releases.
+
+Two further points for the restricted cases:
+- Enforcement is real: Italy's Ministry of Culture and the Galleria dell'Accademia pursued Ravensburger over the Vitruvian Man; the Uffizi pursued Jean Paul Gaultier over Botticelli's Venus, with indicated exposure above €100,000.
+- Counter-position, live but not to be relied on: in March 2024 the Regional Court of Stuttgart found for Ravensburger, holding Italy's code incompatible with the principle of territoriality and so unenforceable extraterritorially. An App Store release is nevertheless distributed *into* Italy, which is the weakest ground on which to rest that argument.
+- Ticketed sites (the Colosseum among them) additionally impose contractual conditions of entry restricting commercial photography — contract, separate from copyright.
+
 *Not legal advice. If the game is monetised materially, take proper advice on the Italian position.*
 
 ---
