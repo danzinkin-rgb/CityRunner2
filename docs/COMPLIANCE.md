@@ -114,6 +114,31 @@ A Capacitor app that is only a wrapped website gets rejected. Native features th
 - Real street names are used descriptively and are not trademarks in this context.
 - A disclaimer of non-affiliation appears in `privacy.html` and should also appear in the App Store description.
 
+### 3.1 Photographs of the landmarks — decision: do not use any
+
+**Decision: all landmark imagery in the game is our own 3D render. No photographs, no stock imagery, from any source.**
+
+The reasoning matters, because it is counter-intuitive. A CC0 / Unsplash / public-domain photo licence grants only the *photographer's* copyright. A separate layer of rights over the **subject** can still prohibit commercial use, and Unsplash states this in its own guidance: the user is responsible for trademark and property rights in what is depicted.
+
+Position per city for commercial distribution:
+
+| City | Photographs of landmarks, commercially |
+|---|---|
+| New York | Permitted — 17 U.S.C. §120 allows images of buildings visible from public places |
+| London | Permitted — s.62 CDPA 1988 covers commercial use |
+| Paris | **Restricted** — France's 2016 freedom-of-panorama exception excludes commercial use |
+| Rome | **Restricted and chargeable** — see below |
+
+Two specific traps:
+
+- **Louvre Pyramid** — architect I. M. Pei died 2019, so copyright subsists to roughly 2089. Commercial photographs are not permitted.
+- **Rome (Colosseum, Pantheon, Trevi)** — Italy has no freedom of panorama, and the Cultural Heritage Code (Legislative Decree 42/2004, Arts. 107–108) requires authorisation and a concession fee for commercial reproduction of state-owned cultural heritage. Ministerial Decree 161 (April 2023) set **minimum fees that apply even to public-domain works**. Age confers no exemption.
+- **Eiffel Tower** — the structure is public domain (1889); the night-time illumination is separately copyrighted. Already noted above.
+
+Using our own renders removes this entire category of risk, keeps the art direction coherent, and costs nothing. If photographic imagery is ever wanted, the safe subset is New York and London freely, plus the Arc de Triomphe and a daytime unlit Eiffel; Rome and the Louvre Pyramid would require written permission and fees.
+
+*Not legal advice. If the game is monetised materially, take proper advice on the Italian position.*
+
 ---
 
 ## 4. Security boundaries — the parts that are not delegable
