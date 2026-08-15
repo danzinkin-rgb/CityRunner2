@@ -1,6 +1,7 @@
 // Visual identity for each city. Everything downstream (sky, fog, buildings,
 // props, obstacles, puzzle landmarks) is driven from this table.
-// Design bar: bright, saturated, golden-hour mobile-game look (Subway Surfers).
+// Design bar: bright, saturated, golden-hour stylised look — high chroma,
+// strong silhouettes, readable at speed on a small screen.
 // fog color === sky glow color so distant geometry melts into the horizon glow.
 //
 // Each city also carries a `levels` array — one entry per street — of visual
