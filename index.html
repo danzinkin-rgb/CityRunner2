@@ -34,6 +34,9 @@
     text-shadow:0 2px 12px rgba(0,0,0,.6);font-variant-numeric:tabular-nums;display:none}
   #hud-timer.low{color:#ff5a5a;animation:pulse .5s infinite alternate}
   @keyframes pulse{from{transform:translateX(-50%) scale(1)}to{transform:translateX(-50%) scale(1.12)}}
+  /* Track behind the fill, so early in a run it reads as "progress at zero"
+     rather than a stray orange mark in the corner. */
+  #hud-progress-track{position:absolute;top:0;left:0;right:0;height:5px;background:rgba(255,255,255,.14)}
   #hud-progress{position:absolute;top:0;left:0;height:5px;border-radius:0 4px 4px 0;
     background:linear-gradient(90deg,var(--gold),#ff9e42);width:0%;transition:width .3s;
     box-shadow:0 1px 8px rgba(255,190,80,.55)}
@@ -102,12 +105,16 @@
     padding:0 8px;border-radius:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
     font-weight:700;color:var(--gold)}
   .muted{opacity:.6}
-  .toggle{pointer-events:auto;min-width:62px;padding:7px 14px;border-radius:999px;cursor:pointer;
+  .toggle{pointer-events:auto;min-width:72px;min-height:44px;padding:0 16px;border-radius:999px;cursor:pointer;
     border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#fff;
     font:inherit;font-size:12px;font-weight:800;letter-spacing:1px}
   .toggle.on{background:var(--gold);color:#20160a;border-color:transparent}
-  input[type=range]{pointer-events:auto;accent-color:var(--gold);width:150px}
-  .menu-links{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:18px;font-size:13px}
+  input[type=range]{pointer-events:auto;accent-color:var(--gold);width:150px;height:44px}
+  .menu-links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:13px}
+  /* Platform emoji render as coloured boxes on iOS and clash with the UI, so
+     the control hints use plain glyphs. Wraps instead of forcing page width. */
+  .controls-hint{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;
+    margin-top:22px;font-size:13px;letter-spacing:2px;max-width:96vw}
   /* Optional on-screen controls for players who cannot swipe reliably. */
   #touchpad{display:none;position:absolute;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom));
     justify-content:center;gap:12px;padding:0 14px}
@@ -119,8 +126,11 @@
   body.reduced-motion .title{animation:none}
   body.reduced-motion #hud-progress{transition:none}
   @media (prefers-reduced-motion: reduce){ .screen,.btn,#hud-hint{transition-duration:.01ms !important} }
+  /* Apple HIG minimum tap target is 44pt — enforce it without changing how
+     these read visually, by padding rather than growing the text. */
   .linkbtn{pointer-events:auto;background:none;border:none;font:inherit;color:inherit;opacity:.75;
-    text-decoration:underline;cursor:pointer;letter-spacing:inherit;text-transform:inherit;padding:0}
+    text-decoration:underline;cursor:pointer;letter-spacing:inherit;text-transform:inherit;
+    min-height:44px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center}
   .linkbtn:hover{opacity:1;color:var(--gold)}
   #menu-identity{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:12px}
   #btn-pause{pointer-events:auto;position:absolute;top:60px;right:16px;width:44px;height:44px;
@@ -141,6 +151,7 @@
 <div id="app"></div>
 
 <div id="hud">
+  <div id="hud-progress-track"></div>
   <div id="hud-progress"></div>
   <div class="hud-top">
     <div class="pill"><span id="hud-coin-icon" style="font-size:18px">🪙</span><span id="hud-coins">0</span></div>
@@ -170,8 +181,8 @@
   <div class="subtitle">Run the world's greatest streets</div>
   <div id="city-select"></div>
   <button class="btn" id="btn-play">RUN</button>
-  <div class="label" style="margin-top:24px;font-size:14px;letter-spacing:2px">
-    ⬅️ ➡️ MOVE &nbsp;·&nbsp; ⬆️ JUMP &nbsp;·&nbsp; ⬇️ ROLL &nbsp;·&nbsp; OR SWIPE</div>
+  <div class="label controls-hint">
+    <span>◀ ▶ MOVE</span><span>▲ JUMP</span><span>▼ ROLL</span><span>OR SWIPE</span></div>
   <div id="menu-stats" class="label" style="margin-top:14px"></div>
   <div class="menu-links label">
     <button class="linkbtn" id="btn-help">How to play</button>

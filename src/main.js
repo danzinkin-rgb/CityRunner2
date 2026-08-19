@@ -91,7 +91,7 @@ function startRun() {
     startSession('run', city().id, level, 0);
     state = 'run';
     showScreen(null);
-    hint('⬅️➡️ move · ⬆️ jump · ⬇️ roll — or swipe');
+    hint('◀ ▶ move · ▲ jump · ▼ roll — or swipe');
     setTimeout(() => {
       if (state === 'run') {
         const lm = city().landmarks[level - 1];
@@ -532,6 +532,9 @@ if (q.get('view')) {
     get camera() { return camera; },
     get state() { return state; },
     get cam() { return cam; },
+    get track() { return track; },
+    get player() { return player; },
+    get speed() { return speed; },
   };
   if (q.get('view') === 'puzzle') startPuzzle();
   else startRun();
@@ -540,4 +543,37 @@ if (q.get('view')) {
   if (tg) setTimeout(() => { if (track) track.goal = tg; }, 900);
 } else {
   window.GOD = false;
+}
+
+// ?ui=<screen> forces any overlay for systematic UI review at a given size.
+// screens: menu | help | settings | scores | facts | over | pwin | paused
+if (q.get('ui')) {
+  const which = q.get('ui');
+  const ci = CITIES.findIndex((c) => c.id === (q.get('city') || 'london'));
+  cityIdx = ci >= 0 ? ci : 0;
+  level = Math.min(3, Math.max(1, +(q.get('level') || 2)));
+  // Populate representative content so screens aren't reviewed empty.
+  score = 12480; coins = 37; puzzleBonus = 1650;
+  save.best = Math.max(save.best, 12480);
+  if (which === 'facts') showStreetFacts();
+  else if (which === 'over') {
+    $('over-score').textContent = Math.round(score);
+    $('over-coins').textContent = coins;
+    showScreen('over'); state = 'over';
+  } else if (which === 'pwin') {
+    const lm = city().landmarks[level - 1];
+    $('pw-name').textContent = LANDMARK_NAMES[lm];
+    $('pw-bonus').textContent = puzzleBonus;
+    $('pw-time').textContent = 21;
+    const pf = $('pw-facts'); pf.innerHTML = '';
+    for (const f of (MONUMENT_FACTS[lm] || [])) {
+      const li = document.createElement('li'); li.textContent = f; pf.appendChild(li);
+    }
+    showScreen('pwin'); state = 'pwin';
+  } else if (which === 'paused') {
+    showScreen('paused'); state = 'paused';
+  } else if (which === 'help') { renderSettings(); showScreen('help'); state = 'ui-help'; }
+  else if (which === 'settings') { renderSettings(); showScreen('settings'); state = 'ui-settings'; }
+  else if (which === 'scores') { renderScores(); showScreen('scores'); state = 'ui-scores'; }
+  else { buildCitySelect(); showScreen('menu'); state = 'menu'; }
 }
