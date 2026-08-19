@@ -1,0 +1,27 @@
+{
+  "appId": "uk.co.zinkin.cityrunner",
+  "appName": "CityRunner",
+  "webDir": "dist",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#070b1a",
+    "limitsNavigationsToAppBoundDomains": true,
+    "preferredContentMode": "mobile"
+  },
+  "server": {
+    "iosScheme": "capacitor"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "backgroundColor": "#070b1a",
+      "showSpinner": false,
+      "launchAutoHide": true
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#070b1a",
+      "overlaysWebView": true
+    }
+  }
+}

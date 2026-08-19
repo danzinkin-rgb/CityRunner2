@@ -4,19 +4,33 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node test/ios-ui.mjs && node test/determinism.mjs",
     "test:ios": "node test/ios-ui.mjs",
     "serve": "npx serve . -l 4173",
-    "test:determinism": "node test/determinism.mjs"
+    "test:determinism": "node test/determinism.mjs",
+    "build": "vite build",
+    "ios:sync": "vite build && cap sync ios",
+    "ios:open": "cap open ios"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/core": "^7.6.8",
+    "@capacitor/haptics": "^7.0.5",
+    "@capacitor/ios": "^7.6.8",
+    "@capacitor/splash-screen": "^7.0.5",
+    "@capacitor/status-bar": "^7.0.6",
     "three": "0.180.0"
   },
   "devDependencies": {
-    "playwright": "^1.62.1"
+    "@capacitor/cli": "^7.6.8",
+    "playwright": "^1.62.1",
+    "vite": "^7.3.6"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }

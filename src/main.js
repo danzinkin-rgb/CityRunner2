@@ -7,6 +7,7 @@ import { STREET_FACTS, MONUMENT_FACTS } from './facts.js';
 import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
 import { startSession, submit, top as topScores, personalBest, currentSession } from './core/scores.js';
 import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset } from './core/rng.js';
+import { initNative, onAppPause, hapticLight, hapticMedium, hapticHeavy, hapticSuccess } from './core/native.js';
 
 export const VERSION = '1.0.0';
 import { Player, DEFAULT_STYLE } from './run/player.js';
@@ -208,6 +209,7 @@ let continuesUsed = 0;
 function crash() {
   if (GOD) return;
   sfx.crash();
+  hapticHeavy();
   stopMusic();
   shake = 0.7;
   state = 'dead';
@@ -382,6 +384,7 @@ function startPuzzle() {
 function finishPuzzle(won) {
   const lm = city().landmarks[level - 1];
   if (won) {
+    hapticSuccess();
     puzzleBonus = Math.round(puzzle.time) * 50;
     score += puzzleBonus;
     save.stars[city().id] = Math.max(save.stars[city().id] || 0, level);
@@ -417,10 +420,10 @@ function finishPuzzle(won) {
 // ---------- input ----------
 createInput((action, px, py) => {
   if (state === 'run') {
-    if (action === 'left') player.moveLane(-1, sfx);
-    else if (action === 'right') player.moveLane(1, sfx);
-    else if (action === 'up') player.jump(sfx);
-    else if (action === 'down') player.roll(sfx);
+    if (action === 'left') { player.moveLane(-1, sfx); hapticMedium(); }
+    else if (action === 'right') { player.moveLane(1, sfx); hapticMedium(); }
+    else if (action === 'up') { player.jump(sfx); hapticMedium(); }
+    else if (action === 'down') { player.roll(sfx); hapticMedium(); }
   }
   // Puzzle picking is handled by the pointer/drag layer below, so that a drag
   // to rotate the view is never mistaken for a tap to place a block.
@@ -727,7 +730,7 @@ function frame() {
       speed += dt * 0.25;                       // gentle ramp
       score += speed * dt * 2;
       track.update(dt, speed, player,
-        () => { coins++; sfx.coin(); score += 25; },
+        () => { coins++; sfx.coin(); hapticLight(); score += 25; },
         () => crash());
       player.update(dt, speed);
       if (track.done()) showStreetFacts();
@@ -776,6 +779,8 @@ function frame() {
   renderer.render(scene, camera);
 }
 
+initNative();
+onAppPause(() => pauseGame());   // iOS fires this more reliably than visibilitychange
 buildCitySelect();
 frame();
 
