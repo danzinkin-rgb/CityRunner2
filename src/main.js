@@ -131,18 +131,91 @@ function crash() {
   }, 900);
 }
 
-// ---------- street facts interstitial (run complete → facts → puzzle) ----------
+// ---------- fact pages ----------
+// Facts are the reward for finishing a street, so they get a magazine
+// treatment: a hero title in the city's colour, then cards that lead with a
+// big number. Numbers count up, because a number that moves gets read.
+
+function paintFactCards(container, facts) {
+  container.innerHTML = '';
+  for (const f of facts) {
+    const card = document.createElement('div');
+    card.className = 'fp-card' + (f.big ? '' : ' noStat');
+    if (f.big) {
+      const stat = document.createElement('div');
+      stat.className = 'fp-stat';
+      stat.innerHTML = `<div class="fp-big" data-target="${f.big}">${f.big}</div>`
+        + (f.unit ? `<div class="fp-unit">${f.unit}</div>` : '')
+        + (f.label ? `<div class="fp-slabel">${f.label}</div>` : '');
+      card.appendChild(stat);
+    }
+    const t = document.createElement('div');
+    t.className = 'fp-text';
+    t.textContent = f.text;
+    card.appendChild(t);
+    container.appendChild(card);
+  }
+  if (!save.reducedMotion) countUpNumbers(container);
+}
+
+// Animate any purely numeric statistic from zero. Values like "€1.5M" or "#1"
+// are left alone — counting up a currency symbol looks broken.
+function countUpNumbers(scope) {
+  scope.querySelectorAll('.fp-big').forEach((el) => {
+    const raw = el.dataset.target || '';
+    const m = raw.match(/^([\d.,]+)([A-Za-z]*)$/);
+    if (!m) return;
+    const target = parseFloat(m[1].replace(/,/g, ''));
+    if (!isFinite(target) || target === 0) return;
+    const suffix = m[2] || '';
+    const decimals = (m[1].split('.')[1] || '').length;
+    const grouped = m[1].includes(',');
+    const t0 = performance.now();
+    const dur = 900;
+    const tick = (now) => {
+      const k = Math.min(1, (now - t0) / dur);
+      const eased = 1 - Math.pow(1 - k, 3);
+      const v = target * eased;
+      let out = decimals ? v.toFixed(decimals) : Math.round(v).toString();
+      if (grouped) out = Number(out).toLocaleString('en-GB');
+      el.textContent = out + suffix;
+      if (k < 1) requestAnimationFrame(tick);
+      else el.textContent = raw;
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+// A monument's height next to something familiar, so 96m means something.
+const SCALE_REFS = { bus: { h: 4.4, name: 'double-decker bus' }, person: { h: 1.7, name: 'person' } };
+function paintScale(el, metres, compare, name) {
+  const ref = SCALE_REFS[compare] || SCALE_REFS.bus;
+  if (!metres) { el.innerHTML = ''; return; }
+  const refPct = Math.max(4, (ref.h / metres) * 100);
+  el.innerHTML = `
+    <div class="fp-bar"><div class="val">${metres} m</div>
+      <div class="col" style="height:0"></div><div class="cap">${name}</div></div>
+    <div class="fp-bar ref"><div class="val">${ref.h} m</div>
+      <div class="col" style="height:0"></div><div class="cap">${ref.name}</div></div>`;
+  const [a, b] = el.querySelectorAll('.col');
+  requestAnimationFrame(() => { a.style.height = '78%'; b.style.height = `${refPct * 0.78}%`; });
+}
+
+function applyCityPalette() {
+  const t = city();
+  document.documentElement.style.setProperty('--fp-accent', t.windowLit || '#ffd166');
+  document.documentElement.style.setProperty('--fp-glow', t.sky?.mid || '#3a4a8c');
+}
+
 function showStreetFacts() {
   stopMusic();
   state = 'facts';
-  $('facts-title').textContent = city().streets[level - 1];
-  const list = $('facts-list');
-  list.innerHTML = '';
-  for (const f of (STREET_FACTS[city().id]?.[level - 1] || [])) {
-    const li = document.createElement('li');
-    li.textContent = f;
-    list.appendChild(li);
-  }
+  applyCityPalette();
+  const entry = STREET_FACTS[city().id]?.[level - 1];
+  $('facts-kicker').textContent = city().name;
+  $('facts-title').textContent = entry?.street || city().streets[level - 1];
+  $('facts-tag').textContent = entry?.tag || '';
+  paintFactCards($('facts-list'), entry?.facts || []);
   showScreen('facts');
 }
 
@@ -184,13 +257,10 @@ function finishPuzzle(won) {
       $('pw-name').textContent = LANDMARK_NAMES[lm];
       $('pw-bonus').textContent = puzzleBonus;
       $('pw-time').textContent = Math.round(puzzle.time);
-      const pf = $('pw-facts');
-      pf.innerHTML = '';
-      for (const f of (MONUMENT_FACTS[lm] || [])) {
-        const li = document.createElement('li');
-        li.textContent = f;
-        pf.appendChild(li);
-      }
+      applyCityPalette();
+      const md = MONUMENT_FACTS[lm];
+      paintFactCards($('pw-facts'), md?.facts || []);
+      paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm]);
       showScreen('pwin');
       state = 'pwin';
     }, 4300);
@@ -565,10 +635,10 @@ if (q.get('ui')) {
     $('pw-name').textContent = LANDMARK_NAMES[lm];
     $('pw-bonus').textContent = puzzleBonus;
     $('pw-time').textContent = 21;
-    const pf = $('pw-facts'); pf.innerHTML = '';
-    for (const f of (MONUMENT_FACTS[lm] || [])) {
-      const li = document.createElement('li'); li.textContent = f; pf.appendChild(li);
-    }
+    applyCityPalette();
+    const md = MONUMENT_FACTS[lm];
+    paintFactCards($('pw-facts'), md?.facts || []);
+    paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm]);
     showScreen('pwin'); state = 'pwin';
   } else if (which === 'paused') {
     showScreen('paused'); state = 'paused';

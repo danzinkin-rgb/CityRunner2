@@ -181,6 +181,69 @@
     border-radius:50%;border:1px solid rgba(255,255,255,.18);background:var(--glass);backdrop-filter:blur(8px);
     color:#fff;font-size:14px;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center}
   #btn-pause:active{transform:scale(.93)}
+  /* ---------- Fact pages: magazine spread, not a bullet list ---------- */
+  .factpage{background:
+      radial-gradient(120% 70% at 50% 0%, var(--fp-glow,#3a4a8c) 0%, transparent 62%),
+      radial-gradient(ellipse at 50% 40%, rgba(16,22,48,.96), rgba(4,6,16,.99))}
+  .fp-wrap{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;
+    margin:0 0 20px}
+  .fp-kicker{font-size:11px;letter-spacing:6px;text-transform:uppercase;color:var(--fp-accent,#ffd166);
+    opacity:.9;margin-bottom:6px}
+  .fp-title{font-size:clamp(30px,9vw,54px);font-weight:900;line-height:1.02;letter-spacing:-.5px;
+    background:linear-gradient(180deg,#fff 20%,var(--fp-accent,#ffd166));-webkit-background-clip:text;
+    background-clip:text;color:transparent;filter:drop-shadow(0 6px 26px rgba(0,0,0,.5))}
+  .fp-tag{font-size:14px;font-style:italic;opacity:.72;margin:6px 0 4px}
+  .fp-cards{display:flex;flex-direction:column;gap:9px;width:100%;margin-top:14px}
+  .fp-card{display:flex;align-items:center;gap:14px;text-align:left;padding:12px 14px;border-radius:16px;
+    background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.04));
+    border:1px solid rgba(255,255,255,.13);box-shadow:0 6px 18px rgba(0,0,0,.28);
+    opacity:0;transform:translateY(12px);animation:fpIn .5s cubic-bezier(.2,.7,.3,1) forwards}
+  .fp-card:nth-child(2){animation-delay:.10s}
+  .fp-card:nth-child(3){animation-delay:.20s}
+  @keyframes fpIn{to{opacity:1;transform:none}}
+  body.reduced-motion .fp-card{animation:none;opacity:1;transform:none}
+  .fp-stat{flex:0 0 84px;text-align:center;line-height:1}
+  .fp-big{font-size:27px;font-weight:900;color:var(--fp-accent,#ffd166);font-variant-numeric:tabular-nums;
+    text-shadow:0 2px 14px rgba(255,190,80,.35)}
+  .fp-unit{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.75;margin-top:2px}
+  .fp-slabel{font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;opacity:.5;margin-top:3px;line-height:1.25}
+  .fp-text{flex:1;font-size:13.5px;line-height:1.45;color:#e6ebfa}
+  .fp-card.noStat .fp-text{font-size:13px;opacity:.85}
+  /* height comparison: monument vs a familiar object */
+  .fp-scale{width:100%;max-width:520px;display:flex;align-items:flex-end;justify-content:center;gap:18px;
+    height:110px;margin:2px 0 4px}
+  .fp-bar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .fp-bar .col{width:34px;border-radius:5px 5px 0 0;
+    background:linear-gradient(180deg,var(--fp-accent,#ffd166),rgba(255,209,102,.25));
+    box-shadow:0 0 18px rgba(255,190,80,.3);transition:height .8s cubic-bezier(.2,.8,.3,1)}
+  .fp-bar.ref .col{width:20px;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.12));box-shadow:none}
+  .fp-bar .cap{font-size:10px;letter-spacing:.5px;opacity:.72;margin-top:5px;text-align:center;max-width:80px}
+  .fp-bar .val{font-size:12px;font-weight:800;color:var(--fp-accent,#ffd166);margin-bottom:4px}
+  @media (max-height:720px){
+    .fp-title{font-size:clamp(24px,7.5vw,38px)}
+    .fp-cards{gap:7px;margin-top:10px}
+    .fp-card{padding:9px 12px;gap:11px}
+    .fp-big{font-size:23px}
+    .fp-text{font-size:12.5px;line-height:1.4}
+    .fp-stat{flex-basis:72px}
+    .fp-scale{height:84px;margin:0}
+    .fp-tag{font-size:12.5px;margin:4px 0 0}
+  }
+  @media (max-height:600px){
+    .fp-scale{display:none}
+    .fp-tag{display:none}
+  }
+  @media (max-height:430px){
+    .fp-wrap{margin:0 0 8px}
+    .fp-kicker{margin-bottom:2px;font-size:10px}
+    #screen-puzzle-win .fp-cards{max-height:96px;overflow-y:auto;gap:5px}
+    #screen-facts .fp-cards{max-height:150px;overflow-y:auto;gap:5px}
+    .fp-card{padding:7px 10px;gap:9px}
+    .fp-big{font-size:19px}
+    .fp-text{font-size:11.5px;line-height:1.35}
+    .fp-stat{flex-basis:62px}
+    .fp-slabel{display:none}
+  }
   .facts-list{list-style:none;max-width:560px;text-align:left;margin:0 0 30px}
   .facts-list li{position:relative;padding:9px 0 9px 34px;font-size:16px;line-height:1.45;color:#e8ecf8}
   .facts-list li::before{content:"✦";position:absolute;left:6px;color:var(--gold);text-shadow:0 0 8px rgba(255,209,102,.6)}
@@ -291,11 +354,13 @@
   <button class="btn" id="btn-scores-close">BACK</button>
 </div>
 
-<div id="screen-facts" class="screen">
-  <div class="label">You made it!</div>
-  <div class="big-num" id="facts-title" style="font-size:34px;margin-bottom:8px">—</div>
-  <div class="label" style="margin-bottom:18px">Did you know?</div>
-  <ul class="facts-list" id="facts-list"></ul>
+<div id="screen-facts" class="screen factpage">
+  <div class="fp-wrap">
+    <div class="fp-kicker" id="facts-kicker">NEW YORK</div>
+    <h1 class="fp-title" id="facts-title">—</h1>
+    <div class="fp-tag" id="facts-tag"></div>
+    <div class="fp-cards" id="facts-list"></div>
+  </div>
   <button class="btn" id="btn-build">BUILD THE MONUMENT</button>
 </div>
 
@@ -310,8 +375,11 @@
 <div id="screen-puzzle-win" class="screen">
   <div class="label">Monument complete</div>
   <div class="big-num" id="pw-name" style="font-size:40px">—</div>
-  <div class="label" style="margin:10px 0 14px"><span id="pw-bonus">0</span> bonus · <span id="pw-time">0</span>s left</div>
-  <ul class="facts-list" id="pw-facts" style="margin-bottom:26px"></ul>
+  <div class="label" style="margin:10px 0 12px"><span id="pw-bonus">0</span> bonus · <span id="pw-time">0</span>s left</div>
+  <div class="fp-wrap fp-compact">
+    <div class="fp-scale" id="pw-scale"></div>
+    <div class="fp-cards" id="pw-facts"></div>
+  </div>
   <button class="btn" id="btn-next">NEXT LEVEL</button>
   <button class="btn ghost" id="btn-menu2">CITY SELECT</button>
 </div>
