@@ -578,7 +578,13 @@ function renderShop() {
     const equipped = save.equipped === c.id;
     const el = document.createElement('div');
     el.className = 'char-card' + (equipped ? ' equipped' : '') + (!owned ? ' locked' : '');
-    el.innerHTML = `<div class="char-thumb" style="background:linear-gradient(135deg,${hexCss(style.hoodie)} 55%,${hexCss(style.cap)} 55%)"></div>
+    // Portrait rendered from the real model (assets/characters), tinted with
+    // the character's own colours behind it so the card still reads at a
+    // glance if the image is slow to arrive.
+    el.innerHTML = `<div class="char-thumb" style="background:
+        url(assets/characters/${c.id}.png) center bottom/auto 96% no-repeat,
+        radial-gradient(ellipse at 50% 85%,${hexCss(style.hoodie)}3a,transparent 70%),
+        linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.01))"></div>
       <div class="char-name">${c.name}</div>
       <div class="char-state">${equipped ? 'EQUIPPED' : owned ? 'OWNED' : `${c.price.toLocaleString()} 🪙`}</div>`;
     el.onclick = () => {
@@ -843,6 +849,30 @@ if (q.get('ui')) {
   else if (which === 'settings') { renderSettings(); showScreen('settings'); state = 'ui-settings'; }
   else if (which === 'scores') { renderScores(); showScreen('scores'); state = 'ui-scores'; }
   else if (which === 'shop') { renderShop(); showScreen('shop'); state = 'ui-shop'; }
+  else if (which === 'portrait') {
+    // Renders one character alone for capturing shop portraits. Deliberately
+    // shown from BEHIND at a three-quarter angle — that is how the player
+    // actually sees their character while running, and the model has no face.
+    const c = characterById(q.get('char') || 'runner');
+    disposeAll();
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x141a30);
+    const key = new THREE.DirectionalLight(0xfff2df, 2.9); key.position.set(4, 7, 6);
+    const rim = new THREE.DirectionalLight(0x9ec8ff, 1.7); rim.position.set(-5, 3, -5);
+    scene.add(key, rim, new THREE.HemisphereLight(0xe6f0ff, 0x2a3050, 1.4));
+    player = new Player(scene, c.style);
+    player.blob.visible = false;              // the ground blob floats with no ground
+    player.group.rotation.y = -0.5;           // three-quarter from behind
+    camera.fov = 26; camera.updateProjectionMatrix();
+    camera.position.set(0, 1.5, 7.2);
+    camera.lookAt(0, 1.12, 0);
+    showScreen(null);
+    hud.classList.remove('on');
+    state = 'portrait';
+    // Freeze on a flattering frame of the run cycle rather than a limp T-pose.
+    player.time = 0.62;
+    player.update(0.0001, 14);
+  }
   else if (which === 'continue') { showContinueOffer(CONTINUE_PRICES[0]); }
   else { buildCitySelect(); showScreen('menu'); state = 'menu'; }
 }
