@@ -15,20 +15,29 @@ export function saveAudioPrefs() {
   if (!prefs.music) stopMusic();
 }
 
+// Audio must never be able to break the game. WebKit throws if the API is
+// missing or blocked (no user gesture yet, low-power mode, locked-down
+// contexts), and these calls sit inside the render loop.
+let audioBroken = false;
+
 function ac() {
+  if (audioBroken) return null;
   if (!ctx) {
-    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { audioBroken = true; return null; }
+    try { ctx = new AC(); } catch { audioBroken = true; return null; }
     master = ctx.createGain();
     master.gain.value = 0.35 * prefs.volume;
     master.connect(ctx.destination);
   }
-  if (ctx.state === 'suspended') ctx.resume();
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   return ctx;
 }
 
 function tone(freq, dur, type = 'sine', vol = 0.5, when = 0, slide = 0, isMusic = false) {
   if (isMusic ? !prefs.music : !prefs.sfx) return;
   const a = ac();
+  if (!a) return;
   const o = a.createOscillator(), g = a.createGain();
   o.type = type; o.frequency.value = freq;
   if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), a.currentTime + when + dur);
@@ -63,6 +72,7 @@ export function startMusic(cityId) {
   stopMusic();
   if (!prefs.music) return;
   const a = ac();
+  if (!a) return;
   const scale = SCALES[cityId] || SCALES.nyc;
   const root = 110;
   let step = 0;
