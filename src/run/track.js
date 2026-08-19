@@ -416,7 +416,10 @@ export class Track {
   }
 
   populateObstacles(chunkGroup, chunkZ) {
-    const density = 0.55 + this.level * 0.25;      // rows per 12m
+    // Rows per 12m. Level 1 is a teaching level: it must be comfortably
+    // completable by a first-time player, so it sits well below the old
+    // 0.8 that made streets feel relentless.
+    const density = [0.55, 0.8, 1.05][this.level - 1] ?? 0.8;
     const t = this.theme;
     for (let zRow = 8; zRow < CHUNK_LEN - 4; zRow += 12 / density) {
       const worldZ = chunkZ - zRow;
@@ -430,9 +433,16 @@ export class Track {
           mesh = makeVehicle(t);
           // Honest hitboxes: buses are walls you must dodge; cars/taxis/vespas
           // are low enough that a well-timed jump clears them.
-          const isBus = t.vehicle === 'bus';
+          // A bus is an unjumpable wall. If every London vehicle were a bus,
+          // London would be far harder than the other cities for no reason —
+          // so most London vehicles are jumpable cabs, and buses stay rare
+          // (and rarer still on level 1).
+          const busChance = this.level === 1 ? 0.18 : 0.4;
+          const isBus = t.vehicle === 'bus' && Math.random() < busChance;
+          mesh.userData.asCab = t.vehicle === 'bus' && !isBus;
           y0 = 0; y1 = isBus ? 3.2 : 1.6;
           halfLen = isBus ? 2.6 : t.vehicle === 'vespa' ? 1.1 : 2.1;
+          if (mesh.userData.asCab) mesh.scale.set(0.82, 0.5, 0.86);
         } else if (kind === 'low') {
           mesh = new THREE.Group();
           const bar = new THREE.Mesh(OB_GEO.bar, this.accentMat);
@@ -466,7 +476,9 @@ export class Track {
         this.obstacles.push({ mesh, lane, kind, y0, y1, halfLen, chunk: chunkGroup, localZ: -zRow });
       };
 
-      if (pattern < 0.3) {
+      // Level 1 sees fewer vehicles and more single jump/roll obstacles.
+      const fullCut = this.level === 1 ? 0.18 : 0.3;
+      if (pattern < fullCut) {
         addObstacle((Math.random() * 3) | 0, 'full');
         if (this.level >= 2 && Math.random() < 0.5) addObstacle(pick3(usedLanes), 'low');
       } else if (pattern < 0.55) {
@@ -527,10 +539,13 @@ export class Track {
       }
     }
 
-    // obstacles — z window matches each obstacle's true length
+    // Obstacles. The z window is deliberately SHORTER than the mesh: matching
+    // true vehicle length made a bus a 6.1m collision zone, so brushing past
+    // one mid-lane-change clipped you. Players should feel they got away with
+    // it, not robbed.
     for (const o of this.obstacles) {
       const wz = o.localZ + o.chunk.position.z + this.group.position.z;
-      const zw = (o.halfLen || 0.35) + 0.45;
+      const zw = (o.halfLen || 0.35) * 0.55 + 0.3;
       if (wz > -zw && wz < zw && Math.abs(LANES[o.lane] - hb.x) < 1.15) {
         const overlap = hb.y0 < o.y1 && hb.y1 > o.y0;
         if (overlap) { onHit(); return; }
