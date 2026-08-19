@@ -115,6 +115,15 @@
     .title{font-size:min(9.5vw,34px)}
     .city-card .thumb{height:46px}
     .controls-hint{display:none}
+    /* An iPhone SE gives 568px. The daily card has to earn its space. */
+    .daily-card{margin-top:8px;padding:7px 12px;max-width:320px}
+    .dc-best{display:none}
+    .dc-where{font-size:12.5px}
+    .dc-title{font-size:9px;letter-spacing:2px}
+    #city-select{margin-bottom:10px}
+    #menu-stats{display:none}
+    .menu-links{margin-top:0}
+    .linkbtn{min-height:34px}
   }
   /* Landscape phone: ~343px of height. Everything must still fit. */
   @media (max-height:430px){
@@ -181,6 +190,33 @@
     border-radius:50%;border:1px solid rgba(255,255,255,.18);background:var(--glass);backdrop-filter:blur(8px);
     color:#fff;font-size:14px;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center}
   #btn-pause:active{transform:scale(.93)}
+  /* ---------- Daily challenge card ---------- */
+  .daily-card{pointer-events:auto;cursor:pointer;font:inherit;color:#fff;text-align:left;
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    width:100%;max-width:360px;margin-top:16px;padding:12px 16px;min-height:44px;
+    border-radius:16px;border:1px solid rgba(255,209,102,.38);
+    background:linear-gradient(135deg,rgba(255,209,102,.16),rgba(255,158,66,.07));
+    box-shadow:0 6px 20px rgba(0,0,0,.32);transition:transform .12s,border-color .12s}
+  .daily-card:hover{transform:translateY(-2px);border-color:rgba(255,209,102,.7)}
+  .daily-card:active{transform:scale(.98)}
+  .dc-title{font-size:10px;letter-spacing:2.5px;font-weight:800;color:var(--gold);opacity:.95}
+  .dc-where{font-size:15px;font-weight:800;margin-top:2px}
+  .dc-best{font-size:11px;opacity:.6;margin-top:2px}
+  .dc-right{text-align:right;flex:0 0 auto}
+  .dc-streak{font-size:11px;font-weight:700;color:#ffb35c}
+  .dc-reset{font-size:10px;opacity:.55;margin-top:2px;white-space:nowrap}
+  .dc-go{font-size:12px;font-weight:800;color:var(--gold);margin-top:4px;letter-spacing:1px}
+  @media (max-height:720px){
+    .daily-card{margin-top:10px;padding:9px 13px}
+    .dc-where{font-size:13.5px}
+    .dc-best,.dc-reset{font-size:10px}
+  }
+  @media (max-height:430px){ .daily-card{display:none} }
+  /* Declared here, after #menu-identity's base rule, so it actually wins.
+     The nickname also lives in Settings; on the shortest screens it is the
+     first thing to drop so the nav links stay above the fold. */
+  @media (max-height:600px){ #menu-identity{display:none} }
+
   /* ---------- Fact pages: magazine spread, not a bullet list ---------- */
   .factpage{background:
       radial-gradient(120% 70% at 50% 0%, var(--fp-glow,#3a4a8c) 0%, transparent 62%),
@@ -288,6 +324,18 @@
   <div class="subtitle">Run the world's greatest streets</div>
   <div id="city-select"></div>
   <button class="btn" id="btn-play">RUN</button>
+  <button id="daily-card" class="daily-card">
+    <div class="dc-left">
+      <div class="dc-title">DAILY CHALLENGE</div>
+      <div class="dc-where" id="daily-where">—</div>
+      <div class="dc-best" id="daily-best"></div>
+    </div>
+    <div class="dc-right">
+      <div class="dc-streak" id="daily-streak"></div>
+      <div class="dc-reset" id="daily-reset"></div>
+      <div class="dc-go">PLAY ▸</div>
+    </div>
+  </button>
   <div class="label controls-hint">
     <span>◀ ▶ MOVE</span><span>▲ JUMP</span><span>▼ ROLL</span><span>OR SWIPE</span></div>
   <div id="menu-stats" class="label" style="margin-top:14px"></div>

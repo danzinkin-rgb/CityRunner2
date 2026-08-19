@@ -11,6 +11,7 @@ import {
   SHARED_GEO,
 } from '../cities/builders.js';
 import { makeCollectible } from '../cities/souvenirs.js';
+import { startRun, randomSeed, rand, randInt } from '../core/rng.js';
 
 const CHUNK_LEN = 36;
 const CHUNKS = 7;          // visible chunks ahead
@@ -72,8 +73,14 @@ for (const g of Object.values(OB_GEO)) SHARED_GEO.add(g);
 //   'full' — vehicle, must change lane
 //   'coin' — collectible
 export class Track {
-  constructor(scene, theme, level) {
+  constructor(scene, theme, level, seed) {
     this.scene = scene;
+    // Gameplay randomness (obstacle spacing/pattern/lane/kind, bus chance,
+    // collectible placement) is drawn from the seeded stream in rng.js so a
+    // seed reproduces an identical course. Cosmetic randomness (window
+    // lighting, facades, props, parked-car colours) stays on Math.random and
+    // is untouched by this. Must run before any chunk is generated.
+    this.seed = seed !== undefined && seed !== null ? startRun(seed) : startRun(randomSeed());
     // Resolve the per-street identity (facade style, palette, mood, props...)
     // over the city base — this is what makes Broadway ≠ 5th Ave ≠ Times Sq.
     this.baseTheme = theme;
@@ -423,7 +430,7 @@ export class Track {
     const t = this.theme;
     for (let zRow = 8; zRow < CHUNK_LEN - 4; zRow += 12 / density) {
       const worldZ = chunkZ - zRow;
-      const pattern = Math.random();
+      const pattern = rand();
       const usedLanes = new Set();
 
       const addObstacle = (lane, kind) => {
@@ -438,7 +445,7 @@ export class Track {
           // so most London vehicles are jumpable cabs, and buses stay rare
           // (and rarer still on level 1).
           const busChance = this.level === 1 ? 0.18 : 0.4;
-          const isBus = t.vehicle === 'bus' && Math.random() < busChance;
+          const isBus = t.vehicle === 'bus' && rand() < busChance;
           mesh.userData.asCab = t.vehicle === 'bus' && !isBus;
           y0 = 0; y1 = isBus ? 3.2 : 1.6;
           halfLen = isBus ? 2.6 : t.vehicle === 'vespa' ? 1.1 : 2.1;
@@ -479,23 +486,23 @@ export class Track {
       // Level 1 sees fewer vehicles and more single jump/roll obstacles.
       const fullCut = this.level === 1 ? 0.18 : 0.3;
       if (pattern < fullCut) {
-        addObstacle((Math.random() * 3) | 0, 'full');
-        if (this.level >= 2 && Math.random() < 0.5) addObstacle(pick3(usedLanes), 'low');
+        addObstacle(randInt(3), 'full');
+        if (this.level >= 2 && rand() < 0.5) addObstacle(pick3(usedLanes), 'low');
       } else if (pattern < 0.55) {
-        addObstacle((Math.random() * 3) | 0, 'low');
+        addObstacle(randInt(3), 'low');
       } else if (pattern < 0.75) {
-        addObstacle((Math.random() * 3) | 0, 'high');
+        addObstacle(randInt(3), 'high');
       } else if (this.level >= 2 && pattern < 0.88) {
         // double vehicle wall — one lane free
-        const free = (Math.random() * 3) | 0;
+        const free = randInt(3);
         for (let l = 0; l < 3; l++) if (l !== free) addObstacle(l, 'full');
       }
 
       // coin lines on a free lane
       const freeLanes = [0, 1, 2].filter((l) => !usedLanes.has(l));
-      if (freeLanes.length && Math.random() < 0.75) {
-        const lane = freeLanes[(Math.random() * freeLanes.length) | 0];
-        const arc = Math.random() < 0.3;
+      if (freeLanes.length && rand() < 0.75) {
+        const lane = freeLanes[randInt(freeLanes.length)];
+        const arc = rand() < 0.3;
         for (let i = 0; i < 5; i++) {
           const coin = this.souvenirProto.clone();
           const yy = arc ? 1.2 + Math.sin((i / 4) * Math.PI) * 1.3 : 1.1;
@@ -573,7 +580,7 @@ export class Track {
 
 function pick3(used) {
   const free = [0, 1, 2].filter((l) => !used.has(l));
-  return free[(Math.random() * free.length) | 0] ?? 1;
+  return free[randInt(free.length)] ?? 1;
 }
 
 // Free only geometry this chunk actually owns. Shared/cached geometry (boxes,

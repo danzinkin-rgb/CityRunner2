@@ -5,7 +5,8 @@ import { sfx, startMusic, stopMusic, prefs as audioPrefs, saveAudioPrefs } from 
 import { CITIES, LANDMARK_NAMES } from './cities/themes.js';
 import { STREET_FACTS, MONUMENT_FACTS } from './facts.js';
 import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
-import { startSession, submit, top as topScores } from './core/scores.js';
+import { startSession, submit, top as topScores, personalBest } from './core/scores.js';
+import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset } from './core/rng.js';
 
 export const VERSION = '1.0.0';
 import { Player } from './run/player.js';
@@ -25,6 +26,7 @@ const screens = {
   help: $('screen-help'), settings: $('screen-settings'), scores: $('screen-scores'),
 };
 function showScreen(name) {
+  if (name !== 'menu') stopDailyTimer();   // never leak the countdown interval
   for (const k in screens) screens[k].classList.toggle('on', k === name);
   // The HUD stays up behind the pause overlay so the run reads as "frozen".
   hud.classList.toggle('on', !name || name === 'paused');
@@ -45,6 +47,71 @@ let shake = 0;
 
 const city = () => CITIES[cityIdx];
 
+// ---------- daily challenge ----------
+// One course a day, identical for every player worldwide, rotating city.
+// Unlimited attempts; the best score of the day is the one that counts.
+let dailyMode = false;
+let runSeed = null;          // null => a fresh random course
+
+function todaysDaily(date = new Date()) {
+  const seed = dailySeedFor(date);
+  // Derive city and street from the seed itself, so the rotation is fixed for
+  // the day and nobody can look ahead by changing their clock forward.
+  const pick = makeRng(seed);
+  const ci = Math.floor(pick() * CITIES.length) % CITIES.length;
+  const lv = 1 + (Math.floor(pick() * 3) % 3);
+  return { seed, cityIdx: ci, level: lv, day: dailyKey(date) };
+}
+
+function fmtCountdown(sec) {
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+// Streaks REWARD but never PUNISH: no penalty messaging, no pressure, no
+// nagging. (UK Children's Code — the project avoids nudge techniques.)
+function recordDailyPlayed() {
+  const today = dailyKey();
+  if (save.dailyLast === today) return;
+  const y = new Date(); y.setUTCDate(y.getUTCDate() - 1);
+  save.dailyStreak = save.dailyLast === dailyKey(y) ? (save.dailyStreak || 0) + 1 : 1;
+  save.dailyLast = today;
+  persist();
+}
+
+let dailyTimer = null;
+function refreshDailyCard() {
+  const card = $('daily-card');
+  if (!card) return;
+  const d = todaysDaily();
+  const c = CITIES[d.cityIdx];
+  $('daily-where').textContent = `${c.name} · ${c.streets[d.level - 1]}`;
+  const best = personalBest({ mode: 'daily', day: d.day });
+  $('daily-best').textContent = best ? `Your best today ${Math.round(best).toLocaleString()}` : 'Not played yet today';
+  const streak = save.dailyStreak || 0;
+  const st = $('daily-streak');
+  st.textContent = streak > 1 ? `🔥 ${streak}-day streak` : '';
+  st.style.display = streak > 1 ? '' : 'none';
+  $('daily-reset').textContent = `New course in ${fmtCountdown(secondsUntilDailyReset())}`;
+}
+function startDailyTimer() {
+  stopDailyTimer();
+  refreshDailyCard();
+  dailyTimer = setInterval(refreshDailyCard, 30000);
+}
+function stopDailyTimer() {
+  if (dailyTimer) { clearInterval(dailyTimer); dailyTimer = null; }
+}
+
+function startDaily() {
+  const d = todaysDaily();
+  cityIdx = d.cityIdx;
+  level = d.level;
+  dailyMode = true;
+  runSeed = d.seed;
+  startRun();
+}
+
 // ---------- menu ----------
 function buildCitySelect() {
   const wrap = $('city-select');
@@ -59,13 +126,18 @@ function buildCitySelect() {
         <span class="thumb-flag">${flagFix[c.id] || c.flag}</span></div>
       <div class="name">${c.name}</div>
       <div class="stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>`;
-    if (unlocked) el.onclick = () => { cityIdx = i; level = Math.min(3, (save.stars[c.id] || 0) + 1); startRun(); };
+    if (unlocked) el.onclick = () => {
+      dailyMode = false; runSeed = null;
+      cityIdx = i; level = Math.min(3, (save.stars[c.id] || 0) + 1);
+      startRun();
+    };
     wrap.appendChild(el);
   });
   const stats = document.getElementById('menu-stats');
   if (stats) stats.textContent = `BEST ${Math.round(save.best)}   ·   ${save.coins} SOUVENIRS BANKED`;
   const nameEl = document.getElementById('menu-name');
   if (nameEl) nameEl.textContent = getIdentity().name;
+  startDailyTimer();
 }
 
 function doFade(fn) {
@@ -80,15 +152,16 @@ function startRun() {
     scene = new THREE.Scene();
     dressScene(scene, city());
     player = new Player(scene);
-    track = new Track(scene, city(), level);
+    track = new Track(scene, city(), level, runSeed);
     speed = 14 + (level - 1) * 3;
     coins = 0; score = 0; shake = 0;
     camera.position.set(0, 5.2, 8.5);
-    $('hud-city').textContent = `${city().name} · ${city().streets[level - 1].toUpperCase()}`;
+    $('hud-city').textContent = (dailyMode ? 'DAILY · ' : '')
+      + `${city().name} · ${city().streets[level - 1].toUpperCase()}`;
     $('hud-timer').style.display = 'none';
     const SOUVENIR_ICON = { nyc: '❤️', paris: '🥐', london: '☎️', rome: '🏛️' };
     $('hud-coin-icon').textContent = SOUVENIR_ICON[city().id] || '🪙';
-    startSession('run', city().id, level, 0);
+    startSession(dailyMode ? 'daily' : 'run', city().id, level, runSeed || 0);
     state = 'run';
     showScreen(null);
     hint('◀ ▶ move · ▲ jump · ▼ roll — or swipe');
@@ -123,6 +196,7 @@ function crash() {
   save.coins += coins;
   persist();
   submit(score);   // validated + recorded locally; ignores its own failures
+  if (dailyMode) recordDailyPlayed();
   setTimeout(() => {
     $('over-score').textContent = Math.round(score);
     $('over-coins').textContent = coins;
@@ -252,6 +326,7 @@ function finishPuzzle(won) {
     save.coins += coins;
     persist();
     submit(score);
+    if (dailyMode) recordDailyPlayed();
     // Let the celebration play out un-dimmed before the modal appears.
     setTimeout(() => {
       $('pw-name').textContent = LANDMARK_NAMES[lm];
@@ -361,7 +436,12 @@ canvasEl.addEventListener('pointerup', (e) => {
 
 canvasEl.addEventListener('pointercancel', () => { cam.dragging = false; });
 
-$('btn-play').onclick = () => { cityIdx = 0; level = Math.min(3, (save.stars.nyc || 0) + 1); startRun(); };
+$('btn-play').onclick = () => {
+  dailyMode = false; runSeed = null;
+  cityIdx = 0; level = Math.min(3, (save.stars.nyc || 0) + 1);
+  startRun();
+};
+$('daily-card').onclick = () => startDaily();
 $('btn-build').onclick = () => startPuzzle();
 
 // ---------- menu shell: help, settings, scoreboard ----------
@@ -605,7 +685,11 @@ if (q.get('view')) {
     get track() { return track; },
     get player() { return player; },
     get speed() { return speed; },
+    get seed() { return runSeed; },
+    todaysDaily,
   };
+  if (q.get('seed')) runSeed = +q.get('seed') >>> 0;
+  if (q.has('daily')) { const d = todaysDaily(); cityIdx = d.cityIdx; level = d.level; dailyMode = true; runSeed = d.seed; }
   if (q.get('view') === 'puzzle') startPuzzle();
   else startRun();
   // &goal=120 shortens the run for automated review of the facts screen
