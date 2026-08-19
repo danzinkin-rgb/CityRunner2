@@ -2,10 +2,35 @@ import * as THREE from '../../vendor/three.module.js';
 
 export const LANES = [-2.4, 0, 2.4];
 
+// Default look — identical to the original hard-coded runner. Every
+// character in src/run/characters.js overrides a subset of these fields;
+// Player fills in the rest from here, so `new Player(scene)` with no style
+// renders exactly as before.
+export const DEFAULT_STYLE = {
+  hoodie: 0xff7b24,
+  cap: 0x2ec4b6,
+  trousers: 0x3a5a9c,
+  shoes: 0xf8f8f8,
+  backpack: 0xffd23f,
+  accent: 0xe33636,
+  skin: 0xe8b48a,
+  accessory: null,   // 'satchel' | 'camera' | 'apron' | 'beret' | 'laurel' | null
+};
+
+function shade(hex, dl) {
+  const c = new THREE.Color(hex);
+  const hsl = { h: 0, s: 0, l: 0 };
+  c.getHSL(hsl);
+  c.setHSL(hsl.h, hsl.s, THREE.MathUtils.clamp(hsl.l + dl, 0, 1));
+  return c;
+}
+
 // Stylized runner: capsule torso, sphere head, animated limbs, cap.
 // Procedurally animated (run cycle, jump tuck, roll ball).
 export class Player {
-  constructor(scene) {
+  constructor(scene, style) {
+    const s = { ...DEFAULT_STYLE, ...(style || {}) };
+
     this.group = new THREE.Group();
     this.lane = 1;
     this.x = 0;
@@ -18,20 +43,21 @@ export class Player {
 
     // Bright, chunky, mobile-game proportions: big head, hoodie, backpack,
     // fat sneakers. Slight emissive lift so he pops against any street.
-    const skin = new THREE.MeshStandardMaterial({ color: 0xe8b48a, roughness: 0.65 });
+    const skin = new THREE.MeshStandardMaterial({ color: s.skin, roughness: 0.65 });
     const hoodie = new THREE.MeshStandardMaterial({
-      color: 0xff7b24, roughness: 0.55, emissive: 0xff5a1a, emissiveIntensity: 0.12,
+      color: s.hoodie, roughness: 0.55, emissive: shade(s.hoodie, -0.14), emissiveIntensity: 0.12,
     });
-    const hoodieDark = new THREE.MeshStandardMaterial({ color: 0xe05e10, roughness: 0.6 });
-    const pants = new THREE.MeshStandardMaterial({ color: 0x3a5a9c, roughness: 0.7 });
+    const hoodieDark = new THREE.MeshStandardMaterial({ color: shade(s.hoodie, -0.12), roughness: 0.6 });
+    const pants = new THREE.MeshStandardMaterial({ color: s.trousers, roughness: 0.7 });
     const capM = new THREE.MeshStandardMaterial({
-      color: 0x2ec4b6, roughness: 0.5, emissive: 0x1a8a80, emissiveIntensity: 0.15,
+      color: s.cap, roughness: 0.5, emissive: shade(s.cap, -0.1), emissiveIntensity: 0.15,
     });
-    const shoe = new THREE.MeshStandardMaterial({ color: 0xf8f8f8, roughness: 0.35 });
-    const shoeAccent = new THREE.MeshStandardMaterial({ color: 0xe33636, roughness: 0.4 });
+    const shoe = new THREE.MeshStandardMaterial({ color: s.shoes, roughness: 0.35 });
+    const shoeAccent = new THREE.MeshStandardMaterial({ color: s.accent, roughness: 0.4 });
     const packM = new THREE.MeshStandardMaterial({
-      color: 0xffd23f, roughness: 0.55, emissive: 0xcc9a1a, emissiveIntensity: 0.12,
+      color: s.backpack, roughness: 0.55, emissive: shade(s.backpack, -0.14), emissiveIntensity: 0.12,
     });
+    const accentM = new THREE.MeshStandardMaterial({ color: s.accent, roughness: 0.55 });
 
     this.body = new THREE.Group();
 
@@ -56,18 +82,11 @@ export class Player {
     hood.position.set(0, 1.48, 0.1);
     this.body.add(hood);
 
-    // backwards cap (brim toward the camera — we see his back)
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), capM);
-    cap.position.y = 1.9;
-    cap.rotation.x = 0.18;
-    this.body.add(cap);
-    const brim = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.06, 0.3), capM);
-    brim.position.set(0, 1.86, 0.46);
-    brim.rotation.x = 0.3;
-    this.body.add(brim);
-    const capBtn = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), shoeAccent);
-    capBtn.position.y = 2.32;
-    this.body.add(capBtn);
+    // headwear: the default backwards baseball cap, or an accessory that
+    // replaces it (beret, laurel wreath) for characters that call for one.
+    if (s.accessory === 'beret') this.buildBeret(capM);
+    else if (s.accessory === 'laurel') this.buildLaurel(accentM);
+    else this.buildCap(capM, shoeAccent);
 
     // yellow backpack facing the camera
     const pack = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.62, 0.26), packM);
@@ -80,6 +99,12 @@ export class Player {
     const packZip = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.05), hoodieDark);
     packZip.position.set(0, 1.34, 0.47);
     this.body.add(packZip);
+
+    // chest/shoulder accessories — small props, never geometry that changes
+    // the silhouette's collision footprint (hitbox() only reads x/y/rolling).
+    if (s.accessory === 'satchel') this.buildSatchel(accentM);
+    else if (s.accessory === 'camera') this.buildCamera(accentM);
+    else if (s.accessory === 'apron') this.buildApron(accentM);
 
     const limb = (r, len) => new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 4, 8), skin);
     this.armL = limb(0.13, 0.46); this.armR = limb(0.13, 0.46);
@@ -130,6 +155,89 @@ export class Player {
     this.group.add(this.blob);
 
     scene.add(this.group);
+  }
+
+  // ---- headwear ----
+  buildCap(capM, shoeAccent) {
+    // backwards cap (brim toward the camera — we see his back)
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), capM);
+    cap.position.y = 1.9;
+    cap.rotation.x = 0.18;
+    this.body.add(cap);
+    const brim = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.06, 0.3), capM);
+    brim.position.set(0, 1.86, 0.46);
+    brim.rotation.x = 0.3;
+    this.body.add(brim);
+    const capBtn = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), shoeAccent);
+    capBtn.position.y = 2.32;
+    this.body.add(capBtn);
+  }
+
+  buildBeret(capM) {
+    const beret = new THREE.Mesh(new THREE.SphereGeometry(0.36, 14, 8), capM);
+    beret.scale.set(1.15, 0.42, 1.15);
+    beret.position.set(0.05, 2.05, -0.02);
+    beret.rotation.z = -0.15;
+    this.body.add(beret);
+    const stem = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 6), capM);
+    stem.position.set(0.08, 2.28, -0.02);
+    this.body.add(stem);
+  }
+
+  buildLaurel(accentM) {
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.035, 6, 16), accentM);
+    band.rotation.x = Math.PI / 2;
+    band.position.set(0, 1.98, 0.02);
+    this.body.add(band);
+    for (const side of [-1, 1]) {
+      for (let i = 0; i < 3; i++) {
+        const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 4), accentM);
+        leaf.position.set(side * (0.28 + i * 0.07), 2.0 + i * 0.03, -0.05 - i * 0.05);
+        leaf.rotation.z = side > 0 ? -0.6 - i * 0.15 : 0.6 + i * 0.15;
+        leaf.rotation.x = 0.3;
+        this.body.add(leaf);
+      }
+    }
+  }
+
+  // ---- chest/shoulder accessories ----
+  buildSatchel(accentM) {
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.85, 0.06), accentM);
+    strap.position.set(-0.06, 1.15, 0.3);
+    strap.rotation.z = 0.55;
+    this.body.add(strap);
+    const pouch = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.28, 0.16), accentM);
+    pouch.position.set(0.28, 0.78, 0.22);
+    this.body.add(pouch);
+  }
+
+  buildCamera(accentM) {
+    const camBody = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4 });
+    const neckStrap = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.02, 6, 12, Math.PI), accentM);
+    neckStrap.rotation.x = Math.PI / 2.4;
+    neckStrap.position.set(0, 1.55, 0.15);
+    this.body.add(neckStrap);
+    const cam = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.14), camBody);
+    cam.position.set(0, 0.92, 0.36);
+    this.body.add(cam);
+    const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.1, 10), camBody);
+    lens.rotation.x = Math.PI / 2;
+    lens.position.set(0, 0.92, 0.44);
+    this.body.add(lens);
+  }
+
+  buildApron(accentM) {
+    const bib = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.62, 0.04), accentM);
+    bib.position.set(0, 0.98, 0.34);
+    this.body.add(bib);
+    const strapL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.36, 0.04), accentM);
+    strapL.position.set(-0.18, 1.32, 0.28);
+    strapL.rotation.z = 0.35;
+    this.body.add(strapL);
+    const strapR = strapL.clone();
+    strapR.position.x = 0.18;
+    strapR.rotation.z = -0.35;
+    this.body.add(strapR);
   }
 
   moveLane(dir, sfx) {

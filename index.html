@@ -63,6 +63,12 @@
   .btn:hover{transform:scale(1.05)}
   .btn:active{transform:scale(.97)}
   .btn.ghost{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.35);box-shadow:none;font-size:15px;padding:12px 34px;min-height:44px;margin-top:14px}
+  .btn:disabled{opacity:.4;cursor:default;pointer-events:none;transform:none !important}
+  /* Continue-offer note: dynamic, sentence-length text — the all-caps 4px
+     letter-spacing on .label overflows a narrow viewport once the copy runs
+     past a couple of words, so this gets its own quieter, wrappable style. */
+  .continue-note{font-size:13.5px;line-height:1.5;opacity:.7;letter-spacing:.2px;
+    text-transform:none;max-width:320px;margin:20px auto 14px;padding:0 8px}
   .big-num{font-size:64px;font-weight:900;color:var(--gold);text-shadow:0 4px 20px rgba(255,190,80,.4)}
   .label{font-size:13px;letter-spacing:4px;text-transform:uppercase;opacity:.65}
   #city-select{display:flex;gap:14px;margin-bottom:36px;flex-wrap:wrap;justify-content:center;pointer-events:auto}
@@ -186,6 +192,28 @@
     min-height:44px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center}
   .linkbtn:hover{opacity:1;color:var(--gold)}
   #menu-identity{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:12px}
+  /* ---------- Shop (souvenir sink #1: characters) ---------- */
+  #shop-balance{display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;letter-spacing:1px}
+  .char-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;pointer-events:auto}
+  .char-card{width:calc(33.333% - 8px);min-width:96px;max-width:150px;min-height:44px;padding:10px 6px;
+    border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
+    text-align:center;cursor:pointer;transition:.15s}
+  .char-card:hover{background:rgba(255,255,255,.13);transform:translateY(-2px)}
+  .char-card.equipped{border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,209,102,.35)}
+  .char-card.locked{opacity:.6}
+  .char-thumb{width:100%;height:48px;border-radius:10px;margin-bottom:6px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+  .char-name{font-weight:800;font-size:12.5px;line-height:1.2}
+  .char-state{font-size:11px;opacity:.75;margin-top:3px;letter-spacing:.4px}
+  .char-card.equipped .char-state{color:var(--gold);font-weight:800}
+  .char-card.locked .char-state{color:var(--gold)}
+  #shop-msg{min-height:16px;margin-top:8px;font-size:12px;color:#ff8a8a}
+  @media (max-height:720px){
+    .char-card{padding:7px 5px}
+    .char-thumb{height:38px;margin-bottom:4px}
+    .char-name{font-size:11.5px}
+    .char-state{font-size:10px}
+  }
   #btn-pause{pointer-events:auto;position:absolute;top:60px;right:16px;width:44px;height:44px;
     border-radius:50%;border:1px solid rgba(255,255,255,.18);background:var(--glass);backdrop-filter:blur(8px);
     color:#fff;font-size:14px;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -342,6 +370,7 @@
   <div class="menu-links label">
     <button class="linkbtn" id="btn-help">How to play</button>
     <button class="linkbtn" id="btn-scores">Best runs</button>
+    <button class="linkbtn" id="btn-shop">Shop</button>
     <button class="linkbtn" id="btn-settings">Settings</button>
   </div>
   <div id="menu-identity" class="label" style="margin-top:10px;font-size:12px">
@@ -402,6 +431,16 @@
   <button class="btn" id="btn-scores-close">BACK</button>
 </div>
 
+<div id="screen-shop" class="screen">
+  <div class="title" style="font-size:clamp(26px,7vw,48px)">SHOP</div>
+  <div id="shop-balance" class="label"><span id="shop-coin-icon">🪙</span><span id="shop-balance-num">0</span> SOUVENIRS</div>
+  <div class="sheet" style="max-width:560px">
+    <div id="shop-grid" class="char-grid"></div>
+    <div id="shop-msg"></div>
+  </div>
+  <button class="btn" id="btn-shop-close">DONE</button>
+</div>
+
 <div id="screen-facts" class="screen factpage">
   <div class="fp-wrap">
     <div class="fp-kicker" id="facts-kicker">NEW YORK</div>
@@ -410,6 +449,16 @@
     <div class="fp-cards" id="facts-list"></div>
   </div>
   <button class="btn" id="btn-build">BUILD THE MONUMENT</button>
+</div>
+
+<div id="screen-continue" class="screen">
+  <div class="label">Run over — for now</div>
+  <div class="title" style="font-size:clamp(28px,7vw,52px)">KEEP GOING?</div>
+  <div class="label" style="margin:10px 0 2px">Score so far</div>
+  <div class="big-num" id="continue-score" style="font-size:44px">0</div>
+  <div class="continue-note" id="continue-note">Spend souvenirs to clear the road ahead and carry on.</div>
+  <button class="btn" id="btn-continue-pay">CONTINUE — <span id="continue-price">150</span> 🪙</button>
+  <button class="btn ghost" id="btn-continue-no">END RUN</button>
 </div>
 
 <div id="screen-over" class="screen">

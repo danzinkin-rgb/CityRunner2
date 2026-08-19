@@ -563,6 +563,25 @@ export class Track {
   progress() { return Math.min(1, this.distance / this.goal); }
   done() { return this.distance >= this.goal; }
 
+  // Souvenir-economy sink #2: the continue token. Paying to revive is only
+  // fair if the player isn't immediately killed by the same obstacle they
+  // just hit — so wipe everything in the corridor from just behind the
+  // player out to one chunk ahead. This never touches spawnChunk/
+  // populateObstacles, so obstacle density/balance (test/difficulty.mjs) is
+  // untouched; it only removes obstacles that already exist in the world.
+  clearNearPlayer(ahead = CHUNK_LEN, behind = 4) {
+    const kept = [];
+    for (const o of this.obstacles) {
+      const wz = o.localZ + o.chunk.position.z + this.group.position.z;
+      if (wz > -ahead && wz < behind) {
+        o.chunk.remove(o.mesh);
+      } else {
+        kept.push(o);
+      }
+    }
+    this.obstacles = kept;
+  }
+
   dispose() {
     this.scene.remove(this.group);
     disposeGroup(this.group);

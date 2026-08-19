@@ -5,17 +5,25 @@ import { sfx, startMusic, stopMusic, prefs as audioPrefs, saveAudioPrefs } from 
 import { CITIES, LANDMARK_NAMES } from './cities/themes.js';
 import { STREET_FACTS, MONUMENT_FACTS } from './facts.js';
 import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
-import { startSession, submit, top as topScores, personalBest } from './core/scores.js';
+import { startSession, submit, top as topScores, personalBest, currentSession } from './core/scores.js';
 import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset } from './core/rng.js';
 
 export const VERSION = '1.0.0';
-import { Player } from './run/player.js';
+import { Player, DEFAULT_STYLE } from './run/player.js';
 import { Track } from './run/track.js';
 import { Puzzle } from './puzzle/puzzle.js';
+import { CHARACTERS, characterById } from './run/characters.js';
 
 // ---------- persistent progress ----------
 const save = JSON.parse(localStorage.getItem('cityrunner2') || '{"stars":{},"coins":0,"best":0}');
 const persist = () => localStorage.setItem('cityrunner2', JSON.stringify(save));
+
+// Souvenir-economy sink #1: cosmetic characters. The default runner is
+// always owned so a fresh save never looks empty in the shop.
+if (!Array.isArray(save.characters)) save.characters = [];
+if (!save.characters.includes('runner')) save.characters.push('runner');
+if (!save.equipped || !CHARACTERS.some((c) => c.id === save.equipped)) save.equipped = 'runner';
+persist();
 
 // ---------- dom ----------
 const $ = (id) => document.getElementById(id);
@@ -24,12 +32,13 @@ const screens = {
   menu: $('screen-menu'), over: $('screen-over'), pwin: $('screen-puzzle-win'),
   facts: $('screen-facts'), paused: $('screen-paused'),
   help: $('screen-help'), settings: $('screen-settings'), scores: $('screen-scores'),
+  shop: $('screen-shop'), continue: $('screen-continue'),
 };
 function showScreen(name) {
   if (name !== 'menu') stopDailyTimer();   // never leak the countdown interval
   for (const k in screens) screens[k].classList.toggle('on', k === name);
-  // The HUD stays up behind the pause overlay so the run reads as "frozen".
-  hud.classList.toggle('on', !name || name === 'paused');
+  // The HUD stays up behind the pause/continue overlay so the run reads as "frozen".
+  hud.classList.toggle('on', !name || name === 'paused' || name === 'continue');
   $('btn-pause').style.display = (!name && (state === 'run' || state === 'puzzle')) ? 'flex' : 'none';
 }
 
@@ -151,10 +160,11 @@ function startRun() {
     disposeAll();
     scene = new THREE.Scene();
     dressScene(scene, city());
-    player = new Player(scene);
+    player = new Player(scene, characterById(save.equipped).style);
     track = new Track(scene, city(), level, runSeed);
     speed = 14 + (level - 1) * 3;
     coins = 0; score = 0; shake = 0;
+    continuesUsed = 0;
     camera.position.set(0, 5.2, 8.5);
     $('hud-city').textContent = (dailyMode ? 'DAILY · ' : '')
       + `${city().name} · ${city().streets[level - 1].toUpperCase()}`;
@@ -186,23 +196,76 @@ function hint(text) {
   hintTimer = setTimeout(() => { el.style.opacity = 0; }, 2600);
 }
 
+// ---------- souvenir-economy sink #2: the continue token ----------
+// Price escalates within a single run — 150, 300, 600 — then it's simply
+// not offered again. No countdown, no flashing: a calm choice with a clear
+// price and a clear decline (UK Children's Code — no nudge techniques).
+// Disabled entirely in the daily challenge: it's a level playing field for
+// every player worldwide, and paying to survive would distort that board.
+const CONTINUE_PRICES = [150, 300, 600];
+let continuesUsed = 0;
+
 function crash() {
   if (GOD) return;
   sfx.crash();
   stopMusic();
   shake = 0.7;
   state = 'dead';
+  const price = CONTINUE_PRICES[continuesUsed];
+  const offerContinue = !dailyMode && price !== undefined;
+  setTimeout(() => {
+    if (offerContinue) showContinueOffer(price);
+    else endRun();
+  }, 900);
+}
+
+function showContinueOffer(price) {
+  $('continue-score').textContent = Math.round(score);
+  $('continue-price').textContent = price;
+  const affordable = save.coins >= price;
+  $('btn-continue-pay').disabled = !affordable;
+  $('continue-note').textContent = affordable
+    ? 'Spend souvenirs to clear the road ahead and carry on.'
+    : `Not enough souvenirs to continue — you have ${save.coins}.`;
+  showScreen('continue');
+  state = 'continue-offer';
+}
+
+function acceptContinue() {
+  const price = CONTINUE_PRICES[continuesUsed];
+  if (state !== 'continue-offer' || price === undefined || save.coins < price) return;
+  save.coins -= price;
+  persist();
+  continuesUsed++;
+  shake = 0;
+  track.clearNearPlayer();
+  player.vy = 0; player.y = 0; player.grounded = true; player.rolling = 0;
+  state = 'run';
+  showScreen(null);
+  hint('Back in it — the road ahead is clear');
+  startMusic(city().id);
+}
+
+function declineContinue() {
+  if (state !== 'continue-offer') return;
+  endRun();
+}
+
+// The run has TRULY ended (crash declined/exhausted, or a puzzle finished).
+// Score is submitted here and ONLY here for a crash-ending run, so a
+// continued run's higher final score is the one that gets recorded —
+// submit() itself also refuses a second call for the same session, so
+// calling this twice would silently drop the better score.
+function endRun() {
   save.best = Math.max(save.best, score);
   save.coins += coins;
   persist();
   submit(score);   // validated + recorded locally; ignores its own failures
   if (dailyMode) recordDailyPlayed();
-  setTimeout(() => {
-    $('over-score').textContent = Math.round(score);
-    $('over-coins').textContent = coins;
-    showScreen('over');
-    state = 'over';
-  }, 900);
+  $('over-score').textContent = Math.round(score);
+  $('over-coins').textContent = coins;
+  showScreen('over');
+  state = 'over';
 }
 
 // ---------- fact pages ----------
@@ -466,6 +529,8 @@ $('btn-scores').onclick = () => { renderScores(); openOverlay('scores'); };
 $('btn-scores-close').onclick = closeOverlay;
 $('btn-settings').onclick = () => { renderSettings(); openOverlay('settings'); };
 $('btn-settings-close').onclick = closeOverlay;
+$('btn-shop').onclick = () => { renderShop(); openOverlay('shop'); };
+$('btn-shop-close').onclick = closeOverlay;
 
 function renderScores() {
   const body = $('scores-body');
@@ -493,6 +558,45 @@ function renderScores() {
       <span class="muted">${save.coins.toLocaleString()}</span>`;
     body.append(hr, tot);
   }
+}
+
+// ---------- shop (souvenir sink #1: characters) ----------
+const hexCss = (n) => '#' + (n >>> 0).toString(16).padStart(6, '0').slice(-6);
+let shopMsgTimer = null;
+function shopMsg(text) {
+  const el = $('shop-msg');
+  el.textContent = text;
+  clearTimeout(shopMsgTimer);
+  shopMsgTimer = setTimeout(() => { el.textContent = ''; }, 2200);
+}
+function renderShop() {
+  const wrap = $('shop-grid');
+  wrap.innerHTML = '';
+  for (const c of CHARACTERS) {
+    const style = { ...DEFAULT_STYLE, ...c.style };
+    const owned = save.characters.includes(c.id);
+    const equipped = save.equipped === c.id;
+    const el = document.createElement('div');
+    el.className = 'char-card' + (equipped ? ' equipped' : '') + (!owned ? ' locked' : '');
+    el.innerHTML = `<div class="char-thumb" style="background:linear-gradient(135deg,${hexCss(style.hoodie)} 55%,${hexCss(style.cap)} 55%)"></div>
+      <div class="char-name">${c.name}</div>
+      <div class="char-state">${equipped ? 'EQUIPPED' : owned ? 'OWNED' : `${c.price.toLocaleString()} 🪙`}</div>`;
+    el.onclick = () => {
+      if (equipped) return;
+      if (owned) { save.equipped = c.id; persist(); renderShop(); return; }
+      if (save.coins >= c.price) {
+        save.coins -= c.price;
+        save.characters.push(c.id);
+        save.equipped = c.id;
+        persist();
+        renderShop();
+      } else {
+        shopMsg(`Not enough souvenirs — need ${(c.price - save.coins).toLocaleString()} more.`);
+      }
+    };
+    wrap.appendChild(el);
+  }
+  $('shop-balance-num').textContent = save.coins.toLocaleString();
 }
 
 function renderSettings() {
@@ -582,6 +686,8 @@ window.addEventListener('keydown', (e) => {
 });
 // Auto-pause when the tab/app is backgrounded — expected behaviour on phones.
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
+$('btn-continue-pay').onclick = acceptContinue;
+$('btn-continue-no').onclick = declineContinue;
 $('btn-retry').onclick = () => startRun();
 $('btn-menu').onclick = $('btn-menu2').onclick = () => doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; });
 $('btn-next').onclick = () => {
@@ -686,6 +792,10 @@ if (q.get('view')) {
     get player() { return player; },
     get speed() { return speed; },
     get seed() { return runSeed; },
+    get score() { return score; },
+    get continuesUsed() { return continuesUsed; },
+    get session() { return currentSession(); },
+    crash, acceptContinue, declineContinue,   // test-only: drive the continue flow without a real collision
     todaysDaily,
   };
   if (q.get('seed')) runSeed = +q.get('seed') >>> 0;
@@ -700,7 +810,7 @@ if (q.get('view')) {
 }
 
 // ?ui=<screen> forces any overlay for systematic UI review at a given size.
-// screens: menu | help | settings | scores | facts | over | pwin | paused
+// screens: menu | help | settings | scores | shop | continue | facts | over | pwin | paused
 if (q.get('ui')) {
   const which = q.get('ui');
   const ci = CITIES.findIndex((c) => c.id === (q.get('city') || 'london'));
@@ -709,6 +819,9 @@ if (q.get('ui')) {
   // Populate representative content so screens aren't reviewed empty.
   score = 12480; coins = 37; puzzleBonus = 1650;
   save.best = Math.max(save.best, 12480);
+  // in-memory only (no persist) — lets the shop preview show a mix of owned/locked;
+  // scoped to `shop` so it doesn't mask the continue screen's affordability states
+  if (which === 'shop') save.coins = Math.max(save.coins, 2600);
   if (which === 'facts') showStreetFacts();
   else if (which === 'over') {
     $('over-score').textContent = Math.round(score);
@@ -729,5 +842,7 @@ if (q.get('ui')) {
   } else if (which === 'help') { renderSettings(); showScreen('help'); state = 'ui-help'; }
   else if (which === 'settings') { renderSettings(); showScreen('settings'); state = 'ui-settings'; }
   else if (which === 'scores') { renderScores(); showScreen('scores'); state = 'ui-scores'; }
+  else if (which === 'shop') { renderShop(); showScreen('shop'); state = 'ui-shop'; }
+  else if (which === 'continue') { showContinueOffer(CONTINUE_PRICES[0]); }
   else { buildCitySelect(); showScreen('menu'); state = 'menu'; }
 }

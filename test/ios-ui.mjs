@@ -44,7 +44,8 @@ const PRIMARY = ['iphone-15', devices['iPhone 15']];
 
 const SCREENS = {
   menu: '#screen-menu', help: '#screen-help', settings: '#screen-settings',
-  scores: '#screen-scores', facts: '#screen-facts', over: '#screen-over',
+  scores: '#screen-scores', shop: '#screen-shop', continue: '#screen-continue',
+  facts: '#screen-facts', over: '#screen-over',
   pwin: '#screen-puzzle-win', paused: '#screen-paused',
 };
 const CITIES = ['nyc', 'paris', 'london', 'rome'];
