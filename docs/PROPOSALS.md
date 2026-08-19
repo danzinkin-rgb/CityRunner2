@@ -111,3 +111,69 @@ Selling to an audience that includes children constrains *how* you sell, not whe
 2. Paywall screen — what you get, price, Buy, **Restore**, and a plain "New York stays free forever" line.
 3. City cards already carry a `.locked` style; extend it to distinguish *locked by progression* from *locked by purchase*.
 4. Capacitor IAP plugin, App Store Connect product setup, sandbox testing.
+
+---
+
+## 5. Monetisation — revised: free with kid-safe contextual ads
+
+**Supersedes proposal 4's premium model.** Decision taken: the game ships **free**, with ads added over time and a cheap ad-free unlock.
+
+### Why the model changed
+
+Essentially every successful endless runner is free — Subway Surfers, Temple Run, Crossy Road. There is no meaningful paid endless-runner market, so a premium price would be fighting the category. Comparable premium titles for reference: Alto's Odyssey $2.99, Monument Valley $4.99, Mini Metro $4.99 — but those are art/puzzle games with brand behind them.
+
+### The model
+
+| | |
+|---|---|
+| **Base game** | Free. All four cities, all 12 streets, all 12 monuments |
+| **Ad-free unlock** | **£0.99** non-consumable IAP ("Supporter"), removes ads and adds a cosmetic character. Apple's global price tiers handle currency automatically; nets ~£0.84 after the 15% Small Business rate |
+| **Ad type** | **Contextual only, never behavioural** |
+
+### Ad provider — automated, no selling required
+
+The requirement is a network that serves programmatically with no manual sales effort, and stays compliant with an audience that includes children. That category exists and is purpose-built:
+
+1. **Kidoz — recommended.** Privacy-first SDK across 40,000+ kid-safe games; behavioural targeting disabled by default; no personal data collected from under-13s; PRIVO-certified. The most accessible option for a small developer.
+2. **SuperAwesome AwesomeAds.** Certified COPPA-compliant through an FTC-approved Safe Harbor programme, contextual ML placement plus human review of every creative. Aimed historically at larger publishers.
+3. **AdMob with child-directed treatment** — serves non-personalised ads, but is a general network configured for children rather than built for them. Third choice.
+
+The distinction that makes 1 and 2 acceptable: they target the **content**, not the **person**. That is exactly the line the UK Children's Code draws.
+
+### Placement — corrected
+
+**Between-level interstitials, clearly labelled "Advertisement".** This is the safe placement.
+
+**Not in-world billboards.** Static ads painted into the scenery initially looked like the elegant answer, but for a child audience it is the riskiest: the Children's Code and the ASA both treat "blurring" commercial content with editorial content as a harm, and an advert disguised as a building is by definition hard to label. **In-world billboards stay reserved for house promotion and the game's own fictional brands**, where no commercial relationship exists to disclose.
+
+Also required, from the Code:
+- No ads interrupting a run in progress — only between levels.
+- No rewarded-video nagging, no ads as a pressure mechanic.
+- Frequency capped; an ad every level is harassment.
+
+### Consequences to accept
+
+- **The privacy label changes.** "Kid-safe" is not "collects nothing" — any third-party SDK triggers Apple's SDK disclosure, and we would likely move off "Data Not Collected". §2.1 of COMPLIANCE.md must be revised against the chosen provider's declared collection, not assumed.
+- **Revenue will be small.** Contextual CPMs are a fraction of behavioural, times a small install base. Pennies, not income.
+- **There is a volume gate.** These networks generally want existing traffic.
+
+### Sequencing
+
+1. **Now:** build the ad slots; fill them with house ads promoting the game's own cities. Zero compliance cost, and it proves the placements.
+2. **At launch:** ship free, no third-party SDK. Add the £0.99 Supporter unlock as a tip jar that also pre-empts future ads.
+3. **Once there is an install base:** integrate Kidoz behind a feature flag, update the compliance doc, and only then enable ads for non-supporters.
+
+**Integration cost:** native SDKs needing a Capacitor bridge — roughly one session if no community plugin exists, and gated on the wrapper existing.
+
+### Content obligation
+
+Going free-with-ads raises the content bar, because retention becomes the whole business. A city is now mostly **data** — one `themes.js` entry, three monuments, six fact sets — so roughly 1–2 sessions each. But candidate cities must clear the same IP filter as the imagery decision:
+
+| Safe | Avoid | Why |
+|---|---|---|
+| Amsterdam, Prague, Istanbul, Edinburgh, Lisbon, Vienna, Berlin | Sydney | Opera House copyright to 2078 |
+| | Rio | Christ the Redeemer protected until 2031 |
+| | Venice, Athens, Cairo | Heritage-code regimes as in Italy |
+| | Tokyo (partly) | Tokyo Tower protected to 2040 |
+
+Cheaper content per unit of value: seasonal variants of existing cities, the character collection, weekly challenges, and an endless mode mixing all cities.
