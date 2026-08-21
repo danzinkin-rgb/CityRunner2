@@ -14,6 +14,7 @@ import { Player, DEFAULT_STYLE } from './run/player.js';
 import { Track } from './run/track.js';
 import { Puzzle } from './puzzle/puzzle.js';
 import { CHARACTERS, characterById } from './run/characters.js';
+import { makeCollectible } from './cities/souvenirs.js';
 
 // ---------- persistent progress ----------
 const save = JSON.parse(localStorage.getItem('cityrunner2') || '{"stars":{},"coins":0,"best":0}');
@@ -170,8 +171,7 @@ function startRun() {
     $('hud-city').textContent = (dailyMode ? 'DAILY · ' : '')
       + `${city().name} · ${city().streets[level - 1].toUpperCase()}`;
     $('hud-timer').style.display = 'none';
-    const SOUVENIR_ICON = { nyc: '❤️', paris: '🥐', london: '☎️', rome: '🏛️' };
-    $('hud-coin-icon').textContent = SOUVENIR_ICON[city().id] || '🪙';
+    $('hud-coin-icon').src = `assets/souvenirs/${city().id}.png`;
     startSession(dailyMode ? 'daily' : 'run', city().id, level, runSeed || 0);
     state = 'run';
     showScreen(null);
@@ -373,8 +373,7 @@ function startPuzzle() {
     camera.lookAt(0, cam.lookY, 0);
     $('hud-timer').style.display = 'block';
     $('hud-city').textContent = `BUILD: ${LANDMARK_NAMES[lm].toUpperCase()}`;
-    const SOUVENIR_ICON = { nyc: '❤️', paris: '🥐', london: '☎️', rome: '🏛️' };
-    $('hud-coin-icon').textContent = SOUVENIR_ICON[city().id] || '🪙';
+    $('hud-coin-icon').src = `assets/souvenirs/${city().id}.png`;
     state = 'puzzle';
     showScreen(null);
     hint('Tap the glowing blocks — drag to look around');
@@ -854,6 +853,26 @@ if (q.get('ui')) {
   else if (which === 'settings') { renderSettings(); showScreen('settings'); state = 'ui-settings'; }
   else if (which === 'scores') { renderScores(); showScreen('scores'); state = 'ui-scores'; }
   else if (which === 'shop') { renderShop(); showScreen('shop'); state = 'ui-shop'; }
+  else if (which === 'souvenir') {
+    // Renders one city's collectible alone, for capturing HUD/help icons.
+    // Emoji were standing in for these and were both inaccurate (a classical
+    // BUILDING for Rome's Caesar bust) and rendered as flat boxes on iOS.
+    disposeAll();
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x141a30);
+    const key = new THREE.DirectionalLight(0xfff4e2, 3.1); key.position.set(3, 5, 6);
+    const rim = new THREE.DirectionalLight(0xa8d0ff, 1.6); rim.position.set(-4, 2, -4);
+    scene.add(key, rim, new THREE.HemisphereLight(0xeaf2ff, 0x2a3050, 1.6));
+    const souvenir = makeCollectible(city());
+    souvenir.rotation.y = -0.55;
+    scene.add(souvenir);
+    camera.fov = 26; camera.updateProjectionMatrix();
+    camera.position.set(0, 0.1, 3.4);
+    camera.lookAt(0, 0, 0);
+    showScreen(null);
+    hud.classList.remove('on');
+    state = 'souvenir';
+  }
   else if (which === 'portrait') {
     // Renders one character alone for capturing shop portraits. Deliberately
     // shown from BEHIND at a three-quarter angle — that is how the player

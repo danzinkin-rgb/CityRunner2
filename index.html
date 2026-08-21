@@ -218,6 +218,20 @@
     border-radius:50%;border:1px solid rgba(255,255,255,.18);background:var(--glass);backdrop-filter:blur(8px);
     color:#fff;font-size:14px;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center}
   #btn-pause:active{transform:scale(.93)}
+  /* Souvenir icons: rendered from the real in-game collectibles. Emoji were
+     both inaccurate (a classical BUILDING standing in for Rome's Caesar bust)
+     and rendered as flat coloured boxes on iOS. */
+  #hud-coin-icon{width:22px;height:22px;object-fit:contain;display:block;
+    filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+  .souv-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 0 10px}
+  .souv{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;
+    padding:8px 4px;border-radius:12px;background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.10)}
+  .souv img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 2px 5px rgba(0,0,0,.45))}
+  .souv span{font-size:10px;line-height:1.3;opacity:.72}
+  .souv b{color:var(--gold);font-size:10.5px;opacity:1}
+  @media (max-height:720px){ .souv img{width:32px;height:32px} .souv{padding:6px 3px} }
+
   /* ---------- Daily challenge card ---------- */
   .daily-card{pointer-events:auto;cursor:pointer;font:inherit;color:#fff;text-align:left;
     display:flex;align-items:center;justify-content:space-between;gap:14px;
@@ -325,7 +339,7 @@
   <div id="hud-progress-track"></div>
   <div id="hud-progress"></div>
   <div class="hud-top">
-    <div class="pill"><span id="hud-coin-icon" style="font-size:18px">🪙</span><span id="hud-coins">0</span></div>
+    <div class="pill"><img id="hud-coin-icon" src="assets/souvenirs/nyc.png" alt=""><span id="hud-coins">0</span></div>
     <div class="pill"><span id="hud-score">0</span></div>
   </div>
   <div id="hud-city">NEW YORK · LEVEL 1</div>
@@ -390,8 +404,13 @@
     <p class="tip">Buses are solid walls — change lane, you cannot jump those.</p>
 
     <h3>Souvenirs</h3>
-    <p>Each city has its own collectible: <b>❤️ hearts</b> in New York, <b>🥐 croissants</b> in Paris,
-       <b>☎️ phone boxes</b> in London, <b>🏛️ Caesar busts</b> in Rome. Each is worth 25 points.</p>
+    <p>Each city has its own collectible, worth 25 points each.</p>
+    <div class="souv-row">
+      <div class="souv"><img src="assets/souvenirs/nyc.png" alt="I heart NY heart"><span>New York<br><b>Hearts</b></span></div>
+      <div class="souv"><img src="assets/souvenirs/paris.png" alt="Croissant"><span>Paris<br><b>Croissants</b></span></div>
+      <div class="souv"><img src="assets/souvenirs/london.png" alt="Red phone box"><span>London<br><b>Phone boxes</b></span></div>
+      <div class="souv"><img src="assets/souvenirs/rome.png" alt="Caesar bust"><span>Rome<br><b>Caesar busts</b></span></div>
+    </div>
 
     <h3>Building the monument</h3>
     <p>Reach the end of a street and you get 60 seconds to rebuild that city's landmark.
