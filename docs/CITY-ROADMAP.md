@@ -75,11 +75,17 @@ Legally the simplest city on this list: everything of note is centuries old, so 
 | | |
 |---|---|
 | **Streets** | **Jaffa Road**, **Mahane Yehuda** market, **the Cardo** (Old City) |
-| **Monuments** | **Tower of David** citadel, **Jaffa Gate / Old City walls** (1538), **Montefiore Windmill** (1857) |
+| **Monuments** | **The Western Wall**, **The Dome of the Rock**, **Tower of David** citadel |
 | **Souvenir** | A pomegranate or an olive branch |
 | **Palette** | Jerusalem stone — warm limestone, gold at dusk |
 
-**One judgement call, which is yours rather than mine.** The Western Wall and Dome of the Rock are active religious sites and politically contested. They carry no legal risk, but depicting them in a game invites reactions that the Tower of David and Mahane Yehuda simply do not. The landmarks above give an unmistakable Jerusalem without stepping into that. Say if you would rather include them and we will handle it carefully.
+**Decided: the Western Wall and the Dome of the Rock are both included.** Dan's call, taken 02 August 2026.
+
+Both are legally clear — they are centuries old, so no copyright question arises. The care needed is editorial rather than legal. The approach: dual naming where a site has contested names (Temple Mount / Haram al-Sharif), facts kept architectural and historical rather than political, and religious significance described in the terms each tradition uses of itself.
+
+**The three monuments are therefore: the Western Wall, the Dome of the Rock, and the Tower of David.**
+
+**Jerusalem's facts are drafted separately in `JERUSALEM-FACTS-DRAFT.md` and must be personally reviewed and signed off by Dan before they ship.** No other city has this gate; this one does.
 
 ### Parked: Sydney
 
