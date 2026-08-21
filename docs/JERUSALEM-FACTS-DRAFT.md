@@ -9,7 +9,7 @@ Same structure as every other city: 3 streets × 3 facts, 3 monuments × 3 facts
 
 Three rules I applied. Tell me if you want any of them changed:
 
-1. **Dual naming where a site has contested names.** The Dome of the Rock stands on what is called the **Temple Mount** in Jewish tradition and **Haram al-Sharif** in Islamic tradition. I have used both. Using only one reads as taking a side.
+1. **Dual naming where a site has contested names.** The Dome of the Rock stands on what is called the **Temple Mount** in Jewish tradition and **Haram al-Sharif — "the Noble Sanctuary"** in Islamic tradition. I have used both. Using only one reads as taking a side.
 2. **Facts are architectural, historical and measurable** — dates, dimensions, materials, construction. No claims about sovereignty, ownership or political status.
 3. **Religious significance stated descriptively**, in the terms each tradition uses of itself, rather than ranked or compared.
 
@@ -66,15 +66,20 @@ Three rules I applied. Tell me if you want any of them changed:
 | **691 CE** — completed | One of the oldest surviving Islamic buildings in the world, built under Caliph Abd al-Malik. |
 | **80 kg** of gold | The dome was re-covered in 1993; King Hussein of Jordan funded the work, reportedly selling a house in London to pay for it. |
 | **Octagonal** — eight sides | The plan is a perfect octagon around the rock at its centre, its exterior clad in Ottoman tilework added under Suleiman in the 1550s. |
+| *(no statistic)* | **It is not the al-Aqsa Mosque.** They are two separate buildings on the same compound: the Dome of the Rock is the gold-domed octagon, while al-Aqsa is the silver-domed mosque to its south. The two are very widely confused. |
 
-*Framing: it stands on the Temple Mount / Haram al-Sharif and shelters the Foundation Stone, which is sacred in both Jewish and Islamic tradition.*
+*Framing: it stands on the Temple Mount / Haram al-Sharif ("the Noble Sanctuary") and shelters the Foundation Stone, which is sacred in both Jewish and Islamic tradition.*
+
+*Note on the confusion: the whole compound is itself sometimes referred to as "al-Aqsa" in broader usage, which is precisely why the gold dome is so often mistaken for the mosque. Stating the distinction plainly is worth a fact slot — it is the single most common misconception about the site, and correcting it is exactly what this game is for.*
+
+**This monument now carries four facts rather than three** — the al-Aqsa clarification earns its place. Say if you would rather cut one of the others to keep it to three.
 
 ### 3. The Tower of David
 
 | Statistic | Fact |
 |---|---|
 | **1655** — the minaret | The tower everyone photographs is an Ottoman minaret, added more than 2,500 years after David. |
-| **2nd century BCE** | The citadel's foundations are Hasmonean, later rebuilt by Herod, Crusaders, Mamluks and Ottomans in turn. |
+| **2nd century BCE** | The citadel's foundations are Hasmonean — a Jewish ruling dynasty in Judea at that time — and were later rebuilt by Herod, Crusaders, Mamluks and Ottomans in turn. |
 | *(no statistic)* | The name is a misnomer: Byzantine visitors assumed the citadel was King David's palace, and it stuck. |
 
 ---
@@ -85,5 +90,8 @@ Three rules I applied. Tell me if you want any of them changed:
 2. **The dual-naming approach** — keep, or use one name?
 3. **Tone on the Dome of the Rock** — I have kept it architectural and historical. Say if you want more or less religious context.
 4. **Anything culturally off** that I have not spotted.
+5. **The Dome of the Rock now has four facts, not three** — is that right, or should one be cut?
+
+*Applied from your notes: "Noble Sanctuary" translation added, Hasmonean glossed as a Jewish ruling dynasty in Judea, and the al-Aqsa distinction stated explicitly.*
 
 Once you have signed this off it goes into `src/facts.js` and the city gets built in the usual way.

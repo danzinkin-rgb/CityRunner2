@@ -2,6 +2,12 @@ import * as THREE from '../../vendor/three.module.js';
 
 export const LANES = [-2.4, 0, 2.4];
 
+// Jump physics, exported so the track can shape collectible arcs from the REAL
+// trajectory rather than guessed numbers. Apex 2.48m, airtime 0.787s — enough
+// to clear a 1.6m car. If these change, the coin arcs follow automatically.
+export const JUMP_V = 12.6;
+export const GRAVITY = 32;
+
 // Default look — identical to the original hard-coded runner. Every
 // character in src/run/characters.js overrides a subset of these fields;
 // Player fills in the rest from here, so `new Player(scene)` with no style
@@ -247,7 +253,7 @@ export class Player {
 
   jump(sfx) {
     if (this.grounded && this.rolling <= 0) {
-      this.vy = 12.6;   // apex ~2.5m, ~0.79s airtime — clears a 1.6m-tall car comfortably
+      this.vy = JUMP_V;
       this.grounded = false;
       sfx.jump();
     }
@@ -272,7 +278,7 @@ export class Player {
 
     // vertical
     if (!this.grounded) {
-      this.vy -= 32 * dt;
+      this.vy -= GRAVITY * dt;
       this.y += this.vy * dt;
       if (this.y <= 0) { this.y = 0; this.vy = 0; this.grounded = true; }
     }

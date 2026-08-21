@@ -1,5 +1,5 @@
 import * as THREE from '../../vendor/three.module.js';
-import { LANES } from './player.js';
+import { LANES, JUMP_V, GRAVITY } from './player.js';
 import { makeSky } from '../core/engine.js';
 import { resolveStreet } from '../cities/themes.js';
 import {
@@ -41,6 +41,11 @@ const BANNER_H = 1.7;
 // 39 m, and still a clear 9% of frame height above the vanishing point at the
 // 80 m mark where fog has already eaten most of its contrast.
 const BANNER_GAP = 2;      // min chunks between two spanning boards
+
+// How far above the jump path a collectible arc floats. Enough that the peak
+// cannot be reached by running, small enough that the whole arc stays inside
+// the collection band for a correctly-timed jump.
+const ARC_LIFT = 0.9;
 
 // Obstacle materials are shared: the track recycles a chunk every few seconds
 // and would otherwise allocate a fresh material per barrier leg.
@@ -502,11 +507,29 @@ export class Track {
       const freeLanes = [0, 1, 2].filter((l) => !usedLanes.has(l));
       if (freeLanes.length && rand() < 0.75) {
         const lane = freeLanes[randInt(freeLanes.length)];
-        const arc = rand() < 0.3;
+        const arc = rand() < 0.35;
+        // An arc traces the player's ACTUAL jump parabola, spaced by how far
+        // they travel while airborne, and lifted clear of running height.
+        //
+        // The old arc was a fixed sine of its own invention and could never be
+        // fully collected: from the ground the apex coin was out of reach, and
+        // at the top of a jump the two end coins fell below the hitbox. Deriving
+        // it from JUMP_V/GRAVITY means one well-timed jump sweeps all five.
+        //
+        // Lift matters because the collection band is asymmetric — it reaches
+        // 2.5m ABOVE the player but only 0.55m below — so coins sitting a little
+        // above the jump path are forgiving, while coins below it are not.
+        const T = (2 * JUMP_V) / GRAVITY;
+        const vRun = this.speed || (14 + (this.level - 1) * 3);
         for (let i = 0; i < 5; i++) {
           const coin = this.souvenirProto.clone();
-          const yy = arc ? 1.2 + Math.sin((i / 4) * Math.PI) * 1.3 : 1.1;
-          coin.position.set(LANES[lane], yy, -zRow - i * 1.6);
+          let yy = 1.1, dz = i * 1.6;
+          if (arc) {
+            const t = (i / 4) * T;
+            yy = JUMP_V * t - 0.5 * GRAVITY * t * t + ARC_LIFT;
+            dz = vRun * t;
+          }
+          coin.position.set(LANES[lane], yy, -zRow - dz);
           chunkGroup.add(coin);
           this.coins.push({ mesh: coin, chunk: chunkGroup, taken: false });
         }
@@ -515,6 +538,7 @@ export class Track {
   }
 
   update(dt, speed, player, onCoin, onHit) {
+    this.speed = speed;   // arcs spawned later match the ramped-up pace
     const dz = speed * dt;
     this.distance += dz;
     this.group.position.z += dz;
