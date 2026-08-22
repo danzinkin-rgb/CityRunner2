@@ -52,7 +52,18 @@
     -webkit-overflow-scrolling:touch}
   .screen.on{display:flex}
   /* Puzzle-win keeps the freshly built monument visible behind the modal */
-  #screen-puzzle-win{background:radial-gradient(ellipse at 50% 62%,rgba(8,12,30,.22),rgba(4,6,16,.82) 78%)}
+  /* The monument you just built keeps rendering behind this screen -- showScreen
+     only toggles .on, it never hides the canvas -- and that is deliberate: the
+     celebration IS the building. But the scrim was only 22% opaque at 50%/62%,
+     which is exactly where the chart and the fact cards sit, so white stone
+     (Trevi, the Louvre pyramid) and drifting confetti came straight through the
+     text. Reviewing this screen through ?ui=pwin hid it completely, because that
+     harness builds no scene and the cards were judged against black.
+     The window onto the monument is now at the TOP, with the title; the ground
+     under the content is close to solid. */
+  #screen-puzzle-win{background:
+    linear-gradient(180deg,rgba(4,6,16,0) 0,rgba(4,6,16,.28) 24%,rgba(4,6,16,.70) 40%,rgba(4,6,16,.86) 58%),
+    radial-gradient(ellipse at 50% 26%,rgba(8,12,30,.30),rgba(4,6,16,.80) 80%)}
   .title{font-size:clamp(30px,8.5vw,84px);white-space:nowrap;max-width:96vw;font-weight:900;letter-spacing:2px;
     background:linear-gradient(180deg,#fff,#ffd166 60%,#ff9e42);-webkit-background-clip:text;background-clip:text;color:transparent;
     filter:drop-shadow(0 6px 24px rgba(255,190,80,.35))}
@@ -164,10 +175,15 @@
     box-shadow:0 0 22px rgba(255,190,80,.3);transition:height .9s cubic-bezier(.2,.8,.3,1)}
   .fv-sart{width:44px;height:0;min-height:9px;display:flex;align-items:flex-end;
     transition:height .9s cubic-bezier(.2,.8,.3,1)}
-  .fv-sart svg{width:100%;height:100%;fill:rgba(255,255,255,.66)}
-  .fv-sval{font-size:12px;font-weight:800;color:var(--fp-accent,#ffd166);margin-bottom:5px}
+  /* The chart is the one part of the monument page with no card behind it, so
+     its labels and the reference silhouette land directly on the 3D scene. */
+  .fv-sart svg{width:100%;height:100%;fill:rgba(255,255,255,.66);
+    filter:drop-shadow(0 1px 5px rgba(0,0,0,.65))}
+  .fv-sval{font-size:12px;font-weight:800;color:var(--fp-accent,#ffd166);margin-bottom:5px;
+    text-shadow:0 1px 7px rgba(0,0,0,.85)}
   .fv-sbar.ref .fv-sval{color:rgba(255,255,255,.72)}
-  .fv-scap{font-size:10px;letter-spacing:.4px;opacity:.7;margin-top:6px;text-align:center;max-width:94px}
+  .fv-scap{font-size:10px;letter-spacing:.4px;opacity:.82;margin-top:6px;text-align:center;max-width:94px;
+    text-shadow:0 1px 7px rgba(0,0,0,.85)}
 
   @media (max-height:720px){
     .title{font-size:min(11vw,44px)}
@@ -350,6 +366,11 @@
     background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.04));
     border:1px solid rgba(255,255,255,.13);box-shadow:0 6px 18px rgba(0,0,0,.28);
     opacity:0;transform:translateY(12px);animation:fpIn .5s cubic-bezier(.2,.7,.3,1) forwards}
+  /* Cards on the monument screen sit over a lit, moving scene rather than over
+     the near-opaque backdrop #screen-facts gives them, so their glass needs a
+     floor. The white sheen is untouched: background-color paints behind
+     background-image, so this grounds the pane without flattening it. */
+  #screen-puzzle-win .fv,#screen-puzzle-win .fp-card{background-color:rgba(9,13,30,.76)}
   .fp-card:nth-child(2){animation-delay:.10s}
   .fp-card:nth-child(3){animation-delay:.20s}
   @keyframes fpIn{to{opacity:1;transform:none}}
