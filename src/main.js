@@ -288,6 +288,59 @@ function nextHeroIndex(key, len) {
   return cur;
 }
 
+/**
+ * Makes a capped, scrolling card list admit that it scrolls.
+ *
+ * Landscape gives .fp-cards a 96px window for ~224px of cards, so the first
+ * card is cut off mid-air and the two behind it are invisible. Nothing in
+ * that picture says "scroll me": the cut reads as a card edge.
+ *
+ * Two cues, because they fail differently. The fade is always-on but passive
+ * -- it survives being missed. The nudge is active but fires once -- it
+ * cannot be missed, and it is the only cue that proves the list moves. It is
+ * skipped under reduced motion, where the fade carries it alone.
+ */
+function showScrollCue(container, reduced) {
+  const sync = () => container.classList.toggle(
+    'fp-more', container.scrollHeight - container.clientHeight - container.scrollTop > 2);
+
+  if (!container._fpCue) {
+    container._fpCue = true;
+    container.addEventListener('scroll', sync, { passive: true });
+    // Rotating to landscape is what creates the tight window in the first
+    // place, so the cue has to be recomputed when the viewport changes.
+    window.addEventListener('resize', () => requestAnimationFrame(sync));
+    // One measurement at paint time is not enough: the hero card's chart
+    // grows on the next frame and countUp() runs for another second, so the
+    // list is still changing height well after it is on screen. Measuring
+    // once put a fade over a 320x568 portrait list that had nothing below
+    // it at all. Watching the container catches its own box; watching the
+    // children catches the content, which is what moves when the container
+    // is capped and cannot grow.
+    if (window.ResizeObserver) container._fpRO = new ResizeObserver(sync);
+  }
+  if (container._fpRO) {
+    container._fpRO.disconnect();
+    container._fpRO.observe(container);
+    for (const el of container.children) container._fpRO.observe(el);
+  }
+  // Fallback for the same job where ResizeObserver is missing, and the first
+  // honest measurement either way: a frame late, so showScreen() has laid the
+  // screen out. Measured while it is still display:none, every height is 0.
+  requestAnimationFrame(sync);
+
+  clearTimeout(container._fpNudge);
+  if (reduced) return;
+  // Late enough that the cards have finished flying in and countUp() has
+  // settled -- a nudge competing with those reads as a glitch, not a hint.
+  container._fpNudge = setTimeout(() => {
+    sync();
+    if (!container.classList.contains('fp-more')) return;
+    container.scrollTo({ top: 18, behavior: 'smooth' });
+    setTimeout(() => container.scrollTo({ top: 0, behavior: 'smooth' }), 620);
+  }, 1200);
+}
+
 // One fact gets the full-width infographic; the rest become quiet rows.
 function paintFacts(container, facts, key) {
   container.innerHTML = '';
@@ -297,6 +350,7 @@ function paintFacts(container, facts, key) {
   container.appendChild(renderHero(facts[hero], reduced));
   facts.forEach((f, n) => { if (n !== hero) container.appendChild(renderCompact(f)); });
   countUp(container, reduced);
+  showScrollCue(container, reduced);
 }
 
 // Lighten a hex colour toward white so a city's signature colour stays legible

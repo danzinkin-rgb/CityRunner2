@@ -343,6 +343,15 @@
   .fp-tag{font-size:14px;font-style:italic;opacity:.72;margin:6px 0 4px}
   .pw-sub{margin:10px 0 12px}
   .fp-cards{display:flex;flex-direction:column;gap:9px;width:100%;margin-top:14px}
+  /* On short screens the card list is capped and scrolls -- most sharply in
+     landscape, where three cards share a 96px window. A hard-cut card edge
+     reads as "the card ends here", not "there is more below it", so main.js
+     adds .fp-more while anything is still under the fold and the bottom of
+     the list dissolves instead of being guillotined. The class is removed
+     once you reach the end, so the fade never implies content that is not
+     there. */
+  .fp-cards.fp-more{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 24px),rgba(0,0,0,0));
+    mask-image:linear-gradient(to bottom,#000 calc(100% - 24px),rgba(0,0,0,0))}
   .fp-card{display:flex;align-items:center;gap:14px;text-align:left;padding:12px 14px;border-radius:16px;
     background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.04));
     border:1px solid rgba(255,255,255,.13);box-shadow:0 6px 18px rgba(0,0,0,.28);
