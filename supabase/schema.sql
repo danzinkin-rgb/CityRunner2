@@ -162,6 +162,12 @@ $$;
 -- `anon` alone therefore achieves nothing: the PUBLIC grant survives and the
 -- endpoint stays open. Revoke from PUBLIC first. The named roles that follow
 -- are belt-and-braces in case a grant is added later.
+--
+-- Caveat: `anon` and `authenticated` exist in every Supabase project but NOT in
+-- plain Postgres. If this file is ever replayed against a bare database (local
+-- docker, CI), those lines error and abort the rest of the script, leaving a
+-- half-applied schema. The `from public` lines above do the actual work, so the
+-- named-role lines are the ones to drop if that ever happens.
 revoke execute on function delete_player(uuid) from public;
 revoke execute on function delete_player(uuid) from anon, authenticated;
 

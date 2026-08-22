@@ -23,7 +23,7 @@ A single-player endless-runner game with score leaderboards. No social features,
 | Scores, progress, souvenirs | Core game function | Legitimate interests | Device | Until user erases |
 | *(Planned)* the above, on a server | Online leaderboards | Legitimate interests | Supabase, EU (London/Frankfurt region) | 400 days |
 | *(Planned)* Run outcome — how a run ended, distance reached, souvenirs found, puzzle progress | Understanding which parts of the game work | Legitimate interests (Art. 6(1)(f)) — improving the service; aggregate use only | Supabase, EU, as columns on the score row | 400 days |
-| *(Planned)* City poll vote | Deciding which city to build next | Legitimate interests | Supabase, EU | Until superseded — **no identifier stored, so not personal data** |
+| *(Planned)* City poll vote | Deciding which city to build next | Legitimate interests | Supabase, EU | Until superseded — **no identifier stored, so not personal data.** The trade-off is deliberate: with no identifier there is no way to stop one person voting a thousand times, so the counts are indicative signal, not a ballot. De-duplicating would require storing an identifier, which would add a row to this table and require this assessment to be revised. Do not add one without that revision |
 
 **Not collected:** name, email, phone, address, date of birth, location, IP retained for analytics, advertising ID, device fingerprint, contacts, photos, camera, microphone, biometrics.
 
