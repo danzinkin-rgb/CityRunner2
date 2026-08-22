@@ -341,6 +341,7 @@
     background:linear-gradient(180deg,#fff 20%,var(--fp-accent,#ffd166));-webkit-background-clip:text;
     background-clip:text;color:transparent;filter:drop-shadow(0 6px 26px rgba(0,0,0,.5))}
   .fp-tag{font-size:14px;font-style:italic;opacity:.72;margin:6px 0 4px}
+  .pw-sub{margin:10px 0 12px}
   .fp-cards{display:flex;flex-direction:column;gap:9px;width:100%;margin-top:14px}
   .fp-card{display:flex;align-items:center;gap:14px;text-align:left;padding:12px 14px;border-radius:16px;
     background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.04));
@@ -394,14 +395,46 @@
     .fv-rule{margin-top:10px;width:46px}
   }
   @media (max-height:600px){
-    .fp-scale{display:none}
+    /* A 320x568 iPhone SE (1st gen — iOS 14 is still the deployment target, so
+       it is in the supported set) used to lose the height chart entirely here.
+       That is the one element on the monument page doing real work: "381 m" is
+       an abstraction until it stands next to a bus. The page was only ~32px
+       too tall at its worst, so the chart stays and the space comes from the
+       text around it instead.
+       The caption gets smaller and wider so long names like "Empire State
+       Building" wrap to two lines rather than three — which also gives the
+       column back the height those wraps were stealing. */
+    .fv-sval{font-size:11px;margin-bottom:3px}
+    .fv-scap{font-size:9px;margin-top:4px;max-width:120px}
+    .fp-cards{gap:5px;margin-top:8px}
+    #screen-puzzle-win .fp-card{padding:6px 11px}
+    #screen-puzzle-win .fp-wrap{margin-bottom:8px}
+    #screen-puzzle-win .btn+.btn{margin-top:6px}
+    .pw-sub{margin:5px 0 6px}
+    /* The hero card carries the most air, so it gives up the most. */
+    #screen-puzzle-win .fv{padding:8px 12px 8px}
+    #screen-puzzle-win .fv-num{font-size:clamp(24px,7.5vw,30px)}
+    #screen-puzzle-win .fv-text{font-size:12px;line-height:1.35;margin-top:6px}
+    #screen-puzzle-win .fv-rail{height:26px;margin:8px 3px 0}
+    #screen-puzzle-win .fv-grid{margin:8px 0 3px;gap:3px}
+    #screen-puzzle-win .fv-mark{width:8px;height:8px}
+    #screen-puzzle-win .fv-grid.people .fv-mark{width:7px;height:12px}
+    /* Backstop only — the rules above already fit every monument in the game.
+       flex-shrink is the important half: .fp-cards is a column flex, so
+       without this the cards silently compress past their content and clip
+       their own text, and overflow-y never fires because nothing ever
+       overflows. Pinning the basis makes the container scroll for real. */
+    #screen-puzzle-win .fp-cards{max-height:290px;overflow-y:auto}
+    #screen-puzzle-win .fp-cards > *{flex-shrink:0}
     .fp-tag{display:none}
   }
   @media (max-height:430px){
+    .fp-scale{display:none}
     .fp-wrap{margin:0 0 8px}
     .fp-kicker{margin-bottom:2px;font-size:10px}
     #screen-puzzle-win .fp-cards{max-height:96px;overflow-y:auto;gap:5px}
     #screen-facts .fp-cards{max-height:150px;overflow-y:auto;gap:5px}
+    .fp-cards > *{flex-shrink:0}
     .fp-card{padding:7px 10px;gap:9px}
     .fp-big{font-size:19px}
     .fp-text{font-size:11.5px;line-height:1.35}
@@ -585,7 +618,7 @@
 <div id="screen-puzzle-win" class="screen">
   <div class="label">Monument complete</div>
   <div class="big-num" id="pw-name">—</div>
-  <div class="label" style="margin:10px 0 12px"><span id="pw-bonus">0</span> bonus · <span id="pw-time">0</span>s left</div>
+  <div class="label pw-sub"><span id="pw-bonus">0</span> bonus · <span id="pw-time">0</span>s left</div>
   <div class="fp-wrap fp-compact">
     <div class="fp-scale" id="pw-scale"></div>
     <div class="fp-cards" id="pw-facts"></div>

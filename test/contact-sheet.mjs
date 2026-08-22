@@ -12,10 +12,11 @@
  * suites in `npm test`. It asserts nothing and always exits 0. Its job is to
  * put the whole corpus in front of a human, not to decide whether it is good.
  *
- * Two viewports by default. The narrow one matters: the monument height chart
- * is hidden below a certain width, so a review at iPhone 15 only would show
- * the chart present everywhere and tell you nothing about that gap. The sheet
- * flags every page where the chart is absent.
+ * Two viewports by default, and the narrow one is the reason this exists. The
+ * monument height chart used to be dropped below 600px of viewport HEIGHT — a
+ * height gate, not a width one — which took it off every 320x568 iPhone SE.
+ * Reviewing at iPhone 15 alone would have shown the chart present everywhere
+ * and said nothing about it. The sheet flags every page where it is absent.
  *
  * Usage:
  *   npm run serve            # in another terminal — this needs :4173 up
@@ -130,7 +131,7 @@ const card = (r) => `
       ${r.tag ? `<span class="tag">${esc(r.tag)}</span>` : ''}
       <pre>${esc(r.body || '(empty)')}</pre>
       ${!r.items ? '<span class="warn">no facts rendered</span>' : ''}
-      ${r.scale === false ? '<span class="warn">height chart hidden at this width</span>' : ''}
+      ${r.scale === false ? '<span class="warn">height chart hidden at this viewport</span>' : ''}
       ${r.err ? `<span class="warn">${esc(r.err)}</span>` : ''}
       <a href="${esc(r.url)}" target="_blank">open live →</a>
     </figcaption>
