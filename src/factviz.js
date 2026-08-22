@@ -231,12 +231,22 @@ function renderPull(f) {
   return wrap;
 }
 
-/** A fact with no statistic at all — the text carries it, so set it in quotes. */
+// The quote glyph was a font character, and the system stack renders it as two
+// flat bars -- the same placeholder look the ghosted number had. Drawn instead,
+// so it is a real mark and picks up the city colour like the pictograms do.
+function quoteMark() {
+  const d = 'M4 30h8c2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4H8.2C8.8 8.4 11 6 15.4 4.6L13.8 0C5.4 1.8 0 7.6 0 16.4V26c0 2.2 1.8 4 4 4z';
+  const s = svgEl('svg', { viewBox: '0 0 38 30', class: 'fv-qm' });
+  s.appendChild(svgEl('path', { d }));
+  s.appendChild(svgEl('path', { d, transform: 'translate(22,0)' }));
+  s.setAttribute('aria-hidden', 'true');
+  return s;
+}
+
+/** A fact with no statistic at all — the text carries it, so set it as a quote. */
 function renderQuote(f) {
   const wrap = el('div', 'fv fv-pull fv-quote');
-  const ghost = el('div', 'fv-ghost', wrap);
-  ghost.textContent = '“';
-  ghost.setAttribute('aria-hidden', 'true');
+  wrap.appendChild(quoteMark());
   el('div', 'fv-text', wrap).textContent = f.text;
   return wrap;
 }
