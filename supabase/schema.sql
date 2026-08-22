@@ -30,7 +30,13 @@ create table if not exists scores (
   id          bigint generated always as identity primary key,
   player_id   uuid not null references players (id) on delete cascade,
   mode        text not null check (mode in ('run', 'daily')),
-  city_id     text check (city_id in ('nyc', 'paris', 'london', 'rome')),
+  -- Keep in step with the ids in src/cities/themes.js. A score for a city
+  -- missing from this list is REJECTED, silently as far as the player is
+  -- concerned, so this line has to be updated in the same commit as the city.
+  -- If the roadmap's Kyoto / Mexico City / Jerusalem all land, replace this
+  -- with a `cities` lookup table and a foreign key, so adding a city stops
+  -- being a schema migration.
+  city_id     text check (city_id in ('nyc', 'paris', 'london', 'rome', 'sf')),
   level       smallint check (level between 1 and 3),
   day         date,
   seed        bigint,
@@ -116,12 +122,79 @@ create or replace view leaderboard_city as
 -- Retention: UK GDPR requires a defined retention period, not "forever".
 -- Schedule via pg_cron once the project exists.
 -- ---------------------------------------------------------------------------
-create or replace function purge_old_scores() returns void language sql as $$
+create or replace function purge_old_scores() returns void
+language sql
+set search_path = public
+as $$
   delete from scores where created_at < now() - interval '400 days';
 $$;
 
 -- Deletion route for a data-subject request. Cascades to that player's scores.
-create or replace function delete_player(target uuid) returns void language sql
-security definer as $$
+--
+-- This function is `security definer`: it runs with the OWNER's rights and so
+-- bypasses row-level security entirely. That is the point — it has to delete a
+-- row that no anon policy permits deleting — and it is also why the two
+-- protections below are not optional.
+--
+-- `set search_path` is the first. Without it, an unprivileged caller who can
+-- create objects in a schema earlier on the search path can shadow a name this
+-- function body resolves, and have their own code run as the owner. Pinning the
+-- path removes that. Every `security definer` function must have this line.
+create or replace function delete_player(target uuid) returns void
+language sql
+security definer
+set search_path = public
+as $$
   delete from players where id = target;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- Execute grants — the second protection, and the one that is easy to get
+-- wrong.
+--
+-- PostgREST publishes every function in the public schema as an RPC endpoint
+-- automatically. Left as written above, `delete_player` would be callable by
+-- anyone holding the public anon key, against ANY player id — and player ids
+-- are readable from the leaderboard, so there is nothing to guess. That is a
+-- one-request wipe of the whole leaderboard.
+--
+-- Postgres grants EXECUTE to PUBLIC on new functions by DEFAULT. Revoking from
+-- `anon` alone therefore achieves nothing: the PUBLIC grant survives and the
+-- endpoint stays open. Revoke from PUBLIC first. The named roles that follow
+-- are belt-and-braces in case a grant is added later.
+revoke execute on function delete_player(uuid) from public;
+revoke execute on function delete_player(uuid) from anon, authenticated;
+
+-- purge_old_scores is NOT `security definer`, so it runs as its caller and RLS
+-- already blocks it — scores has no delete policy. It is not exploitable today.
+-- It is revoked anyway because that changes the moment somebody adds
+-- `security definer` to make a pg_cron job work, and at that point the hole
+-- would open silently.
+revoke execute on function purge_old_scores() from public;
+revoke execute on function purge_old_scores() from anon, authenticated;
+
+-- Deletion is therefore an operator action: run it from the SQL editor, or
+-- expose it behind a Supabase Edge Function that authenticates the requester.
+-- Do NOT re-grant execute to `anon` to make an in-game "erase my data" button
+-- work. The correct shape for that button is Supabase anonymous auth plus a
+-- policy of `id = auth.uid()`, so a caller can only ever delete themselves —
+-- see the note below.
+
+-- ---------------------------------------------------------------------------
+-- KNOWN GAP, to close before online leaderboards go live.
+--
+-- Nothing here ties a row to the caller. `players_insert` is `with check
+-- (true)`, and a score carries whatever player_id the client sends. An anon
+-- caller can post scores in another player's name.
+--
+-- The fix is Supabase anonymous auth (`signInAnonymously`), storing the
+-- returned uid as the player id, and then:
+--   create policy players_insert on players for insert
+--     with check (id = auth.uid());
+--   create policy scores_insert  on scores  for insert
+--     with check (player_id = auth.uid() and ...existing conditions...);
+-- and a self-delete policy on players of `using (id = auth.uid())`, which
+-- removes the need for delete_player to be reachable from the client at all.
+--
+-- Deliberately not applied yet: it needs a live project to test against, and
+-- an untested auth change is worse than a documented gap.
