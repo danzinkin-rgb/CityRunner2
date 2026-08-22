@@ -1770,13 +1770,36 @@ export class Puzzle {
     const meshes = this.items.filter((it) => !it.placed && !this.flying.includes(it)).map((it) => it.mesh);
     const hits = this.raycaster.intersectObjects(meshes, true);
     if (!hits.length) return;
-    let obj = hits[0].object;
-    while (obj && !meshes.includes(obj)) obj = obj.parent;
-    const item = this.items.find((it) => it.mesh === obj);
-    if (!item) return;
-    if (!this.pickable(item)) {
-      sfx.tick();
-      this.shakeEffect(item.mesh);
+
+    // Walk the whole ray and take the first PICKABLE piece, rather than
+    // whatever happens to be nearest.
+    //
+    // Scattering guards against the frame edges and the monument footprint,
+    // but never against other loose pieces, so a slab from an upper course can
+    // sit squarely in front of a small piece from the course below. Taking
+    // hits[0] made that piece untappable through every one of its pixels --
+    // and because pickable() is strict bottom-up, the only thing that could
+    // uncover it was the very piece you are not allowed to touch yet. That is
+    // a soft-lock, not an annoyance: the camera does not orbit during play and
+    // nothing reshuffles, so the board simply runs out the clock. Simulating
+    // every monument to completion found it on the Chrysler Building and the
+    // Trevi Fountain, under both greedy and optimal play.
+    //
+    // Reaching past a piece the player can see is safe here precisely because
+    // it is unpickable: tapping it could never have done anything but shake.
+    let item = null, front = null;
+    for (const hit of hits) {
+      let obj = hit.object;
+      while (obj && !meshes.includes(obj)) obj = obj.parent;
+      const cand = obj && this.items.find((it) => it.mesh === obj);
+      if (!cand) continue;
+      if (!front) front = cand;
+      if (this.pickable(cand)) { item = cand; break; }
+    }
+    if (!item) {
+      // nothing pickable anywhere along the ray -- keep the "not this course
+      // yet" feedback on the piece the finger actually landed on
+      if (front) { sfx.tick(); this.shakeEffect(front.mesh); }
       return;
     }
     this.flying.push(item);

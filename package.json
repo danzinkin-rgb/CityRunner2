@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node test/coin-arc.mjs && node test/road-clearance.mjs && node test/ios-ui.mjs && node test/determinism.mjs",
+    "test": "node test/coin-arc.mjs && node test/road-clearance.mjs && node test/ios-ui.mjs && node test/determinism.mjs && node test/puzzle-solvable.mjs",
     "test:ios": "node test/ios-ui.mjs",
     "serve": "npx serve . -l 4173",
     "test:determinism": "node test/determinism.mjs",
@@ -13,6 +13,7 @@
     "ios:open": "cap open ios",
     "test:coins": "node test/coin-arc.mjs",
     "test:clearance": "node test/road-clearance.mjs",
+    "test:puzzle": "node test/puzzle-solvable.mjs",
     "review": "node test/contact-sheet.mjs"
   },
   "keywords": [],
