@@ -12,7 +12,8 @@
     "ios:sync": "vite build && cap sync ios",
     "ios:open": "cap open ios",
     "test:coins": "node test/coin-arc.mjs",
-    "test:clearance": "node test/road-clearance.mjs"
+    "test:clearance": "node test/road-clearance.mjs",
+    "review": "node test/contact-sheet.mjs"
   },
   "keywords": [],
   "author": "",

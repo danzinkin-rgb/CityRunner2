@@ -64,7 +64,7 @@ Three of the outstanding items are genuine submission blockers (app icon set, sc
 | 27 | Build step (Vite) | **TODO** | Ships unminified ES modules plus a full Three.js build — wasteful over mobile data |
 | 28 | Crash / error reporting | **TODO** | We currently have no idea when the game breaks on a real device. Sentry free tier suffices |
 | 29 | Deterministic simulation wired in | **PARTIAL** | Module done; `track.js` still calls `Math.random()` for obstacle placement |
-| 30 | Automated tests for logic | **PARTIAL** | `npm test` chains four suites: coin-arc reachability, road clearance across every city and level, iOS layout, determinism. `test/difficulty.mjs` exists but is deliberately NOT in the chain — it prints a table and asserts nothing, so it is a probe to run by hand, not a gate. Score bounds and save-migration are still unchecked |
+| 30 | Automated tests for logic | **PARTIAL** | `npm test` chains four suites: coin-arc reachability, road clearance across every city and level, iOS layout, determinism. `test/difficulty.mjs` exists but is deliberately NOT in the chain — it prints a table and asserts nothing, so it is a probe to run by hand, not a gate. `test/contact-sheet.mjs` (`npm run review`) is a second hand-run probe: it renders every street and monument fact page at two viewports and writes a contact sheet, so the whole corpus can be proofread without playing. Score bounds and save-migration are still unchecked |
 | 31 | Loading screen | **TODO** | Brief black flash before first frame |
 | 32 | Analytics | **DECIDED, not built** | No SDK, ever. Instead: run-outcome columns on our own score row, plus Apple's free App Analytics. Ships with the leaderboard. See PRODUCT-ROADMAP §7 |
 
