@@ -227,7 +227,12 @@ export class Track {
           // Abbey Road: villas sit behind a continuous low wall + hedge
           if (t.facade === 'georgian') {
             const wall = makeGardenWall(t, w + 0.5);
-            wall.rotation.y = Math.PI / 2;
+            // Length runs along Z (the street). It used to be rotated 90°, which
+            // laid a 7.5-13.5m wall ACROSS the road: at max villa width its inner
+            // edge reached x=0.35, straight through lane +2.4 and into the centre
+            // lane, with no collider because chunk decoration is not an obstacle.
+            // Mirroring on the left keeps the hedge behind the wall on both sides.
+            wall.rotation.y = side < 0 ? Math.PI : 0;
             wall.position.set(side * (ROAD_W / 2 + setback - 1.6), 0.3, -bz - w / 2);
             g.add(wall);
           }

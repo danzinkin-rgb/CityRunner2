@@ -4,14 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node test/coin-arc.mjs && node test/ios-ui.mjs && node test/determinism.mjs",
+    "test": "node test/coin-arc.mjs && node test/road-clearance.mjs && node test/ios-ui.mjs && node test/determinism.mjs",
     "test:ios": "node test/ios-ui.mjs",
     "serve": "npx serve . -l 4173",
     "test:determinism": "node test/determinism.mjs",
     "build": "vite build",
     "ios:sync": "vite build && cap sync ios",
     "ios:open": "cap open ios",
-    "test:coins": "node test/coin-arc.mjs"
+    "test:coins": "node test/coin-arc.mjs",
+    "test:clearance": "node test/road-clearance.mjs"
   },
   "keywords": [],
   "author": "",
