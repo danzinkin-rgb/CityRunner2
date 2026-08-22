@@ -4,6 +4,7 @@ import { createInput } from './core/input.js';
 import { sfx, startMusic, stopMusic, prefs as audioPrefs, saveAudioPrefs } from './core/audio.js';
 import { CITIES, LANDMARK_NAMES } from './cities/themes.js';
 import { STREET_FACTS, MONUMENT_FACTS } from './facts.js';
+import { renderHero, renderCompact, paintScale, countUp } from './factviz.js';
 import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
 import { startSession, submit, top as topScores, personalBest, currentSession } from './core/scores.js';
 import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset } from './core/rng.js';
@@ -275,69 +276,27 @@ function endRun() {
 // treatment: a hero title in the city's colour, then cards that lead with a
 // big number. Numbers count up, because a number that moves gets read.
 
-function paintFactCards(container, facts) {
+// Which fact leads. The cursor advances every time a screen is shown, so a
+// street looks materially different on each play without a word being
+// rewritten -- three facts give three distinct pages, not one page seen thrice.
+function nextHeroIndex(key, len) {
+  if (len <= 0) return 0;
+  if (!save.factCursor) save.factCursor = {};
+  const cur = (save.factCursor[key] || 0) % len;
+  save.factCursor[key] = (cur + 1) % len;
+  persist();
+  return cur;
+}
+
+// One fact gets the full-width infographic; the rest become quiet rows.
+function paintFacts(container, facts, key) {
   container.innerHTML = '';
-  for (const f of facts) {
-    const card = document.createElement('div');
-    card.className = 'fp-card' + (f.big ? '' : ' noStat');
-    if (f.big) {
-      const stat = document.createElement('div');
-      stat.className = 'fp-stat';
-      stat.innerHTML = `<div class="fp-big" data-target="${f.big}">${f.big}</div>`
-        + (f.unit ? `<div class="fp-unit">${f.unit}</div>` : '')
-        + (f.label ? `<div class="fp-slabel">${f.label}</div>` : '');
-      card.appendChild(stat);
-    }
-    const t = document.createElement('div');
-    t.className = 'fp-text';
-    t.textContent = f.text;
-    card.appendChild(t);
-    container.appendChild(card);
-  }
-  if (!save.reducedMotion) countUpNumbers(container);
-}
-
-// Animate any purely numeric statistic from zero. Values like "€1.5M" or "#1"
-// are left alone — counting up a currency symbol looks broken.
-function countUpNumbers(scope) {
-  scope.querySelectorAll('.fp-big').forEach((el) => {
-    const raw = el.dataset.target || '';
-    const m = raw.match(/^([\d.,]+)([A-Za-z]*)$/);
-    if (!m) return;
-    const target = parseFloat(m[1].replace(/,/g, ''));
-    if (!isFinite(target) || target === 0) return;
-    const suffix = m[2] || '';
-    const decimals = (m[1].split('.')[1] || '').length;
-    const grouped = m[1].includes(',');
-    const t0 = performance.now();
-    const dur = 900;
-    const tick = (now) => {
-      const k = Math.min(1, (now - t0) / dur);
-      const eased = 1 - Math.pow(1 - k, 3);
-      const v = target * eased;
-      let out = decimals ? v.toFixed(decimals) : Math.round(v).toString();
-      if (grouped) out = Number(out).toLocaleString('en-GB');
-      el.textContent = out + suffix;
-      if (k < 1) requestAnimationFrame(tick);
-      else el.textContent = raw;
-    };
-    requestAnimationFrame(tick);
-  });
-}
-
-// A monument's height next to something familiar, so 96m means something.
-const SCALE_REFS = { bus: { h: 4.4, name: 'double-decker bus' }, person: { h: 1.7, name: 'person' } };
-function paintScale(el, metres, compare, name) {
-  const ref = SCALE_REFS[compare] || SCALE_REFS.bus;
-  if (!metres) { el.innerHTML = ''; return; }
-  const refPct = Math.max(4, (ref.h / metres) * 100);
-  el.innerHTML = `
-    <div class="fp-bar"><div class="val">${metres} m</div>
-      <div class="col" style="height:0"></div><div class="cap">${name}</div></div>
-    <div class="fp-bar ref"><div class="val">${ref.h} m</div>
-      <div class="col" style="height:0"></div><div class="cap">${ref.name}</div></div>`;
-  const [a, b] = el.querySelectorAll('.col');
-  requestAnimationFrame(() => { a.style.height = '78%'; b.style.height = `${refPct * 0.78}%`; });
+  if (!facts || !facts.length) return;
+  const reduced = !!save.reducedMotion;
+  const hero = nextHeroIndex(key, facts.length);
+  container.appendChild(renderHero(facts[hero], reduced));
+  facts.forEach((f, n) => { if (n !== hero) container.appendChild(renderCompact(f)); });
+  countUp(container, reduced);
 }
 
 function applyCityPalette() {
@@ -354,7 +313,7 @@ function showStreetFacts() {
   $('facts-kicker').textContent = city().name;
   $('facts-title').textContent = entry?.street || city().streets[level - 1];
   $('facts-tag').textContent = entry?.tag || '';
-  paintFactCards($('facts-list'), entry?.facts || []);
+  paintFacts($('facts-list'), entry?.facts || [], 's:' + city().id + ':' + level);
   showScreen('facts');
 }
 
@@ -399,8 +358,8 @@ function finishPuzzle(won) {
       $('pw-time').textContent = Math.round(puzzle.time);
       applyCityPalette();
       const md = MONUMENT_FACTS[lm];
-      paintFactCards($('pw-facts'), md?.facts || []);
-      paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm]);
+      paintFacts($('pw-facts'), md?.facts || [], 'm:' + lm);
+      paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm], !!save.reducedMotion);
       showScreen('pwin');
       state = 'pwin';
     }, 4300);
@@ -844,8 +803,8 @@ if (q.get('ui')) {
     $('pw-time').textContent = 21;
     applyCityPalette();
     const md = MONUMENT_FACTS[lm];
-    paintFactCards($('pw-facts'), md?.facts || []);
-    paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm]);
+    paintFacts($('pw-facts'), md?.facts || [], 'm:' + lm);
+    paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm], !!save.reducedMotion);
     showScreen('pwin'); state = 'pwin';
   } else if (which === 'paused') {
     showScreen('paused'); state = 'paused';
