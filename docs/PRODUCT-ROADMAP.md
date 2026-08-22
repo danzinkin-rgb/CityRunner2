@@ -1,6 +1,6 @@
 # CityRunner — Path to a Real Product
 
-**Status: source of truth for scope and sequencing. Last updated 02 August 2026.**
+**Status: source of truth for scope and sequencing. Last updated 22 August 2026.**
 Purpose: what stands between the current build and a shipped, supportable product with accounts and leaderboards.
 
 ---
@@ -110,7 +110,76 @@ Everything above is plumbing. This is the product. Current state: play, get a sc
 
 ---
 
-## 7. Engineering prerequisites
+## 7. Measurement — how we learn what works
+
+**The question: once this is live, what tells us which cities get played, where players quit, and whether any of it is working?**
+
+### What Apple gives us — and what it does not
+
+| Source | What it tells us | Cost |
+|---|---|---|
+| **Game Center** | Ranked scores and achievements. Hands leaderboard anti-cheat to Apple | Free |
+| **App Store Connect → App Analytics** | Impressions, product page views, downloads, sessions, active devices, deletions, crashes, and **day-1 / day-7 / day-28 retention** | Free, no SDK, no code |
+
+**Game Center provides no analytics whatsoever.** It is a leaderboard and an achievement store. It does not report what players did, which city they chose, or why they stopped. This is the most common misunderstanding of what Game Center is for, and it is worth stating flatly before anyone plans around it.
+
+App Store Connect is genuinely useful, genuinely free, and has two limits that decide everything below:
+
+- It is a **consented sample, not a census.** Only players who opted into sharing with developers are counted. Treat the shape of a curve as real and the absolute numbers as indicative.
+- **It stops at the app boundary.** It knows a session happened. It cannot know the session was Rome level 3, ended by a barrier at 400 m, with the monument puzzle abandoned and the fact page skipped in under a second.
+
+Everything we actually want to know lives in that second gap.
+
+### Recommendation: the scores table *is* the analytics
+
+We are already planning to post one row per run to Supabase for the leaderboard. Add a handful of columns to that row and it answers most product questions with **no new system, no SDK, no new consent story, and no extra network request**:
+
+| Column | The question it answers |
+|---|---|
+| `ended_reason` — crash, quit, completed | Do people finish runs, or bail out mid-way? |
+| `distance_m` | Where is the difficulty wall? |
+| `city_id`, `level` *(already in the schema)* | Which cities and levels actually get played? |
+| `souvenirs` | Is the collectible loop engaging, or ignored? |
+| `puzzle_state` | Does anyone finish a monument? |
+
+The five decisions that shape the roadmap — *which city to build next, whether level 3 is too hard, whether the puzzle mode earns its complexity, whether the fact pages are read, whether anyone comes back* — are answered by four of those columns plus Apple's retention curve. That is a strong return for one migration.
+
+**Why roll our own instead of taking an SDK.** TelemetryDeck and Aptabase are both credible and privacy-respecting, and either would be a defensible choice. Firebase is not, for this game: Google ad-tech identifiers in a 4+ title likely to be used by children is the wrong trade at any level of convenience. But the deciding argument is that `COMPLIANCE.md` states **"No third-party SDKs"** as a position, and that sentence is load-bearing — it is an answer on the nutrition label, a line in the DPIA, and a claim that stays true with no ongoing vendor diligence. Extra columns on a table we are already writing retract nothing.
+
+**This resolves a contradiction rather than reversing a decision.** The executive summary above already puts "basic telemetry" in Tranche 1, while `LAUNCH-CHECKLIST` #32 said analytics was excluded on compliance grounds. Run-outcome columns are the version of telemetry that *is* compatible with the compliance posture. Both documents now say so.
+
+**Known blind spots, stated now rather than discovered later.** This sees nothing of players who never start a run, and nothing of players who are offline. Apple's session and crash data covers the first. The second is a real bias: online rows over-represent connected players, which is fine for comparing cities against each other and wrong for any absolute count.
+
+### Player feedback — and the trap in "request a city"
+
+Asking players which city they want next is a good idea. **Implemented as a text box, it would be a serious mistake.**
+
+`COMPLIANCE.md` §1.4 records the risk of a child disclosing their identity through a display name as *Eliminated*, on the basis that names are generated and never typed. §2.2 sets the expected age rating at 4+ **on the stated basis that there is no user-generated content.** A free-text request box reintroduces both at once: it creates UGC, it creates a moderation duty we have no capacity for, and it puts the age rating in question. Generated display names exist precisely to make it structurally impossible for typed text to enter the system. A request box would walk it back in through the front door.
+
+**Keep the feature, drop the risk: make it a poll, not a text box.** Show the candidate cities that have *already* been cleared against the IP filter in `PROPOSALS.md` — Amsterdam, Prague, Istanbul, Edinburgh, Lisbon, Vienna, Berlin — and let the player tap one. Store it as a per-city counter with **no identifier attached at all**, so it never becomes personal data, never enters "linked to you", and never needs a retention policy.
+
+It is also simply better data. Votes across a fixed list are countable and comparable; a thousand free-text strings are a spreadsheet nobody reads. And it can never surface an enthusiastic request for a city we are not legally able to build — Sydney, Rio and Venice are excluded at the design stage rather than disappointed at the reply stage.
+
+**Where the qualitative signal actually comes from, in descending order of value:**
+
+1. **TestFlight, before launch.** Free, up to 10,000 testers, and its built-in feedback form captures a screenshot plus free text — from consenting adults we invited, so none of the above applies. **This is the highest-value channel in the list, and it is available pre-launch, which is when feedback can still change the design cheaply.** Recruit deliberately: children in the target age band, watched while playing, are worth more than any number of developers.
+2. **App Store reviews.** Prompt once, at a genuine high point — a monument completed, never a death — using the system rating sheet. Never nag; that is a nudge technique and the Children's Code names it.
+3. **A support email.** Already required for submission.
+4. **The city poll**, as above.
+
+### What to do, and when
+
+| When | Action |
+|---|---|
+| Now | Nothing to build. This section is the decision |
+| Tranche 1, with the leaderboard | The run-outcome columns. One migration, no separate system |
+| Tranche 2, at TestFlight | The point at which feedback is worth most. Recruit real players in the target age band |
+| Tranche 3 | The city poll, once there is a base worth asking |
+| Post-launch, first thing | **Watch day-1 retention before anything else.** If it is poor, no amount of city-level analysis matters — the problem is the first ninety seconds, and that is a design problem, not a data problem |
+
+---
+
+## 8. Engineering prerequisites
 
 Applying the enterprise checklist proportionately — this is a single-developer game, not a bank. Items 6–10 of the usual list are overkill today; these five are not:
 
@@ -122,7 +191,7 @@ Applying the enterprise checklist proportionately — this is a single-developer
 
 ---
 
-## 8. Sequenced plan
+## 9. Sequenced plan
 
 **Tranche 1 — Web product (2–3 sessions)**
 Seeded/deterministic simulation · Supabase project with RLS · anonymous identity · score submission with sanity bounds and session tokens · global and daily leaderboards · display-name filtering · Sentry · Vite build.
@@ -147,7 +216,7 @@ Missions · progression economy · friends · seasons · additional cities · mo
 
 ---
 
-## 9. Risks
+## 10. Risks
 
 | Risk | Probability | Mitigation |
 |---|---|---|

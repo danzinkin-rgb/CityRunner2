@@ -1,6 +1,6 @@
 # CityRunner — Compliance Record
 
-**Source of truth for data protection and App Store submission answers. Last updated 02 August 2026.**
+**Source of truth for data protection and App Store submission answers. Last updated 22 August 2026.**
 
 The design decision underpinning everything here: **collect as close to nothing as possible.** Compliance obligations scale with what you hold. Holding almost nothing makes most obligations trivially satisfied, and is far cheaper than holding data and defending it.
 
@@ -22,10 +22,14 @@ A single-player endless-runner game with score leaderboards. No social features,
 | Generated display name | Labels a leaderboard entry | Legitimate interests | Device | Until user erases or rerolls |
 | Scores, progress, souvenirs | Core game function | Legitimate interests | Device | Until user erases |
 | *(Planned)* the above, on a server | Online leaderboards | Legitimate interests | Supabase, EU (London/Frankfurt region) | 400 days |
+| *(Planned)* Run outcome — how a run ended, distance reached, souvenirs found, puzzle progress | Understanding which parts of the game work | Legitimate interests (Art. 6(1)(f)) — improving the service; aggregate use only | Supabase, EU, as columns on the score row | 400 days |
+| *(Planned)* City poll vote | Deciding which city to build next | Legitimate interests | Supabase, EU | Until superseded — **no identifier stored, so not personal data** |
 
 **Not collected:** name, email, phone, address, date of birth, location, IP retained for analytics, advertising ID, device fingerprint, contacts, photos, camera, microphone, biometrics.
 
 **No third-party SDKs.** No analytics, no advertising, no social login in the current build.
+
+Planned measurement deliberately avoids an analytics SDK, using extra columns on our own score row instead — see §7 of `PRODUCT-ROADMAP.md`. TelemetryDeck and Aptabase would both have been defensible choices; the reason for declining them is that this sentence is worth more than the convenience. It is an answer on the nutrition label, a line in this assessment, and a claim that stays true without ongoing vendor diligence.
 
 ### 1.3 Necessity and proportionality
 
@@ -41,6 +45,8 @@ The UUID is the minimum viable identifier for saving progress; a login would col
 | Data retained indefinitely | Low | Low | 400-day purge job defined in `supabase/schema.sql`; local data erasable by the user |
 | Compulsive-play design harming children | Low | Medium | No streak penalties, no energy timers, no loot boxes, no notifications nagging return |
 | Public anon key abused to write junk | **Moderate** | Low | Row-level security, insert-only tables, server-side plausibility constraint, one-daily-score unique index |
+| Free-text input reintroducing user-generated content — e.g. a "request a city" box | **Designed out** | — | There is no text field anywhere in the game and none may be added. City requests are a tap-to-vote poll over a fixed, pre-cleared list. See §2.2: the 4+ rating depends on this |
+| Anon caller posts scores under another player's id | **Live, unmitigated** | Low | Known gap, recorded in `supabase/schema.sql`. Closes with Supabase anonymous auth before leaderboards go live. No impact while scores are device-local |
 
 ### 1.5 Age Appropriate Design Code — standards assessment
 
@@ -53,11 +59,11 @@ The UUID is the minimum viable identifier for saving progress; a login would col
 | Detrimental use of data | None — data is not used for anything beyond saving and ranking |
 | Policies and standards | This document |
 | Default settings | High privacy is the only setting; nothing to weaken |
-| Data minimisation | UUID, generated name, score only |
+| Data minimisation | UUID, generated name, score and run outcome only. No free text is accepted anywhere in the game |
 | Data sharing | None |
 | Geolocation | Not collected |
 | Parental controls | Not applicable — no tracking to disclose |
-| Profiling | None |
+| Profiling | None. Run-outcome data is read in aggregate to decide what to build; it is never used to profile a player or to personalise what any individual sees |
 | Nudge techniques | None used toward lower privacy or extended play |
 | Connected toys | Not applicable |
 | Online tools | Erase-my-data control in the game; deletion function in the database |
@@ -73,13 +79,16 @@ The UUID is the minimum viable identifier for saving progress; a login would col
 **"Data Not Collected"** for every category, on the basis that the UUID and score stay on device and are not linked to identity.
 
 If online leaderboards ship, this changes to:
-- **Data Not Linked to You → Identifiers (User ID)** and **Usage Data (gameplay score)**
+- **Data Not Linked to You → Identifiers (User ID)** and **Usage Data (gameplay score, run outcome, city vote)**
+- Purposes: **App Functionality** and **Analytics** — the second because run-outcome columns exist to improve the game. Declare it; the columns are analytics whether or not an SDK is involved
 - Tracking: **No** — data is never combined with third-party data for advertising
 - **App Tracking Transparency prompt: not required**, since no tracking occurs
 
 ### 2.2 Age rating
 
 Expected **4+**. No violence, no profanity, no gambling simulation, no horror, no mature themes, no unrestricted web access, no user-generated content.
+
+**That last clause is a live constraint, not a description.** The rating, and the "Eliminated" risk ratings in §1.4, both rest on it. Any feature that accepts typed input from a player — a name field, a request box, a comment — invalidates this section and requires the rating and the DPIA to be redone.
 
 **Do not opt into the Kids Category.** It brings extra restrictions (no third-party analytics, parental gates on external links) without benefit here, and the ordinary 4+ rating reaches the same audience.
 

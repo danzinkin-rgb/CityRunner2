@@ -64,9 +64,9 @@ Three of the outstanding items are genuine submission blockers (app icon set, sc
 | 27 | Build step (Vite) | **TODO** | Ships unminified ES modules plus a full Three.js build — wasteful over mobile data |
 | 28 | Crash / error reporting | **TODO** | We currently have no idea when the game breaks on a real device. Sentry free tier suffices |
 | 29 | Deterministic simulation wired in | **PARTIAL** | Module done; `track.js` still calls `Math.random()` for obstacle placement |
-| 30 | Automated tests for logic | **TODO** | Collision fairness, score bounds, save-migration. Visuals are screenshot-reviewed; the maths is unchecked |
+| 30 | Automated tests for logic | **PARTIAL** | `npm test` runs five suites: coin-arc reachability, road clearance across every city and level, iOS layout, determinism, difficulty. Score bounds and save-migration are still unchecked |
 | 31 | Loading screen | **TODO** | Brief black flash before first frame |
-| 32 | Analytics | *n/a* | Deliberately excluded — compliance choice, see COMPLIANCE.md |
+| 32 | Analytics | **DECIDED, not built** | No SDK, ever. Instead: run-outcome columns on our own score row, plus Apple's free App Analytics. Ships with the leaderboard. See PRODUCT-ROADMAP §7 |
 
 ## Tranche D — accessibility
 
