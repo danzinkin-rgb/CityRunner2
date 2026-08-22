@@ -114,7 +114,7 @@
   .fv-head{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
   .fv-num{font-size:clamp(38px,12.5vw,60px);font-weight:900;line-height:.92;letter-spacing:-1.5px;
     font-variant-numeric:tabular-nums;
-    background:linear-gradient(180deg,#fff 8%,var(--fp-accent,#ffd166) 92%);
+    background:linear-gradient(165deg,#fff 4%,var(--fp-accent,#ffd166) 55%,var(--fp-accent2,#ffd166) 100%);
     -webkit-background-clip:text;background-clip:text;color:transparent;
     filter:drop-shadow(0 4px 18px rgba(255,190,80,.3))}
   .fv-unit{font-size:13px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
@@ -127,10 +127,10 @@
   .fv-rail{position:relative;height:36px;margin:16px 3px 4px}
   .fv-track{position:absolute;left:0;right:0;top:9px;height:4px;border-radius:3px;background:rgba(255,255,255,.14)}
   .fv-fill{position:absolute;left:0;top:9px;height:4px;width:0;border-radius:3px;
-    background:linear-gradient(90deg,rgba(255,209,102,.35),var(--fp-accent,#ffd166));
+    background:linear-gradient(90deg,rgba(255,255,255,.22),var(--fp-accent2,#ffd166));
     transition:width 1s cubic-bezier(.2,.8,.3,1)}
   .fv-dot{position:absolute;top:4px;left:0;width:14px;height:14px;margin-left:-7px;border-radius:50%;
-    background:var(--fp-accent,#ffd166);transition:left 1s cubic-bezier(.2,.8,.3,1);
+    background:var(--fp-accent2,#ffd166);transition:left 1s cubic-bezier(.2,.8,.3,1);
     box-shadow:0 0 0 4px rgba(255,209,102,.2),0 0 16px rgba(255,190,80,.7)}
   .fv-tick{position:absolute;top:6px;width:1px;height:10px;background:rgba(255,255,255,.22)}
   .fv-tick span{position:absolute;top:13px;left:50%;transform:translateX(-50%);
@@ -139,19 +139,20 @@
 
   /* tally — a count made countable */
   .fv-grid{display:flex;flex-wrap:wrap;gap:4px;margin:14px 0 5px}
-  .fv-mark{width:11px;height:11px;fill:var(--fp-accent,#ffd166);opacity:0;transform:scale(.4);
+  .fv-mark{width:11px;height:11px;fill:var(--fp-accent2,#ffd166);opacity:0;transform:scale(.4);
     transition:opacity .28s ease,transform .3s cubic-bezier(.2,1.5,.4,1)}
   .fv-grid.people .fv-mark{width:10px;height:16px}
   .fv-mark.on{opacity:.92;transform:none}
   body.reduced-motion .fv-mark{transition:none;opacity:.92;transform:none}
 
+  #pw-name{font-size:clamp(27px,8.5vw,40px);line-height:1.06}
   /* pull — for the values that look worst as a plain number */
   .fv-pull{padding-top:19px}
   .fv-pull::before{content:'';position:absolute;left:-12%;top:-45%;width:72%;height:135%;pointer-events:none;
     background:radial-gradient(closest-side,rgba(255,209,102,.15),transparent 72%)}
   .fv-pull .fv-num{font-size:clamp(50px,16.5vw,82px);letter-spacing:-2.5px}
   .fv-rule{height:3px;width:54px;border-radius:2px;margin-top:13px;
-    background:linear-gradient(90deg,var(--fp-accent,#ffd166),rgba(255,209,102,0))}
+    background:linear-gradient(90deg,var(--fp-accent2,#ffd166),rgba(255,255,255,0))}
   .fv-ghost{position:absolute;right:-8px;top:-30px;font-size:150px;font-weight:900;line-height:1;
     color:rgba(255,255,255,.055);pointer-events:none;user-select:none;letter-spacing:-4px}
   .fv-quote{padding:50px 17px 17px}
@@ -336,7 +337,7 @@
       radial-gradient(ellipse at 50% 40%, rgba(16,22,48,.96), rgba(4,6,16,.99))}
   .fp-wrap{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;
     margin:0 0 20px}
-  .fp-kicker{font-size:11px;letter-spacing:6px;text-transform:uppercase;color:var(--fp-accent,#ffd166);
+  .fp-kicker{font-size:11px;letter-spacing:6px;text-transform:uppercase;color:var(--fp-accent2,#ffd166);
     opacity:.9;margin-bottom:6px}
   .fp-title{font-size:clamp(30px,9vw,54px);font-weight:900;line-height:1.02;letter-spacing:-.5px;
     background:linear-gradient(180deg,#fff 20%,var(--fp-accent,#ffd166));-webkit-background-clip:text;
@@ -386,6 +387,12 @@
     .fv-quote{padding:44px 15px 14px}
     .fv-quote .fv-ghost{font-size:74px}
     .fv-quote .fv-text{font-size:15px}
+    #pw-name{font-size:clamp(22px,6.8vw,29px)}
+    #screen-puzzle-win .fv{padding:11px 13px 10px}
+    #screen-puzzle-win .fv-text{margin-top:7px}
+    #screen-puzzle-win .fp-card{padding:8px 11px}
+    #screen-puzzle-win .btn+.btn{margin-top:9px}
+    #screen-puzzle-win .fp-wrap{margin-bottom:12px}
     .fv-pull .fv-num{font-size:clamp(40px,13vw,58px)}
     .fv-rule{margin-top:10px;width:46px}
   }
@@ -580,7 +587,7 @@
 
 <div id="screen-puzzle-win" class="screen">
   <div class="label">Monument complete</div>
-  <div class="big-num" id="pw-name" style="font-size:40px">—</div>
+  <div class="big-num" id="pw-name">—</div>
   <div class="label" style="margin:10px 0 12px"><span id="pw-bonus">0</span> bonus · <span id="pw-time">0</span>s left</div>
   <div class="fp-wrap fp-compact">
     <div class="fp-scale" id="pw-scale"></div>

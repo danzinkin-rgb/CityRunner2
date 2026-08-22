@@ -299,10 +299,27 @@ function paintFacts(container, facts, key) {
   countUp(container, reduced);
 }
 
+// Lighten a hex colour toward white so a city's signature colour stays legible
+// as ink on a dark panel. #3a6ea5 (Paris blue) is unreadable at full strength.
+function lighten(hex, k = 0.34) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return '#ffd166';
+  const n = parseInt(m[1], 16);
+  const mix = (c) => Math.round(c + (255 - c) * k);
+  const r = mix((n >> 16) & 255), g = mix((n >> 8) & 255), b = mix(n & 255);
+  return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('');
+}
+
+// Every city drew its fact pages in the same gold, because windowLit is a near
+// identical warm cream in all four -- which is exactly why London looked like
+// Rome. The city's real signature colour (NYC red, Paris blue, London crimson,
+// Rome green) now carries the structural elements, so the pages read as places.
 function applyCityPalette() {
   const t = city();
-  document.documentElement.style.setProperty('--fp-accent', t.windowLit || '#ffd166');
-  document.documentElement.style.setProperty('--fp-glow', t.sky?.mid || '#3a4a8c');
+  const root = document.documentElement.style;
+  root.setProperty('--fp-accent', t.windowLit || '#ffd166');
+  root.setProperty('--fp-accent2', lighten(t.accent));
+  root.setProperty('--fp-glow', t.sky?.mid || '#3a4a8c');
 }
 
 function showStreetFacts() {
