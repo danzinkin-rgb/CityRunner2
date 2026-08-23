@@ -9,6 +9,8 @@ import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
 import { startSession, submit, top as topScores, personalBest, currentSession } from './core/scores.js';
 import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset } from './core/rng.js';
 import { initNative, onAppPause, hapticLight, hapticMedium, hapticHeavy, hapticSuccess } from './core/native.js';
+import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild } from './core/entitlements.js';
+import { initIAP, getOffer, purchase, restore } from './core/iap.js';
 
 export const VERSION = '1.0.0';
 import { Player, DEFAULT_STYLE } from './run/player.js';
@@ -36,6 +38,7 @@ const screens = {
   facts: $('screen-facts'), paused: $('screen-paused'),
   help: $('screen-help'), settings: $('screen-settings'), scores: $('screen-scores'),
   shop: $('screen-shop'), continue: $('screen-continue'),
+  paywall: $('screen-paywall'),
 };
 function showScreen(name) {
   if (name !== 'menu') stopDailyTimer();   // never leak the countdown interval
@@ -131,18 +134,27 @@ function buildCitySelect() {
   const flagFix = { london: '💂' };   // 🇬🇧 renders as plain "GB" on Windows
   CITIES.forEach((c, i) => {
     const stars = save.stars[c.id] || 0;
-    const unlocked = i === 0 || (save.stars[CITIES[i - 1].id] || 0) >= 1;
+    // Two independent gates. `earned` is the game's own pacing; `owned` is
+    // whether it has been paid for (always true on the web build). A card is
+    // playable only when both are open, but they are shown differently: an
+    // unearned city is dimmed and inert, a purchasable one stays bright and
+    // opens the paywall. Telling a player to "keep playing" to reach a city
+    // that no amount of playing will open would simply be false.
+    const earned = i === 0 || (save.stars[CITIES[i - 1].id] || 0) >= 1;
+    const owned = isCityEntitled(c.id);
+    const sellable = earned && !owned;
     const el = document.createElement('div');
-    el.className = 'city-card' + (unlocked ? '' : ' locked');
+    el.className = 'city-card' + (!earned ? ' locked' : sellable ? ' paid' : '');
     el.innerHTML = `<div class="thumb" style="background-image:url(assets/thumbs/${c.id}.png)">
-        <span class="thumb-flag">${flagFix[c.id] || c.flag}</span></div>
+        <span class="thumb-flag">${flagFix[c.id] || c.flag}</span>${sellable ? '<span class="padlock">🔒</span>' : ''}</div>
       <div class="name">${c.name}</div>
       <div class="stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>`;
-    if (unlocked) el.onclick = () => {
+    if (earned && owned) el.onclick = () => {
       dailyMode = false; runSeed = null;
       cityIdx = i; level = Math.min(3, (save.stars[c.id] || 0) + 1);
       startRun();
     };
+    else if (sellable) el.onclick = () => openPaywall();
     wrap.appendChild(el);
   });
   const stats = document.getElementById('menu-stats');
@@ -159,6 +171,20 @@ function doFade(fn) {
 
 // ---------- run mode ----------
 function startRun() {
+  // Entitlement backstop, and the only one that covers every caller.
+  // buildCitySelect() already refuses to start an unpaid run, but it is not the
+  // only way in: startDaily() takes its city from the daily seed, and the
+  // ?view=run&city=... debug parameter takes it from the URL. This is the one
+  // choke point all three share, so the check belongs here rather than at each
+  // call site where the next new caller would forget it.
+  //
+  // THE DAILY CHALLENGE IS DELIBERATELY EXEMPT. It is a single seeded run whose
+  // score goes on a leaderboard shared by every player that day. Clamping it to
+  // free cities for unpaid players would put two genuinely different challenges
+  // on one board and quietly make the rankings meaningless. One run a day in a
+  // locked city is a taster, not the city — its monuments and its own progress
+  // stay behind the paywall.
+  if (!dailyMode && !isLevelEntitled(city().id, level)) { openPaywall(); return; }
   doFade(() => {
     disposeAll();
     scene = new THREE.Scene();
@@ -390,6 +416,11 @@ function showStreetFacts() {
 
 // ---------- puzzle mode ----------
 function startPuzzle() {
+  // Same backstop as startRun(), for the same reason: the ?view=puzzle&city=...
+  // parameter reaches this directly. The normal path (the BUILD button after a
+  // run) is already entitled, so this only ever fires on a debug URL — but a
+  // debug URL that survives into a shipped build is a one-tap bypass.
+  if (!dailyMode && !isLevelEntitled(city().id, level)) { openPaywall(); return; }
   stopMusic();
   doFade(() => {
     disposeAll();
@@ -564,6 +595,87 @@ $('btn-settings-close').onclick = closeOverlay;
 $('btn-shop').onclick = () => { renderShop(); openOverlay('shop'); };
 $('btn-shop-close').onclick = closeOverlay;
 
+// ---------- paywall ----------
+// Opened only by a deliberate tap: a paid city card, or the Settings row.
+// Nothing here opens itself, and nothing here is on a timer.
+let paywallFrom = 'menu';
+
+async function openPaywall(from) {
+  paywallFrom = from === 'settings' ? 'settings' : 'menu';
+  const buy = $('btn-paywall-buy');
+  const status = $('paywall-status');
+  status.textContent = '';
+  $('pw-price').textContent = '';
+  // Hidden rather than disabled-looking until we know there is something to
+  // sell. A buy button that is visible before the price loads invites a tap
+  // that cannot work.
+  buy.style.display = 'none';
+  openOverlay('paywall');
+
+  const offer = await getOffer();
+  if (!offer) {
+    // Normal on the web build, and on a device that cannot reach the store.
+    // Say so plainly and leave Restore reachable — a player who already paid
+    // must not be stuck behind a broken shop.
+    status.textContent = isFreeBuild()
+      ? 'Everything is already unlocked in the browser version.'
+      : 'The store is not reachable right now. Please try again later.';
+    return;
+  }
+  $('pw-price').textContent = offer.price;
+  $('pw-buy-label').textContent = 'UNLOCK';
+  buy.style.display = '';
+}
+
+$('btn-paywall-close').onclick = () => {
+  if (paywallFrom === 'settings') { renderSettings(); openOverlay('settings'); return; }
+  closeOverlay();
+};
+
+$('btn-paywall-buy').onclick = async () => {
+  const status = $('paywall-status');
+  const buy = $('btn-paywall-buy');
+  const offer = await getOffer();
+  if (!offer) return;
+  buy.disabled = true;
+  status.textContent = 'Opening the App Store…';
+  const ok = await purchase(offer.productId);
+  buy.disabled = false;
+  if (!ok) {
+    // Covers the player simply cancelling Apple's sheet, which is not a
+    // failure and must not be reported as one.
+    status.textContent = '';
+    return;
+  }
+  // The entitlement itself is granted by the store's verified handler, not
+  // here — including for an Ask to Buy approval that lands much later.
+  if (hasFullAccess()) {
+    hapticSuccess();
+    status.textContent = 'Thank you. Everything is unlocked.';
+    buildCitySelect();
+  } else {
+    status.textContent = 'Waiting for confirmation. This can take a moment.';
+  }
+};
+
+/** Shared by the paywall and the Settings row — Apple requires both to work. */
+async function doRestore(statusEl) {
+  statusEl.textContent = 'Checking with the App Store…';
+  const found = await restore();
+  if (hasFullAccess()) {
+    statusEl.textContent = 'Restored. Everything is unlocked.';
+    buildCitySelect();
+  } else {
+    statusEl.textContent = found.length
+      ? 'Restored.'
+      : 'No previous purchase found on this Apple Account.';
+  }
+}
+
+$('btn-paywall-restore').onclick = () => doRestore($('paywall-status'));
+$('set-restore').onclick = () => doRestore($('set-restore-status'));
+$('set-purchase').onclick = () => openPaywall('settings');
+
 function renderScores() {
   const body = $('scores-body');
   body.innerHTML = '';
@@ -650,6 +762,39 @@ function renderSettings() {
   $('set-vol').value = Math.round(audioPrefs.volume * 100);
   $('set-name').textContent = getIdentity().name;
   $('set-version').textContent = `v${VERSION}`;
+  renderPurchaseRows();
+}
+
+/**
+ * The permanent, quiet entry point to the offer, per the Children's Code
+ * reasoning in docs/PROPOSALS.md §4 — always findable, never pushed.
+ *
+ * Hidden entirely on the web build, where there is nothing to sell and a
+ * "Restore purchases" button would be a dead control.
+ */
+function renderPurchaseRows() {
+  const label = $('set-purchase-label');
+  const view = $('set-purchase');
+  const restoreBtn = $('set-restore');
+  const rows = [label, view, restoreBtn].map((el) => el && el.closest('.row'));
+  const hide = isFreeBuild();
+  for (const r of rows) if (r) r.style.display = hide ? 'none' : '';
+  $('set-restore-status').style.display = hide ? 'none' : '';
+  if (hide) return;
+
+  if (isFounder()) {
+    // Founders paid early and were promised everything, forever. Say thank
+    // you; never show them a price again.
+    label.textContent = 'Founder — thank you';
+    view.style.display = 'none';
+  } else if (hasFullAccess()) {
+    label.textContent = 'Full city set — unlocked';
+    view.style.display = 'none';
+  } else {
+    label.textContent = 'Full city set';
+    view.style.display = '';
+    view.textContent = 'view';
+  }
 }
 
 $('set-music').onclick = () => {
@@ -809,6 +954,10 @@ function frame() {
 }
 
 initNative();
+// Warm the store so the first paywall open is instant rather than spinning.
+// Resolves to null on the web and on any build without the plugin, and can
+// never throw — see src/core/iap.js.
+initIAP();
 onAppPause(() => pauseGame());   // iOS fires this more reliably than visibilitychange
 buildCitySelect();
 frame();
@@ -883,6 +1032,17 @@ if (q.get('ui')) {
   else if (which === 'settings') { renderSettings(); showScreen('settings'); state = 'ui-settings'; }
   else if (which === 'scores') { renderScores(); showScreen('scores'); state = 'ui-scores'; }
   else if (which === 'shop') { renderShop(); showScreen('shop'); state = 'ui-shop'; }
+  else if (which === 'paywall') {
+    // The real screen asks StoreKit for a localised price, which cannot
+    // answer in a browser. Stand in a representative one so the layout can
+    // be reviewed at every viewport — this branch is debug-only and never
+    // runs in the app.
+    $('pw-price').textContent = q.get('price') || '£1.99';
+    $('pw-buy-label').textContent = 'UNLOCK';
+    $('btn-paywall-buy').style.display = '';
+    $('paywall-status').textContent = '';
+    showScreen('paywall'); state = 'ui-paywall';
+  }
   else if (which === 'souvenir') {
     // Renders one city's collectible alone, for capturing HUD/help icons.
     // Emoji were standing in for these and were both inaccurate (a classical

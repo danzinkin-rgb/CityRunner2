@@ -193,14 +193,21 @@ revoke execute on function purge_old_scores() from anon, authenticated;
 -- (true)`, and a score carries whatever player_id the client sends. An anon
 -- caller can post scores in another player's name.
 --
--- The fix is Supabase anonymous auth (`signInAnonymously`), storing the
--- returned uid as the player id, and then:
---   create policy players_insert on players for insert
---     with check (id = auth.uid());
---   create policy scores_insert  on scores  for insert
---     with check (player_id = auth.uid() and ...existing conditions...);
--- and a self-delete policy on players of `using (id = auth.uid())`, which
--- removes the need for delete_player to be reachable from the client at all.
+-- The fix — Supabase anonymous auth (`signInAnonymously`), storing the
+-- returned uid as the player id, and policies of `id = auth.uid()` /
+-- `player_id = auth.uid()` — is written out in full as a migration:
+--   supabase/migrations/001-anon-auth.sql
+-- and the runbook for applying, verifying and load-bearing-test-ing it
+-- (including the adversarial test that actually proves the gap is closed —
+-- player A must be REJECTED when attempting to insert a score as player B)
+-- is at:
+--   docs/SUPABASE-AUTH-PLAN.md
 --
--- Deliberately not applied yet: it needs a live project to test against, and
--- an untested auth change is worse than a documented gap.
+-- Deliberately not applied HERE yet: it needs a live project to test
+-- against, and an untested auth change, applied directly to the schema this
+-- file describes, is worse than a documented gap. The migration file is
+-- equally untested — it says so at its own top — but keeping it separate
+-- means it can be tried, iterated on and eventually proven against staging
+-- without this file ever describing a security model that isn't actually
+-- the one deployed. Once it has been proven, run it, then fold its policy
+-- definitions back into this file and delete this paragraph.

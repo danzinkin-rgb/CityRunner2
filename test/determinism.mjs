@@ -13,8 +13,22 @@
  * Usage: node test/determinism.mjs [baseUrl]      (npm run test:determinism)
  */
 import { webkit, devices } from 'playwright';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 const BASE = process.argv[2] || 'http://localhost:4173';
+const HERE = dirname(fileURLToPath(import.meta.url));
+
+// City ids come from themes.js, the source of truth. The daily challenge can
+// pick any city, so the valid range must derive from the actual city count.
+const themesSrc = readFileSync(join(HERE, '..', 'src', 'cities', 'themes.js'), 'utf8');
+const CITIES = [...themesSrc.matchAll(/^\s{2}\{\s*$\n\s*id:\s*'([a-z]+)'/gm)].map((m) => m[1]);
+if (!CITIES.length) {
+  console.log('✗ could not read city ids from src/cities/themes.js');
+  process.exit(1);
+}
+const NUM_CITIES = CITIES.length;
 
 const browser = await webkit.launch();
 const ctx = await browser.newContext({ ...devices['iPhone 15'] });
@@ -72,7 +86,7 @@ check('daily seed is identical all day (UTC)',
   `05:00 seed ${daily.morning.seed} city ${daily.morning.cityIdx} · 23:00 seed ${daily.evening.seed} city ${daily.evening.cityIdx}`);
 check('daily seed changes at UTC midnight', daily.morning.seed !== daily.tomorrow.seed);
 check('daily picks a valid city and street',
-  daily.morning.cityIdx >= 0 && daily.morning.cityIdx < 4
+  daily.morning.cityIdx >= 0 && daily.morning.cityIdx < NUM_CITIES
   && daily.morning.level >= 1 && daily.morning.level <= 3,
   `city ${daily.morning.cityIdx} level ${daily.morning.level}`);
 

@@ -26,13 +26,15 @@
  * Usage:  node test/ios-ui.mjs [baseUrl]      (npm run test:ios)
  */
 import { webkit, devices } from 'playwright';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const BASE = process.argv[2] || 'http://localhost:4173';
 const OUT = join(dirname(fileURLToPath(import.meta.url)), 'shots');
 mkdirSync(OUT, { recursive: true });
+
+const HERE = dirname(fileURLToPath(import.meta.url));
 
 const PROFILES = [
   ['iphone-15', devices['iPhone 15']],
@@ -48,7 +50,17 @@ const SCREENS = {
   facts: '#screen-facts', over: '#screen-over',
   pwin: '#screen-puzzle-win', paused: '#screen-paused',
 };
-const CITIES = ['nyc', 'paris', 'london', 'rome'];
+
+// City ids come from themes.js, the source of truth, so a new city appears in
+// these tests the day it lands. A hardcoded list would silently skip it.
+const themesSrc = readFileSync(join(HERE, '..', 'src', 'cities', 'themes.js'), 'utf8');
+const CITIES = [...themesSrc.matchAll(/^\s{2}\{\s*$\n\s*id:\s*'([a-z]+)'/gm)].map((m) => m[1]);
+if (!CITIES.length) {
+  console.log('✗ could not read city ids from src/cities/themes.js — has the file moved?');
+  process.exit(1);
+}
+console.log(`cities [${CITIES.join(', ')}] from src/cities/themes.js`);
+
 const MIN_TAP = 44;
 
 let failures = 0, checked = 0;
@@ -72,7 +84,7 @@ const AUDIT = ({ selector, MIN_TAP }) => {
     const name = el.tagName.toLowerCase() + (el.id ? '#' + el.id : '')
       + (typeof el.className === 'string' && el.className ? '.' + el.className.trim().split(/\s+/)[0] : '');
     if (r.right > vw + 1 || r.left < -1) issues.push(`OVERFLOW-X ${name} [${Math.round(r.left)}..${Math.round(r.right)}] vw=${vw}`);
-    if (r.bottom > vh + 1 && cs.position !== 'absolute' && !el.closest('.sheet') && !el.closest('.facts-list'))
+    if (r.bottom > vh + 1 && cs.position !== 'absolute' && !el.closest('.sheet') && !el.closest('#facts-list'))
       issues.push(`BELOW-FOLD ${name} bottom=${Math.round(r.bottom)} vh=${vh}`);
     const tappable = el.tagName === 'BUTTON' || el.tagName === 'A' || el.tagName === 'INPUT';
     if (tappable && (r.height < MIN_TAP - 0.5 || r.width < MIN_TAP - 0.5))

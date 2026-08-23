@@ -69,6 +69,24 @@ Daily challenge · souvenir economy · Game Center · freemium model.
 
 ## 4. Freemium — "first city free"
 
+> [!IMPORTANT]
+> **SUPERSEDED (2026-08-23) — implemented differently. See `FREEMIUM-IAP.md`.**
+>
+> The shipped model keeps this section's *architecture* — one non-consumable, an
+> `entitlements.js` single source of truth, a mandatory Restore control, the web
+> build left entirely free — and every word below about Apple's mechanics and the
+> Children's Code still applies. What changed is the commercial shape:
+>
+> | This section proposed | What shipped |
+> |---|---|
+> | £4.99 | **£1.99** founder price for the first ~3 months |
+> | New York free, three cities paid | **Three cities free forever** (NY, Paris, London), Rome paid |
+> | One product | **Two** — a time-limited Founder, then a standing unlock |
+> | — | Monuments added beyond a free city's first three are also paid |
+>
+> Read the rest of this section for the *reasoning*, which stands. Do not
+> implement its prices or its free-tier boundary.
+
 ### Recommended model: a single one-time unlock
 
 | | |
@@ -115,6 +133,24 @@ Selling to an audience that includes children constrains *how* you sell, not whe
 ---
 
 ## 5. Monetisation — revised: free with kid-safe contextual ads
+
+> [!IMPORTANT]
+> **SUPERSEDED (2026-08-23) — not implemented. See `FREEMIUM-IAP.md`.**
+>
+> This section superseded §4 by replacing a paid unlock with ads plus a £0.99
+> tip jar. That is now reversed: **ads are paused, and the paid unlock is what
+> shipped.**
+>
+> The £0.99 "Supporter" SKU here bought the removal of ads. With ads paused it
+> would have bought nothing but a cosmetic — a tip jar asking for money in a
+> game rated 4+ without giving content back. The £1.99 Founder product replaces
+> it and grants real content: every city, forever, including future ones.
+>
+> **What still stands:** the warning below that any third-party ad SDK ends
+> "Data Not Collected" and forces Apple's SDK disclosure. That reasoning is why
+> RevenueCat was also rejected for the purchase path — see `COMPLIANCE.md` §1.2.
+> If ads are ever revisited, this section is the starting point, and the privacy
+> label must be re-answered before a line of code is written.
 
 **Supersedes proposal 4's premium model.** Decision taken: the game ships **free**, with ads added over time and a cheap ad-free unlock.
 

@@ -31,6 +31,10 @@ A single-player endless-runner game with score leaderboards. No social features,
 
 Planned measurement deliberately avoids an analytics SDK, using extra columns on our own score row instead — see §7 of `PRODUCT-ROADMAP.md`. TelemetryDeck and Aptabase would both have been defensible choices; the reason for declining them is that this sentence is worth more than the convenience. It is an answer on the nutrition label, a line in this assessment, and a claim that stays true without ongoing vendor diligence.
 
+**One carve-out, stated explicitly: Apple's StoreKit.** The in-app purchase described in `FREEMIUM-IAP.md` reaches StoreKit through a Cordova bridge plugin. That plugin is third-party *code*, but it is not a third-party *data recipient*: it is a thin wrapper over Apple's own framework, and the only party receiving anything is Apple, who is already the payment processor and the app's distributor. No new processor enters the picture, no identifier is created, and nothing is added to the table above. "Data Not Collected" survives this unchanged.
+
+**What would NOT survive it.** A purchase-infrastructure SaaS — RevenueCat is the obvious one, and it is genuinely convenient — routes purchase events and device identifiers through its own servers. That is a new processor, a new entry in the table above, an Apple SDK disclosure, and the end of "Data Not Collected" for a 4+ title likely to be used by children. It is rejected on those grounds, and the rejection is recorded in `src/core/iap.js` next to the code that would otherwise import it. Do not adopt it without first revising §1.2, §2.1 and the submitted privacy label.
+
 ### 1.3 Necessity and proportionality
 
 The UUID is the minimum viable identifier for saving progress; a login would collect strictly more. Display names are generated rather than typed, which means the system cannot receive a real name even if a child tries to enter one.

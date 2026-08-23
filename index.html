@@ -87,6 +87,15 @@
     border:1px solid rgba(255,255,255,.14);text-align:center;cursor:pointer;transition:.15s}
   .city-card:hover{background:rgba(255,255,255,.13);transform:translateY(-4px)}
   .city-card.locked{opacity:.35;cursor:default}
+  /* Locked by PURCHASE, not by progression — deliberately not dimmed like
+     .locked above. A city you could buy is merchandise and should look
+     appealing; a city you have not yet earned is a closed door. Same word
+     "locked" in English, two different things to a player, so two states. */
+  .city-card.paid{opacity:1;cursor:pointer}
+  .city-card.paid .thumb{filter:saturate(.55) brightness(.72)}
+  .city-card.paid:hover .thumb{filter:saturate(.9) brightness(.9)}
+  .city-card .padlock{position:absolute;left:5px;bottom:3px;font-size:15px;
+    filter:drop-shadow(0 1px 2px #000)}
   .city-card .flag{font-size:34px}
   .city-card .thumb{width:100%;height:86px;border-radius:12px;background-size:135%;background-position:center 32%;
     position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 4px 12px rgba(0,0,0,.35)}
@@ -585,6 +594,12 @@
     <div class="row"><span>Player</span><span id="set-name" class="muted">—</span></div>
     <div class="row"><span></span><button class="linkbtn" id="set-reroll">new nickname</button></div>
     <hr>
+    <hr>
+    <div class="row"><span id="set-purchase-label">Full city set</span>
+      <button class="linkbtn" id="set-purchase">view</button></div>
+    <div class="row"><span></span><button class="linkbtn" id="set-restore">Restore purchases</button></div>
+    <div class="row muted" id="set-restore-status" style="font-size:12px;min-height:15px"></div>
+    <hr>
     <div class="row"><a class="linkbtn" href="privacy.html">Privacy policy</a>
       <button class="linkbtn" id="set-erase">Erase my data</button></div>
     <div class="row muted" style="font-size:12px"><span id="set-version">v—</span><span>Made with Three.js</span></div>
@@ -596,6 +611,39 @@
   <div class="title" style="font-size:clamp(26px,7vw,48px)">BEST RUNS</div>
   <div class="sheet" id="scores-body"></div>
   <button class="btn" id="btn-scores-close">BACK</button>
+</div>
+
+<!--
+  Paywall. Reachable two ways only: tapping a paid city card, and a quiet
+  permanent row in Settings. It is never shown unprompted, and never shown
+  on a timer — docs/PROPOSALS.md §4 records the Children's Code reasoning,
+  and it is worth restating where the markup lives:
+
+    * no countdown, no "ends soon", no "only N left", no animated nagging
+    * no repeat interstitials — the player opens this, it does not open itself
+    * DISMISS is a real button of the same weight as BUY, not a grey 8px x
+    * the price is written by StoreKit at runtime, localised by Apple. There
+      is no hardcoded "1.99" in this file on purpose
+
+  #pw-price is the offer price; #pw-offer-name is the product title. Both stay
+  empty until the store answers, and if it never answers the screen is never
+  shown at all (see getOffer() in src/core/iap.js).
+-->
+<div id="screen-paywall" class="screen">
+  <div class="title" style="font-size:clamp(24px,6.4vw,42px)">THE FULL CITY SET</div>
+  <div class="sheet">
+    <div class="row"><span id="paywall-lede">Unlock every city and every monument.</span></div>
+    <hr>
+    <div class="row"><span>Rome, and every city added later</span><span class="muted">included</span></div>
+    <div class="row"><span>New monuments in cities you already have</span><span class="muted">included</span></div>
+    <div class="row"><span>One payment, kept forever</span><span class="muted">no subscription</span></div>
+    <hr>
+    <div class="row muted" style="font-size:12px"><span>New York, Paris and London stay free, always.</span></div>
+  </div>
+  <button class="btn" id="btn-paywall-buy"><span id="pw-buy-label">UNLOCK</span> <span id="pw-price"></span></button>
+  <button class="btn" id="btn-paywall-close">NOT NOW</button>
+  <button class="linkbtn" id="btn-paywall-restore">Restore purchases</button>
+  <div class="muted" id="paywall-status" style="font-size:12px;margin-top:8px;min-height:16px"></div>
 </div>
 
 <div id="screen-shop" class="screen">
