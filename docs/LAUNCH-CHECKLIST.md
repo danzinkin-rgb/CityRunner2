@@ -1,6 +1,6 @@
 # CityRunner — Launch Checklist
 
-**Source of truth for App Store readiness. Last updated 02 August 2026.**
+**Source of truth for App Store readiness. Last updated 23 August 2026.**
 Status of every element a submitted game is normally expected to have.
 
 Legend: **DONE** · **PARTIAL** · **TODO** · *n/a*
@@ -23,15 +23,15 @@ Three of the outstanding items are genuine submission blockers (app icon set, sc
 
 | # | Item | Status | Notes |
 |---|---|---|---|
-| 1 | How to play / help screen | **TODO** | Only a 3-second hint on run start. Needs a persistent, re-openable guide: controls, souvenirs, puzzle rules, scoring |
-| 2 | Settings screen | **TODO** | No settings surface exists at all |
+| 1 | How to play / help screen | **DONE** | Persistent help screen exists: `#screen-help` in index.html with controls guide |
+| 2 | Settings screen | **DONE** | Settings screen exists: `#screen-settings` in index.html |
 | 3 | Music / SFX toggles + volume | **TODO** | Procedural audio exists (`core/audio.js`) with no user control. Expected in every mobile game |
-| 4 | Leaderboard screen | **PARTIAL** | Service is built and tested (`core/scores.js`: sessions, plausibility bounds, per-mode/per-city filters). **No UI exists** |
+| 4 | Leaderboard screen | **DONE** | Service and UI complete: `#screen-scores` in index.html displays leaderboard |
 | 5 | Daily challenge | **PARTIAL** | Seeded RNG built and verified (`core/rng.js`, UTC-stable). **Not wired into the track** — needs `track.js` to draw from the seeded stream |
 | 6 | Achievements | **TODO** | Nothing. Pairs with Game Center (#16) |
 | 7 | Progression / rewards | **PARTIAL** | Stars unlock cities; souvenirs accumulate but **buy nothing**. Needs a spend sink (characters, boards, city unlocks) |
 | 8 | First-run onboarding | **TODO** | New players get no guided first run |
-| 9 | Credits / About + version number | **TODO** | No version is surfaced anywhere — makes bug reports unattributable |
+| 9 | Credits / About + version number | **DONE** | Version surfaced in settings screen: `#set-version` in index.html:605, populated from `VERSION` constant in src/main.js:15 (v1.0.0) |
 | 10 | Pause + resume | **DONE** | Button, Esc/P, auto-pause on backgrounding, no time-jump on resume |
 | 11 | Progress persistence | **DONE** | `localStorage`, survives reload |
 | 12 | Offline play | **DONE** | No network dependency in any core loop |
@@ -43,10 +43,10 @@ Three of the outstanding items are genuine submission blockers (app icon set, sc
 
 | # | Item | Status | Notes |
 |---|---|---|---|
-| 14 | iOS app icon set | **PARTIAL** | Only PWA 192/512 exist. iOS needs the full set including the 1024px marketing icon |
-| 15 | Screenshots | **TODO** | Required: 6.7" and 6.5" iPhone; 12.9" iPad if iPad is supported |
+| 14 | iOS app icon set | **DONE** | Full set exists: assets/icon-192.png, icon-512.png, icon-1024.png (1024px marketing icon added 23 Aug) |
+| 15 | Screenshots | **TODO** | Generator built (`npm run shots:store`), captures not yet taken/uploaded. iPad is NOT optional — TARGETED_DEVICE_FAMILY is "1,2", so 6.7", 6.5" and 13" iPad are all required |
 | 16 | Game Center leaderboards + achievements | **TODO** | The single strongest 4.2 answer; also removes our own anti-cheat burden |
-| 17 | Haptics | **TODO** | Collision, souvenir pickup, block placement. Cheap, high perceived quality |
+| 17 | Haptics | **DONE** | `hapticHeavy()` function implemented in src/core/native.js:75, wired into collisions in src/main.js:239 |
 | 18 | iPad layout | **TODO** | Responsive CSS exists but is untested at tablet aspect |
 | 19 | Native pause on interruption | **DONE** | `visibilitychange` handler |
 | 20 | Export compliance declaration | **TODO** | HTTPS-only → exempt, but must still be declared |
@@ -74,7 +74,7 @@ Three of the outstanding items are genuine submission blockers (app icon set, sc
 
 | # | Item | Status | Notes |
 |---|---|---|---|
-| 33 | Reduced-motion support | **TODO** | `prefers-reduced-motion` should damp camera shake, confetti and bob |
+| 33 | Reduced-motion support | **DONE** | `prefers-reduced-motion: reduce` media query implemented in index.html:276, body.reduced-motion selectors on lines 131, 164 |
 | 34 | VoiceOver labels / colour-contrast pass | **PARTIAL** | One `aria-label` on the pause button; menus otherwise unlabelled |
 | 35 | Tap-control alternative to swipe | **TODO** | On-screen lane buttons for players who cannot swipe reliably |
 

@@ -193,6 +193,6 @@ These must be understood and personally verified, not accepted on trust from gen
 
 1. **The Supabase anon key is public.** It ships in the app bundle. Anyone can extract it. Security rests entirely on row-level security policies.
 2. **The service-role key must never appear in client code**, any committed file, or the repository. It bypasses all RLS.
-3. **Tables are insert-only.** No update or delete policy exists for anonymous callers, so a posted score cannot be altered or removed by a caller.
+3. **Scores remain insert-only in the sense that matters for integrity.** No caller can edit a score's value after posting or delete another player's score. A caller can only delete their own player row (via `players_delete_self`), which cascades to all their scores as an indivisible unit — an intentional data-subject-erasure route, not selective curation. There is deliberately no scores-only delete policy.
 4. **Every client-side validation is repeated server-side.** The client checks in `src/core/scores.js` are a courtesy to honest players; the constraints in `supabase/schema.sql` are the actual control.
 5. **Client scores remain fundamentally untrustworthy** even so. See §2 of `PRODUCT-ROADMAP.md`. Plausibility bounds stop absurd values; they cannot stop a determined cheat posting a merely-excellent score.

@@ -80,11 +80,18 @@ for (const g of Object.values(OB_GEO)) SHARED_GEO.add(g);
 export class Track {
   constructor(scene, theme, level, seed) {
     this.scene = scene;
-    // Gameplay randomness (obstacle spacing/pattern/lane/kind, bus chance,
-    // collectible placement) is drawn from the seeded stream in rng.js so a
-    // seed reproduces an identical course. Cosmetic randomness (window
-    // lighting, facades, props, parked-car colours) stays on Math.random and
-    // is untouched by this. Must run before any chunk is generated.
+    // Every draw THIS FILE makes — obstacle spacing/pattern/lane/kind, bus
+    // chance, collectible placement, and also the chunk layout (building
+    // size/height/position, props, parked cars, banners, festoons) — is
+    // drawn from the seeded stream in rng.js, so a seed reproduces an
+    // identical course: same obstacles, same hitboxes, same z positions, in
+    // the same order. Must run before any chunk is generated.
+    //
+    // Fine cosmetic detail INSIDE the builders (src/cities/builders.js) —
+    // which windows are lit, canvas paint noise, a parked car's paint colour
+    // — still draws from Math.random by design (see rng.js's own header
+    // comment): it never touches gameplay or the obstacle course, so it is
+    // fine for it to render a little differently frame to frame.
     this.seed = seed !== undefined && seed !== null ? startRun(seed) : startRun(randomSeed());
     // Resolve the per-street identity (facade style, palette, mood, props...)
     // over the city base — this is what makes Broadway ≠ 5th Ave ≠ Times Sq.
@@ -200,11 +207,11 @@ export class Track {
         // buildings — packed shoulder to shoulder, varied heights
         let bz = 0;
         while (bz < CHUNK_LEN - 4) {
-          const w = 7 + Math.random() * 6;
-          const d = 8 + Math.random() * 4;
+          const w = 7 + rand() * 6;
+          const d = 8 + rand() * 4;
           const hBase = t.hBase ?? (t.id === 'paris' || t.id === 'rome' ? 14 : 22);
           const hVar = t.hVar ?? (t.id === 'nyc' ? 34 : 14);
-          const h = hBase + Math.random() * hVar;
+          const h = hBase + rand() * hVar;
           // Piccadilly: the giant curved stacked-LED corner building
           if (t.curvedLED && side > 0 && nChunk % 4 === 2 && bz === 0) {
             const led = makeCurvedLED(t);
@@ -214,7 +221,7 @@ export class Track {
             bz += 15;
             continue;
           }
-          const b = makeBuilding(t, w, h, d, Math.random, side);
+          const b = makeBuilding(t, w, h, d, rand, side);
           // The road-facing face (the box's ±X face) is pinned to a single
           // building line at `setback - 1` behind the kerb. Placing by centre
           // used to let the facade wander ±2.5m, so a random building — and
@@ -239,9 +246,9 @@ export class Track {
 
           // distant second row for skyline depth
           const rowP = t.secondRow ?? 0.8;
-          if (Math.random() < rowP) {
-            const b2 = makeBuilding(t, w * 1.3, h * (0.9 + Math.random() * 0.8), d);
-            b2.position.set(side * (ROAD_W / 2 + 16 + Math.random() * 8), 0, -bz - d / 2);
+          if (rand() < rowP) {
+            const b2 = makeBuilding(t, w * 1.3, h * (0.9 + rand() * 0.8), d);
+            b2.position.set(side * (ROAD_W / 2 + 16 + rand() * 8), 0, -bz - d / 2);
             g.add(b2);
           }
           bz += w + (t.facade === 'georgian' ? 2.5 : 0.5);
@@ -273,10 +280,10 @@ export class Track {
       // parked decorative cars hugging the curb (placed first so props avoid them)
       const carZs = [];
       const parkP = t.facade === 'georgian' ? 0.95 : t.arcade ? 0.3 : 0.85;
-      if (Math.random() < parkP) {
-        const n = 1 + (Math.random() < 0.4 ? 1 : 0);
+      if (rand() < parkP) {
+        const n = 1 + (rand() < 0.4 ? 1 : 0);
         for (let i = 0; i < n; i++) {
-          const cz = 5 + Math.random() * (CHUNK_LEN - 12);
+          const cz = 5 + rand() * (CHUNK_LEN - 12);
           if (carZs.some((zz) => Math.abs(zz - cz) < 5)) continue;
           carZs.push(cz);
           const car = makeParkedCar(t);
@@ -289,16 +296,16 @@ export class Track {
       // props along the curb — denser for a lived-in street
       const propKinds = t.props;
       const wallProps = new Set(['billboard', 'awning', 'flagbanner']);
-      for (let pz = 3; pz < CHUNK_LEN; pz += 5.5 + Math.random() * 4) {
-        const kind = propKinds[(Math.random() * propKinds.length) | 0];
+      for (let pz = 3; pz < CHUNK_LEN; pz += 5.5 + rand() * 4) {
+        const kind = propKinds[(rand() * propKinds.length) | 0];
         if (!wallProps.has(kind) && carZs.some((zz) => Math.abs(zz - pz) < 3.2)) continue;
         // under the arcade only the stalls fit (lamps would pierce the vault)
         if (t.arcade && side > 0 && kind !== 'souvenirstall') continue;
         const p = makeProp(kind, t);
-        p.position.set(side * (ROAD_W / 2 + 1.1 + Math.random() * 1.6), 0.3, -pz);
+        p.position.set(side * (ROAD_W / 2 + 1.1 + rand() * 1.6), 0.3, -pz);
         if (kind === 'billboard') {
           p.position.x = side * (ROAD_W / 2 + 4.2);
-          p.position.y = 5 + Math.random() * 3;   // keep it up on the facade line
+          p.position.y = 5 + rand() * 3;   // keep it up on the facade line
           p.rotation.y = side > 0 ? -Math.PI / 2.3 : Math.PI / 2.3;
         }
         if (kind === 'awning') {
@@ -307,7 +314,7 @@ export class Track {
         }
         if (kind === 'flagbanner') {
           p.position.x = side * (ROAD_W / 2 + setback - 1.2);
-          p.position.y = 6 + Math.random() * 2.5;
+          p.position.y = 6 + rand() * 2.5;
           p.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
         }
         if (kind === 'newsstand' || kind === 'kiosk' || kind === 'hotdog' || kind === 'artstall'
@@ -331,7 +338,7 @@ export class Track {
           p.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2;
           p.position.x = side * (ROAD_W / 2 + 0.9);
         }
-        if (kind === 'easel') p.rotation.y = Math.random() * Math.PI * 2;
+        if (kind === 'easel') p.rotation.y = rand() * Math.PI * 2;
         g.add(p);
       }
     }
@@ -363,9 +370,9 @@ export class Track {
         g.add(st);
       }
       for (const side of [-1, 1]) {
-        if (Math.random() > 0.6) continue;
+        if (rand() > 0.6) continue;
         const ap = makeArtistPitch(t);
-        ap.position.set(side * (ROAD_W / 2 + 2.6), 0.3, -4 - Math.random() * (CHUNK_LEN - 10));
+        ap.position.set(side * (ROAD_W / 2 + 2.6), 0.3, -4 - rand() * (CHUNK_LEN - 10));
         ap.rotation.y = side > 0 ? -1.2 : 1.2;
         g.add(ap);
       }
@@ -399,9 +406,9 @@ export class Track {
     // every few chunks: seven live chunks at the old 75% put five boards in
     // the corridor at once, and in portrait only the furthest one read — the
     // one sitting right on the vanishing point.
-    if (t.banners && nChunk - this.lastBannerChunk >= BANNER_GAP && Math.random() < 0.34) {
+    if (t.banners && nChunk - this.lastBannerChunk >= BANNER_GAP && rand() < 0.34) {
       this.lastBannerChunk = nChunk;
-      const bz = -CHUNK_LEN * (0.3 + Math.random() * 0.5);
+      const bz = -CHUNK_LEN * (0.3 + rand() * 0.5);
       const banner = makeBillboard(t, BANNER_W, BANNER_H);
       banner.position.set(0, BANNER_Y, bz);
       g.add(banner);
@@ -419,10 +426,10 @@ export class Track {
     // block nothing, so they only need to stay off the vanishing point at
     // close range — streets with a low roofline (Montmartre) set their own
     // spanY so the lights still read as strung between the houses.
-    if (t.span && Math.random() < (t.spanFreq ?? 0.75)) {
+    if (t.span && rand() < (t.spanFreq ?? 0.75)) {
       const span = makeStreetSpan(t, ROAD_W + 4.5);
-      span.position.set(0, (t.spanY ?? SPAN_Y) + Math.random() * 0.4,
-        -CHUNK_LEN * (0.2 + Math.random() * 0.6));
+      span.position.set(0, (t.spanY ?? SPAN_Y) + rand() * 0.4,
+        -CHUNK_LEN * (0.2 + rand() * 0.6));
       g.add(span);
     }
 
