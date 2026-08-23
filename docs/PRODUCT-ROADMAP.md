@@ -186,7 +186,9 @@ Applying the enterprise checklist proportionately — this is a single-developer
 1. **Deterministic simulation** — seeded RNG throughout. Blocks daily challenges *and* replay verification. Do it once, early.
 2. **Secrets and config** — no keys in the repo; Supabase URL and anon key via environment config, service-role key server-side only and never in the client bundle.
 3. **Automated tests on the logic that can silently break** — collision fairness (is every obstacle actually passable?), score calculation, save/load migration. The visuals are checked by screenshot review; the maths is not checked by anything today.
-4. **Error reporting** — you currently have no idea when the game crashes on someone's phone. Sentry's free tier is sufficient.
+4. **Error reporting** — **decided for v1: Apple only, no SDK.** Sentry, Crashlytics and Bugsnag all receive device and diagnostic data from players. That makes each of them a third-party data recipient, which contradicts `COMPLIANCE.md` §4 and would falsify the "Data Not Collected" privacy label submitted for a title rated 4+ and likely used by children. App Store Connect → Crashes gives symbolicated reports for free, gathered under Apple's own consent prompt, with nothing to integrate.
+
+   **Open follow-up (owner: Dan).** Apple's crash data is only useful if somebody looks at it. The intent is an agent that checks it on a schedule and escalates on a spike, so a bad release is caught in hours rather than whenever the reviews turn. Not built, not scoped, deliberately recorded here so it is not lost — the decision above is what makes it necessary.
 5. **A real build step** — the game ships unminified ES modules and a full Three.js build. Fine for GitHub Pages, wasteful over mobile data. Vite would cut the payload substantially.
 
 ---

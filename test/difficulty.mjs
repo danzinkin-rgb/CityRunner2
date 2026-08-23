@@ -9,8 +9,11 @@
  * Usage: node test/difficulty.mjs [baseUrl]
  */
 import { webkit, devices } from 'playwright';
+import { resolveBase } from './serve.mjs';
 
-const BASE = process.argv[2] || 'http://localhost:4173';
+// The suite serves the repo itself unless a URL is named. See test/serve.mjs
+// for why an externally-started server was the wrong shape for this.
+const { base: BASE } = await resolveBase(process.argv[2]);
 const LANE_CHANGE_SEC = 0.30;   // measured: lane easing settles in ~0.3s
 const JUMP_AIRTIME = 0.79;      // vy 12.6, g 32
 

@@ -25,12 +25,14 @@
  *   node test/contact-sheet.mjs [baseUrl] [--device=iphone-15]
  */
 import { webkit, devices } from 'playwright';
+import { resolveBase } from './serve.mjs';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const args = process.argv.slice(2);
-const BASE = args.find((a) => !a.startsWith('--')) || 'http://localhost:4173';
+// Serves the repo itself unless a URL is named — see test/serve.mjs
+const { base: BASE } = await resolveBase(args.find((a) => !a.startsWith('--')));
 const only = (args.find((a) => a.startsWith('--device=')) || '').split('=')[1];
 
 const HERE = dirname(fileURLToPath(import.meta.url));

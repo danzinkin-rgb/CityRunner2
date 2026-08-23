@@ -30,11 +30,14 @@
  * Usage:  node test/road-clearance.mjs [baseUrl]     (npm run test:clearance)
  */
 import { webkit } from 'playwright';
+import { resolveBase } from './serve.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-const BASE = process.argv[2] || 'http://localhost:4173';
+// The suite serves the repo itself unless a URL is named. See test/serve.mjs
+// for why an externally-started server was the wrong shape for this.
+const { base: BASE } = await resolveBase(process.argv[2]);
 const HERE = dirname(fileURLToPath(import.meta.url));
 
 // Lane positions come from the source of truth, so this test cannot drift out

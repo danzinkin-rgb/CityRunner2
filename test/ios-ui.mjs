@@ -26,11 +26,14 @@
  * Usage:  node test/ios-ui.mjs [baseUrl]      (npm run test:ios)
  */
 import { webkit, devices } from 'playwright';
+import { resolveBase } from './serve.mjs';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-const BASE = process.argv[2] || 'http://localhost:4173';
+// The suite serves the repo itself unless a URL is named. See test/serve.mjs
+// for why an externally-started server was the wrong shape for this.
+const { base: BASE } = await resolveBase(process.argv[2]);
 const OUT = join(dirname(fileURLToPath(import.meta.url)), 'shots');
 mkdirSync(OUT, { recursive: true });
 
