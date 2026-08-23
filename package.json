@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node test/coin-arc.mjs && node test/road-clearance.mjs && node test/ios-ui.mjs && node test/determinism.mjs && node test/entitlements.mjs && node test/puzzle-solvable.mjs",
+    "test": "node test/coin-arc.mjs && node test/road-clearance.mjs && node test/ios-ui.mjs && node test/determinism.mjs && node test/entitlements.mjs && node test/save-and-scores.mjs && node test/puzzle-solvable.mjs",
     "test:ios": "node test/ios-ui.mjs",
     "serve": "npx serve . -l 4173",
     "test:determinism": "node test/determinism.mjs",

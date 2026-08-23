@@ -20,7 +20,25 @@ import { CHARACTERS, characterById } from './run/characters.js';
 import { makeCollectible } from './cities/souvenirs.js';
 
 // ---------- persistent progress ----------
-const save = JSON.parse(localStorage.getItem('cityrunner2') || '{"stars":{},"coins":0,"best":0}');
+// This is the only place an old, partial or corrupt save is read, so it is
+// the only place that gets to assume nothing about its shape. A save can be
+// old (fields this version added don't exist yet), partial (a future version
+// wrote fewer fields than this one expects) or outright corrupt (truncated
+// write, storage quota eviction, a hand-edited value) — none of those are
+// hypothetical on a device nobody but the player controls, and none of them
+// should cost the player their stars. JSON.parse on garbage throws, and an
+// uncaught throw here is a blank app, because everything below depends on
+// `save` existing — so every step degrades instead of throwing.
+function loadSave() {
+  let s;
+  try { s = JSON.parse(localStorage.getItem('cityrunner2') || 'null'); } catch { s = null; }
+  if (!s || typeof s !== 'object' || Array.isArray(s)) s = { stars: {}, coins: 0, best: 0 };
+  if (!s.stars || typeof s.stars !== 'object' || Array.isArray(s.stars)) s.stars = {};
+  if (!Number.isFinite(s.coins)) s.coins = 0;
+  if (!Number.isFinite(s.best)) s.best = 0;
+  return s;
+}
+const save = loadSave();
 const persist = () => localStorage.setItem('cityrunner2', JSON.stringify(save));
 
 // Souvenir-economy sink #1: cosmetic characters. The default runner is
