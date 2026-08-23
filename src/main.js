@@ -148,7 +148,11 @@ function startDaily() {
 // ---------- menu ----------
 function buildCitySelect() {
   const wrap = $('city-select');
+  // This clears the placeholder cards the HTML ships with as well as any
+  // previous build, so the loading state needs no separate teardown. Only the
+  // aria-busy that went with them has to be dropped by hand.
   wrap.innerHTML = '';
+  wrap.removeAttribute('aria-busy');
   const flagFix = { london: '💂' };   // 🇬🇧 renders as plain "GB" on Windows
   CITIES.forEach((c, i) => {
     const stars = save.stars[c.id] || 0;

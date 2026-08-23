@@ -51,6 +51,7 @@
     overflow-x:hidden;overflow-y:auto;padding:0 14px;text-align:center;
     -webkit-overflow-scrolling:touch}
   .screen.on{display:flex}
+
   /* Puzzle-win keeps the freshly built monument visible behind the modal */
   /* The monument you just built keeps rendering behind this screen -- showScreen
      only toggles .on, it never hides the canvas -- and that is deliberate: the
@@ -87,6 +88,54 @@
     border:1px solid rgba(255,255,255,.14);text-align:center;cursor:pointer;transition:.15s}
   .city-card:hover{background:rgba(255,255,255,.13);transform:translateY(-4px)}
   .city-card.locked{opacity:.35;cursor:default}
+  /* The placeholder cards that sit in #city-select until buildCitySelect()
+     replaces them. They exist for LAYOUT, not decoration: the menu markup is
+     in the HTML but its content is not — cards, thumbnails and saved stars are
+     painted by src/main.js, which cannot run until three.js has downloaded and
+     parsed. Without these the player saw a title sitting above an empty row,
+     then everything below it jumping down as cards arrived.
+
+     Deliberately NOT a full-screen overlay with a second copy of the title.
+     That was tried; because the menu is a tall column and an overlay is a
+     short one, the title landed 274-367px apart in the two states and visibly
+     jumped at the handover. Holding the real layout open is the only version
+     with no jump in it, and test/boot.mjs pins that.
+
+     They must keep the same children as a real card (thumb, name, stars) so
+     their height falls out of the rules above rather than a magic number that
+     would drift the first time a card gains a row. Reusing .locked's dimming
+     rather than a shimmer: this game already says "not ready yet" that way,
+     and it needs no reduced-motion branch. */
+  .city-card.skel{opacity:.35;cursor:default;pointer-events:none}
+  .city-card.skel .thumb{background-color:rgba(255,255,255,.07)}
+  /* The row is pinned to the full width on purpose, and it is not cosmetic.
+
+     #city-select is a centred flex item, so left to itself it shrink-to-fits
+     its content — while the phone-width rule below sizes each card as a
+     PERCENTAGE of that same row. The two definitions chase each other, and
+     where they settle depends on how wide the text inside the cards happens to
+     be. Two consequences, both real and both measured:
+
+       - The placeholder cards have no city name in them, so the row collapsed
+         much further and they rendered about a third of their true width, as
+         tall narrow slivers.
+       - Even with real cards it under-sized them: on a 375px iPhone SE they
+         came out 131px rather than the 150px the max-width is there to allow.
+
+     Giving the row a definite width breaks the loop, so a card is the width
+     the rules actually ask for in both states. The cards stay centred inside
+     it, so a wider row is invisible. */
+  #city-select{width:100%}
+  /* RUN and the daily card have no click handlers until src/main.js has run —
+     they are wired at the bottom of that module. Holding the menu's layout
+     open makes the screen look finished while it is not, so without this the
+     first thing an impatient player does is tap a button that silently does
+     nothing. Dimming them says "not yet" in the same language the placeholder
+     cards use, and they come up to full strength as the menu goes live.
+     Opacity only, so nothing here can move the layout the rest of this works
+     to keep still. */
+  #city-select[aria-busy] ~ #btn-play,
+  #city-select[aria-busy] ~ #daily-card{opacity:.45;pointer-events:none}
   /* Locked by PURCHASE, not by progression — deliberately not dimmed like
      .locked above. A city you could buy is merchandise and should look
      appealing; a city you have not yet earned is a closed door. Same word
@@ -521,23 +570,43 @@
 <div id="screen-menu" class="screen on">
   <div class="title">CITYRUNNER</div>
   <div class="subtitle">Run the world's greatest streets</div>
-  <div id="city-select"></div>
+  <!-- One placeholder per city in src/cities/themes.js, so the row is the
+       right height and wraps the same way before main.js has run. buildCitySelect()
+       opens with wrap.innerHTML = '', so these are cleared by the code that
+       replaces them and need no dismissal of their own.
+       KEEP THE COUNT IN STEP WITH CITIES — test/boot.mjs fails if it drifts. -->
+  <div id="city-select" aria-busy="true">
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+  </div>
   <button class="btn" id="btn-play">RUN</button>
   <button id="daily-card" class="daily-card">
     <div class="dc-left">
       <div class="dc-title">DAILY CHALLENGE</div>
       <div class="dc-where" id="daily-where">—</div>
-      <div class="dc-best" id="daily-best"></div>
+      <!-- Blank line for the same reason as #menu-stats: startDailyTimer()
+           always writes a line in here ("Your best today ..." or "Not played
+           yet today"), so an empty element means the daily card grows and the
+           menu above it slides when the timer first runs. -->
+      <div class="dc-best" id="daily-best">&nbsp;</div>
     </div>
     <div class="dc-right">
       <div class="dc-streak" id="daily-streak"></div>
-      <div class="dc-reset" id="daily-reset"></div>
+      <div class="dc-reset" id="daily-reset">&nbsp;</div>
       <div class="dc-go">PLAY ▸</div>
     </div>
   </button>
   <div class="label controls-hint">
     <span>◀ ▶ MOVE</span><span>▲ JUMP</span><span>▼ ROLL</span><span>OR SWIPE</span></div>
-  <div id="menu-stats" class="label" style="margin-top:14px"></div>
+  <!-- The nbsp is load-bearing. buildCitySelect() writes the best score and
+       souvenir count in here; empty, this element has no height at all, so the
+       whole centred menu column used to slide up ~16px the moment they arrived.
+       A blank line holds that row open and costs nothing visually. It scales
+       with the font-size overrides in the media queries above, which a fixed
+       min-height would not. test/boot.mjs pins it. -->
+  <div id="menu-stats" class="label" style="margin-top:14px">&nbsp;</div>
   <div class="menu-links label">
     <button class="linkbtn" id="btn-help">How to play</button>
     <button class="linkbtn" id="btn-scores">Best runs</button>
