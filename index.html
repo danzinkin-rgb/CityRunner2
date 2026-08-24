@@ -257,7 +257,7 @@
     .linkbtn{min-height:38px}
     #menu-stats{font-size:11px;margin-top:8px !important}
     #menu-identity{margin-top:2px !important}
-    .sheet{max-height:50vh;padding:14px 16px}
+    .sheet{--sheet-pb:14px;padding:14px 16px}
   }
   @media (max-height:600px){
     .title{font-size:min(9.5vw,34px)}
@@ -283,12 +283,12 @@
     .city-card .thumb{height:40px}
     .city-card{padding:6px 4px}
     #city-select{margin-bottom:10px;gap:6px}
-    .sheet{max-height:44vh;padding:10px 14px;margin:8px 0 12px}
+    .sheet{--sheet-pb:10px;padding:10px 14px;margin:8px 0 12px}
     #menu-stats,#menu-identity{display:none}
     .menu-links{margin-top:0}
     .linkbtn{min-height:34px}
   }
-  .sheet{max-width:520px;width:100%;max-height:58vh;overflow-y:auto;text-align:left;
+  .sheet{--sheet-pb:20px;max-width:520px;width:100%;min-height:0;overflow-y:auto;text-align:left;
     background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:18px;
     padding:20px 22px;margin:14px 0 26px;-webkit-overflow-scrolling:touch}
   .sheet h3{color:var(--gold);font-size:15px;letter-spacing:2px;text-transform:uppercase;margin:16px 0 8px}
@@ -296,6 +296,31 @@
   .sheet p{font-size:14px;line-height:1.5;margin-bottom:10px;color:#dde3f2}
   .sheet .tip{font-size:13px;opacity:.72;font-style:italic}
   .sheet hr{border:none;border-top:1px solid rgba(255,255,255,.12);margin:14px 0}
+  /* A sheet that scrolls has to LOOK like it scrolls. A player reported that
+     "Erase my data" was missing from Settings: it was there, wired and working,
+     but it sat below the fold of a nested scroller that gave no sign it could
+     scroll. A data-subject right nobody can find is not offered (COMPLIANCE §4).
+     The fade is a sticky pseudo-element, so it pins to the bottom of the
+     scrollport while there is more below and scrolls away by itself at the end
+     — no scroll listener. It costs no layout height (the negative margin
+     cancels it), and .can-scroll is set from JS only when the sheet really
+     overflows, because a permanent fade on a sheet that fits reads as content
+     being cut off. */
+  .sheet.can-scroll::after{content:'';display:block;position:sticky;pointer-events:none;
+    bottom:calc(-1 * var(--sheet-pb));height:calc(38px + var(--sheet-pb));
+    margin:calc(-38px - var(--sheet-pb)) calc(-1 * var(--sheet-pb)) 0;
+    background:linear-gradient(rgba(8,11,24,0),rgba(8,11,24,.94))}
+  /* Erasing everything is irreversible; it must not look like the link next to
+     it. Colour is a hint, not the signal — the word "Erase" and the confirm
+     dialog carry it for anyone who cannot see the red. */
+  .linkbtn.danger{color:#ff9a9a;opacity:.92}
+  .linkbtn.danger:hover{color:#ff6b6b;opacity:1}
+  /* Settings groups its rows under headings instead of bare rules. Tighter than
+     the help screen's headings so the swap costs no more height than the <hr>s
+     it replaced — this sheet is the tallest in the game. */
+  #screen-settings .sheet h3{margin:14px 0 2px;font-size:12px}
+  #screen-settings .sheet h3:first-child{margin-top:0}
+  #set-restore-status:empty{display:none}
   .row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:7px 0;font-size:14px}
   .row .key + span{flex:1;text-align:left}
   .row .key{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:30px;
@@ -561,7 +586,7 @@
 </div>
 
 <div id="screen-paused" class="screen">
-  <div class="title" style="font-size:clamp(28px,7vw,56px)">PAUSED</div>
+  <div class="title" style="font-size:clamp(28px,7vmin,56px)">PAUSED</div>
   <div class="label" style="margin:6px 0 34px">Take a breath</div>
   <button class="btn" id="btn-resume">RESUME</button>
   <button class="btn ghost" id="btn-quit">QUIT TO CITIES</button>
@@ -620,7 +645,7 @@
 </div>
 
 <div id="screen-help" class="screen">
-  <div class="title" style="font-size:clamp(26px,7vw,48px)">HOW TO PLAY</div>
+  <div class="title" style="font-size:clamp(26px,7vmin,48px)">HOW TO PLAY</div>
   <div class="sheet">
     <h3>Running</h3>
     <div class="row"><span class="key">← →</span><span>Swipe or press to change lane</span></div>
@@ -652,32 +677,33 @@
 </div>
 
 <div id="screen-settings" class="screen">
-  <div class="title" style="font-size:clamp(26px,7vw,48px)">SETTINGS</div>
+  <div class="title" style="font-size:clamp(26px,7vmin,48px)">SETTINGS</div>
   <div class="sheet">
     <div class="row"><span>Music</span><button class="toggle" id="set-music">ON</button></div>
     <div class="row"><span>Sound effects</span><button class="toggle" id="set-sfx">ON</button></div>
     <div class="row"><span>Volume</span><input type="range" id="set-vol" min="0" max="100" step="5"></div>
     <div class="row"><span>Reduced motion</span><button class="toggle" id="set-motion">OFF</button></div>
     <div class="row"><span>On-screen controls</span><button class="toggle" id="set-touchbtns">OFF</button></div>
-    <hr>
-    <div class="row"><span>Player</span><span id="set-name" class="muted">—</span></div>
-    <div class="row"><span></span><button class="linkbtn" id="set-reroll">new nickname</button></div>
-    <hr>
-    <hr>
+    <h3>Player</h3>
+    <div class="row"><span id="set-name" class="muted">—</span>
+      <button class="linkbtn" id="set-reroll">new nickname</button></div>
+    <h3 id="set-purchase-head">Purchases</h3>
     <div class="row"><span id="set-purchase-label">Full city set</span>
       <button class="linkbtn" id="set-purchase">view</button></div>
-    <div class="row"><span></span><button class="linkbtn" id="set-restore">Restore purchases</button></div>
-    <div class="row muted" id="set-restore-status" style="font-size:12px;min-height:15px"></div>
-    <hr>
-    <div class="row"><a class="linkbtn" href="privacy.html">Privacy policy</a>
-      <button class="linkbtn" id="set-erase">Erase my data</button></div>
+    <div class="row"><span>Bought on another device?</span>
+      <button class="linkbtn" id="set-restore">Restore</button></div>
+    <div class="row muted" id="set-restore-status" style="font-size:12px"></div>
+    <h3>Privacy</h3>
+    <div class="row"><span>Privacy policy</span><a class="linkbtn" href="privacy.html">Read</a></div>
+    <div class="row"><span>Erase my data</span>
+      <button class="linkbtn danger" id="set-erase">Erase</button></div>
     <div class="row muted" style="font-size:12px"><span id="set-version">v—</span><span>Made with Three.js</span></div>
   </div>
   <button class="btn" id="btn-settings-close">DONE</button>
 </div>
 
 <div id="screen-scores" class="screen">
-  <div class="title" style="font-size:clamp(26px,7vw,48px)">BEST RUNS</div>
+  <div class="title" style="font-size:clamp(26px,7vmin,48px)">BEST RUNS</div>
   <div class="sheet" id="scores-body"></div>
   <button class="btn" id="btn-scores-close">BACK</button>
 </div>
@@ -699,7 +725,7 @@
   shown at all (see getOffer() in src/core/iap.js).
 -->
 <div id="screen-paywall" class="screen">
-  <div class="title" style="font-size:clamp(24px,6.4vw,42px)">THE FULL CITY SET</div>
+  <div class="title" style="font-size:clamp(24px,6.4vmin,42px)">THE FULL CITY SET</div>
   <div class="sheet">
     <div class="row"><span id="paywall-lede">Unlock every city and every monument.</span></div>
     <hr>
@@ -716,7 +742,7 @@
 </div>
 
 <div id="screen-shop" class="screen">
-  <div class="title" style="font-size:clamp(26px,7vw,48px)">SHOP</div>
+  <div class="title" style="font-size:clamp(26px,7vmin,48px)">SHOP</div>
   <div id="shop-balance" class="label"><span id="shop-coin-icon">🪙</span><span id="shop-balance-num">0</span> SOUVENIRS</div>
   <div class="sheet" style="max-width:560px">
     <div id="shop-grid" class="char-grid"></div>
@@ -737,7 +763,7 @@
 
 <div id="screen-continue" class="screen">
   <div class="label">Run over — for now</div>
-  <div class="title" style="font-size:clamp(28px,7vw,52px)">KEEP GOING?</div>
+  <div class="title" style="font-size:clamp(28px,7vmin,52px)">KEEP GOING?</div>
   <div class="label" style="margin:10px 0 2px">Score so far</div>
   <div class="big-num" id="continue-score" style="font-size:44px">0</div>
   <div class="continue-note" id="continue-note">Spend souvenirs to clear the road ahead and carry on.</div>

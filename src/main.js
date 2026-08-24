@@ -66,7 +66,32 @@ function showScreen(name) {
   // The HUD stays up behind the pause/continue overlay so the run reads as "frozen".
   hud.classList.toggle('on', !name || name === 'paused' || name === 'continue');
   $('btn-pause').style.display = (!name && (state === 'run' || state === 'puzzle')) ? 'flex' : 'none';
+  syncSheetScroll();
 }
+
+/**
+ * Tell each visible sheet whether it actually scrolls, so index.html can draw
+ * the fade only when there is something below the fold.
+ *
+ * This exists because a player reported "Erase my data" as MISSING from
+ * Settings. It was present and working; it was simply past the bottom of a
+ * nested scroller that looked like a complete panel. Height alone will not fix
+ * that class of bug — a landscape phone gives the sheet ~240px and the content
+ * is over twice that, so on some device it will always scroll. What has to be
+ * true is that the player can tell.
+ *
+ * Called after every screen change and after every Settings re-render, since
+ * rerolling a name or a restore message changes the height. rAF, because
+ * scrollHeight is meaningless until the screen has been laid out.
+ */
+function syncSheetScroll() {
+  requestAnimationFrame(() => {
+    for (const el of document.querySelectorAll('.screen.on .sheet')) {
+      el.classList.toggle('can-scroll', el.scrollHeight - el.clientHeight > 4);
+    }
+  });
+}
+window.addEventListener('resize', syncSheetScroll);
 
 // ---------- three ----------
 const renderer = createRenderer($('app'));
@@ -787,6 +812,7 @@ function renderSettings() {
   $('set-name').textContent = getIdentity().name;
   $('set-version').textContent = `v${VERSION}`;
   renderPurchaseRows();
+  syncSheetScroll();   // a reroll or a restore message changes the height
 }
 
 /**
@@ -803,6 +829,8 @@ function renderPurchaseRows() {
   const rows = [label, view, restoreBtn].map((el) => el && el.closest('.row'));
   const hide = isFreeBuild();
   for (const r of rows) if (r) r.style.display = hide ? 'none' : '';
+  // The heading goes with its rows, or the web build shows an empty section.
+  $('set-purchase-head').style.display = hide ? 'none' : '';
   $('set-restore-status').style.display = hide ? 'none' : '';
   if (hide) return;
 
