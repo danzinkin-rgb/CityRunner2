@@ -1,8 +1,11 @@
 // Procedural WebAudio: no audio files, everything synthesized.
+import { STORAGE } from './storage-keys.js';
+
 let ctx = null, master = null, musicTimer = null;
 
 // ---- user preferences (persisted; every mobile game is expected to have these)
-const PREF_KEY = 'cityrunner2.audio';
+// Deliberately NOT cleared by "erase my data" — see src/core/storage-keys.js.
+const PREF_KEY = STORAGE.AUDIO;
 export const prefs = { music: true, sfx: true, volume: 0.8 };
 try {
   const saved = JSON.parse(localStorage.getItem(PREF_KEY) || 'null');

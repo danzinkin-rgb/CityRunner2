@@ -1,7 +1,9 @@
 // Leaderboard service.
 //
-// The backend is pluggable. Today it is device-local; swapping in Supabase is
-// a config change, not a rewrite, because everything goes through submit()/top().
+// The backend is pluggable: everything goes through submit()/top(), so the
+// device-local store below can be swapped for a remote one without touching
+// any caller. That is an ARCHITECTURE convenience and nothing more — read the
+// next paragraph before reading it as "adding Supabase is a config change".
 //
 // SCORE INTEGRITY — read before trusting any number in here.
 // This game runs entirely on the player's device. Anyone can open developer
@@ -9,11 +11,23 @@
 // casual cheating; they do NOT make scores trustworthy. When a remote backend
 // is added, EVERY check in this file must be repeated server-side, because a
 // client-side check is a suggestion, not a control.
+//
+// Concretely, a remote leaderboard is a NEW SECURITY BOUNDARY, not a new
+// storage driver. Nothing this module produces can be trusted across it: the
+// session token below is minted on the device, currentSession() hands out the
+// live object so startedAt can be backdated, and the identity attached to an
+// entry is a UUID the device chose for itself. A server must therefore issue
+// its own session, time the run itself, re-run every bound in this file
+// against its own clock, enforce one entry per session on its own side, and
+// ignore any identity or entitlement the client claims. Until that exists,
+// what is in here is a personal best board that happens to be shaped like a
+// leaderboard — see docs/COMPLIANCE.md §4.4 and supabase/schema.sql.
 
 import { getIdentity } from './identity.js';
 import { dailyKey } from './rng.js';
+import { STORAGE } from './storage-keys.js';
 
-const STORE = 'cityrunner2.scores';
+const STORE = STORAGE.SCORES;
 
 // ---------------------------------------------------------------------------
 // Plausibility bounds
@@ -54,6 +68,21 @@ export function currentSession() { return session; }
  * Validate and record a score.
  * Returns { ok, reason?, entry? }. Never throws — a failed submission must not
  * interrupt play.
+ *
+ * ORDER MATTERS AT THE END OF THIS FUNCTION. The one-submission-per-session
+ * rule is marked only after the write is confirmed. Marking it first — which
+ * is what this used to do — meant that a device with full or blocked storage
+ * would finish a run, silently lose the entry, report { ok: true } anyway, and
+ * then refuse the retry that could have saved it. Both halves of that are
+ * wrong: the caller was told a lie, and the only recovery path was closed.
+ * Setting the flag last cannot cause a duplicate entry, because setItem
+ * throwing means nothing was written at all; and even a duplicate would be
+ * harmless, since top() already keeps one best entry per player id.
+ *
+ * Caveat worth stating rather than chasing: writeAll() keeps the top 500, so a
+ * confirmed write proves the list was stored, not that THIS entry made the cut.
+ * On a single-player device 500 entries is not a real ceiling, and the entry
+ * that would be dropped is by definition the worst one.
  */
 export function submit(score) {
   if (!session) return { ok: false, reason: 'no-session' };
@@ -66,7 +95,6 @@ export function submit(score) {
   if (!Number.isFinite(rounded) || rounded < 0) return { ok: false, reason: 'not-a-number' };
   if (rounded > maxPlausibleScore(seconds)) return { ok: false, reason: 'implausible' };
 
-  session.submitted = true;
   const me = getIdentity();
   const entry = {
     id: me.id,
@@ -79,7 +107,9 @@ export function submit(score) {
     day: dailyKey(),
     at: new Date().toISOString(),
   };
-  record(entry);
+  // See the note above: mark the session used only once the write is real.
+  if (!record(entry)) return { ok: false, reason: 'not-saved' };
+  session.submitted = true;
   return { ok: true, entry };
 }
 
@@ -94,15 +124,25 @@ function readAll() {
   } catch { return []; }
 }
 
+/** Returns whether the list actually reached storage. Never throws. */
 function writeAll(list) {
-  try { localStorage.setItem(STORE, JSON.stringify(list.slice(0, 500))); } catch { /* full or private */ }
+  try {
+    localStorage.setItem(STORE, JSON.stringify(list.slice(0, 500)));
+    return true;
+  } catch {
+    // Quota exceeded, or a WebView with storage disabled. Nothing to do here
+    // but report it honestly — swallowing this is what made a lost score look
+    // like a saved one.
+    return false;
+  }
 }
 
+/** Returns whether the entry was persisted. Never throws. */
 function record(entry) {
   const all = readAll();
   all.push(entry);
   all.sort((a, b) => b.score - a.score);
-  writeAll(all);
+  return writeAll(all);
 }
 
 /**

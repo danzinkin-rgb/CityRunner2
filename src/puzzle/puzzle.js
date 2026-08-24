@@ -1,6 +1,7 @@
 import * as THREE from '../../vendor/three.module.js';
 import { getLandmark } from './landmarks.js';
 import { sfx } from '../core/audio.js';
+import { DEBUG_HOOKS } from '../core/debug.js';
 
 // Monument assembly puzzle.
 // Blocks are scattered on a festival plaza; a ghost silhouette shows the
@@ -1312,9 +1313,14 @@ export class Puzzle {
     // Difficulty: level 1 pre-places some base blocks, level 3 scatters everything.
     let preplaced = level === 1 ? Math.floor(def.length * 0.35)
       : level === 2 ? Math.floor(def.length * 0.15) : 0;
-    // visual-review harness: ?built=1 shows the finished monument,
-    // ?auto=1 self-plays a block every half second
-    const q = new URLSearchParams(location.search);
+    // Visual-review harness: ?built=1 shows the finished monument, ?auto=1
+    // self-plays a block every half second. Compiled out of release builds
+    // (src/core/debug.js): ?built=1 completes the monument outright, which
+    // hands over the whole puzzle bonus for free, so it is a cheat and not
+    // just a screenshot convenience. Reading from an EMPTY parameter set
+    // rather than gating each line keeps every consumer below unchanged and
+    // makes it impossible for a new one to miss the guard.
+    const q = DEBUG_HOOKS ? new URLSearchParams(location.search) : new URLSearchParams();
     if (q.has('built') || q.has('celebrate')) preplaced = def.length;
     this.autoT = q.has('auto') ? 0.6 : -1;
     this.celebrateAt = q.has('celebrate') ? 0.05 : -1;

@@ -39,7 +39,7 @@ import { join, extname, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
  * Content types for what this repo actually serves. The suites load unbundled
@@ -75,11 +75,11 @@ const TYPES = {
  * point in this game is a query parameter (?ui=, ?view=, ?city=), so nearly
  * every request the suites make carries one.
  */
-function resolvePath(url) {
+function resolvePath(url, root) {
   const pathname = decodeURIComponent(new URL(url, 'http://localhost').pathname);
   const rel = normalize(pathname).replace(/^[/\\]+/, '');
   if (rel === '..' || rel.startsWith(`..${sep}`)) return null;
-  return join(ROOT, rel || 'index.html');
+  return join(root, rel || 'index.html');
 }
 
 /**
@@ -88,15 +88,23 @@ function resolvePath(url) {
  * Returns the origin to hand to page.goto, plus close() for the rare caller
  * that wants to shut down early. Most callers never need close(): unref()
  * means the process exits on its own.
+ *
+ * `root` exists for exactly one caller. Every gameplay suite runs against the
+ * unbundled repo, which is the point of this file — but test/release-build.mjs
+ * has to check what a PLAYER receives, and that only exists in dist/ after a
+ * Vite build. Pointing this at dist/ is the only way to assert on the real
+ * shipped bundle rather than on source that resembles it. Do not reach for it
+ * anywhere else: a suite that silently tested dist/ would go green against a
+ * stale build long after the source it claims to cover had changed.
  */
-export async function startStaticServer() {
+export async function startStaticServer(root = REPO_ROOT) {
   const server = createServer(async (req, res) => {
     const send = (code, body, type) => {
       res.writeHead(code, { 'Content-Type': type || 'text/plain; charset=utf-8' });
       res.end(body);
     };
     try {
-      let file = resolvePath(req.url);
+      let file = resolvePath(req.url, root);
       if (!file) return send(403, 'forbidden');
       let info = await stat(file).catch(() => null);
       // A directory request means index.html, which is how `/` and any future
@@ -132,8 +140,8 @@ export async function startStaticServer() {
  * server, respect it — they are pointing at a deployed build or a dev server
  * on purpose. Otherwise serve the repo ourselves.
  */
-export async function resolveBase(explicit) {
+export async function resolveBase(explicit, root = REPO_ROOT) {
   if (explicit) return { base: explicit, close: async () => {} };
-  const { base, close } = await startStaticServer();
+  const { base, close } = await startStaticServer(root);
   return { base, close };
 }

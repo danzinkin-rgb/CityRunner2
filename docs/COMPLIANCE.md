@@ -27,6 +27,15 @@ A single-player endless-runner game with score leaderboards. No social features,
 
 **Not collected:** name, email, phone, address, date of birth, location, IP retained for analytics, advertising ID, device fingerprint, contacts, photos, camera, microphone, biometrics.
 
+**Retained through an erase, and why.** "Erase my data" removes every row in the table above. Two further `localStorage` keys are written by the game and deliberately survive it, because neither is information about a person:
+
+| Key | Contents | Why it survives an erase |
+|---|---|---|
+| `cityrunner2.audio` | Music on/off, sound on/off, volume | A device setting. It says nothing about who is playing, and silently un-muting a game somebody muted is a defect, not a privacy improvement |
+| `cityrunner2.ent` | Which in-app purchase products are owned | A local cache of Apple's receipt, not a record we hold. Apple's copy is authoritative and survives even an app delete, so clearing ours cannot un-buy anything — it would only show a paying player a paywall the instant they erase, which reads as the erase having taken their purchase away |
+
+The full key list, the erase/keep split and the reasoning live in `src/core/storage-keys.js`, and `test/storage-keys.mjs` fails if a new key is added without choosing a side. The player-facing wording in `privacy.html` states both exclusions and points at clearing site data as the way to remove them too.
+
 **No third-party SDKs.** No analytics, no advertising, no social login in the current build.
 
 Planned measurement deliberately avoids an analytics SDK, using extra columns on our own score row instead — see §7 of `PRODUCT-ROADMAP.md`. TelemetryDeck and Aptabase would both have been defensible choices; the reason for declining them is that this sentence is worth more than the convenience. It is an answer on the nutrition label, a line in this assessment, and a claim that stays true without ongoing vendor diligence.

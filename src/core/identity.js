@@ -10,7 +10,9 @@
 //    and Apple's UGC rules would require profanity filtering, a reporting
 //    route and moderation. Generated names remove that obligation entirely.
 
-const KEY = 'cityrunner2.identity';
+import { STORAGE, ERASED_KEYS } from './storage-keys.js';
+
+const KEY = STORAGE.IDENTITY;
 
 // Word lists are chosen so that ANY adjective+noun combination is safe to
 // display to a child. Keep them travel/positive themed; never add words that
@@ -74,12 +76,24 @@ export function rerollName() {
 /**
  * Erase all locally held data — identity, progress, scores.
  * Required as a data-subject deletion route (UK GDPR) and surfaced in the UI.
+ *
+ * WHAT GETS ERASED IS NOT DECIDED HERE. The list lives in storage-keys.js,
+ * next to the reason each key is on it, so that adding a key anywhere in the
+ * game forces a decision about this function instead of silently bypassing
+ * it. Removing keys one at a time, in a loop, also means a key that throws
+ * cannot stop the ones after it from being removed — the old shape put all
+ * three inside one try block, where a single failure would have left the rest
+ * of the player's data on the device while the UI reported success.
+ *
+ * Erasing storage is only half of it: whatever this module already read is
+ * still in memory. `cached` is dropped below so the next getIdentity() mints
+ * a fresh anonymous profile rather than handing back the erased one. The
+ * caller is responsible for its own in-memory copies (src/main.js resets
+ * `save` and re-persists immediately after calling this).
  */
 export function eraseAllData() {
-  try {
-    localStorage.removeItem(KEY);
-    localStorage.removeItem('cityrunner2');
-    localStorage.removeItem('cityrunner2.scores');
-  } catch { /* nothing more we can do */ }
+  for (const key of ERASED_KEYS) {
+    try { localStorage.removeItem(key); } catch { /* keep going: the rest must still go */ }
+  }
   cached = null;
 }

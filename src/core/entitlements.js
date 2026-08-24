@@ -62,6 +62,7 @@
  */
 
 import { isNative } from './native.js';
+import { STORAGE } from './storage-keys.js';
 
 // --------------------------------------------------------------- the policy
 
@@ -110,7 +111,9 @@ const GRANTS_EVERYTHING = new Set([PRODUCTS.FOUNDER, PRODUCTS.UNLOCK]);
 
 // -------------------------------------------------------------- the storage
 
-const KEY = 'cityrunner2.ent';
+// Deliberately NOT cleared by "erase my data" — see src/core/storage-keys.js
+// for why wiping a receipt cache would read as losing a purchase.
+const KEY = STORAGE.ENTITLEMENTS;
 
 /** Owned product ids. A cache of Apple's receipt, not the record itself. */
 let owned = new Set();

@@ -3,19 +3,22 @@
  *
  * This is a GATE, not a probe: it exits non-zero and is meant to sit next to
  * entitlements / coin-arc / road-clearance / ios-ui / determinism /
- * puzzle-solvable in `npm test`. It covers two things nothing else did:
+ * puzzle-solvable in `npm test`. It covers three things nothing else did:
  *
  *   PART A — score plausibility bounds (src/core/scores.js)
  *   PART B — save-file migration (src/main.js, key "cityrunner2")
+ *   PART C — what happens when the device refuses the write (src/core/scores.js)
  *
- * Why these two and why together: both are the client half of a promise the
- * server half enforces for real. docs/COMPLIANCE.md §4.4 is explicit that
+ * Why these three and why together: all of them are the client half of a
+ * promise the server half enforces for real. docs/COMPLIANCE.md §4.4 is explicit that
  * `src/core/scores.js` is a courtesy to honest players and `supabase/schema.sql`
  * is the actual control — this file tests the courtesy, not the control. The
  * save migration has no server counterpart at all: the localStorage save under
  * the key "cityrunner2" is the only copy of a player's stars, coins and
  * unlocked characters that exists anywhere, so a version bump or a corrupted
- * write must never be allowed to lose it or crash the app outright.
+ * write must never be allowed to lose it or crash the app outright — and
+ * neither must a device that simply refuses to store anything, which is what
+ * PART C covers.
  *
  * HOW SEEDING WORKS FOR THE MIGRATION HALF. localStorage has to be seeded
  * with an init script BEFORE main.js evaluates, exactly as entitlements.mjs
@@ -289,6 +292,90 @@ const browser = await webkit.launch();
 
     await ctx.close();
   }
+}
+
+// =============================================================================
+// PART C — a failed write must not consume the session's one submission
+// =============================================================================
+// The device this game runs on can refuse a write at any moment: quota
+// exceeded, a WebView with storage disabled, Safari's private mode. submit()
+// used to mark the session used BEFORE writing and then discard the write's
+// failure, so the player finished a run, lost the entry, was told { ok: true },
+// and could not retry. Every symptom of that is invisible from inside the
+// game, which is exactly why it needs a test.
+//
+// setItem is stubbed on Storage.prototype rather than on the localStorage
+// instance because that is where WebKit actually resolves the call, and the
+// stub is installed with addInitScript so it is in place before any module
+// evaluates. It fails ONLY the scores key: failing every key would take the
+// save file down too and the failure under test would be lost in the noise.
+// The `window.__failScores` switch is what makes the retry half provable —
+// the same session is submitted twice, first against a broken store and then
+// against a working one.
+{
+  const ctx = await browser.newContext();
+  await ctx.addInitScript(() => {
+    window.__failScores = true;
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function setItem(key, value) {
+      if (key === 'cityrunner2.scores' && window.__failScores) {
+        const err = new Error('QuotaExceededError: simulated full storage');
+        err.name = 'QuotaExceededError';
+        throw err;
+      }
+      return original.call(this, key, value);
+    };
+  });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await page.goto(`${BASE}/?ui=settings`, { waitUntil: 'load' });
+  await page.waitForTimeout(400);
+
+  const failed = await page.evaluate(async () => {
+    const m = await import('/src/core/scores.js');
+    m.startSession('run', 'nyc', 1, 0);
+    m.currentSession().startedAt = Date.now() - 60_000;
+    const result = m.submit(2500);
+    return { result, stored: localStorage.getItem('cityrunner2.scores'), submitted: m.currentSession().submitted };
+  });
+  check(failed.result.ok === false && failed.result.reason === 'not-saved',
+    'a score that could not be written reports failure, not success',
+    JSON.stringify(failed.result));
+  check(failed.stored === null,
+    'nothing was written when storage refused (the stub really did fire)',
+    String(failed.stored));
+  check(failed.submitted === false,
+    'the session is NOT marked submitted after a failed write',
+    String(failed.submitted));
+
+  // The retry the old code made impossible. Same session, storage now working.
+  const retried = await page.evaluate(async () => {
+    const m = await import('/src/core/scores.js');
+    window.__failScores = false;
+    const result = m.submit(2500);
+    const stored = JSON.parse(localStorage.getItem('cityrunner2.scores') || '[]');
+    return { result, count: stored.length, top: stored[0]?.score };
+  });
+  check(retried.result.ok === true && retried.result.entry?.score === 2500,
+    'the same session can retry once storage recovers, and the score is not lost',
+    JSON.stringify(retried.result));
+  check(retried.count === 1 && retried.top === 2500,
+    'exactly one entry is stored after the retry — no duplicate from the failed attempt',
+    `count=${retried.count} top=${retried.top}`);
+
+  // And the one-shot rule still holds once a write has actually succeeded.
+  const third = await page.evaluate(async () => {
+    const m = await import('/src/core/scores.js');
+    return m.submit(3000);
+  });
+  check(third.ok === false && third.reason === 'already-submitted',
+    'after a CONFIRMED write the session is closed as before',
+    JSON.stringify(third));
+
+  check(!errors.length, 'storage failure: no page errors — a refused write never throws into play',
+    errors[0] || '');
+  await ctx.close();
 }
 
 await browser.close();

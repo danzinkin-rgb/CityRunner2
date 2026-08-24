@@ -11,6 +11,8 @@ import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset } from './core/
 import { initNative, onAppPause, hapticLight, hapticMedium, hapticHeavy, hapticSuccess } from './core/native.js';
 import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild } from './core/entitlements.js';
 import { initIAP, getOffer, purchase, restore } from './core/iap.js';
+import { STORAGE } from './core/storage-keys.js';
+import { DEBUG_HOOKS } from './core/debug.js';
 
 export const VERSION = '1.0.0';
 import { Player, DEFAULT_STYLE } from './run/player.js';
@@ -31,7 +33,7 @@ import { makeCollectible } from './cities/souvenirs.js';
 // `save` existing — so every step degrades instead of throwing.
 function loadSave() {
   let s;
-  try { s = JSON.parse(localStorage.getItem('cityrunner2') || 'null'); } catch { s = null; }
+  try { s = JSON.parse(localStorage.getItem(STORAGE.SAVE) || 'null'); } catch { s = null; }
   if (!s || typeof s !== 'object' || Array.isArray(s)) s = { stars: {}, coins: 0, best: 0 };
   if (!s.stars || typeof s.stars !== 'object' || Array.isArray(s.stars)) s.stars = {};
   if (!Number.isFinite(s.coins)) s.coins = 0;
@@ -39,7 +41,7 @@ function loadSave() {
   return s;
 }
 const save = loadSave();
-const persist = () => localStorage.setItem('cityrunner2', JSON.stringify(save));
+const persist = () => localStorage.setItem(STORAGE.SAVE, JSON.stringify(save));
 
 // Souvenir-economy sink #1: cosmetic characters. The default runner is
 // always owned so a fresh save never looks empty in the shop.
@@ -986,10 +988,23 @@ frame();
 
 // ---------- automated screenshot / test harness ----------
 // ?view=run|puzzle&city=nyc|paris|london|rome&level=1..3&god=1
-// Used by headless-browser visual review; harmless in normal play.
+//
+// NONE OF THIS RUNS IN A RELEASE BUILD. DEBUG_HOOKS is false whenever Vite
+// built the bundle and true when the suites serve src/ raw — see the long
+// explanation in src/core/debug.js. What is behind the gate is not harmless:
+// ?god=1 turns off collisions, ?ui= writes a fabricated best score into the
+// in-memory save that the very next persist() would make permanent, and
+// window.__cr hands out live references to the run, the score session and the
+// continue flow. That is exactly the toolkit for forging a leaderboard entry,
+// and it has no business shipping to a player.
+//
+// `q` and `GOD` stay declared out here on purpose. GOD is read by the
+// collision path on every frame (see above), so moving its declaration inside
+// the gate would trade a cheating hole for a ReferenceError on first
+// collision. The VALUE is what gets gated, not the declaration.
 const q = new URLSearchParams(location.search);
-const GOD = q.has('god');
-if (q.get('view')) {
+const GOD = DEBUG_HOOKS && q.has('god');
+if (DEBUG_HOOKS && q.get('view')) {
   const ci = CITIES.findIndex((c) => c.id === (q.get('city') || 'nyc'));
   cityIdx = ci >= 0 ? ci : 0;
   level = Math.min(3, Math.max(1, +(q.get('level') || 1)));
@@ -1016,13 +1031,11 @@ if (q.get('view')) {
   // &goal=120 shortens the run for automated review of the facts screen
   const tg = +(q.get('goal') || 0);
   if (tg) setTimeout(() => { if (track) track.goal = tg; }, 900);
-} else {
-  window.GOD = false;
 }
 
 // ?ui=<screen> forces any overlay for systematic UI review at a given size.
 // screens: menu | help | settings | scores | shop | continue | facts | over | pwin | paused
-if (q.get('ui')) {
+if (DEBUG_HOOKS && q.get('ui')) {
   const which = q.get('ui');
   const ci = CITIES.findIndex((c) => c.id === (q.get('city') || 'london'));
   cityIdx = ci >= 0 ? ci : 0;
