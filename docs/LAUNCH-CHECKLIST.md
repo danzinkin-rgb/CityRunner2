@@ -25,7 +25,7 @@ Three of the outstanding items are genuine submission blockers (app icon set, sc
 |---|---|---|---|
 | 1 | How to play / help screen | **DONE** | Persistent help screen exists: `#screen-help` in index.html with controls guide |
 | 2 | Settings screen | **DONE** | Settings screen exists: `#screen-settings` in index.html |
-| 3 | Music / SFX toggles + volume | **TODO** | Procedural audio exists (`core/audio.js`) with no user control. Expected in every mobile game |
+| 3 | Music / SFX toggles + volume | **DONE** | All three in Settings: `#set-music`, `#set-sfx`, `#set-vol` wired in `src/main.js`. Persisted to `cityrunner2.audio`, which an erase deliberately keeps (see `src/core/storage-keys.js`) |
 | 4 | Leaderboard screen | **DONE** | Service and UI complete: `#screen-scores` in index.html displays leaderboard |
 | 5 | Daily challenge | **PARTIAL** | Seeded RNG built and verified (`core/rng.js`, UTC-stable). **Not wired into the track** — needs `track.js` to draw from the seeded stream |
 | 6 | Achievements | **TODO** | Nothing. Pairs with Game Center (#16) |
