@@ -14,6 +14,15 @@
 <style>
   :root{
     --gold:#ffd166; --ink:#0b1020; --glass:rgba(10,14,30,.55);
+    /* Two text tiers below white, set as COLOUR rather than opacity. Opacity
+       fades the text-shadow with the glyph and compounds with whatever the
+       parent already dims, which is how secondary text ended up at roughly
+       half strength on a bright screen. A player reported the sheets as
+       unreadable in sunlight; these are the values that fixed it. Both clear
+       12:1 against the sheet ground, which leaves headroom for a phone at
+       minimum brightness outdoors. */
+    --fg-2:#e8ecf9;   /* labels, link buttons, secondary rows */
+    --fg-3:#c9d1e6;   /* fine print: captions, version, status lines */
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:"Segoe UI",system-ui,sans-serif;color:#fff}
@@ -68,7 +77,7 @@
   .title{font-size:clamp(30px,8.5vw,84px);white-space:nowrap;max-width:96vw;font-weight:900;letter-spacing:2px;
     background:linear-gradient(180deg,#fff,#ffd166 60%,#ff9e42);-webkit-background-clip:text;background-clip:text;color:transparent;
     filter:drop-shadow(0 6px 24px rgba(255,190,80,.35))}
-  .subtitle{font-size:15px;letter-spacing:6px;text-transform:uppercase;opacity:.7;margin:6px 0 40px}
+  .subtitle{font-size:15px;letter-spacing:6px;text-transform:uppercase;color:var(--fg-2);margin:6px 0 40px}
   .btn{pointer-events:auto;cursor:pointer;border:none;font:inherit;color:var(--ink);font-weight:800;font-size:19px;
     padding:16px 52px;min-height:44px;border-radius:999px;background:linear-gradient(180deg,#ffe9a8,var(--gold) 55%,#f0a832);
     box-shadow:0 8px 28px rgba(255,190,80,.4),inset 0 1px 0 #fff8;letter-spacing:1px;transition:transform .12s}
@@ -79,10 +88,14 @@
   /* Continue-offer note: dynamic, sentence-length text — the all-caps 4px
      letter-spacing on .label overflows a narrow viewport once the copy runs
      past a couple of words, so this gets its own quieter, wrappable style. */
-  .continue-note{font-size:13.5px;line-height:1.5;opacity:.7;letter-spacing:.2px;
+  .continue-note{font-size:13.5px;line-height:1.5;color:var(--fg-2);letter-spacing:.2px;
     text-transform:none;max-width:320px;margin:20px auto 14px;padding:0 8px}
   .big-num{font-size:64px;font-weight:900;color:var(--gold);text-shadow:0 4px 20px rgba(255,190,80,.4)}
-  .label{font-size:13px;letter-spacing:4px;text-transform:uppercase;opacity:.65}
+  /* .label sits on the menu, which is the live 3D city, not a flat panel — the
+     skyline behind it is bright in places. The shadow is what the HUD already
+     does for the same reason. */
+  .label{font-size:13px;letter-spacing:4px;text-transform:uppercase;color:var(--fg-2);
+    text-shadow:0 1px 6px rgba(0,0,0,.9)}
   #city-select{display:flex;gap:14px;margin-bottom:36px;flex-wrap:wrap;justify-content:center;pointer-events:auto}
   .city-card{width:150px;padding:18px 10px;border-radius:18px;background:rgba(255,255,255,.06);
     border:1px solid rgba(255,255,255,.14);text-align:center;cursor:pointer;transition:.15s}
@@ -289,32 +302,36 @@
     .linkbtn{min-height:34px}
   }
   .sheet{--sheet-pb:20px;max-width:520px;width:100%;min-height:0;overflow-y:auto;text-align:left;
-    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:18px;
+    background:rgba(6,10,26,.66);border:1px solid rgba(255,255,255,.18);border-radius:18px;
     padding:20px 22px;margin:14px 0 26px;-webkit-overflow-scrolling:touch}
   .sheet h3{color:var(--gold);font-size:15px;letter-spacing:2px;text-transform:uppercase;margin:16px 0 8px}
   .sheet h3:first-child{margin-top:0}
-  .sheet p{font-size:14px;line-height:1.5;margin-bottom:10px;color:#dde3f2}
-  .sheet .tip{font-size:13px;opacity:.72;font-style:italic}
+  .sheet p{font-size:14px;line-height:1.5;margin-bottom:10px;color:#f0f3fc}
+  .sheet .tip{font-size:13px;color:var(--fg-3);font-style:italic}
   .sheet hr{border:none;border-top:1px solid rgba(255,255,255,.12);margin:14px 0}
   /* A sheet that scrolls has to LOOK like it scrolls. A player reported that
      "Erase my data" was missing from Settings: it was there, wired and working,
      but it sat below the fold of a nested scroller that gave no sign it could
      scroll. A data-subject right nobody can find is not offered (COMPLIANCE §4).
      The fade is a sticky pseudo-element, so it pins to the bottom of the
-     scrollport while there is more below and scrolls away by itself at the end
-     — no scroll listener. It costs no layout height (the negative margin
-     cancels it), and .can-scroll is set from JS only when the sheet really
-     overflows, because a permanent fade on a sheet that fits reads as content
-     being cut off. */
-  .sheet.can-scroll::after{content:'';display:block;position:sticky;pointer-events:none;
-    bottom:calc(-1 * var(--sheet-pb));height:calc(38px + var(--sheet-pb));
-    margin:calc(-38px - var(--sheet-pb)) calc(-1 * var(--sheet-pb)) 0;
-    background:linear-gradient(rgba(8,11,24,0),rgba(8,11,24,.94))}
+     scrollport while there is more below and comes to rest at the end without
+     a scroll listener.
+     THE STRIP IS ALWAYS THERE, the gradient is not. Two reasons. It gives the
+     fade somewhere blank to land, so the last line of a fully scrolled sheet is
+     never dimmed — a faded last line says "there is more below" when there is
+     not, which is the same lie in the other direction. And keeping it out of
+     the .can-scroll branch keeps scrollHeight identical in both states: a strip
+     that appeared with the class would add its own height to the overflow that
+     decides the class, and the toggle would never settle. */
+  .sheet::after{content:'';display:block;position:sticky;pointer-events:none;
+    bottom:calc(-1 * var(--sheet-pb));height:calc(22px + var(--sheet-pb));
+    margin:0 calc(-1 * var(--sheet-pb)) calc(-1 * var(--sheet-pb))}
+  .sheet.can-scroll::after{background:linear-gradient(rgba(9,13,32,0),rgba(9,13,32,.97))}
   /* Erasing everything is irreversible; it must not look like the link next to
      it. Colour is a hint, not the signal — the word "Erase" and the confirm
      dialog carry it for anyone who cannot see the red. */
-  .linkbtn.danger{color:#ff9a9a;opacity:.92}
-  .linkbtn.danger:hover{color:#ff6b6b;opacity:1}
+  .linkbtn.danger{color:#ffa8a8}
+  .linkbtn.danger:hover{color:#ff7b7b}
   /* Settings groups its rows under headings instead of bare rules. Tighter than
      the help screen's headings so the swap costs no more height than the <hr>s
      it replaced — this sheet is the tallest in the game. */
@@ -326,7 +343,7 @@
   .row .key{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:30px;
     padding:0 8px;border-radius:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
     font-weight:700;color:var(--gold)}
-  .muted{opacity:.6}
+  .muted{color:var(--fg-3)}
   .toggle{pointer-events:auto;min-width:72px;min-height:44px;padding:0 16px;border-radius:999px;cursor:pointer;
     border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#fff;
     font:inherit;font-size:12px;font-weight:800;letter-spacing:1px}
@@ -350,10 +367,10 @@
   @media (prefers-reduced-motion: reduce){ .screen,.btn,#hud-hint{transition-duration:.01ms !important} }
   /* Apple HIG minimum tap target is 44pt — enforce it without changing how
      these read visually, by padding rather than growing the text. */
-  .linkbtn{pointer-events:auto;background:none;border:none;font:inherit;color:inherit;opacity:.75;
+  .linkbtn{pointer-events:auto;background:none;border:none;font:inherit;color:var(--fg-2);
     text-decoration:underline;cursor:pointer;letter-spacing:inherit;text-transform:inherit;
     min-height:44px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center}
-  .linkbtn:hover{opacity:1;color:var(--gold)}
+  .linkbtn:hover{color:var(--gold)}
   #menu-identity{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:12px}
   /* ---------- Shop (souvenir sink #1: characters) ---------- */
   #shop-balance{display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;letter-spacing:1px}
@@ -367,7 +384,7 @@
   .char-thumb{width:100%;height:72px;border-radius:10px;margin-bottom:6px;
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
   .char-name{font-weight:800;font-size:12.5px;line-height:1.2}
-  .char-state{font-size:11px;opacity:.75;margin-top:3px;letter-spacing:.4px}
+  .char-state{font-size:11px;color:var(--fg-2);margin-top:3px;letter-spacing:.4px}
   .char-card.equipped .char-state{color:var(--gold);font-weight:800}
   .char-card.locked .char-state{color:var(--gold)}
   #shop-msg{min-height:16px;margin-top:8px;font-size:12px;color:#ff8a8a}
@@ -391,7 +408,7 @@
     padding:8px 4px;border-radius:12px;background:rgba(255,255,255,.05);
     border:1px solid rgba(255,255,255,.10)}
   .souv img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 2px 5px rgba(0,0,0,.45))}
-  .souv span{font-size:10px;line-height:1.3;opacity:.72}
+  .souv span{font-size:10px;line-height:1.3;color:var(--fg-3)}
   .souv b{color:var(--gold);font-size:10.5px;opacity:1}
   @media (max-height:720px){ .souv img{width:32px;height:32px} .souv{padding:6px 3px} }
 
@@ -406,10 +423,10 @@
   .daily-card:active{transform:scale(.98)}
   .dc-title{font-size:10px;letter-spacing:2.5px;font-weight:800;color:var(--gold);opacity:.95}
   .dc-where{font-size:15px;font-weight:800;margin-top:2px}
-  .dc-best{font-size:11px;opacity:.6;margin-top:2px}
+  .dc-best{font-size:11px;color:var(--fg-3);margin-top:2px}
   .dc-right{text-align:right;flex:0 0 auto}
   .dc-streak{font-size:11px;font-weight:700;color:#ffb35c}
-  .dc-reset{font-size:10px;opacity:.55;margin-top:2px;white-space:nowrap}
+  .dc-reset{font-size:10px;color:var(--fg-3);margin-top:2px;white-space:nowrap}
   .dc-go{font-size:12px;font-weight:800;color:var(--gold);margin-top:4px;letter-spacing:1px}
   @media (max-height:720px){
     .daily-card{margin-top:10px;padding:9px 13px}
@@ -557,7 +574,12 @@
     .fv-pull .fv-num{font-size:clamp(34px,11vw,46px)}
   }
   #screen-facts{background:radial-gradient(ellipse at 50% 30%,rgba(20,30,70,.86),rgba(4,6,16,.94))}
-  .skyline{position:absolute;left:0;right:0;bottom:0;height:180px;pointer-events:none;opacity:.55;
+  /* z-index:-1 puts the silhouette behind the menu's own content and in front
+     of the screen backdrop. Without it the skyline is the last child of
+     #screen-menu, so a dark decorative panel was painting OVER the links, the
+     stats line and "playing as" — which is most of why the bottom of the menu
+     read as washed out. */
+  .skyline{position:absolute;left:0;right:0;bottom:0;height:180px;pointer-events:none;opacity:.55;z-index:-1;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 180' preserveAspectRatio='none'%3E%3Cpath fill='%23070b1a' d='M0 180V120h30V80h20v40h25V60h18l6-25 6 25h14v50h30V95h35v-35h12V40h16v20h12v35h28v25h40V70h10l5-40 5 40h10v50h26V85h30v35h22V55h8l4-30 4 30h8v65h36v-25h24V70h30v50h20V90h26v30h34V45h10l6-35 6 35h10v75h30v-30h26v30h24V80h30v40h28V95h20v-20h24v45h30v-60h14l8-30 8 30h12v60h32v-40h26v40h22v-25h28v25h28V85h24v35h30v-45h12V50h14v25h10v45h36v-30h22v30H1200v60z'/%3E%3C/svg%3E");
     background-size:100% 100%;
     -webkit-mask-image:linear-gradient(180deg,transparent,#000 40%);mask-image:linear-gradient(180deg,transparent,#000 40%)}

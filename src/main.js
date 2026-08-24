@@ -87,7 +87,16 @@ function showScreen(name) {
 function syncSheetScroll() {
   requestAnimationFrame(() => {
     for (const el of document.querySelectorAll('.screen.on .sheet')) {
-      el.classList.toggle('can-scroll', el.scrollHeight - el.clientHeight > 4);
+      // Every sheet ends with a blank strip for the fade to land on (see
+      // index.html). It is part of scrollHeight, so it has to come back out
+      // before asking whether anything is really below the fold — otherwise a
+      // sheet that fits perfectly reports 30px of overflow and draws a fade
+      // over nothing. The strip is a pseudo-element, hence the second
+      // getComputedStyle; its own height overlaps the sheet's bottom padding.
+      const strip = parseFloat(getComputedStyle(el, '::after').height) || 0;
+      const pad = parseFloat(getComputedStyle(el).paddingBottom) || 0;
+      const hidden = el.scrollHeight - (strip - pad) - el.clientHeight;
+      el.classList.toggle('can-scroll', hidden > 4);
     }
   });
 }
