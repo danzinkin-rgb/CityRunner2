@@ -130,6 +130,7 @@ import { resolveBase } from './serve.mjs';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { flattenPng } from './png-flatten.mjs';
 
 // Serves the repo itself unless a URL is named — see test/serve.mjs
 const { base: BASE } = await resolveBase(process.argv.find((a) => a.startsWith('http')));
@@ -274,7 +275,11 @@ const BLANK_CHECK = () => {
 // viewport maths assumed would be written.
 function pngSize(buf) {
   if (buf.length < 24 || buf.toString('ascii', 12, 16) !== 'IHDR') return null;
-  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+  // Byte 25 is the IHDR colour type. 2 is truecolour; 6 is truecolour+alpha,
+  // which App Store Connect refuses — see test/png-flatten.mjs. It is read
+  // here, after the file is on disk, for the same reason the dimensions are:
+  // what was written is the only thing that will be uploaded.
+  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20), colourType: buf[25] };
 }
 
 async function capture(page, shot) {
@@ -328,19 +333,22 @@ for (const size of SIZES) {
     }
 
     await page.screenshot({ path: outPath });
+    flattenPng(outPath);   // Playwright writes RGBA; Apple will not take alpha
     const buf = readFileSync(outPath);
     const dims = pngSize(buf);
     const dimsOk = dims && dims.width === size.width && dims.height === size.height;
+    const alphaOk = dims && dims.colourType === 2;
     const blankFlag = r.blank && r.blank.ok && r.blank.range < 10;
 
     rows.push({
-      size: size.name, shot, file, dims, dimsOk, kb: Math.round(buf.length / 1024),
+      size: size.name, shot, file, dims, dimsOk, alphaOk, kb: Math.round(buf.length / 1024),
       blank: r.blank, blankFlag, err: r.errors.join(' | '),
     });
 
     const dimsNote = dims ? `${dims.width}x${dims.height}${dimsOk ? '' : `  ! expected ${size.width}x${size.height}`}` : '! could not read PNG header';
     const blankNote = blankFlag ? `  ! possible blank frame (luminance range ${r.blank.range})` : '';
-    console.log(`ok  ${size.name} ${shot.id} — ${dimsNote}, ${Math.round(buf.length / 1024)}KB${blankNote}`);
+    const alphaNote = alphaOk ? '' : '  ! still has an alpha channel — Apple will reject this file';
+    console.log(`ok  ${size.name} ${shot.id} — ${dimsNote}, ${Math.round(buf.length / 1024)}KB${blankNote}${alphaNote}`);
   }
   await ctx.close();
 }
@@ -350,7 +358,7 @@ await browser.close();
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 const card = (r) => `
-  <figure class="card${r.err || r.blankFlag || (r.dims && !r.dimsOk) ? ' bad' : ''}" data-size="${r.size}">
+  <figure class="card${r.err || r.blankFlag || (r.dims && !r.dimsOk) || (r.dims && !r.alphaOk) ? ' bad' : ''}" data-size="${r.size}">
     ${r.file ? `<img loading="lazy" src="${esc(r.file)}" alt="${esc(r.shot.label)}">`
              : '<div class="missing">no screenshot</div>'}
     <figcaption>
@@ -358,6 +366,7 @@ const card = (r) => `
       <span class="meta">${esc(r.size)} ${r.dims ? `· ${r.dims.width}x${r.dims.height}` : ''}${r.kb ? ` · ${r.kb}KB` : ''}</span>
       <span class="why">${esc(r.shot.why)}</span>
       ${r.dims && !r.dimsOk ? '<span class="warn">pixel size mismatch — see console log</span>' : ''}
+      ${r.dims && !r.alphaOk ? '<span class="warn">has an alpha channel — App Store Connect will reject it</span>' : ''}
       ${r.blankFlag ? `<span class="warn">possible blank frame — luminance range ${r.blank.range} (min ${r.blank.min}, max ${r.blank.max})</span>` : ''}
       ${r.err ? `<span class="warn">${esc(r.err)}</span>` : ''}
     </figcaption>
@@ -368,7 +377,7 @@ const bySize = SIZES.map((size) => {
   return `<section><h2>${esc(size.name)} <small>${size.width}x${size.height}</small></h2><div class="grid">${mine.map(card).join('')}</div></section>`;
 }).join('');
 
-const warnings = rows.filter((r) => r.err || r.blankFlag || (r.dims && !r.dimsOk)).length;
+const warnings = rows.filter((r) => r.err || r.blankFlag || (r.dims && !r.dimsOk) || (r.dims && !r.alphaOk)).length;
 
 writeFileSync(join(OUT, 'index.html'), `<!doctype html><meta charset="utf-8">
 <title>CityRunner — App Store screenshots</title>

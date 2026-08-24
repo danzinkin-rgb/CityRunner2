@@ -9,7 +9,7 @@ Legend: **DONE** · **PARTIAL** · **TODO** · *n/a*
 
 ## Executive summary
 
-The game itself is complete and good. What is missing is almost entirely the **shell around the game** — the screens, settings and native integrations that reviewers and players treat as table stakes. There are 34 items below; **8 are done, 5 partial, 21 outstanding**.
+The game itself is complete and good. What is missing is almost entirely the **shell around the game** — the screens, settings and native integrations that reviewers and players treat as table stakes. There are 34 items below; **9 are done, 5 partial, 20 outstanding**.
 
 Three of the outstanding items are genuine submission blockers (app icon set, screenshots, export-compliance declaration). Six more are Guideline 4.2 risk — without them a Capacitor build reads as a wrapped website and gets rejected. The rest are quality and retention.
 
@@ -47,7 +47,7 @@ Three of the outstanding items are genuine submission blockers (app icon set, sc
 | 15 | Screenshots | **TODO** | Generator built (`npm run shots:store`), captures not yet taken/uploaded. iPad is NOT optional — TARGETED_DEVICE_FAMILY is "1,2", so 6.7", 6.5" and 13" iPad are all required |
 | 16 | Game Center leaderboards + achievements | **TODO** | The single strongest 4.2 answer; also removes our own anti-cheat burden |
 | 17 | Haptics | **DONE** | `hapticHeavy()` function implemented in src/core/native.js:75, wired into collisions in src/main.js:239 |
-| 18 | iPad layout | **TODO** | Responsive CSS exists but is untested at tablet aspect |
+| 18 | iPad layout | **DONE** | Tablet breakpoint (`min-width:900px`) scales type, cards and sheets up so the layout reads as tablet-sized rather than a stretched phone screen; verified against the 13" iPad screenshot set |
 | 19 | Native pause on interruption | **DONE** | `visibilitychange` handler |
 | 20 | Export compliance declaration | **TODO** | HTTPS-only → exempt, but must still be declared |
 | 21 | Store metadata (name, subtitle, keywords, description) | **TODO** | Must name no competitor — see COMPLIANCE.md §3.0 |
@@ -84,6 +84,6 @@ Three of the outstanding items are genuine submission blockers (app icon set, sc
 
 1. **App icon set + screenshots** (#14, #15) — cannot submit without them.
 2. **Export compliance declaration** (#20) — trivial but mandatory.
-3. **Guideline 4.2 substance** (#16, #17, #18) — a wrapper without native features is the most likely rejection reason.
+3. **Guideline 4.2 substance** (#16, #17) — a wrapper without native features is the most likely rejection reason.
 
 Everything else is quality, retention or hygiene — and is what separates "it works" from "it's a product".
