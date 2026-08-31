@@ -356,6 +356,7 @@ function endRun() {
   persist();
   submit(score);   // validated + recorded locally; ignores its own failures
   if (dailyMode) recordDailyPlayed();
+  reportRun({ cityId: city().id, score, dailyMode, save });
   $('over-score').textContent = Math.round(score);
   $('over-coins').textContent = coins;
   showScreen('over');
