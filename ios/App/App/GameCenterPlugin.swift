@@ -5,6 +5,8 @@ import GameKit
 /// plugin package — see the comment above registerPlugin('GameCenter') in
 /// src/core/native.js for why: no podspec, no Capacitor-version coupling,
 /// nothing to keep in sync with a package this project doesn't control.
+/// Registered by hand in BridgeViewController.swift — Capacitor 7 only
+/// auto-registers plugins shipped as real npm packages.
 ///
 /// Every method fails soft. A signed-out account, a declined sign-in sheet,
 /// or a device with no network must leave the game exactly as playable as
@@ -22,23 +24,19 @@ public class GameCenterPlugin: CAPPlugin, CAPBridgedPlugin {
     ]
 
     @objc func authenticate(_ call: CAPPluginCall) {
-        print("GameCenter DEBUG: authenticate() called")
         GKLocalPlayer.local.authenticateHandler = { viewController, error in
             if let vc = viewController {
                 // Apple's own sign-in sheet. Present it on top of whatever is
                 // currently showing; the game underneath is already paused-safe.
-                print("GameCenter DEBUG: presenting sign-in sheet")
                 DispatchQueue.main.async {
                     self.bridge?.viewController?.present(vc, animated: true)
                 }
                 return
             }
-            if let error = error {
-                print("GameCenter DEBUG: auth error \(error.localizedDescription)")
+            if error != nil {
                 call.resolve(["authenticated": false])
                 return
             }
-            print("GameCenter DEBUG: authenticated = \(GKLocalPlayer.local.isAuthenticated)")
             call.resolve(["authenticated": GKLocalPlayer.local.isAuthenticated])
         }
     }
@@ -46,22 +44,15 @@ public class GameCenterPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func submitScore(_ call: CAPPluginCall) {
         guard GKLocalPlayer.local.isAuthenticated,
               let leaderboardId = call.getString("leaderboardId") else {
-            print("GameCenter DEBUG: submitScore skipped, authenticated=\(GKLocalPlayer.local.isAuthenticated)")
             call.resolve(["reported": false])
             return
         }
         let value = call.getInt("score") ?? 0
-        print("GameCenter DEBUG: submitting \(value) to \(leaderboardId)")
         GKLeaderboard.submitScore(
             value, context: 0,
             player: GKLocalPlayer.local,
             leaderboardIDs: [leaderboardId]
         ) { error in
-            if let error = error {
-                print("GameCenter DEBUG: submitScore error \(error.localizedDescription)")
-            } else {
-                print("GameCenter DEBUG: submitScore OK")
-            }
             call.resolve(["reported": error == nil])
         }
     }
@@ -69,21 +60,14 @@ public class GameCenterPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func reportAchievement(_ call: CAPPluginCall) {
         guard GKLocalPlayer.local.isAuthenticated,
               let achievementId = call.getString("achievementId") else {
-            print("GameCenter DEBUG: reportAchievement skipped, authenticated=\(GKLocalPlayer.local.isAuthenticated)")
             call.resolve(["reported": false])
             return
         }
         let percent = call.getDouble("percentComplete") ?? 0
-        print("GameCenter DEBUG: reporting \(achievementId) at \(percent)%")
         let achievement = GKAchievement(identifier: achievementId)
         achievement.percentComplete = percent
         achievement.showsCompletionBanner = true
         GKAchievement.report([achievement]) { error in
-            if let error = error {
-                print("GameCenter DEBUG: reportAchievement error \(error.localizedDescription)")
-            } else {
-                print("GameCenter DEBUG: reportAchievement OK")
-            }
             call.resolve(["reported": error == nil])
         }
     }

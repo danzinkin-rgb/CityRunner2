@@ -56,10 +56,7 @@ export function initNative() {
 
       // Fire-and-forget: a signed-out Game Center account or a player who
       // declines the sign-in sheet must never block or interrupt the game.
-      console.log('GameCenter DEBUG JS: calling authenticate()');
-      GameCenter.authenticate()
-        .then((r) => console.log('GameCenter DEBUG JS: authenticate resolved', r))
-        .catch((e) => console.log('GameCenter DEBUG JS: authenticate rejected', e));
+      fire(() => GameCenter.authenticate());
 
       return native;
     } catch {
