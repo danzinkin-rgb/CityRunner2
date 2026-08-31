@@ -43,6 +43,8 @@ export const STORAGE = {
   SAVE: 'cityrunner2',
   /** Local leaderboard entries. src/core/scores.js */
   SCORES: 'cityrunner2.scores',
+  /** Lifetime accumulated score, for the Game Center "Overall" board. src/core/scores.js */
+  LIFETIME_SCORE: 'cityrunner2.lifetime',
   /** Cache of owned IAP product ids. src/core/entitlements.js */
   ENTITLEMENTS: 'cityrunner2.ent',
   /** Music/sfx/volume preferences. src/core/audio.js */
@@ -50,7 +52,7 @@ export const STORAGE = {
 };
 
 /** Removed by eraseAllData(). See the split rationale above. */
-export const ERASED_KEYS = [STORAGE.IDENTITY, STORAGE.SAVE, STORAGE.SCORES];
+export const ERASED_KEYS = [STORAGE.IDENTITY, STORAGE.SAVE, STORAGE.SCORES, STORAGE.LIFETIME_SCORE];
 
 /** Deliberately survives eraseAllData(). Each entry is justified above. */
 export const KEPT_KEYS = [STORAGE.ENTITLEMENTS, STORAGE.AUDIO];

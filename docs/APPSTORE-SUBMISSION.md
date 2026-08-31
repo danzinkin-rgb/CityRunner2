@@ -1,7 +1,9 @@
 # CityRunner — App Store Submission Guide
 
-**Working checklist, in submission order, with exact text to paste into every App Store Connect field. Written 23 August 2026.**
+**Working checklist, in submission order, with exact text to paste into every App Store Connect field. Written 23 August 2026, updated 30 August 2026.**
 Screenshot specifications, the Developer Program fee and the age-rating questionnaire were checked against `developer.apple.com` on 23 August 2026 and are cited where used — Apple changes all three periodically, so re-verify if this document sits unused for more than a couple of months.
+
+**As of 30 August 2026: trademark search is clear, Developer Program enrolment is done, iPad support is confirmed shipping, and screenshots are generated.** The three blockers this document originally opened with are gone — what's left is filling in App Store Connect itself, §2 onward.
 
 Authoritative sources used, deferred to on any conflict: `docs/COMPLIANCE.md` (§2.1 privacy answers, §2.2 age rating, §3.0 competitor-naming rule, §4 security), `docs/LAUNCH-CHECKLIST.md` (item list only — its statuses are dated 02 August 2026 and are **not** treated as current fact here), `docs/PRODUCT-ROADMAP.md`, `capacitor.config.json`, `privacy.html`, `docs/MAC-SETUP.md`.
 
@@ -41,7 +43,7 @@ Only one icon file is produced (`AppIcon-512@2x.png`, 1024×1024) because the as
 
 **Not verified, flagged rather than assumed:** the splash screen images were generated from the same alpha-bearing source; splash screens are not subject to the same alpha rule as the marketing icon, so this was not checked and does not need to be.
 
-**Effect on the checklist:** LAUNCH-CHECKLIST item #14 ("iOS app icon set") is stale at **PARTIAL** — it is now done, at least for the icon itself. It does not cover screenshots (#15) or the App Store Connect 1024×1024 marketing icon upload, which is a separate manual step in §3 below (same file, uploaded directly to App Store Connect, not read from the Xcode project).
+**Effect on the checklist:** LAUNCH-CHECKLIST item #14 ("iOS app icon set") reflects this and is now **DONE**. Screenshots (#15) are a separate item, covered in §7 below — now also generated. Uploading this same 1024×1024 file to App Store Connect's Media Manager is still a separate manual step (not read from the Xcode project automatically).
 
 **Only these files changed**, all inside the paths this task was scoped to touch:
 ```
@@ -55,17 +57,13 @@ Nothing has been committed. Commit these once the owner has reviewed the images.
 
 ---
 
-## Top three things blocking submission right now
+## What's left
 
-1. **Trademark search on "CityRunner" is still open.** COMPLIANCE §2.3 and §3.0 both list it as required before committing to the name, and it has not been done. This gates the App Store Connect app-record step (§2 below) — if the name is unavailable or contested, the record has to be created under a different name before anything else proceeds.
-2. **Screenshots do not exist yet.** `test/store-shots.mjs` is reportedly being built by another agent; until it runs, there is nothing to upload. See §7.
-3. **No Apple Developer Program enrolment yet**, which blocks creating the App Store Connect record at all (§1–2), and everything downstream of it — Xcode signing, TestFlight, submission — needs a Mac in any case (see **Needs a Mac**, below).
-
-Export compliance (§6) and the age-rating questionnaire (§4) are *not* on this list — both are answerable in minutes once the app record exists, and the answers are already worked out below.
+Everything through §6 below (record creation, metadata, age rating, privacy label, export compliance, review notes) is fillable today, from any browser, now that the account exists. What still needs a Mac — signing, the Info.plist encryption key, the actual archive/upload — is listed at the bottom in **Needs a Mac** and can't be done from App Store Connect no matter what.
 
 ---
 
-## 1. Apple Developer Program enrolment
+## 1. Apple Developer Program enrolment — done
 
 | | |
 |---|---|
@@ -76,7 +74,7 @@ Export compliance (§6) and the age-rating questionnaire (§4) are *not* on this
 
 *Source: `developer.apple.com/help/account/membership/program-enrollment/` and `developer.apple.com/programs/enroll/`, checked 23 August 2026.*
 
-**Action:** enrol at [developer.apple.com/programs/enroll](https://developer.apple.com/programs/enroll/) using the Apple ID intended to own this app long-term (not a throwaway or a family member's — see the note in `docs/MAC-SETUP.md` Step 5 about using different Apple IDs for local testing versus the one that should actually own the App Store listing).
+**Done as of 30 August 2026** — you're logged into App Store Connect, which confirms enrolment is approved.
 
 ---
 
@@ -87,7 +85,7 @@ Export compliance (§6) and the age-rating questionnaire (§4) are *not* on this
 | **Bundle ID** | `uk.co.zinkin.cityrunner` — from `capacitor.config.json`. Register this exact string under Certificates, Identifiers & Profiles *before* creating the app record; App Store Connect will only offer bundle IDs already registered to the account |
 | **SKU** | A unique internal string, never shown to users. Recommend `cityrunner-ios-01` — simple, and won't collide if a second SKU is ever needed |
 | **Primary language** | English (U.K.) |
-| **Name availability** | Cannot be checked in advance except by trying to type it into the "Name" field when creating the record — App Store Connect rejects it live if taken. This is a weaker check than a trademark search (see blocker #1 above) — a name can be unclaimed on the App Store and still infringe a trademark elsewhere. Do the trademark search first; use App Store Connect's live rejection only as a secondary confirmation |
+| **Name availability** | Trademark search (COMPLIANCE §2.3/§3.0) is clear as of 30 August 2026. App Store Connect will still reject the "Name" field live if it happens to be taken by another app — that's a separate, weaker check (unclaimed on the App Store ≠ trademark-clear elsewhere), but at this point it's the only remaining check, not a gate on top of an open trademark question |
 
 ---
 
@@ -95,35 +93,39 @@ Export compliance (§6) and the age-rating questionnaire (§4) are *not* on this
 
 ### App name (30 characters)
 
+**Decided: `CityRunner: Landmark Run`** (24 chars), 30 August 2026. An existing App Store title, "NeonCity: Cityrunner", was found during name entry — a different exact string, so it doesn't block registration or conflict with the clear trademark search, but it's reason enough to differentiate rather than use the plain `CityRunner` or `CityRunner: City Dash` options (both lean on "City", which the existing app already uses). "Landmark Run" leans on the puzzle-mode differentiator instead — a stronger, less contested search term with no overlap with the existing title.
+
 | Option | Chars | Note |
 |---|---|---|
-| `CityRunner` | 10 | Plain brand name. Matches the Capacitor `appName`, the web app title, and every existing doc. Leaves 20 characters of prime search-ranked real estate unused |
-| **`CityRunner: City Dash`** | 21 | **Recommended.** The App Name field is weighted heavily in App Store search — Apple's own ASO guidance is to use it, not just the keywords field, for search terms. "Dash" adds a second searchable term without repeating a word already in "Runner" |
-| `CityRunner: Landmark Run` | 24 | Leans on the puzzle-mode differentiator instead of pace. Also viable — "Landmark" is a stronger, less contested search term than "City" |
-
-All three are pending the trademark search in blocker #1 — a clash on "CityRunner" forces a rename before any of them can be used.
+| `CityRunner` | 10 | Plain brand name. Not used — see decision above |
+| `CityRunner: City Dash` | 21 | Not used — "City" overlaps with the existing "NeonCity" title |
+| **`CityRunner: Landmark Run`** | 24 | **Decided.** See rationale above |
 
 ### Subtitle (30 characters)
 
+**Decided: `Run the World's Landmarks`** (25 chars) — pairs with "Landmark Run" without repeating "Landmark" or "Run".
+
 | Option | Chars |
 |---|---|
-| **`Run the World's Landmarks`** | 25 — **recommended**, pairs with the "Landmark Run" or "City Dash" name options above without repeating "City" or "Dash" |
+| **`Run the World's Landmarks`** | 25 — **decided** |
 | `Endless Runner, No Ads` | 22 |
 | `Puzzle Streets, Real Cities` | 27 |
 
 ### Promotional text (170 characters)
 
+**Live in App Store Connect as of 30 August 2026 — this is what's actually in the field, not a draft:**
+
 ```
-New puzzles and souvenirs across real city streets. Offline play, no ads, no accounts, no tracking. Free to play.
+Sprint the streets of famous cities across the world. Rebuild real monuments against the clock and learn facts about the cities and buildings.
 ```
-113 characters. Promotional text can be edited without a full app-review resubmission, so keep this current with whatever is genuinely newest rather than treating it as fixed at launch.
+142 characters, 28 remaining. Promotional text can be edited without a full app-review resubmission.
 
 ### Description (4000 characters)
 
-Ready to paste as-is (1,945 characters — well inside the limit; the field doesn't need filling, since description text has no effect on App Store search ranking, unlike the name, subtitle and keywords fields, which do):
+**The user rewrote this by hand in the live ASC field on 30 August 2026** — the earlier draft below read as too dry/compliance-focused ("too compliancy/boring"). This is a transcript of what's actually live, kept here so the doc doesn't go stale — **do not regenerate or overwrite this field without being asked**:
 
 ```
-Run real streets. Build real monuments. No ads, no accounts, no tracking.
+Run real streets. Build real monuments. Learn facts about the cities and buildings.
 
 CityRunner is a fast, three-lane endless runner set on street-accurate recreations of New York, London, Paris and Rome. Swipe to change lane, jump, and roll past traffic, market stalls and street furniture as the pace builds. Every building, vehicle and sign is generated by our own code — nothing borrowed, nothing stock.
 
@@ -131,25 +133,24 @@ Reach a landmark and the run stops being a runner: a 60-second puzzle mode asks 
 
 Collect city souvenirs as you run — a croissant in Paris, a red phone box in London, a Caesar bust in Rome — and unlock new streets and cities as you go.
 
-What makes CityRunner different from the genre it sits in:
-- An original monument-building puzzle mode, not a reskin of a generic runner
-- Named real streets, each with bespoke architecture, not a repeating generic backdrop
-- Short, factual interstitials about the landmark you just rebuilt
-- Every asset — every character, vehicle, building and sound — procedurally generated in-house
+Come back for a fresh daily challenge — and see how your best run stacks up on the leaderboard.
+
+What makes CityRunner different from other runner games:
+- An original monument-building puzzle mode
+- Named real streets, each with bespoke architecture
+- Learn facts about the landmark you just rebuilt
 
 Built for families:
 - No account, no sign-up, no email, no password — just open it and play
 - No advertising, no third-party trackers, no in-app purchases
-- Nicknames are generated for you, never typed, so nothing personal ever has to be entered
-- Fully playable offline — no connection required, ever
-- Bright, non-violent, no jump-scares, no loot boxes
+- Nicknames are generated for you, so no data entry
 
-CityRunner plays entirely on your device. Progress, scores and souvenirs are stored locally and can be erased at any time from within the game.
-
-CityRunner is an independent game and is not affiliated with, sponsored by, or endorsed by any city, landmark, business or brand depicted. All shops, signs and products shown are fictional.
+CityRunner is an independent game and is not affiliated with, sponsored by, or endorsed by any city, landmark, business or brand depicted.
+All shops, signs and products shown are fictional.
 ```
+1,577 characters.
 
-**One honesty check before pasting this**: it deliberately does not mention leaderboards, Game Center, achievements or a daily challenge, because per `LAUNCH-CHECKLIST.md` those are not built yet (items #4–6, #16, #21 are TODO/PARTIAL as of the checklist's last edit, and this document does not trust that checklist's *statuses* — but no other evidence in the repo shows them built either). **If any of those ship before submission, add one line for each and re-check the description still matches reality** — a store listing claiming a feature that doesn't exist is a rejection risk (Guideline 2.3, misleading metadata) independent of anything else in this document.
+**Honesty check, updated 30 August 2026**: the leaderboard and daily-challenge line above is accurate — both are DONE per `LAUNCH-CHECKLIST.md` #4 and #5, verified by `test/determinism.mjs`. Still deliberately **not** mentioned: Game Center and achievements — both genuinely TODO (checklist #16, #6). **If either ships before submission, add a line for it and re-check the description still matches reality** — a store listing claiming a feature that doesn't exist is a rejection risk (Guideline 2.3, misleading metadata) independent of anything else in this document.
 
 ### Keywords (100 characters, comma-separated, no spaces)
 
@@ -247,34 +248,20 @@ This is an Info.plist edit and was left undone deliberately — it falls outside
 
 ---
 
-## 7. Screenshots
+## 7. Screenshots — generated, ready to upload
 
-**Apple's requirement changed since `LAUNCH-CHECKLIST.md` (dated 02 August 2026) was written, and it no longer matches this document's original brief either — both said "6.7-inch and 6.5-inch are mandatory". Checked directly against `developer.apple.com/help/app-store-connect/reference/screenshot-specifications/` on 23 August 2026:**
+**Done.** `npm run shots:store` has been run; 24 images sit in `test/shots/store/` (`test/shots/store/index.html` is a contact sheet for reviewing them before upload). Apple's size classes, checked against `developer.apple.com/help/app-store-connect/reference/screenshot-specifications/` on 23 August 2026:
 
-| Display | Status | Sizes (portrait) |
-|---|---|---|
-| **6.9"** (iPhone 17 Pro Max, 16 Pro Max, 15 Pro Max, 15 Plus, etc.) | **Required**, unless 6.5" is provided instead | 1290×2796 px (the current standard; 1260×2736 and 1320×2868 are also accepted depending on exact device) |
-| 6.5" (iPhone 14 Plus, 11, XS Max, etc.) | Required **only if 6.9" is not supplied** — otherwise Apple auto-scales it down from the 6.9" set | 1284×2778 px |
-| Everything smaller (6.3", 6.1", 5.5", 4.7", 4", 3.5") | Auto-scaled down automatically | — |
-| **13" iPad** (Pro, Air) | **Required — because this app targets it.** Checked `TARGETED_DEVICE_FAMILY` in `ios/App/App.xcodeproj/project.pbxproj`: it is set to `"1,2"`, meaning the Xcode project is built as a **universal iPhone+iPad app**, not iPhone-only | 2064×2752 px |
+| Display | Status | Required px | What's on disk |
+|---|---|---|---|
+| **6.5"** — the slot ASC's own UI shows for this app, confirmed by opening the version page directly on 30 August 2026 | **Required, and the one in use** | 1242×2688 or 1284×2778 (both accepted per the live upload dialog) | `6.5in-*` files, generated at exactly 1242×2688 — matches directly |
+| 6.9" (iPhone 17/16/15 Pro Max class, per Apple's written spec) | Not shown as a separate slot in this account's current UI | 1290×2796 | `6.7in-*` files exist at this size but aren't used — no matching slot appeared when the app record was opened |
+| Everything smaller | Auto-scaled by Apple | — | n/a |
+| **13" iPad** | **Required** — `TARGETED_DEVICE_FAMILY` is `"1,2"` (universal), confirmed still set in `ios/App/App.xcodeproj/project.pbxproj`; iPad layout is now DONE per `LAUNCH-CHECKLIST.md` #18 | 2064×2752 | `13in-ipad-*` files, confirmed generated at exactly 2064×2752 |
 
-**Practical read: supply one 6.9" iPhone set and one 13" iPad set; do not bother separately producing 6.7" or 6.5" — Apple derives them.** No alpha channel/transparency is permitted in any screenshot (same rule as the marketing icon). 1–10 images per size.
+**Upload the 6.5in-\* set into the iPhone slot and the 13in-ipad-\* set into the 13" iPad slot.** No alpha channel in any of them (same rule as the marketing icon — generated the same way `assets/icon-1024.png` was flattened in §0). The `6.7in-*` set is not used for this account.
 
-**The iPad requirement is worth a decision, not just an action.** LAUNCH-CHECKLIST #18 marks iPad layout as untested ("Responsive CSS exists but is untested at tablet aspect"). Two honest options:
-1. **Test and ship iPad now** — since the project is already configured as universal, this is the path of least resistance, but it means the untested layout needs a real look on an iPad simulator before screenshots are taken of it.
-2. **Restrict to iPhone only for this submission** — set `TARGETED_DEVICE_FAMILY = "1"` in Xcode, drop the iPad screenshot requirement entirely, and add iPad support in a later update once it's actually been tested. This is a Mac-side Xcode change, not something this document can make from Windows.
-
-This document does not choose between them — it is a genuine trade-off between shipping sooner and shipping something untested. Decide before the Mac session in §7, since it changes what `test/store-shots.mjs` needs to produce.
-
-**What each screenshot should show** (five to six is normal; more than that has rapidly diminishing returns):
-1. Mid-run gameplay in a strong lighting moment — establishes the visual identity fastest
-2. The monument-puzzle mode mid-solve — the single strongest differentiator per COMPLIANCE §3.0, worth leading with, not burying
-3. A completed monument with its fact interstitial — shows the educational hook
-4. A second city, for variety (e.g. Rome or London, contrasting with whichever led in #1)
-5. A souvenir-collection or progress moment — shows there's a game loop beyond one run
-6. *(iPad set only, if Option 1 above is taken)* the same beats, re-shot at tablet aspect — do not just stretch the iPhone captures
-
-**Tool: `test/store-shots.mjs`** is being built by another agent in this repository at the time of writing and is the intended way to generate these. This document does not create or edit that file — once it exists, run it, review the output against the five beats above, and upload.
+**What's in each set** — menu, mid-run (two cities), puzzle mode mid-solve (two landmarks), completed-monument fact interstitial, and the shop — eight beats per size, comfortably inside Apple's 1–10 range and led with the puzzle mode, the strongest differentiator per COMPLIANCE §3.0.
 
 ---
 
@@ -292,13 +279,14 @@ If Game Center or online leaderboards ship before submission, revisit this — a
 
 ## 9. Pre-submission checklist
 
-- [ ] Trademark search on "CityRunner" completed and clear
-- [ ] Apple Developer Program enrolment approved (§1)
+- [x] Trademark search on "CityRunner" completed and clear (30 August 2026)
+- [x] Apple Developer Program enrolment approved (§1)
+- [x] iPad support confirmed shipping — `TARGETED_DEVICE_FAMILY` is `"1,2"`, layout DONE per LAUNCH-CHECKLIST #18
+- [x] Screenshots generated via `npm run shots:store` (§7) — not yet uploaded
 - [ ] Bundle ID `uk.co.zinkin.cityrunner` registered in Certificates, Identifiers & Profiles
 - [ ] App Store Connect record created (§2)
 - [ ] App name, subtitle, promotional text, description, keywords, URLs and copyright pasted in (§3)
-- [ ] Decision made on iPad support for this release (§7) and `TARGETED_DEVICE_FAMILY` set accordingly
-- [ ] Screenshots generated via `test/store-shots.mjs` and uploaded for every required size (§7)
+- [ ] Screenshots uploaded for both required sizes — 6.5in-\* set into the iPhone slot, 13in-ipad-\* set into the 13" iPad slot (§7)
 - [ ] 1024×1024 marketing icon uploaded to App Store Connect (the same file already verified alpha-free in §0 — `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png`)
 - [ ] Age rating questionnaire completed (§4) — expect 4+
 - [ ] App Privacy nutrition label completed — "Data Not Collected" (§5)
@@ -318,8 +306,7 @@ Everything in this section is impossible from the Windows PC — not just inconv
 - **Xcode itself** — signing, capabilities, and the whole build toolchain only run on macOS
 - **Code signing** — MAC-SETUP.md §5: choosing a Team, resolving bundle-identifier conflicts
 - **Archive and upload to App Store Connect** — done from Xcode's Product → Archive, then the Organizer window; there is no command-line-only path from Windows
-- **Adding `ITSAppUsesNonExemptEncryption` to Info.plist** (§6 above) — a small edit, but it's an Xcode-managed file normally touched inside Xcode
-- **Setting/confirming `TARGETED_DEVICE_FAMILY`** (§7 above) — Xcode project setting, iPhone-only vs universal decision
+- **Adding `ITSAppUsesNonExemptEncryption` to Info.plist** (§6 above) — a small edit, but it's an Xcode-managed file normally touched inside Xcode; confirmed still absent from `ios/App/App/Info.plist` as of 30 August 2026
 - **Real-device testing** — MAC-SETUP.md's whole "What to look for while testing" section: haptics, safe-area/notch behaviour, audio unlock on first tap, backgrounding/interruption, rotation. The simulator cannot test haptics at all
 - **Game Center configuration** — enabling the capability, creating leaderboard and achievement IDs in App Store Connect, wiring `GKLocalPlayer` authentication — none of this has a Windows-side equivalent
 - **TestFlight builds** — uploaded the same way as a release build, via Xcode/Organizer

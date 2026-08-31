@@ -763,24 +763,24 @@
 <div id="screen-settings" class="screen">
   <div class="title" style="font-size:clamp(26px,7vmin,48px)">SETTINGS</div>
   <div class="sheet">
-    <div class="row"><span>Music</span><button class="toggle" id="set-music">ON</button></div>
-    <div class="row"><span>Sound effects</span><button class="toggle" id="set-sfx">ON</button></div>
-    <div class="row"><span>Volume</span><input type="range" id="set-vol" min="0" max="100" step="5"></div>
-    <div class="row"><span>Reduced motion</span><button class="toggle" id="set-motion">OFF</button></div>
-    <div class="row"><span>On-screen controls</span><button class="toggle" id="set-touchbtns">OFF</button></div>
+    <div class="row"><span>Music</span><button class="toggle" id="set-music" aria-label="Music">ON</button></div>
+    <div class="row"><span>Sound effects</span><button class="toggle" id="set-sfx" aria-label="Sound effects">ON</button></div>
+    <div class="row"><span>Volume</span><input type="range" id="set-vol" min="0" max="100" step="5" aria-label="Volume"></div>
+    <div class="row"><span>Reduced motion</span><button class="toggle" id="set-motion" aria-label="Reduced motion">OFF</button></div>
+    <div class="row"><span>On-screen controls</span><button class="toggle" id="set-touchbtns" aria-label="On-screen controls">OFF</button></div>
     <h3>Player</h3>
     <div class="row"><span id="set-name" class="muted">—</span>
-      <button class="linkbtn" id="set-reroll">new nickname</button></div>
+      <button class="linkbtn" id="set-reroll" aria-label="Get a new nickname">new nickname</button></div>
     <h3 id="set-purchase-head">Purchases</h3>
     <div class="row"><span id="set-purchase-label">Full city set</span>
-      <button class="linkbtn" id="set-purchase">view</button></div>
+      <button class="linkbtn" id="set-purchase" aria-label="View full city set purchase">view</button></div>
     <div class="row"><span>Bought on another device?</span>
-      <button class="linkbtn" id="set-restore">Restore</button></div>
+      <button class="linkbtn" id="set-restore" aria-label="Restore purchases">Restore</button></div>
     <div class="row muted" id="set-restore-status" style="font-size:12px"></div>
     <h3>Privacy</h3>
     <div class="row"><span>Privacy policy</span><a class="linkbtn" href="privacy.html">Read</a></div>
     <div class="row"><span>Erase my data</span>
-      <button class="linkbtn danger" id="set-erase">Erase</button></div>
+      <button class="linkbtn danger" id="set-erase" aria-label="Erase my data">Erase</button></div>
     <div class="row muted" style="font-size:12px"><span id="set-version">v—</span><span>Made with Three.js</span></div>
   </div>
   <button class="btn" id="btn-settings-close">DONE</button>

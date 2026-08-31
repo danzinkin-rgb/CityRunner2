@@ -28,6 +28,7 @@ import { dailyKey } from './rng.js';
 import { STORAGE } from './storage-keys.js';
 
 const STORE = STORAGE.SCORES;
+const LIFETIME_STORE = STORAGE.LIFETIME_SCORE;
 
 // ---------------------------------------------------------------------------
 // Plausibility bounds
@@ -110,7 +111,28 @@ export function submit(score) {
   // See the note above: mark the session used only once the write is real.
   if (!record(entry)) return { ok: false, reason: 'not-saved' };
   session.submitted = true;
+  addLifetimeScore(rounded);
   return { ok: true, entry };
+}
+
+/**
+ * Lifetime accumulated score, for the Game Center "Overall" leaderboard.
+ * Deliberately a running total rather than a max: the per-city and daily
+ * boards already answer "what's your best run"; this one rewards played
+ * time instead, which is what makes it a distinct board rather than a
+ * sixth copy of "best score". Same trust model as everything else in this
+ * file — a client-side counter, not a security boundary.
+ */
+function addLifetimeScore(rounded) {
+  const total = lifetimeScore() + rounded;
+  try { localStorage.setItem(LIFETIME_STORE, String(total)); } catch { /* best-effort */ }
+}
+
+export function lifetimeScore() {
+  try {
+    const n = Number(localStorage.getItem(LIFETIME_STORE));
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  } catch { return 0; }
 }
 
 // ---------------------------------------------------------------------------
