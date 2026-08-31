@@ -147,9 +147,15 @@ const FORCE_RUN = '?view=run&god=1&built=1&seed=7';
     forced.errors[0] || run.errors[0] || '');
   check(forced.alive > 0, 'release: the built app is genuinely alive (menu rendered city cards)',
     `${forced.alive} cards`);
-  check(forced.screen === 'screen-menu', 'release: ?ui= cannot force an overlay open',
+  // Every probe here is a fresh browser context, i.e. no save — which is also
+  // exactly what a genuine first launch looks like. In the shipped bundle that
+  // legitimately opens the onboarding help screen (src/main.js's isFirstRun),
+  // so screen-help is as valid a landing spot as screen-menu; what actually
+  // matters is that it's one of those two, never the ?ui=/?view= target.
+  const inertScreen = (s) => s === 'screen-menu' || s === 'screen-help';
+  check(inertScreen(forced.screen), 'release: ?ui= cannot force an overlay open',
     String(forced.screen));
-  check(run.screen === 'screen-menu', 'release: ?view= cannot start a run',
+  check(inertScreen(run.screen), 'release: ?view= cannot start a run',
     String(run.screen));
   check(run.hooks === 'undefined', 'release: window.__cr is not exposed', `typeof=${run.hooks}`);
   await close();

@@ -9,6 +9,7 @@ import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
 import { startSession, submit, top as topScores, personalBest, currentSession } from './core/scores.js';
 import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset } from './core/rng.js';
 import { initNative, onAppPause, hapticLight, hapticMedium, hapticHeavy, hapticSuccess } from './core/native.js';
+import { reportRun } from './core/gamecenter.js';
 import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild } from './core/entitlements.js';
 import { initIAP, getOffer, purchase, restore } from './core/iap.js';
 import { STORAGE } from './core/storage-keys.js';
@@ -31,6 +32,12 @@ import { makeCollectible } from './cities/souvenirs.js';
 // should cost the player their stars. JSON.parse on garbage throws, and an
 // uncaught throw here is a blank app, because everything below depends on
 // `save` existing — so every step degrades instead of throwing.
+// No save at all (not even a corrupt one) means this device has never played
+// a run — the one signal worth showing onboarding on. A parse failure further
+// down is a lost/corrupt save, not a new player, so this is captured before
+// loadSave() ever gets a chance to invent a default object.
+const isFirstRun = localStorage.getItem(STORAGE.SAVE) == null;
+
 function loadSave() {
   let s;
   try { s = JSON.parse(localStorage.getItem(STORAGE.SAVE) || 'null'); } catch { s = null; }
@@ -511,6 +518,7 @@ function finishPuzzle(won) {
     persist();
     submit(score);
     if (dailyMode) recordDailyPlayed();
+    reportRun({ cityId: city().id, score, dailyMode, save });
     // Let the celebration play out un-dimmed before the modal appears.
     setTimeout(() => {
       $('pw-name').textContent = LANDMARK_NAMES[lm];
@@ -528,6 +536,7 @@ function finishPuzzle(won) {
     save.best = Math.max(save.best, score);
     save.coins += coins; persist();
     submit(score);          // the run still counts even if the puzzle timed out
+    reportRun({ cityId: city().id, score, dailyMode, save });
     $('over-score').textContent = Math.round(score);
     $('over-coins').textContent = coins;
     showScreen('over');
@@ -812,6 +821,7 @@ function renderSettings() {
     const el = $(id);
     el.textContent = on ? 'ON' : 'OFF';
     el.classList.toggle('on', on);
+    el.setAttribute('aria-pressed', String(on));
   };
   setToggle('set-music', audioPrefs.music);
   setToggle('set-sfx', audioPrefs.sfx);
@@ -1021,6 +1031,16 @@ initNative();
 initIAP();
 onAppPause(() => pauseGame());   // iOS fires this more reliably than visibilitychange
 buildCitySelect();
+// First-run onboarding: a brand-new player lands on Help instead of a bare
+// menu. Reuses the existing help screen rather than a separate flow — same
+// content either way, and there's exactly one "GOT IT" to dismiss it.
+//
+// Gated on !DEBUG_HOOKS as well as isFirstRun: every automated suite drives
+// the app with a fresh browser context, which looks identical to a real
+// first launch from localStorage alone. Without this, the onboarding screen
+// would cover the menu on every single test run, not just a player's actual
+// first one. See src/core/debug.js.
+if (isFirstRun && !DEBUG_HOOKS) openOverlay('help');
 frame();
 
 // ---------- automated screenshot / test harness ----------

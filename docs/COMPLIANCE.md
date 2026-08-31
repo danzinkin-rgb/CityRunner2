@@ -113,7 +113,7 @@ Expected **4+**. No violence, no profanity, no gambling simulation, no horror, n
 - [ ] Screenshots: 6.7" and 6.5" iPhone, plus 12.9" iPad if iPad is supported
 - [ ] Age rating questionnaire
 - [ ] Export compliance: uses only standard HTTPS → exempt, but must be declared
-- [ ] Trademark search on "CityRunner" before committing to the name
+- [x] Trademark search on "CityRunner" — clear under both US (USPTO) and UK (IPO) searches, 30 August 2026
 
 ### 2.4 Guideline 4.2 (Minimum Functionality) — rejection risk
 
@@ -158,7 +158,7 @@ A Capacitor app that is only a wrapped website gets rejected. Native features th
 3. **Trade dress.** Do not replicate a competitor's HUD arrangement, character-select layout, or signature iconography (e.g. hoverboards).
 4. **Apple Guideline 4.1(a)** — "don't simply copy the latest popular app". The puzzle mode, souvenir system, street identity and facts layer are the substantive answer to this.
 5. **Internal documents matter.** Xio's admission was used against it. Avoid "make it look like *X*" phrasing in code comments, commit messages, issues or briefs — benchmarking quality is legitimate, but the written record should say what it means: high chroma, strong silhouettes, readable at speed. *(One such comment existed in `themes.js` and has been removed; commit history scanned and clean as of 02 August 2026.)*
-6. **Name clearance** — "CityRunner" still requires a trademark search plus a check for existing games of that name.
+6. **Name clearance** — done. "CityRunner" is clear under both US (USPTO) and UK (IPO) trademark searches, checked 30 August 2026. A live App Store title, "NeonCity: Cityrunner", was found during App Store Connect name entry the same day — a different exact string, so it does not block registration or conflict with the trademark clearance, but it's why the store listing name is `CityRunner: Landmark Run` rather than the plain `CityRunner` or a "City Dash" variant (see `docs/APPSTORE-SUBMISSION.md` §3).
 
 *Counter-position, low probability:* a rights-holder could argue overall look-and-feel similarity on the runner segments alone. It would be weak against wholly original assets, an original puzzle mode and distinct art direction — but it is the reason items 1–3 above are disciplines rather than one-off checks.
 

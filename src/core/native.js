@@ -27,12 +27,13 @@ export function initNative() {
   ready = (async () => {
     if (!isNative()) return null;
     try {
-      const [{ Haptics, ImpactStyle, NotificationType }, { StatusBar, Style }, { SplashScreen }, { App }] =
+      const [{ Haptics, ImpactStyle, NotificationType }, { StatusBar, Style }, { SplashScreen }, { App }, { registerPlugin }] =
         await Promise.all([
           import('@capacitor/haptics'),
           import('@capacitor/status-bar'),
           import('@capacitor/splash-screen'),
           import('@capacitor/app'),
+          import('@capacitor/core'),
         ]);
 
       // The game draws its own full-screen scene; the status bar overlays it.
@@ -43,7 +44,20 @@ export function initNative() {
 
       try { await SplashScreen.hide(); } catch { /* already hidden */ }
 
-      native = { Haptics, ImpactStyle, NotificationType, App };
+      // GameCenter has no npm package: it is ~60 lines of Swift dropped
+      // straight into ios/App/App/ (see GameCenterPlugin.swift), which
+      // registerPlugin() finds by name at runtime. No podspec, no Capacitor
+      // version coupling to track — see docs/COMPLIANCE.md §4 on why this
+      // project writes its own thin native wrappers instead of taking on a
+      // third-party plugin for something Apple's own SDK already does.
+      const GameCenter = registerPlugin('GameCenter');
+
+      native = { Haptics, ImpactStyle, NotificationType, App, GameCenter };
+
+      // Fire-and-forget: a signed-out Game Center account or a player who
+      // declines the sign-in sheet must never block or interrupt the game.
+      fire(() => GameCenter.authenticate());
+
       return native;
     } catch {
       // A plugin failing to load must never take the game down.
@@ -81,6 +95,33 @@ export function hapticHeavy() {
 export function hapticSuccess() {
   if (!native) return;
   fire(() => native.Haptics.notification({ type: native.NotificationType.Success }));
+}
+
+// ---------------------------------------------------------------------------
+// Game Center. Every call is best-effort: a player who is signed out, offline,
+// or on a device where GameKit refuses for any reason must see exactly the
+// same game as a player fully authenticated. src/core/gamecenter.js owns the
+// leaderboard/achievement id scheme and decides WHEN to call these; this file
+// only wraps the plugin call itself.
+// ---------------------------------------------------------------------------
+
+/** Submit a score to one Game Center leaderboard. Fire-and-forget. */
+export function gkSubmitScore(leaderboardId, score) {
+  if (!native) return;
+  fire(() => native.GameCenter.submitScore({ leaderboardId, score: Math.round(score) }));
+}
+
+/**
+ * Report progress on an achievement, 0-100. Safe to call repeatedly with the
+ * same or a lower value — GameKit keeps the highest percent it has ever seen
+ * for a given achievement id, so callers never need to track "already sent".
+ */
+export function gkReportAchievement(achievementId, percentComplete) {
+  if (!native) return;
+  fire(() => native.GameCenter.reportAchievement({
+    achievementId,
+    percentComplete: Math.max(0, Math.min(100, percentComplete)),
+  }));
 }
 
 /**
