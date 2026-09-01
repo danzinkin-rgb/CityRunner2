@@ -934,6 +934,18 @@
 <div id="screen-shop" class="screen">
   <div class="title" style="font-size:clamp(26px,7vmin,48px)">SHOP</div>
   <div id="shop-balance" class="label"><span id="shop-coin-icon">🪙</span><span id="shop-balance-num">0</span> SOUVENIRS</div>
+  <!-- Same quiet, permanent entry point as Settings (see renderPurchaseRows in
+       main.js) — hidden on the web build, relabelled once owned, and never
+       shown with urgency language, per the Children's Code reasoning in
+       docs/PROPOSALS.md §4. Exists here too because the Shop is where a
+       player is already thinking about spending, and finding the city
+       purchase required knowing to look in Settings first. -->
+  <div class="sheet" id="shop-purchase-sheet" style="display:none;padding:12px 22px;margin:0 0 4px">
+    <div class="row" style="padding:0">
+      <span id="shop-purchase-label">Full city set</span>
+      <button class="linkbtn" id="shop-purchase" aria-label="View full city set purchase">view</button>
+    </div>
+  </div>
   <div class="sheet wide">
     <div id="shop-grid" class="char-grid"></div>
     <div id="shop-msg"></div>

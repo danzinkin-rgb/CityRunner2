@@ -684,7 +684,7 @@ function showPaywallOwned(message) {
 }
 
 async function openPaywall(from) {
-  paywallFrom = from === 'settings' ? 'settings' : 'menu';
+  paywallFrom = from === 'settings' || from === 'shop' ? from : 'menu';
   const buy = $('btn-paywall-buy');
   const status = $('paywall-status');
   status.textContent = '';
@@ -719,6 +719,7 @@ async function openPaywall(from) {
 
 $('btn-paywall-close').onclick = () => {
   if (paywallFrom === 'settings') { renderSettings(); openOverlay('settings'); return; }
+  if (paywallFrom === 'shop') { renderShop(); openOverlay('shop'); return; }
   closeOverlay();
 };
 
@@ -759,6 +760,8 @@ onEntitlementGranted(() => {
     hapticSuccess();
     showPaywallOwned('Thank you. Everything is unlocked.');
   }
+  if ($('screen-settings').classList.contains('on')) renderPurchaseRows();
+  if ($('screen-shop').classList.contains('on')) renderShopPurchaseRow();
 });
 
 /** Shared by the paywall and the Settings row — Apple requires both to work. */
@@ -782,6 +785,7 @@ async function doRestore(statusEl) {
 $('btn-paywall-restore').onclick = () => doRestore($('paywall-status'));
 $('set-restore').onclick = () => doRestore($('set-restore-status'));
 $('set-purchase').onclick = () => openPaywall('settings');
+$('shop-purchase').onclick = () => openPaywall('shop');
 
 function renderScores() {
   const body = $('scores-body');
@@ -854,6 +858,7 @@ function renderShop() {
     wrap.appendChild(el);
   }
   $('shop-balance-num').textContent = save.coins.toLocaleString();
+  renderShopPurchaseRow();
 }
 
 function renderSettings() {
@@ -875,6 +880,27 @@ function renderSettings() {
 }
 
 /**
+ * Set a label/view-button pair to reflect ownership state, shared by every
+ * quiet entry point to the offer (Settings, Shop). Never shows urgency
+ * language or a price here — just whether there is something to view.
+ */
+function setPurchaseRowState(label, view) {
+  if (isFounder()) {
+    // Founders paid early and were promised everything, forever. Say thank
+    // you; never show them a price again.
+    label.textContent = 'Founder — thank you';
+    view.style.display = 'none';
+  } else if (hasFullAccess()) {
+    label.textContent = 'Full city set — unlocked';
+    view.style.display = 'none';
+  } else {
+    label.textContent = 'Full city set';
+    view.style.display = '';
+    view.textContent = 'view';
+  }
+}
+
+/**
  * The permanent, quiet entry point to the offer, per the Children's Code
  * reasoning in docs/PROPOSALS.md §4 — always findable, never pushed.
  *
@@ -892,20 +918,19 @@ function renderPurchaseRows() {
   $('set-purchase-head').style.display = hide ? 'none' : '';
   $('set-restore-status').style.display = hide ? 'none' : '';
   if (hide) return;
+  setPurchaseRowState(label, view);
+}
 
-  if (isFounder()) {
-    // Founders paid early and were promised everything, forever. Say thank
-    // you; never show them a price again.
-    label.textContent = 'Founder — thank you';
-    view.style.display = 'none';
-  } else if (hasFullAccess()) {
-    label.textContent = 'Full city set — unlocked';
-    view.style.display = 'none';
-  } else {
-    label.textContent = 'Full city set';
-    view.style.display = '';
-    view.textContent = 'view';
-  }
+/**
+ * Same entry point, surfaced in the Shop too — this is where a player is
+ * already thinking about spending, and the purchase used to be findable only
+ * by knowing to look in Settings first.
+ */
+function renderShopPurchaseRow() {
+  const sheet = $('shop-purchase-sheet');
+  if (isFreeBuild()) { sheet.style.display = 'none'; return; }
+  sheet.style.display = '';
+  setPurchaseRowState($('shop-purchase-label'), $('shop-purchase'));
 }
 
 $('set-music').onclick = () => {
