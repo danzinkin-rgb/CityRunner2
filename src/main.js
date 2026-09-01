@@ -11,7 +11,7 @@ import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset } from './core/
 import { initNative, onAppPause, hapticLight, hapticMedium, hapticHeavy, hapticSuccess } from './core/native.js';
 import { reportRun } from './core/gamecenter.js';
 import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild } from './core/entitlements.js';
-import { initIAP, getOffer, purchase, restore } from './core/iap.js';
+import { initIAP, getOffer, purchase, restore, onEntitlementGranted } from './core/iap.js';
 import { STORAGE } from './core/storage-keys.js';
 import { DEBUG_HOOKS } from './core/debug.js';
 
@@ -725,6 +725,19 @@ $('btn-paywall-buy').onclick = async () => {
     status.textContent = 'Waiting for confirmation. This can take a moment.';
   }
 };
+
+// A purchase can verify after purchase() has already resolved — often
+// seconds later while "Waiting for confirmation" is still on screen, and for
+// Ask to Buy, minutes or days later while the player is elsewhere entirely.
+// Refresh whatever is currently visible rather than leaving a stale screen.
+onEntitlementGranted(() => {
+  buildCitySelect();
+  const paywallOpen = $('screen-paywall').classList.contains('on');
+  if (paywallOpen && hasFullAccess()) {
+    hapticSuccess();
+    $('paywall-status').textContent = 'Thank you. Everything is unlocked.';
+  }
+});
 
 /** Shared by the paywall and the Settings row — Apple requires both to work. */
 async function doRestore(statusEl) {

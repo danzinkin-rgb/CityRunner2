@@ -65,6 +65,22 @@ let ready = null;       // in-flight init promise
 let offer = null;       // cached {productId, price, title} once known
 
 /**
+ * Subscribers notified whenever an entitlement is granted after the fact —
+ * covers the ordinary case of verification completing after `purchase()`
+ * already resolved, and the Ask to Buy case where it lands minutes or days
+ * later while the player is elsewhere in the game. Without this, a paywall
+ * that checked `hasFullAccess()` once right after `purchase()` returned would
+ * show "waiting" forever even though the purchase went through.
+ */
+const entitlementListeners = new Set();
+
+/** Called by the UI to learn about a grant that happens after purchase() returns. */
+export function onEntitlementGranted(fn) {
+  entitlementListeners.add(fn);
+  return () => entitlementListeners.delete(fn);
+}
+
+/**
  * Load the native store plugin. Returns null on the web and on any native
  * build where the plugin is absent or fails to initialise.
  *
@@ -90,6 +106,7 @@ async function loadStore() {
     cdvStore.when().approved((tx) => tx.verify()).verified((receipt) => {
       receipt.finish();
       for (const item of receipt.collection ?? []) grant(item.id);
+      for (const fn of entitlementListeners) fn();
     });
     await cdvStore.initialize([Platform.APPLE_APPSTORE]);
     return cdvStore;
