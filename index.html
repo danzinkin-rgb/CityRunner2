@@ -411,11 +411,20 @@
 
   /* ---------- Daily challenge card ---------- */
   .daily-card{pointer-events:auto;cursor:pointer;font:inherit;color:#fff;text-align:left;
-    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    display:block;
     width:100%;max-width:360px;margin-top:16px;padding:14px 16px;min-height:44px;
     border-radius:16px;border:1px solid rgba(255,209,102,.38);
     background:linear-gradient(135deg,rgba(255,209,102,.16),rgba(255,158,66,.07));
     box-shadow:0 6px 20px rgba(0,0,0,.32);transition:transform .12s,border-color .12s}
+  /* .daily-card is a <button>. WebKit gives buttons an internal anonymous
+     content box that does not size to flex children the way a plain <div>
+     does — put display:flex on it directly and WKWebView centers the
+     content box itself rather than growing the button to fit, so tall
+     content (the title line) overflows past the button's own top/bottom
+     edge. Chromium doesn't have this bug, which is why desktop testing
+     never caught it. Keeping the button a plain block and putting the flex
+     row on a child sidesteps the button's own layout quirks entirely. */
+  .dc-row{display:flex;align-items:center;justify-content:space-between;gap:14px}
   .daily-card:hover{transform:translateY(-2px);border-color:rgba(255,209,102,.7)}
   .daily-card:active{transform:scale(.98)}
   .dc-title{font-size:10px;line-height:1.4;letter-spacing:2.5px;font-weight:800;color:var(--gold);opacity:.95}
@@ -701,19 +710,21 @@
   </div>
   <button class="btn" id="btn-play">RUN</button>
   <button id="daily-card" class="daily-card">
-    <div class="dc-left">
-      <div class="dc-title">DAILY CHALLENGE</div>
-      <div class="dc-where" id="daily-where">—</div>
-      <!-- Blank line for the same reason as #menu-stats: startDailyTimer()
-           always writes a line in here ("Your best today ..." or "Not played
-           yet today"), so an empty element means the daily card grows and the
-           menu above it slides when the timer first runs. -->
-      <div class="dc-best" id="daily-best">&nbsp;</div>
-    </div>
-    <div class="dc-right">
-      <div class="dc-streak" id="daily-streak"></div>
-      <div class="dc-reset" id="daily-reset">&nbsp;</div>
-      <div class="dc-go">PLAY ▸</div>
+    <div class="dc-row">
+      <div class="dc-left">
+        <div class="dc-title">DAILY CHALLENGE</div>
+        <div class="dc-where" id="daily-where">—</div>
+        <!-- Blank line for the same reason as #menu-stats: startDailyTimer()
+             always writes a line in here ("Your best today ..." or "Not played
+             yet today"), so an empty element means the daily card grows and the
+             menu above it slides when the timer first runs. -->
+        <div class="dc-best" id="daily-best">&nbsp;</div>
+      </div>
+      <div class="dc-right">
+        <div class="dc-streak" id="daily-streak"></div>
+        <div class="dc-reset" id="daily-reset">&nbsp;</div>
+        <div class="dc-go">PLAY ▸</div>
+      </div>
     </div>
   </button>
   <div class="label controls-hint">
