@@ -55,11 +55,48 @@
     white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
 
   /* ---------- Screens ---------- */
-  .screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
+  /* NOTE THE justify-content, AND DO NOT "TIDY" IT BACK TO `center`.
+     This is a scrolling flex column (overflow-y:auto), and `center` plus
+     overflow is the classic broken combination: when the content is taller
+     than the box, a centred column overflows EQUALLY in both directions, so
+     the first child lands at a negative offset. There is no scrollable area
+     above the origin, so that part is not merely off-screen, it is
+     unreachable — the page scrolls to the top and the title is still cut
+     off. The menu's natural height is ~850px, i.e. taller than the viewport
+     on essentially every phone once safe-area insets and any in-app Safari
+     return banner are subtracted, so this is the normal case, not an edge
+     case.
+     The fix is the standard one: align to the start, and let a pair of
+     auto-margin pseudo-elements soak up the free space instead. Auto margins
+     centre the content exactly like `center` while there IS spare room, and
+     collapse to zero when there is not — so an overflowing menu simply
+     starts at the top and scrolls, with nothing stranded. `justify-content:
+     safe center` expresses the same intent in one line but only on Safari 16
+     and up; this works everywhere and costs two empty boxes.
+     Guarded by test/menu-fit.mjs. */
+  .screen{position:fixed;inset:0;display:none;align-items:center;justify-content:flex-start;flex-direction:column;
     background:radial-gradient(ellipse at 50% 30%,rgba(20,30,70,.92),rgba(4,6,16,.97));z-index:10;
     overflow-x:hidden;overflow-y:auto;padding:0 14px;text-align:center;
     -webkit-overflow-scrolling:touch}
   .screen.on{display:flex}
+  .screen::before,.screen::after{content:'';display:block;flex:0 0 auto;margin:auto}
+  /* THE ONE RULE THAT KILLS A WHOLE BUG CLASS — do not remove it.
+     Every direct child of .screen is a column flex item, so each one defaults
+     to flex-shrink:1. That is normally harmless because a flex item refuses
+     to shrink below its own content — but ONLY while its min-height is
+     `auto`, and any element that sets an explicit min-height (the 44px Apple
+     tap target, which .btn and .daily-card both want) loses that protection.
+     Such an item is then squashed to its min-height on a viewport that is
+     short of room, while its text still needs the full height, and the
+     surplus paints outside the element's own border. That is what put the
+     daily card's outline through its own words on a real iPhone.
+     It was fixed three separate times on three elements (.daily-card, .btn,
+     .fp-wrap) before it was clear the fix belongs to every child at once.
+     .sheet is the deliberate exception: it sets overflow-y:auto and min-height
+     :0 precisely so it CAN shrink and scroll its own content, which is how
+     the long help and settings text stays reachable. */
+  .screen > *{flex-shrink:0}
+  .screen > .sheet{flex-shrink:1}
 
   /* Puzzle-win keeps the freshly built monument visible behind the modal */
   /* The monument you just built keeps rendering behind this screen -- showScreen
@@ -256,7 +293,7 @@
   .fv-scap{font-size:10px;letter-spacing:.4px;opacity:.82;margin-top:6px;text-align:center;max-width:94px;
     text-shadow:0 1px 7px rgba(0,0,0,.85)}
 
-  @media (max-height:720px){
+  @media (max-height:950px){
     .title{font-size:min(11vw,44px)}
     .subtitle{margin:4px 0 16px;font-size:11px;letter-spacing:3px}
     .city-card{padding:8px 6px}
@@ -272,7 +309,7 @@
     #menu-identity{margin-top:2px !important}
     .sheet{--sheet-pb:14px;padding:14px 16px}
   }
-  @media (max-height:600px){
+  @media (max-height:780px){
     .title{font-size:min(9.5vw,34px)}
     .city-card .thumb{height:46px}
     .controls-hint{display:none}
@@ -280,6 +317,22 @@
     #menu-stats{display:none}
     .menu-links{margin-top:0}
     .linkbtn{min-height:34px}
+  }
+  /* Small portrait: the original iPhone SE (568px) and anything a banner has
+     eaten into. The tier above still needs ~560px of content, which does not
+     fit once a status bar is subtracted, so this trims the last ~90px. The
+     daily card deliberately SURVIVES here — it is the one thing on the menu
+     with a time limit, and hiding it (as the landscape tier below does) would
+     silently cost the player a streak. The subtitle goes instead: it is pure
+     decoration and the only item on the menu that says nothing actionable. */
+  @media (max-height:660px){
+    .title{font-size:min(9vw,30px)}
+    .subtitle{display:none}
+    .city-card .thumb{height:40px}
+    #city-select{gap:6px;margin-bottom:8px}
+    .controls-hint{display:none}
+    .menu-links{margin-top:0;gap:2px;font-size:11.5px}
+    #menu-stats,#menu-identity{display:none}
   }
   /* Landscape phone: ~343px of height. Everything must still fit. */
   @media (max-height:430px){
@@ -290,10 +343,20 @@
     .btn.ghost{font-size:13px;padding:0 24px;margin-top:8px}
     .city-card .thumb{height:40px}
     .city-card{padding:6px 4px}
-    #city-select{margin-bottom:10px;gap:6px}
+    /* Four across, not two. The card width normally comes from the
+       `max-width:520px` block, which does NOT match in landscape — turning
+       the phone sideways makes it 844px wide, so the cards keep their
+       full-size desktop width and wrap onto two rows on a screen with 428px
+       of height to spend. Pinning the width by height instead of by width is
+       what lets the row collapse to one, and one row is most of the 114px
+       that landscape was overflowing by. */
+    .city-card{width:calc(25% - 8px);max-width:132px}
+    .city-card .name{font-size:12px;margin-top:3px}
+    .city-card .stars{font-size:10px;margin-top:1px}
+    #city-select{margin-bottom:8px;gap:6px;flex-wrap:nowrap}
     .sheet{--sheet-pb:10px;padding:10px 14px;margin:8px 0 12px}
     #menu-stats,#menu-identity{display:none}
-    .menu-links{margin-top:0}
+    .menu-links{margin-top:0;gap:2px}
     .linkbtn{min-height:34px}
   }
   .sheet{--sheet-pb:20px;max-width:520px;width:100%;min-height:0;overflow-y:auto;text-align:left;
@@ -385,7 +448,7 @@
   .char-card.equipped .char-state{color:var(--gold);font-weight:800}
   .char-card.locked .char-state{color:var(--gold)}
   #shop-msg{min-height:16px;margin-top:8px;font-size:12px;color:#ff8a8a}
-  @media (max-height:720px){
+  @media (max-height:950px){
     .char-card{padding:7px 5px}
     .char-thumb{height:38px;margin-bottom:4px}
     .char-name{font-size:11.5px}
@@ -407,23 +470,35 @@
   .souv img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 2px 5px rgba(0,0,0,.45))}
   .souv span{font-size:10px;line-height:1.3;color:var(--fg-3)}
   .souv b{color:var(--gold);font-size:10.5px;opacity:1}
-  @media (max-height:720px){ .souv img{width:32px;height:32px} .souv{padding:6px 3px} }
+  @media (max-height:950px){ .souv img{width:32px;height:32px} .souv{padding:6px 3px} }
 
   /* ---------- Daily challenge card ---------- */
+  /* flex-shrink:0 is load-bearing and must stay. .screen is a column flex
+     container, so this card is a flex item with the default flex-shrink:1.
+     That is normally harmless because a flex item will not shrink below its
+     own content — but ONLY while its min-height is `auto`, and the
+     min-height:44px below (the Apple tap-target minimum) replaces that
+     automatic floor with a literal 44px. Without flex-shrink:0 the card is
+     therefore squashed to 44px on any viewport where the menu does not fit,
+     while its text still needs ~68px, and the surplus paints outside the
+     border: the card's own outline runs straight through its own words.
+     It reproduces from roughly 660px of viewport height downward — which no
+     nominal device size hits, but a real iPhone does as soon as an in-app
+     Safari return banner ("◀ WhatsApp") eats into the viewport. See
+     test/menu-fit.mjs, which sweeps heights precisely because a device list
+     misses this. The same trap is documented on .fp-cards further down. */
   .daily-card{pointer-events:auto;cursor:pointer;font:inherit;color:#fff;text-align:left;
-    display:block;
+    display:block;flex-shrink:0;
     width:100%;max-width:360px;margin-top:16px;padding:14px 16px;min-height:44px;
     border-radius:16px;border:1px solid rgba(255,209,102,.38);
     background:linear-gradient(135deg,rgba(255,209,102,.16),rgba(255,158,66,.07));
     box-shadow:0 6px 20px rgba(0,0,0,.32);transition:transform .12s,border-color .12s}
-  /* .daily-card is a <button>. WebKit gives buttons an internal anonymous
-     content box that does not size to flex children the way a plain <div>
-     does — put display:flex on it directly and WKWebView centers the
-     content box itself rather than growing the button to fit, so tall
-     content (the title line) overflows past the button's own top/bottom
-     edge. Chromium doesn't have this bug, which is why desktop testing
-     never caught it. Keeping the button a plain block and putting the flex
-     row on a child sidesteps the button's own layout quirks entirely. */
+  /* The row lives on a child rather than on the <button> itself. This is
+     tidiness, not a workaround — an earlier commit (3896886) claimed it
+     fixed a WebKit button-flex bug, and that claim was wrong: the whole test
+     suite already runs WebKit and rendered the card correctly throughout.
+     The real cause was flex-shrink, above. Keeping the row here does no
+     harm, so it stays, but do not credit it with fixing anything. */
   .dc-row{display:flex;align-items:center;justify-content:space-between;gap:14px}
   .daily-card:hover{transform:translateY(-2px);border-color:rgba(255,209,102,.7)}
   .daily-card:active{transform:scale(.98)}
@@ -434,17 +509,17 @@
   .dc-streak{font-size:11px;line-height:1.4;font-weight:700;color:#ffb35c}
   .dc-reset{font-size:10px;line-height:1.4;color:var(--fg-3);margin-top:2px;white-space:nowrap}
   .dc-go{font-size:12px;line-height:1.4;font-weight:800;color:var(--gold);margin-top:4px;letter-spacing:1px}
-  @media (max-height:720px){
+  @media (max-height:950px){
     .daily-card{margin-top:10px;padding:9px 13px}
     .dc-where{font-size:13.5px}
     .dc-best,.dc-reset{font-size:10px}
   }
-  @media (max-height:600px){
+  @media (max-height:780px){
     /* An iPhone SE gives 568px. The daily card has to earn its space.
        Placed after the base .dc-* rules (declared further up, in the "Daily
        challenge card" section) and after the 720px block above, so it
        actually wins the cascade on a short screen — a copy of these
-       declarations once lived up near .title's own max-height:600px block,
+       declarations once lived up near .title's own max-height:780px block,
        which is BEFORE the base .daily-card rule in source order, so it was
        always losing to the base rule at equal specificity. Keep any future
        daily-card override down here, never back up there. */
@@ -457,14 +532,18 @@
   /* Declared here, after #menu-identity's base rule, so it actually wins.
      The nickname also lives in Settings; on the shortest screens it is the
      first thing to drop so the nav links stay above the fold. */
-  @media (max-height:600px){ #menu-identity{display:none} }
+  @media (max-height:780px){ #menu-identity{display:none} }
 
   /* ---------- Fact pages: magazine spread, not a bullet list ---------- */
   .factpage{background:
       radial-gradient(120% 70% at 50% 0%, var(--fp-glow,#3a4a8c) 0%, transparent 62%),
       radial-gradient(ellipse at 50% 40%, rgba(16,22,48,.96), rgba(4,6,16,.99))}
+  /* flex-shrink:0 for the same reason as .daily-card: this is a child of
+     .screen's flex column, and without it the facts panel is laid out a few
+     pixels shorter than its own content and clips the bottom of the last
+     line. Caught by test/menu-fit.mjs on #screen-facts. */
   .fp-wrap{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;
-    margin:0 0 20px}
+    flex-shrink:0;margin:0 0 20px}
   .fp-kicker{font-size:11px;letter-spacing:6px;text-transform:uppercase;color:var(--fp-accent2,#ffd166);
     opacity:.9;margin-bottom:6px}
   .fp-title{font-size:clamp(30px,9vw,54px);font-weight:900;line-height:1.02;letter-spacing:-.5px;
@@ -512,7 +591,7 @@
   .fp-bar.ref .col{width:20px;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.12));box-shadow:none}
   .fp-bar .cap{font-size:10px;letter-spacing:.5px;opacity:.72;margin-top:5px;text-align:center;max-width:80px}
   .fp-bar .val{font-size:12px;font-weight:800;color:var(--fp-accent,#ffd166);margin-bottom:4px}
-  @media (max-height:720px){
+  @media (max-height:950px){
     .fp-title{font-size:clamp(24px,7.5vw,38px)}
     .fp-cards{gap:7px;margin-top:10px}
     .fp-card{padding:9px 12px;gap:11px}
@@ -538,7 +617,7 @@
     .fv-pull .fv-num{font-size:clamp(40px,13vw,58px)}
     .fv-rule{margin-top:10px;width:46px}
   }
-  @media (max-height:600px){
+  @media (max-height:780px){
     /* A 320x568 iPhone SE (1st gen — iOS 14 is still the deployment target, so
        it is in the supported set) used to lose the height chart entirely here.
        That is the one element on the monument page doing real work: "381 m" is
@@ -614,8 +693,14 @@
      get bigger. gated on min-width so no viewport any test suite drives
      (widest is 852px, test/ios-ui.mjs's landscape iPhone) is affected —
      the narrowest real tablet this is meant for, iPad mini portrait at 744px,
-     intentionally stays out too and just keeps the phone sizing. */
-  @media (min-width:900px){
+     intentionally stays out too and just keeps the phone sizing.
+     THE min-height IS NOT OPTIONAL. A big phone in landscape (a 15 Pro Max
+     is 932x430) satisfies min-width:900 while having barely 430px of height,
+     and because this block sits after the max-height:430 landscape rules it
+     was overriding them on specificity-tie-plus-source-order — upsizing the
+     cards to 200px on the shortest screen the app ever renders, and pushing
+     the menu 114px below the fold. Room to grow means room in BOTH axes. */
+  @media (min-width:900px) and (min-height:600px){
     .title{font-size:clamp(30px,7vw,116px)}
     .subtitle{font-size:19px;letter-spacing:7px;margin:9px 0 52px}
     #city-select{gap:20px;margin-bottom:48px}

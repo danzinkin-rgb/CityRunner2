@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node test/coin-arc.mjs && node test/road-clearance.mjs && node test/ios-ui.mjs && node test/determinism.mjs && node test/entitlements.mjs && node test/save-and-scores.mjs && node test/storage-keys.mjs && node test/puzzle-solvable.mjs && node test/boot.mjs && node test/release-build.mjs",
+    "test": "node test/coin-arc.mjs && node test/road-clearance.mjs && node test/ios-ui.mjs && node test/menu-fit.mjs && node test/determinism.mjs && node test/entitlements.mjs && node test/save-and-scores.mjs && node test/storage-keys.mjs && node test/puzzle-solvable.mjs && node test/boot.mjs && node test/release-build.mjs",
     "test:ios": "node test/ios-ui.mjs",
+    "test:fit": "node test/menu-fit.mjs",
     "serve": "npx serve . -l 4173",
     "test:determinism": "node test/determinism.mjs",
     "build": "vite build",
