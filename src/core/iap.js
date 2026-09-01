@@ -100,13 +100,27 @@ async function loadStore() {
     cdvStore.register(OFFER_ORDER.map((id) => ({
       id, type: ProductType.NON_CONSUMABLE, platform: Platform.APPLE_APPSTORE,
     })));
-    // `verified` is the only place an entitlement is ever granted — it fires
-    // for a purchase made just now, one restored from another device, and one
-    // approved later through a child's Ask to Buy, all the same way.
-    cdvStore.when().approved((tx) => tx.verify()).verified((receipt) => {
-      receipt.finish();
-      for (const item of receipt.collection ?? []) grant(item.id);
-      for (const fn of entitlementListeners) fn();
+    // Deliberately NOT approved->verify->verified: the plugin's own docs say
+    // `verified` "requires a receipt validator" (e.g. store.validator set to
+    // a service like iaptic.com) to ever fire. Configuring one would be
+    // exactly the third-party SDK docs/COMPLIANCE.md §4 rules out — it means
+    // purchase and device data leaving the app for that validator's servers.
+    // So `verify()` was a no-op call into a pipeline that could never
+    // complete, and grant() was never reached on a fresh purchase — only
+    // restore() worked, because it reads local StoreKit ownership directly.
+    //
+    // receiptUpdated + store.owned() is the plugin's own documented pattern
+    // for "monitor ownership without receipt validation" — local StoreKit
+    // truth only, matching entitlements.js's own stated trade-off (a cache of
+    // Apple's receipt, not a server-verified record). Finishing on `approved`
+    // is required regardless of validation, or the transaction stays pending.
+    cdvStore.when().approved((tx) => tx.finish());
+    cdvStore.when().receiptUpdated(() => {
+      let granted = false;
+      for (const id of OFFER_ORDER) {
+        if (cdvStore.owned(id)) { grant(id); granted = true; }
+      }
+      if (granted) for (const fn of entitlementListeners) fn();
     });
     await cdvStore.initialize([Platform.APPLE_APPSTORE]);
     return cdvStore;
