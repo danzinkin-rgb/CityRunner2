@@ -189,11 +189,17 @@ export function isLevelEntitled(cityId, level) {
  * Record a completed purchase or restore. Called only by src/core/iap.js after
  * the store has confirmed it — never from UI code, and never optimistically
  * from a button handler.
+ *
+ * Returns true only when this call actually added something. The store's
+ * receiptUpdated fires on every refresh, not just on a new purchase, so the
+ * caller needs to tell "you now own this" from "you still own this" — the
+ * same add-only bookkeeping reconcile() does below.
  */
 export function grant(productId) {
-  if (!productId) return;
+  if (!productId || owned.has(productId)) return false;
   owned.add(productId);
   persist();
+  return true;
 }
 
 /**

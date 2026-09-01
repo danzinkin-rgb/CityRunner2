@@ -116,9 +116,13 @@ async function loadStore() {
     // is required regardless of validation, or the transaction stays pending.
     cdvStore.when().approved((tx) => tx.finish());
     cdvStore.when().receiptUpdated(() => {
+      // grant() returns true only on a genuinely new entitlement.
+      // receiptUpdated fires on every receipt refresh, so notifying on
+      // "is owned" rather than "just became owned" would re-run the
+      // subscribers -- and their success haptic -- on every refresh.
       let granted = false;
       for (const id of OFFER_ORDER) {
-        if (cdvStore.owned(id)) { grant(id); granted = true; }
+        if (cdvStore.owned(id) && grant(id)) granted = true;
       }
       if (granted) for (const fn of entitlementListeners) fn();
     });
@@ -173,7 +177,7 @@ export async function getOffer() {
 /**
  * Buy a product. Resolves true only once the store has confirmed.
  *
- * Note that the entitlement is granted by the `verified` handler in
+ * Note that the entitlement is granted by the `receiptUpdated` handler in
  * loadStore(), not here — that path also fires for purchases completed on
  * another device or interrupted mid-flight, and for a child's purchase
  * approved later through Ask to Buy, which can land minutes or days after
