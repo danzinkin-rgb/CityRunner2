@@ -7,15 +7,16 @@
  * possibly exist, and so the native work is confined to one file.
  *
  * ---------------------------------------------------------------------------
- * STATUS: the native half is NOT wired up yet, and this file is honest about
- * that rather than pretending. Every function below works correctly today in
- * the sense that it fails safe — on the web, and on an iOS build with no
- * plugin installed, `getOffer()` returns null and the paywall never appears.
- * Nothing is broken; nothing is purchasable.
+ * STATUS: `loadStore()` is implemented (cordova-plugin-purchase, see below)
+ * but UNVERIFIED — written on a machine that cannot build or run the native
+ * half. Every function below still fails safe if the plugin is missing or
+ * throws — on the web, and on an iOS build without the pod installed,
+ * `getOffer()` returns null and the paywall never appears. Nothing is broken;
+ * nothing is purchasable until a real device confirms it works.
  *
- * Finishing it requires a Mac (CocoaPods, Xcode, a sandbox tester account) and
- * is written up step by step in docs/FREEMIUM-IAP.md. The work is confined to
- * `loadStore()` and the three calls below it.
+ * Remaining Mac work — `npm install`, `pod install` via `cap sync`, the
+ * In-App Purchase capability in Xcode, and sandbox testing — is written up
+ * step by step in docs/FREEMIUM-IAP.md §4 and §7.
  *
  * ---------------------------------------------------------------------------
  * WHICH PLUGIN — and one that must not be used
@@ -23,13 +24,11 @@
  * Checked against the npm registry on 2026-08-23, against this repo's
  * Capacitor 7.6.8:
  *
- *   cordova-plugin-purchase@13.18.0  (updated 2026-07-16)  <- the candidate.
- *       Actively maintained, StoreKit 2 on iOS, consumed through Capacitor's
- *       Cordova compatibility layer. Declares no peer dependency on Capacitor,
- *       so nothing forces a version conflict — but that also means the only
- *       real proof it works here is a native build, which is why it is NOT in
- *       package.json yet. Adding a dependency that cannot be built or tested
- *       from this machine would be a guess wearing a lockfile.
+ *   cordova-plugin-purchase@13.18.0  (updated 2026-07-16)  <- the choice, now
+ *       in package.json. Actively maintained, StoreKit 2 on iOS, consumed
+ *       through Capacitor's Cordova compatibility layer. Declares no peer
+ *       dependency on Capacitor, so nothing forces a version conflict — but
+ *       that also means a native build is the only real proof it works.
  *
  *   @capacitor-community/in-app-purchases  <- DOES NOT EXIST. It is the name
  *       everyone reaches for from memory, including me; the registry returns
@@ -69,27 +68,31 @@ let offer = null;       // cached {productId, price, title} once known
  * Load the native store plugin. Returns null on the web and on any native
  * build where the plugin is absent or fails to initialise.
  *
- * MAC TASK: replace the body's `return null` with the real bootstrap. The
- * import must stay dynamic and inside the try — a static import would pull
- * the plugin into the web bundle, which both bloats it and breaks it.
+ * cordova-plugin-purchase ships no JS module to import: Capacitor's Cordova
+ * compatibility layer injects its bridge script into the native WebView at
+ * launch, which is what puts `window.CdvPurchase` there. Nothing here can be
+ * exercised from a desktop browser or from `npm test` — both leave
+ * `window.CdvPurchase` undefined, so this still returns null there, same as
+ * before the plugin existed. Verified end-to-end only on a real device (see
+ * docs/FREEMIUM-IAP.md §7).
  */
 async function loadStore() {
   if (!isNative()) return null;
   try {
-    // --- BEGIN MAC TASK (docs/FREEMIUM-IAP.md §4) -------------------------
-    // const { store: cdvStore, ProductType, Platform } = window.CdvPurchase ?? {};
-    // if (!cdvStore) return null;
-    // cdvStore.register(OFFER_ORDER.map((id) => ({
-    //   id, type: ProductType.NON_CONSUMABLE, platform: Platform.APPLE_APPSTORE,
-    // })));
-    // cdvStore.when().approved((tx) => tx.verify()).verified((receipt) => {
-    //   receipt.finish();
-    //   for (const item of receipt.collection ?? []) grant(item.id);
-    // });
-    // await cdvStore.initialize([Platform.APPLE_APPSTORE]);
-    // return cdvStore;
-    // --- END MAC TASK ----------------------------------------------------
-    return null;
+    const { store: cdvStore, ProductType, Platform } = window.CdvPurchase ?? {};
+    if (!cdvStore) return null;
+    cdvStore.register(OFFER_ORDER.map((id) => ({
+      id, type: ProductType.NON_CONSUMABLE, platform: Platform.APPLE_APPSTORE,
+    })));
+    // `verified` is the only place an entitlement is ever granted — it fires
+    // for a purchase made just now, one restored from another device, and one
+    // approved later through a child's Ask to Buy, all the same way.
+    cdvStore.when().approved((tx) => tx.verify()).verified((receipt) => {
+      receipt.finish();
+      for (const item of receipt.collection ?? []) grant(item.id);
+    });
+    await cdvStore.initialize([Platform.APPLE_APPSTORE]);
+    return cdvStore;
   } catch {
     // A store failure must never take the game down. The player simply sees
     // no offer, which is strictly better than a crash on launch — and far

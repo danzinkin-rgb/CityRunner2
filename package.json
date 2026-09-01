@@ -28,6 +28,7 @@
     "@capacitor/ios": "^7.6.8",
     "@capacitor/splash-screen": "^7.0.5",
     "@capacitor/status-bar": "^7.0.6",
+    "cordova-plugin-purchase": "^13.18.0",
     "three": "0.180.0"
   },
   "devDependencies": {
