@@ -668,17 +668,39 @@ $('btn-shop-close').onclick = closeOverlay;
 // Nothing here opens itself, and nothing here is on a timer.
 let paywallFrom = 'menu';
 
+/**
+ * Switch the paywall into its post-purchase state: nothing left to buy or
+ * restore, and the dismiss button reads as a plain "continue" rather than a
+ * declined offer. Used both right after a successful purchase and when the
+ * paywall is reopened by someone who already owns everything — reopening it
+ * used to still show "UNLOCK £1.99" because the offer is cached and nothing
+ * checked ownership first.
+ */
+function showPaywallOwned(message) {
+  $('btn-paywall-buy').style.display = 'none';
+  $('btn-paywall-restore').style.display = 'none';
+  $('btn-paywall-close').textContent = 'CONTINUE';
+  $('paywall-status').textContent = message;
+}
+
 async function openPaywall(from) {
   paywallFrom = from === 'settings' ? 'settings' : 'menu';
   const buy = $('btn-paywall-buy');
   const status = $('paywall-status');
   status.textContent = '';
   $('pw-price').textContent = '';
+  $('btn-paywall-restore').style.display = '';
+  $('btn-paywall-close').textContent = 'NOT NOW';
   // Hidden rather than disabled-looking until we know there is something to
   // sell. A buy button that is visible before the price loads invites a tap
   // that cannot work.
   buy.style.display = 'none';
   openOverlay('paywall');
+
+  if (hasFullAccess()) {
+    showPaywallOwned('You already own everything.');
+    return;
+  }
 
   const offer = await getOffer();
   if (!offer) {
@@ -719,8 +741,8 @@ $('btn-paywall-buy').onclick = async () => {
   // here — including for an Ask to Buy approval that lands much later.
   if (hasFullAccess()) {
     hapticSuccess();
-    status.textContent = 'Thank you. Everything is unlocked.';
     buildCitySelect();
+    showPaywallOwned('Thank you. Everything is unlocked.');
   } else {
     status.textContent = 'Waiting for confirmation. This can take a moment.';
   }
@@ -735,7 +757,7 @@ onEntitlementGranted(() => {
   const paywallOpen = $('screen-paywall').classList.contains('on');
   if (paywallOpen && hasFullAccess()) {
     hapticSuccess();
-    $('paywall-status').textContent = 'Thank you. Everything is unlocked.';
+    showPaywallOwned('Thank you. Everything is unlocked.');
   }
 });
 
@@ -744,8 +766,12 @@ async function doRestore(statusEl) {
   statusEl.textContent = 'Checking with the App Store…';
   const found = await restore();
   if (hasFullAccess()) {
-    statusEl.textContent = 'Restored. Everything is unlocked.';
     buildCitySelect();
+    if (statusEl.id === 'paywall-status') {
+      showPaywallOwned('Restored. Everything is unlocked.');
+    } else {
+      statusEl.textContent = 'Restored. Everything is unlocked.';
+    }
   } else {
     statusEl.textContent = found.length
       ? 'Restored.'
