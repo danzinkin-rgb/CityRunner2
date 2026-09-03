@@ -155,6 +155,7 @@ const browser = await webkit.launch();
         paid: el.classList.contains('paid'),
         locked: el.classList.contains('locked'),
         padlock: !!el.querySelector('.padlock'),
+        clickable: getComputedStyle(el).cursor,
       };
     });
     return out;
@@ -178,6 +179,14 @@ const browser = await webkit.launch();
     check(c && (c.paid || c.locked), `native: ${id} is gated somehow`,
       c ? `paid=${c.paid} locked=${c.locked}` : '');
     check(c && !(c.paid && c.locked), `native: ${id} is not both states at once`);
+    // The padlock marks purchasable content and shows from the FIRST LAUNCH,
+    // before the city has been earned. It used to appear only once earned,
+    // which hid from a new player that the city was buyable at all.
+    check(c && c.padlock, `native: ${id} shows a padlock on a fresh save`);
+    // And it must do something. A padlock that ignores taps is the same dead
+    // control as the bought-but-unreached card fixed alongside this.
+    check(c && c.clickable === 'pointer',
+      `native: ${id} is tappable on a fresh save`, c ? c.clickable : '');
   }
   check(!errors.length, 'native: no page errors', errors[0] || '');
 

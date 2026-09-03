@@ -201,10 +201,12 @@ function buildCitySelect() {
     const stars = save.stars[c.id] || 0;
     // Two independent gates. `earned` is the game's own pacing; `owned` is
     // whether it has been paid for (always true on the web build). A card is
-    // playable only when both are open, but they are shown differently: an
-    // unearned city is dimmed and inert, a purchasable one stays bright and
-    // opens the paywall. Telling a player to "keep playing" to reach a city
-    // that no amount of playing will open would simply be false.
+    // playable only when both are open, but they are shown differently, and
+    // the difference is the point: telling a player to "keep playing" to reach
+    // a city that no amount of playing will open would simply be false. So an
+    // unearned city is dimmed, an earned-but-unbought one is bright
+    // merchandise, and anything unbought carries a padlock and opens the
+    // paywall -- from the first launch, so the offer is never hidden.
     const earned = i === 0 || (save.stars[CITIES[i - 1].id] || 0) >= 1;
     const owned = isCityEntitled(c.id);
     const sellable = earned && !owned;
@@ -226,10 +228,24 @@ function buildCitySelect() {
     // (It also made the menu two lines taller on a 320x568 screen and pushed
     // Settings below the fold -- test/menu-fit.mjs caught that.)
     const gated = !isFreeBuild() && isPaidCity(c.id) && owned && !earned && i > 0;
+    // The padlock marks "this is purchasable content", so it shows from the
+    // very first launch rather than only once the city has been earned. !owned
+    // already means exactly that: isCityEntitled() is true for every free city
+    // and for everything on the web build, so this can only be a paid city, on
+    // a native build, that has not been bought.
+    //
+    // It is deliberately tappable even while progression-locked. A padlock
+    // that does nothing is the same dead-control bug just fixed above, and
+    // buying early is now a supported path -- the card explains what is left
+    // to do rather than stranding the buyer. The card stays dimmed either way,
+    // so the offer is findable without being pushed at someone three cities
+    // away from it (docs/PROPOSALS.md 4).
+    const purchasable = !owned;
     const el = document.createElement('div');
-    el.className = 'city-card' + (gated ? ' gated' : !earned ? ' locked' : sellable ? ' paid' : '');
+    el.className = 'city-card' + (gated ? ' gated' : !earned ? ' locked' : sellable ? ' paid' : '')
+      + (purchasable && !earned ? ' buyable' : '');
     el.innerHTML = `<div class="thumb" style="background-image:url(assets/thumbs/${c.id}.png)">
-        <span class="thumb-flag">${flagFix[c.id] || c.flag}</span>${sellable ? '<span class="padlock">🔒</span>' : ''}</div>
+        <span class="thumb-flag">${flagFix[c.id] || c.flag}</span>${purchasable ? '<span class="padlock">🔒</span>' : ''}</div>
       <div class="name">${c.name}</div>
       ${gated
         ? `<div class="gate">Unlocked — finish a street in ${CITIES[i - 1].name} to reach it</div>`
@@ -239,7 +255,7 @@ function buildCitySelect() {
       cityIdx = i; level = Math.min(3, (save.stars[c.id] || 0) + 1);
       startRun();
     };
-    else if (sellable) el.onclick = () => openPaywall();
+    else if (purchasable) el.onclick = () => openPaywall();
     wrap.appendChild(el);
   });
   const stats = document.getElementById('menu-stats');

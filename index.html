@@ -139,6 +139,11 @@
     border:1px solid rgba(255,255,255,.14);text-align:center;cursor:pointer;transition:.15s}
   .city-card:hover{background:rgba(255,255,255,.13);transform:translateY(-4px)}
   .city-card.locked{opacity:.35;cursor:default}
+  /* A locked city that can still be BOUGHT is tappable: the padlock shows from
+     first launch so the offer is never hidden, and a padlock that does nothing
+     when tapped is a dead control. Still dimmed -- findable, not pushed. */
+  .city-card.locked.buyable{cursor:pointer}
+  .city-card.locked.buyable:hover{opacity:.5}
   /* The placeholder cards that sit in #city-select until buildCitySelect()
      replaces them. They exist for LAYOUT, not decoration: the menu markup is
      in the HTML but its content is not — cards, thumbnails and saved stars are
