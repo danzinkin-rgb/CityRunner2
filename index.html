@@ -192,6 +192,22 @@
      appealing; a city you have not yet earned is a closed door. Same word
      "locked" in English, two different things to a player, so two states. */
   .city-card.paid{opacity:1;cursor:pointer}
+  /* Bought, but not yet reached: the fourth state, and the one that used to
+     fall between the cracks. `earned` and `owned` are independent, so a player
+     who buys the full set before starring the previous city satisfies one gate
+     and not the other -- and that combination matched neither branch below, so
+     the card was dimmed like .locked, had no padlock, and no click handler.
+     Someone who had just paid saw a dead grey card and no explanation.
+
+     It is deliberately NOT dimmed to .locked's 0.35. Nothing here is withheld
+     from them -- they own it, they are simply not there yet -- so the card
+     stays legible and says what to do. The note replaces the stars row rather
+     than adding a line, so the card's height is unchanged and the menu's fit
+     (test/menu-fit.mjs) is not disturbed. */
+  .city-card.gated{opacity:.72;cursor:default}
+  .city-card.gated .thumb{filter:saturate(.6) brightness(.8)}
+  .city-card .gate{color:var(--fg-3);font-size:11px;margin-top:4px;
+    letter-spacing:.3px;line-height:1.25}
   .city-card.paid .thumb{filter:saturate(.55) brightness(.72)}
   .city-card.paid:hover .thumb{filter:saturate(.9) brightness(.9)}
   .city-card .padlock{position:absolute;left:5px;bottom:3px;font-size:15px;

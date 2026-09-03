@@ -54,6 +54,14 @@ if (!freeMatch) {
 const FREE = [...freeMatch[1].matchAll(/'([a-z]+)'/g)].map((m) => m[1]);
 const PAID = CITIES.filter((c) => !FREE.includes(c));
 
+// The Founder product id, read from source for the same reason as FREE_CITIES.
+const founderMatch = entSrc.match(/FOUNDER:\s*'([^']+)'/);
+if (!founderMatch) {
+  console.log('x could not find PRODUCTS.FOUNDER in src/core/entitlements.js');
+  process.exit(1);
+}
+const FOUNDER = founderMatch[1];
+
 let failures = 0;
 const check = (ok, label, detail = '') => {
   console.log(`${ok ? 'ok ' : 'x  '} ${label}${detail ? `  ${detail}` : ''}`);
@@ -281,6 +289,92 @@ const browser = await webkit.launch();
   const freeRun = await page.evaluate(() =>
     !document.getElementById('screen-paywall').classList.contains('on'));
   check(freeRun, `native/earned: ?view=run&city=${FREE[0]} still plays`);
+
+  await ctx.close();
+}
+
+// ------------------------------- native, PAID FOR but not yet progressed to
+// The fourth state, and the one that shipped broken. `earned` and `owned` are
+// independent, so buying the full set on a fresh save satisfies the
+// entitlement gate while the progression gate is still shut. That combination
+// matched neither branch in buildCitySelect(): the card fell through to
+// `.locked` -- dimmed to 0.35, no padlock, and NO CLICK HANDLER IN EITHER
+// BRANCH. A player who had just paid GBP 1.99 saw a dead grey card with no
+// explanation, and nothing anywhere told them what was left to do.
+//
+// The suite could not have caught it: the scenario above seeds full stars, so
+// it only ever exercised earned-and-unpaid. This one seeds the purchase and NO
+// stars, which is exactly what a player who buys before playing looks like.
+{
+  const ctx = await browser.newContext();
+  await ctx.addInitScript((founder) => {
+    window.Capacitor = { isNativePlatform: () => true };
+    // Owned, but no stars at all -- the progression gate is shut.
+    // Seeded only when absent: addInitScript re-runs on every navigation,
+    // including the reload below, so writing unconditionally would wipe the
+    // star that reload is there to test.
+    localStorage.setItem('cityrunner2.ent', JSON.stringify([founder]));
+    if (localStorage.getItem('cityrunner2') == null) {
+      localStorage.setItem('cityrunner2', JSON.stringify({ stars: {}, coins: 0, best: 0 }));
+    }
+  }, FOUNDER);
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await page.goto(BASE, { waitUntil: 'load' });
+  await page.waitForTimeout(900);
+
+  const bought = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll('#city-select .city-card')];
+    const last = cards[cards.length - 1];
+    const gate = last.querySelector('.gate');
+    return {
+      gated: last.classList.contains('gated'),
+      locked: last.classList.contains('locked'),
+      paid: last.classList.contains('paid'),
+      padlock: !!last.querySelector('.padlock'),
+      opacity: getComputedStyle(last).opacity,
+      note: gate ? gate.textContent.trim() : '',
+    };
+  });
+  const paidId = PAID[PAID.length - 1];
+  check(bought.gated, `native/bought: ${paidId} uses the bought-but-unreached state`,
+    JSON.stringify(bought));
+  check(!bought.locked, `native/bought: ${paidId} is not dimmed as merely locked`);
+  check(!bought.paid, `native/bought: ${paidId} is not still offered for sale`);
+  check(!bought.padlock, `native/bought: ${paidId} shows no padlock -- it is owned`);
+  // Not withheld from them, so not dimmed to .locked's 0.35.
+  check(Number(bought.opacity) > 0.5, `native/bought: ${paidId} stays legible`, bought.opacity);
+  // The whole point: the card has to SAY something. An empty note is the bug.
+  check(bought.note.length > 0, `native/bought: ${paidId} explains what is left to do`,
+    JSON.stringify(bought.note));
+  // One star opens the next city, not three -- so the copy must not say
+  // "finish" or "complete", which would overstate what is required.
+  check(!/finish (the|all)|complete/i.test(bought.note),
+    'native/bought: the note does not overstate the requirement', bought.note);
+  check(!errors.length, 'native/bought: no page errors', errors[0] || '');
+
+  // Earning the star must hand the city over -- the purchase already stands,
+  // so the only thing that was missing is now present and the card must play.
+  await page.evaluate((free) => {
+    const save = JSON.parse(localStorage.getItem('cityrunner2'));
+    save.stars[free] = 1;
+    localStorage.setItem('cityrunner2', JSON.stringify(save));
+  }, FREE[FREE.length - 1]);
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(900);
+  const opened = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll('#city-select .city-card')];
+    const last = cards[cards.length - 1];
+    return {
+      gated: last.classList.contains('gated'),
+      clickable: getComputedStyle(last).cursor,
+      stars: !!last.querySelector('.stars'),
+    };
+  });
+  check(!opened.gated, `native/bought: one star releases ${paidId}`, JSON.stringify(opened));
+  check(opened.clickable === 'pointer', `native/bought: ${paidId} is now tappable`, opened.clickable);
+  check(opened.stars, `native/bought: ${paidId} shows its stars row again`);
 
   await ctx.close();
 }

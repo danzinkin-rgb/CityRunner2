@@ -208,12 +208,32 @@ function buildCitySelect() {
     const earned = i === 0 || (save.stars[CITIES[i - 1].id] || 0) >= 1;
     const owned = isCityEntitled(c.id);
     const sellable = earned && !owned;
+    // Bought but not yet reached. The two gates are independent, so this
+    // combination is reachable the moment anyone buys the full set early --
+    // and it used to match neither branch: the card fell through to `.locked`
+    // with no padlock and no onclick, so a player who had just paid saw a dead
+    // grey card that said nothing. It now says what is left to do. One star in
+    // the previous city is the threshold (see `earned` above), not three, so
+    // the copy says "a street in", never "finish".
+    //
+    // Scoped twice, and both are load-bearing. isPaidCity() because
+    // isCityEntitled() is true for a free city as well, so without it an
+    // unearned Paris would be relabelled "Unlocked" -- true in the entitlement
+    // sense, meaningless to a player never asked to buy it. And !isFreeBuild()
+    // because hasFullAccess() is unconditionally true on the web, where
+    // nothing was ever bought: without it every web player with a fresh save
+    // is told Rome is "unlocked", which is not what that word means to them.
+    // (It also made the menu two lines taller on a 320x568 screen and pushed
+    // Settings below the fold -- test/menu-fit.mjs caught that.)
+    const gated = !isFreeBuild() && isPaidCity(c.id) && owned && !earned && i > 0;
     const el = document.createElement('div');
-    el.className = 'city-card' + (!earned ? ' locked' : sellable ? ' paid' : '');
+    el.className = 'city-card' + (gated ? ' gated' : !earned ? ' locked' : sellable ? ' paid' : '');
     el.innerHTML = `<div class="thumb" style="background-image:url(assets/thumbs/${c.id}.png)">
         <span class="thumb-flag">${flagFix[c.id] || c.flag}</span>${sellable ? '<span class="padlock">🔒</span>' : ''}</div>
       <div class="name">${c.name}</div>
-      <div class="stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>`;
+      ${gated
+        ? `<div class="gate">Unlocked — finish a street in ${CITIES[i - 1].name} to reach it</div>`
+        : `<div class="stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>`}`;
     if (earned && owned) el.onclick = () => {
       dailyMode = false; runSeed = null;
       cityIdx = i; level = Math.min(3, (save.stars[c.id] || 0) + 1);
