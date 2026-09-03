@@ -25,6 +25,13 @@ let audioBroken = false;
 
 function ac() {
   if (audioBroken) return null;
+  // A context iOS has closed (an interruption like a phone call, or extended
+  // backgrounding, can do this) stays unusable forever unless recreated —
+  // `resume()` only helps a merely 'suspended' context, and createOscillator
+  // throws on a 'closed' one. `!ctx` alone never catches this once a context
+  // has existed, which is exactly why sound could go dead for the rest of a
+  // session with no recovery.
+  if (ctx && ctx.state === 'closed') ctx = null;
   if (!ctx) {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) { audioBroken = true; return null; }
@@ -41,14 +48,21 @@ function tone(freq, dur, type = 'sine', vol = 0.5, when = 0, slide = 0, isMusic 
   if (isMusic ? !prefs.music : !prefs.sfx) return;
   const a = ac();
   if (!a) return;
-  const o = a.createOscillator(), g = a.createGain();
-  o.type = type; o.frequency.value = freq;
-  if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), a.currentTime + when + dur);
-  g.gain.setValueAtTime(0, a.currentTime + when);
-  g.gain.linearRampToValueAtTime(vol, a.currentTime + when + 0.012);
-  g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + when + dur);
-  o.connect(g); g.connect(master);
-  o.start(a.currentTime + when); o.stop(a.currentTime + when + dur + 0.05);
+  // These calls sit inside the render loop (see header comment) — a context
+  // caught mid-transition (e.g. iOS tearing it down for an interruption,
+  // between ac() returning it and this running) can still throw here even
+  // after the 'closed' check above. One missed beat of music must never
+  // become a broken run, so this must never propagate.
+  try {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.value = freq;
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), a.currentTime + when + dur);
+    g.gain.setValueAtTime(0, a.currentTime + when);
+    g.gain.linearRampToValueAtTime(vol, a.currentTime + when + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + when + dur);
+    o.connect(g); g.connect(master);
+    o.start(a.currentTime + when); o.stop(a.currentTime + when + dur + 0.05);
+  } catch { /* see above — a dropped note, not a broken run */ }
 }
 
 export const sfx = {

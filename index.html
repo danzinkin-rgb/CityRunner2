@@ -32,7 +32,11 @@
   /* ---------- HUD ---------- */
   #hud{position:fixed;inset:0;pointer-events:none;display:none}
   #hud.on{display:block}
-  .hud-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:14px 18px}
+  /* right stops short of 0 so the score pill can never reach under #btn-pause,
+     which is pinned to the same corner independently below -- both are
+     right-aligned within a few px of the same offset, and without this gap
+     the pause button (painted later, so it wins) hides the score entirely. */
+  .hud-top{position:absolute;top:0;left:0;right:70px;display:flex;justify-content:space-between;padding:14px 18px}
   .pill{background:var(--glass);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);
     border-radius:999px;padding:7px 16px;font-weight:700;font-size:17px;letter-spacing:.4px;
     display:flex;align-items:center;gap:8px;box-shadow:0 4px 18px rgba(0,0,0,.35)}
@@ -231,7 +235,7 @@
     .city-card{width:calc(50% - 12px);max-width:150px;padding:12px 8px}
     .btn{font-size:17px;padding:14px 44px}
     .screen{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-    .hud-top{padding:calc(10px + env(safe-area-inset-top)) 12px 0}
+    .hud-top{padding:calc(10px + env(safe-area-inset-top)) 12px 0;right:60px}
     #hud-city{top:calc(58px + env(safe-area-inset-top));font-size:11px;letter-spacing:2px}
     #hud-hint{font-size:13px;padding:7px 14px;bottom:calc(70px + env(safe-area-inset-bottom))}
     #hud-timer{font-size:28px;top:calc(10px + env(safe-area-inset-top))}
