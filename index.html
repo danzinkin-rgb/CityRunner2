@@ -138,7 +138,41 @@
      does for the same reason. */
   .label{font-size:13px;letter-spacing:4px;text-transform:uppercase;color:var(--fg-2);
     text-shadow:0 1px 6px rgba(0,0,0,.9)}
-  #city-select{display:flex;gap:14px;margin-bottom:36px;flex-wrap:wrap;justify-content:center;pointer-events:auto}
+  /* The city picker is a TWO-ROW HORIZONTAL GRID, not a wrapping flex row.
+     With four cities it lays out as the same 2x2 block it always did and does
+     not scroll at all; past four it grows sideways and scrolls, so the menu's
+     HEIGHT never changes however many cities ship. That is the whole reason
+     for the shape: menu height is the scarce resource on this screen (see
+     test/menu-fit.mjs), and a wrapping grid would add a row -- and roughly
+     100px -- for every two cities added.
+
+     Deliberately a continuous scroller rather than swiped pages. A padlocked
+     city on page two would be invisible until swiped, and the padlock now
+     shows from first launch precisely so the offer is never hidden. Because
+     the column width does not divide the viewport evenly, a sliver of the next
+     column is always in frame -- the standard "more this way" affordance, and
+     it needs no dots, no arrows and no JS.
+
+     width:fit-content + auto margins rather than justify-content:center: a
+     centred overflow container clips its own start on older Safari, and the
+     content is then unreachable by scrolling. fit-content shrinks to the cards
+     when they fit (so auto margins centre it) and caps at 100% when they do
+     not (so it scrolls from the true start). Same class of bug the .screen
+     spacers above exist for. */
+  #city-select{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);
+    grid-auto-columns:var(--card-w);gap:14px;margin-bottom:36px;
+    width:fit-content;max-width:100%;margin-inline:auto;
+    overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+    scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;pointer-events:auto}
+  #city-select::-webkit-scrollbar{display:none}
+  .city-card{scroll-snap-align:center}
+  /* Card width lives on the CONTAINER now (grid-auto-columns), so the cards
+     themselves must not also declare one. Sized in vw rather than % because a
+     percentage here resolves against the scroll container and chases the
+     column width that defines it -- the sizing loop the old comment below
+     describes. vw is independent of the container, so the loop cannot form. */
+  :root{--card-w:150px}
   .city-card{width:150px;padding:18px 10px;border-radius:18px;background:rgba(255,255,255,.06);
     border:1px solid rgba(255,255,255,.14);text-align:center;cursor:pointer;transition:.15s}
   .city-card:hover{background:rgba(255,255,255,.13);transform:translateY(-4px)}
@@ -185,7 +219,10 @@
      Giving the row a definite width breaks the loop, so a card is the width
      the rules actually ask for in both states. The cards stay centred inside
      it, so a wider row is invisible. */
-  #city-select{width:100%}
+  /* (Superseded: the loop this broke cannot form now that --card-w is in vw
+     rather than %, and width:100% would defeat the auto-margin centring the
+     scroller needs. Kept as a note because the failure it describes is real
+     and would come straight back if a % card width were reintroduced.) */
   /* RUN and the daily card have no click handlers until src/main.js has run —
      they are wired at the bottom of that module. Holding the menu's layout
      open makes the screen look finished while it is not, so without this the
@@ -231,8 +268,8 @@
   @media (max-width:520px){
     .title{font-size:13vw;letter-spacing:1px}
     .subtitle{letter-spacing:3px;font-size:12px;margin-bottom:26px}
-    #city-select{gap:10px;padding:0 12px}
-    .city-card{width:calc(50% - 12px);max-width:150px;padding:12px 8px}
+    #city-select{gap:10px;padding:0 12px;--card-w:min(150px,calc(50vw - 22px))}
+    .city-card{padding:12px 8px}
     .btn{font-size:17px;padding:14px 44px}
     .screen{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
     .hud-top{padding:calc(10px + env(safe-area-inset-top)) 12px 0;right:60px}
@@ -376,10 +413,12 @@
        of height to spend. Pinning the width by height instead of by width is
        what lets the row collapse to one, and one row is most of the 114px
        that landscape was overflowing by. */
-    .city-card{width:calc(25% - 8px);max-width:132px}
+    /* One row here. Landscape has ~343px of height and two rows of cards do
+       not fit; scrolling sideways through a single row does. */
+    #city-select{grid-template-rows:repeat(1,auto);--card-w:min(132px,calc(25vw - 10px))}
     .city-card .name{font-size:12px;margin-top:3px}
     .city-card .stars{font-size:10px;margin-top:1px}
-    #city-select{margin-bottom:8px;gap:6px;flex-wrap:nowrap}
+    #city-select{margin-bottom:8px;gap:6px}
     .sheet{--sheet-pb:10px;padding:10px 14px;margin:8px 0 12px}
     #menu-stats,#menu-identity{display:none}
     .menu-links{margin-top:0;gap:2px}
@@ -729,8 +768,8 @@
   @media (min-width:900px) and (min-height:600px){
     .title{font-size:clamp(30px,7vw,116px)}
     .subtitle{font-size:19px;letter-spacing:7px;margin:9px 0 52px}
-    #city-select{gap:20px;margin-bottom:48px}
-    .city-card{width:200px;padding:24px 14px}
+    #city-select{gap:20px;margin-bottom:48px;--card-w:200px}
+    .city-card{padding:24px 14px}
     .city-card .thumb{height:118px}
     .city-card .name{font-size:17px;margin-top:8px}
     .city-card .stars{font-size:16px;margin-top:5px}

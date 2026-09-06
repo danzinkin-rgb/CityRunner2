@@ -95,3 +95,24 @@ Three rules I applied. Tell me if you want any of them changed:
 *Applied from your notes: "Noble Sanctuary" translation added, Hasmonean glossed as a Jewish ruling dynasty in Judea, and the al-Aqsa distinction stated explicitly.*
 
 Once you have signed this off it goes into `src/facts.js` and the city gets built in the usual way.
+
+---
+
+## Sign-off
+
+**Approved by Dan, 6 September 2026.** Binding decisions:
+
+1. The facts draft is approved as-is — "its all good".
+2. Precision on the Western Wall: it is described as **the holiest place where Jews are permitted to pray**, not "the holiest site in Judaism" — the Temple Mount itself is the holier site. Use the precise phrasing, not the common one.
+3. Dual naming is used wherever the site is referred to: **Temple Mount** (Jewish tradition) and **Haram al-Sharif, "the Noble Sanctuary"** (Islamic tradition).
+4. The Dome of the Rock treatment in this draft was praised and is kept as written.
+5. **Four facts on the Dome of the Rock is approved** -- answering question 5 in the
+   list above ("is that right, or should one be cut?"). Nothing is cut. It is the only
+   entry in the game with four; every other street and monument keeps three.
+
+Implementation note: four is safe. `paintFacts()` in `src/main.js` renders one hero
+card plus `facts.forEach` for the rest, so the array length is not fixed anywhere, and
+`#facts-list` is explicitly exempt from the below-the-fold check in `test/ios-ui.mjs`
+because it scrolls. Worth an eye on the smallest screen once it is in, all the same.
+
+This clears the draft to move into `src/facts.js` per the note above.
