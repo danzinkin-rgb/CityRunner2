@@ -66,7 +66,7 @@ All three have pre-worked answers in `docs/APPSTORE-SUBMISSION.md` — this is j
 
 Back on the Mac:
 ```bash
-cd ~/Desktop/CityRunner2
+cd ~/Claudelocal/CityRunner2
 git pull
 npm run ios:sync
 npx cap open ios

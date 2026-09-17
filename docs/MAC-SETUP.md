@@ -72,7 +72,7 @@ sudo gem install cocoapods
 Enter the Mac password when asked. This installs the tool that assembles the iPhone project. It takes a few minutes.
 
 ```bash
-cd ~/Desktop
+mkdir -p ~/Claudelocal && cd ~/Claudelocal
 git clone https://github.com/danzinkin-rgb/CityRunner2.git
 cd CityRunner2
 npm install
@@ -155,7 +155,7 @@ Note anything wrong and send it back; none of it needs fixing on the Mac.
 | A white or black screen in the app | In Terminal: `npm run ios:sync`, then press ▶ in Xcode again |
 | Build fails mentioning Pods | In Terminal: `cd ios/App && pod install && cd ../..`, then ▶ again |
 
-**If you get properly stuck: open Claude Code on the Mac, `cd ~/Desktop/CityRunner2`, and describe what you see. Everything it needs to know is in this repository — including this guide.**
+**If you get properly stuck: open Claude Code on the Mac, `cd ~/Claudelocal/CityRunner2`, and describe what you see. Everything it needs to know is in this repository — including this guide.**
 
 ---
 
@@ -164,7 +164,7 @@ Note anything wrong and send it back; none of it needs fixing on the Mac.
 You do not need the Mac for day-to-day work. Development carries on on Windows, and you only return to the Mac to produce a new build. The cycle from then on is:
 
 ```bash
-cd ~/Desktop/CityRunner2
+cd ~/Claudelocal/CityRunner2
 git pull
 npm run ios:sync
 npx cap open ios
