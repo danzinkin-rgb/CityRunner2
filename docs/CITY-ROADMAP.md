@@ -61,10 +61,12 @@ Vivid, culturally rich, and a real change of register.
 | | |
 |---|---|
 | **Streets** | **Paseo de la Reforma**, **Coyoacán**, **Xochimilco** (canals and painted trajinera boats) |
-| **Monuments** | **Angel of Independence** (1910), **Metropolitan Cathedral** (1573–1813), **Templo Mayor** pyramid |
+| **Monuments** | **Templo Mayor** pyramid, **Metropolitan Cathedral** (1573–1813), **Chapultepec Castle** (from 1785) |
 | **Souvenir** | A sugar skull or marigold |
 
-*IP caution: Mexico is life + 100. **Palacio de Bellas Artes is still protected** — its architect died in 1928, so it clears only in 2028. Leave it out for now. The three above are all clear.*
+*IP caution: Mexico is life + 100, counted from the death of the last surviving author. **Palacio de Bellas Artes is still protected** — its architect died in 1928, so it clears only in 2028. Leave it out.*
+
+**Changed 19 September 2026: the Angel of Independence is out, Chapultepec Castle is in.** This table previously listed the Angel (1910) as clear. It is not. Age of the work is the wrong test under life + 100; the authors' death dates are. Its architect, Antonio Rivas Mercado, died 3 January 1927, so it clears no earlier than 2027. It is also a joint work: sculptor Enrique Alciati made the bronze Angel, and his death date could not be found, so the true clearance date may be later. Dan chose Chapultepec Castle as the replacement. The castle was remodelled in the 1860s and later, so every credited architect's death date is checked in `docs/cities/mexico-city.md` before anything is built.
 
 **Alternative:** Havana — classic American cars, pastel colonial, the Malecón. It pairs neatly with San Francisco's vintage-vehicle theme.
 
