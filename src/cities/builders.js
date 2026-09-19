@@ -1339,6 +1339,7 @@ const ADS = {
   paris: ['CAFÉ', 'MODE', 'PARFUM', 'BISTRO'],
   london: ['WEST END', 'TEA & CO', 'THE TUBE', 'OXFORD ST'],
   rome: ['GELATO', 'CINEMA', 'MODA', 'ROMA'],
+  sf: ['CABLE CAR', 'SOURDOUGH', 'BAY TOURS', 'CHOWDER'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -2670,6 +2671,7 @@ const SIL_TINT = {
   paris: '#5a6486',      // soft blue-grey slate roofs
   london: '#33455e',     // sooty blue-grey
   rome: '#6e4632',       // warm umber stone and pine
+  sf: '#4a5a6a',         // fog-softened slate: hills and towers through the marine layer
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout

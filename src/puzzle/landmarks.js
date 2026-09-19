@@ -338,6 +338,23 @@ const defs = {
     B([0, 8.9, -2.4], [7.6, 3.9, 7.6], '#8f8b80', 'dome', { em: '#ffd9a0', emI: 0.07 }),
     B([0, 12.4, -2.4], [1.9, 0.7, 1.9], '#e6cd9a', 'cyl', { metal: 1, em: '#ffce8a', emI: 1.3 }),
   ],
+  // ---- San Francisco --------------------------------------------------
+  // TEMPORARY placeholders so the city runs end to end while the real
+  // monuments are designed. Each is a plain stack that the puzzle can solve.
+  ggbridge: [
+    B([-4, 1.5, 0], [1.4, 3, 1.4], '#c1440e'), B([4, 1.5, 0], [1.4, 3, 1.4], '#c1440e'),
+    B([-4, 4.5, 0], [1.2, 3, 1.2], '#c1440e'), B([4, 4.5, 0], [1.2, 3, 1.2], '#c1440e'),
+    B([0, 3.2, 0], [10, 0.4, 1.6], '#8a3a14'),
+  ],
+  coit: [
+    B([0, 0.5, 0], [4, 1, 4], '#bdb7a8'), B([0, 3, 0], [2.4, 4, 2.4], '#d4cfc0', 'cyl'),
+    B([0, 6, 0], [2.2, 2, 2.2], '#d4cfc0', 'cyl'), B([0, 7.4, 0], [2.6, 0.8, 2.6], '#cfc9ba', 'cyl'),
+  ],
+  paintedladies: [
+    B([-4, 2, 0], [2.4, 4, 3], '#d8c4d0'), B([-1.3, 2, 0], [2.4, 4, 3], '#b8cdd4'),
+    B([1.3, 2, 0], [2.4, 4, 3], '#e0d0a8'), B([4, 2, 0], [2.4, 4, 3], '#c8b8c4'),
+    B([0, 4.4, 0], [10.6, 0.8, 3.2], '#5a5450'),
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }

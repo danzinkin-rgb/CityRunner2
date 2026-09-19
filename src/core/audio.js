@@ -83,6 +83,7 @@ export const sfx = {
 // Minimal driving music loop: bass pulse + arpeggio, per-city scale flavor.
 const SCALES = {
   nyc: [0, 3, 5, 7, 10], paris: [0, 2, 3, 7, 8], london: [0, 2, 4, 7, 9], rome: [0, 2, 4, 5, 9],
+  sf: [0, 2, 4, 7, 11],   // major with a raised seventh: bright, a little wistful
 };
 
 export function startMusic(cityId) {

@@ -85,6 +85,26 @@ export const STREET_FACTS = {
         { text: 'Bernini\'s Fountain of the Four Rivers carries a genuine Egyptian-style obelisk.' },
       ] },
   ],
+  sf: [
+    { street: 'Lombard Street', tag: 'The crooked street',
+      facts: [
+        { big: '8', unit: 'bends', label: 'in one block', text: 'Lombard Street squeezes eight hairpin bends into a single steep block on Russian Hill.' },
+        { big: '1922', label: 'the bends were built', text: 'The bends were added in 1922 because the hill was too steep to drive straight down.' },
+        { text: 'The road is paved in red brick and lined with flowerbeds on every bend.' },
+      ] },
+    { street: 'Market Street', tag: 'The city\'s main street',
+      facts: [
+        { big: '4.8', unit: 'km', label: 'end to end', text: 'Market Street runs about 4.8 km from the Ferry Building on the bay towards Twin Peaks.' },
+        { big: '1847', label: 'laid out', text: 'It was laid out in 1847, the year the town changed its name from Yerba Buena to San Francisco.' },
+        { text: 'Its historic streetcars were collected from cities all over the world, and still carry passengers.' },
+      ] },
+    { street: 'Haight-Ashbury', tag: 'The Summer of Love',
+      facts: [
+        { big: '1967', label: 'the Summer of Love', text: 'In the summer of 1967 around 100,000 young people came here for music and art.' },
+        { big: '1906', label: 'the earthquake it survived', text: 'Many of its wooden Victorian houses survived the great earthquake and fire of 1906.' },
+        { text: 'The name comes from the corner where two streets meet: Haight Street and Ashbury Street.' },
+      ] },
+  ],
 };
 
 // scale: real height in metres, for the comparison graphic.
@@ -161,5 +181,23 @@ export const MONUMENT_FACTS = {
       { big: '1,900', unit: 'years', label: 'in continuous use', text: 'Rebuilt by Hadrian around AD 126 and never abandoned since.' },
       { big: '43', unit: 'm', label: 'unreinforced dome', text: 'Still the largest unreinforced concrete dome ever built, anywhere.' },
       { text: 'Its only light is the 8.2m oculus — and the floor has drains for the rain.' },
+    ] },
+  ggbridge: { scale: 227, compare: 'bus',
+    facts: [
+      { big: '227', unit: 'm', label: 'tower height', text: 'Each of its two towers rises 227 m above the water.' },
+      { big: '1937', label: 'opened', text: 'When it opened in 1937 it was the longest suspension bridge in the world.' },
+      { text: 'Painters work on it all year round to protect the steel from the salty sea air. The colour is called International Orange.' },
+    ] },
+  coit: { scale: 64, compare: 'bus',
+    facts: [
+      { big: '1933', label: 'completed', text: 'Coit Tower was finished in 1933, paid for with money left to the city by Lillie Hitchcock Coit.' },
+      { big: '64', unit: 'm', label: 'tall', text: 'The tower is 64 m tall and stands on top of Telegraph Hill.' },
+      { text: 'Inside, the walls are covered in murals painted by more than 25 artists in 1934.' },
+    ] },
+  paintedladies: { scale: 12, compare: 'person',
+    facts: [
+      { big: '1892', label: 'building began', text: 'The row was built between 1892 and 1896 by the builder Matthew Kavanagh.' },
+      { big: '7', unit: 'houses', label: 'in the row', text: 'The famous row on Steiner Street has seven houses, sometimes called the Seven Sisters.' },
+      { text: 'They got the name Painted Ladies from a 1978 book about brightly painted Victorian houses.' },
     ] },
 };

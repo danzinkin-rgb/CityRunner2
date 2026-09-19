@@ -14,6 +14,7 @@ const CITY_OF = {
   eiffel: 'paris', arc: 'paris', louvre: 'paris',
   bigben: 'london', towerbridge: 'london', eye: 'london',
   colosseum: 'rome', trevi: 'rome', pantheon: 'rome',
+  ggbridge: 'sf', coit: 'sf', paintedladies: 'sf',
 };
 // Plaza floors deliberately contrast their monuments. Every landmark in the
 // game is a warm stone/limestone/bronze hero, and every city theme lights the
@@ -29,6 +30,7 @@ const PLAZA = {
   paris: { stone: '#7a8394', dark: '#5e6678', trim: '#a3abbc', ground: '#3c4150', sky: '#3e466e' },
   london: { stone: '#5a6675', dark: '#434e5c', trim: '#8496a8', ground: '#2f3640', sky: '#2c3348' },
   rome: { stone: '#63737a', dark: '#4a5960', trim: '#95a8ae', ground: '#323b39', sky: '#4c3e56' },
+  sf: { stone: '#6a6e76', dark: '#4e525a', trim: '#98a0aa', ground: '#30343a', sky: '#3a4656' },
 };
 
 // Painted-panorama palette. Near layer is the darker, more saturated band the
@@ -38,6 +40,7 @@ const SKYPAL = {
   paris: { near: '#4f4c6e', far: '#7c7999', trim: '#726f92', roof: '#38364f', win: '255,228,176', accent: '#d8d2c6' },
   london: { near: '#3b2b2d', far: '#565b6e', trim: '#37414f', roof: '#26262f', win: '255,236,192', accent: '#8f95a6' },
   rome: { near: '#4a3a30', far: '#6d6055', trim: '#6b4e3a', roof: '#5c3324', win: '255,214,150', accent: '#cfc4b0' },
+  sf: { near: '#3c4656', far: '#6a7686', trim: '#556070', roof: '#2e3440', win: '255,220,170', accent: '#c1440e' },
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 

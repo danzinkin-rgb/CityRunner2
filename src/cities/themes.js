@@ -212,6 +212,65 @@ export const CITIES = [
       },
     ],
   },
+  {
+    id: 'sf', name: 'SAN FRANCISCO', flag: '🌉',
+    streets: ['Lombard Street', 'Market Street', 'Haight-Ashbury'],
+    // Cool marine-layer blue-grey thinning to a pale fog horizon. The least
+    // saturated sky in the game on purpose: the orange of the bridge and the
+    // painted Victorians are meant to be the only strong colour in frame.
+    // NYC is warm brick under a blue-to-gold sky; nothing here overlaps it.
+    sky: { top: '#5c7690', mid: '#a8bcc8', horizon: '#e4e2da', glow: '#d8d4c8' },
+    fog: 0xd8d4c8, fogDensity: 0.0118,
+    sun: { color: 0xf0ece0, intensity: 1.9, pos: [30, 50, -60] },
+    hemi: { sky: 0xc4d2dc, ground: 0x8c8478, intensity: 1.0 },
+    fill: { color: 0xe8e4d8, intensity: 0.95 },
+    road: '#565a5e', lane: '#e8d840', sidewalk: '#a8a498',
+    palette: ['#d8c4d0', '#b8cdd4', '#e0d0a8', '#c8b8c4', '#a8c0b8', '#dcc8b0'],
+    trim: '#f2ece0', roof: '#5a5450',
+    windowLit: '#ffd9a0', windowDay: '#a8c4d8', accent: '#c1440e',
+    storefront: ['#c1440e', '#2e6b7a', '#8a4a6a', '#3a7a5a', '#c89020'],
+    props: ['lamp_sf', 'hydrant', 'streetsign', 'lamp_sf'],
+    vehicle: 'cablecar',
+    landmarks: ['ggbridge', 'coit', 'paintedladies'],
+    levels: [
+      { // Lombard Street — the crooked block. The track engine is a straight
+        // fixed-lane corridor, so the switchbacks are not modelled; the street
+        // is sold instead by its red brick, packed flowerbeds, low pastel
+        // houses, thick fog, and Coit Tower on the hill ahead.
+        key: 'lombard', facade: 'rowhouse',
+        roadStyle: 'brick', road: '#9c5638', lane: '#9c5638', sidewalk: '#b4a898',
+        palette: ['#e4c4a0', '#d4b8c8', '#c8d4c0', '#e8d0b0', '#c4b8d0', '#dcc8a8'],
+        setback: 2.6, hBase: 9, hVar: 2, secondRow: 0,
+        fogDensity: 0.0145,
+        props: ['lamp_sf', 'flowerbed', 'flowerbed', 'hydrant'],
+        storefront: ['#6a8a5a', '#8a6a4a', '#5a6a8a', '#8a5a6a'],
+        ads: [],
+        cameo: 'coit', lit: 0.1,
+      },
+      { // Market Street — the wide civic spine: Beaux-Arts banks, streetcar
+        // rails and overhead wires, the Ferry Building clock tower at the end.
+        key: 'market', facade: 'beauxarts',
+        palette: ['#d8d2c0', '#cec8b6', '#d4cdb8', '#dad3c2', '#cfc9b4', '#d6cfbc'],
+        setback: 5.8, hBase: 16, hVar: 8, secondRow: 0.25,
+        roadStyle: 'streetcar', road: '#585c60', lane: '#e8d840',
+        props: ['lamp_sf', 'streetcar_pole', 'flagbanner', 'newsstand'],
+        storefront: ['#1c5a7a', '#8a2a3a', '#2e6b4a', '#7a5a1e'],
+        ads: ['EMBARCADERO BANK', 'FERRY PLAZA', 'MARKET & CO', 'GOLDEN STATE TRUST'],
+        cameo: 'ferrytower', lit: 0.18,
+      },
+      { // Haight-Ashbury — painted Victorians with bay windows and bright trim.
+        key: 'haight', facade: 'victorian',
+        palette: ['#d8506a', '#4a8ac8', '#e8b840', '#6ab868', '#a868c8', '#e87840'],
+        trim: '#f8f2e0',
+        setback: 3.6, hBase: 10, hVar: 3, secondRow: 0.15,
+        fogDensity: 0.0098,
+        props: ['lamp_sf', 'streetsign', 'tree', 'hydrant'],
+        storefront: ['#e83060', '#20b0c0', '#e8a020', '#7040c0'],
+        ads: ['RECORD SHOP', 'BOOKS & ZINES', 'CORNER STORE', 'VINTAGE & CO'],
+        lit: 0.14,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -219,6 +278,7 @@ export const LANDMARK_NAMES = {
   eiffel: 'Eiffel Tower', arc: 'Arc de Triomphe', louvre: 'Louvre Pyramid',
   bigben: 'Big Ben', towerbridge: 'Tower Bridge', eye: 'London Eye',
   colosseum: 'Colosseum', trevi: 'Trevi Fountain', pantheon: 'Pantheon',
+  ggbridge: 'Golden Gate Bridge', coit: 'Coit Tower', paintedladies: 'Painted Ladies',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags
