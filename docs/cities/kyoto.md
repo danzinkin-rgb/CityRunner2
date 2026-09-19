@@ -1,5 +1,7 @@
 # Kyoto — city design spec
 
+> **PARKED 19 September 2026.** Not being built. See docs/CITY-ROADMAP.md §2 for why.
+
 Research and design only. Nothing in `src/`, `index.html` or `test/` is touched by this document. Field names below match the shapes read from `src/cities/themes.js`, `src/puzzle/landmarks.js`, `src/facts.js`, `src/cities/souvenirs.js` and `src/cities/builders.js` as of this writing.
 
 ---

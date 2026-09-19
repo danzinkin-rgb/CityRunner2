@@ -39,7 +39,15 @@ The strongest choice available: legally the cleanest, and visually the maximum p
 
 **Why Lombard Street matters:** its hairpin bends are the first excuse in the game for a road that is not straight. That is a genuine mechanical novelty, not just a reskin.
 
-### 2. Kyoto — Asia
+### 2. Kyoto — Asia (PARKED)
+
+**Parked 19 September 2026, Dan's call.** The design spec is kept in `docs/cities/kyoto.md` for when it is picked up again. Two things were unresolved and both would have to be settled first:
+
+1. **It may not be data-only.** The bamboo grove and the shrine path replace building facades with something else. The spec suggests that may need changes to how `track.js` places buildings, which would make Kyoto a mechanics job rather than a data job. Not traced.
+2. **Japanese heritage fees are unchecked.** Italy, Greece and Egypt charge fees to reproduce even public-domain works. No Japanese equivalent was found, but the search was not thorough.
+
+San Francisco, Mexico City and Jerusalem go ahead without it.
+
 
 Recommended over Tokyo, for a reason worth knowing: **Tokyo's famous modern landmarks are all off-limits.** Tokyo Tower (1958) is protected until 2040, Skytree and Rainbow Bridge are far newer. A legal Tokyo would rest on Senso-ji, Shibuya Crossing and Harajuku — good, but Shibuya's neon would duplicate Times Square.
 
