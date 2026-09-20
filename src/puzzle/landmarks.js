@@ -64,6 +64,19 @@ function eifleg(x0, z0, x1, z1, h, r, c) {
     c, 'eifleg', { leg: { x0, z0, x1, z1, h, r }, em: '#ff9d5a', emI: 0.08 });
 }
 
+// Painted Ladies row house: a narrow gabled body with a bay window bulge.
+// `roofI` picks between two slate tones. They are deliberately close: San
+// Francisco's Victorians are painted in every colour but their roofs are all
+// dark slate, so the variety belongs in the walls, not the roofline.
+function ladyHouse(x, body, bay, roofI) {
+  const roof = ['#403c38', '#4a4640'][roofI];
+  return [
+    B([x, 4.1, 0], [3.4, 8.2, 4.4], body, 'box', { tex: 'win', tx: { cols: 2, rows: 4 } }),
+    B([x, 5.0, 2.5], [2.1, 5.2, 1.1], bay, 'box', { tex: 'win', tx: { cols: 1, rows: 3 } }),
+    B([x, 10.0, 0], [3.7, 3.6, 4.4], roof, 'prism'),
+  ];
+}
+
 const defs = {
   // ================= NEW YORK =================
   // Empire State: warm limestone-cream setbacks, halved window-stripe
@@ -338,22 +351,84 @@ const defs = {
     B([0, 8.9, -2.4], [7.6, 3.9, 7.6], '#8f8b80', 'dome', { em: '#ffd9a0', emI: 0.07 }),
     B([0, 12.4, -2.4], [1.9, 0.7, 1.9], '#e6cd9a', 'cyl', { metal: 1, em: '#ffce8a', emI: 1.3 }),
   ],
-  // ---- San Francisco --------------------------------------------------
-  // TEMPORARY placeholders so the city runs end to end while the real
-  // monuments are designed. Each is a plain stack that the puzzle can solve.
+  // ================= SAN FRANCISCO =================
+  // Golden Gate: the towers are the silhouette, so they get the height and
+  // the detail — tapering lattice shafts, the two portal struts that read as
+  // the rungs of a ladder from the side, and the stepped Art Deco cap. The
+  // deck is deliberately plain and low so it cannot compete. Cables borrow
+  // brooklyn's 'cable' block (main sag plus its own hangers) rather than the
+  // chain used by Tower Bridge: this is a suspension bridge.
+  // International Orange throughout; the real bridge is painted steel, so no
+  // metal flag and no glass.
   ggbridge: [
-    B([-4, 1.5, 0], [1.4, 3, 1.4], '#c1440e'), B([4, 1.5, 0], [1.4, 3, 1.4], '#c1440e'),
-    B([-4, 4.5, 0], [1.2, 3, 1.2], '#c1440e'), B([4, 4.5, 0], [1.2, 3, 1.2], '#c1440e'),
-    B([0, 3.2, 0], [10, 0.4, 1.6], '#8a3a14'),
+    B([-6.4, 1.6, 0], [3.4, 3.2, 5.2], '#8c857a', 'box', { tex: 'relief' }),
+    B([6.4, 1.6, 0], [3.4, 3.2, 5.2], '#8c857a', 'box', { tex: 'relief' }),
+    B([0, 3.6, 0], [10.4, 0.5, 3.8], '#6e6a66'),
+    B([-8.6, 3.6, 0], [7.2, 0.5, 3.8], '#66625e'),
+    B([8.6, 3.6, 0], [7.2, 0.5, 3.8], '#66625e'),
+    // orange kerb rails: two thin lines that carry the colour along the deck
+    B([0, 4.06, 1.85], [25.6, 0.22, 0.16], '#c1440e'),
+    B([0, 4.06, -1.85], [25.6, 0.22, 0.16], '#c1440e'),
+    // south tower
+    B([-6.4, 6.0, 0], [2.4, 4.8, 4.6], '#c1440e', 'box', { tex: 'lattice' }),
+    B([-6.4, 8.55, 0], [2.8, 0.55, 4.8], '#a9380c'),
+    B([-6.4, 11.0, 0], [2.0, 5.2, 4.0], '#c94d16', 'box', { tex: 'lattice' }),
+    B([-6.4, 13.75, 0], [2.4, 0.5, 4.2], '#a9380c'),
+    B([-6.4, 15.6, 0], [1.7, 3.2, 3.4], '#d1531c', 'box', { tex: 'lattice' }),
+    B([-6.4, 17.5, 0], [2.0, 0.6, 3.8], '#b23d0f'),
+    B([-6.4, 18.1, 0], [1.4, 0.55, 2.8], '#e2621f', 'box', { em: '#ffb066', emI: 0.34 }),
+    // north tower
+    B([6.4, 6.0, 0], [2.4, 4.8, 4.6], '#c1440e', 'box', { tex: 'lattice' }),
+    B([6.4, 8.55, 0], [2.8, 0.55, 4.8], '#a9380c'),
+    B([6.4, 11.0, 0], [2.0, 5.2, 4.0], '#c94d16', 'box', { tex: 'lattice' }),
+    B([6.4, 13.75, 0], [2.4, 0.5, 4.2], '#a9380c'),
+    B([6.4, 15.6, 0], [1.7, 3.2, 3.4], '#d1531c', 'box', { tex: 'lattice' }),
+    B([6.4, 17.5, 0], [2.0, 0.6, 3.8], '#b23d0f'),
+    B([6.4, 18.1, 0], [1.4, 0.55, 2.8], '#e2621f', 'box', { em: '#ffb066', emI: 0.34 }),
+    // main cables, hung last (sortY) so they arrive over finished towers
+    B([0, 3.9, 1.6], [27.2, 0.6, 0.3], '#d8520f', 'cable',
+      { sortY: 19, cable: { towerX: 6.4, topY: 17.2, midY: 5.0, endX: 13.4, endY: 3.9, deckY: 4.0, hangers: 13, r: 0.17 } }),
+    B([0, 3.9, -1.6], [27.2, 0.6, 0.3], '#d8520f', 'cable',
+      { sortY: 19, cable: { towerX: 6.4, topY: 17.2, midY: 5.0, endX: 13.4, endY: 3.9, deckY: 4.0, hangers: 13, r: 0.17 } }),
   ],
+
+  // Coit Tower: a plain unpainted-concrete fluted column. The real thing is
+  // pale grey-cream, not white, and is NOT shaped like a fire-hose nozzle —
+  // that is a myth, so the shaft stays a clean taper. 'strip' gives the
+  // fluting; 'archcut' punches the observation-deck arches through.
   coit: [
-    B([0, 0.5, 0], [4, 1, 4], '#bdb7a8'), B([0, 3, 0], [2.4, 4, 2.4], '#d4cfc0', 'cyl'),
-    B([0, 6, 0], [2.2, 2, 2.2], '#d4cfc0', 'cyl'), B([0, 7.4, 0], [2.6, 0.8, 2.6], '#cfc9ba', 'cyl'),
+    B([0, 0.4, 0], [5.2, 0.8, 5.2], '#b7b1a4'),
+    B([0, 1.6, 0], [4.2, 1.6, 4.2], '#c3bdae', 'cyl'),
+    B([0, 2.6, 2.0], [1.3, 2.0, 0.5], '#a8a294', 'box', { tex: 'arch' }),
+    B([0, 3.6, 0], [3.5, 2.2, 3.5], '#d2ccbd', 'cyl', { tex: 'strip' }),
+    B([0, 5.8, 0], [3.4, 2.2, 3.4], '#d4cec0', 'cyl', { tex: 'strip' }),
+    B([0, 8.0, 0], [3.3, 2.2, 3.3], '#d2ccbd', 'cyl', { tex: 'strip' }),
+    B([0, 10.2, 0], [3.2, 2.2, 3.2], '#d4cec0', 'cyl', { tex: 'strip' }),
+    B([0, 12.4, 0], [3.05, 2.2, 3.05], '#d2ccbd', 'cyl', { tex: 'strip' }),
+    B([0, 14.6, 0], [2.9, 2.2, 2.9], '#d4cec0', 'cyl', { tex: 'strip' }),
+    B([0, 16.8, 0], [2.8, 2.2, 2.8], '#d2ccbd', 'cyl', { tex: 'strip' }),
+    B([0, 18.2, 0], [3.2, 0.5, 3.2], '#c9c3b4', 'cyl'),
+    B([0, 19.6, 0], [3.3, 2.4, 3.3], '#dcd6c6', 'cyl', { tex: 'archcut' }),
+    B([0, 21.1, 0], [2.9, 0.6, 2.9], '#c9c3b4', 'cyl'),
+    B([0, 21.9, 0], [2.3, 0.9, 2.3], '#d4cec0', 'cyl'),
+    B([0, 22.9, 0], [2.0, 1.1, 2.0], '#dcd6c6', 'dome'),
+    B([0, 24.2, 0], [0.13, 2.4, 0.13], '#efe9da', 'cyl', { metal: 1 }),
+    // hillside lamps either side of the entrance path
+    B([-2.6, 1.5, 2.6], [0.16, 1.8, 0.16], '#8e887c', 'cyl', { em: '#ffe6b0', emI: 0.5 }),
+    B([2.6, 1.5, 2.6], [0.16, 1.8, 0.16], '#8e887c', 'cyl', { em: '#ffe6b0', emI: 0.5 }),
   ],
+
+  // Painted Ladies: seven narrow houses shoulder to shoulder, each its own
+  // colour, each with a bay window and a steep gable. The jagged roofline is
+  // the whole picture; the colour variety is in the walls, not the roofs.
   paintedladies: [
-    B([-4, 2, 0], [2.4, 4, 3], '#d8c4d0'), B([-1.3, 2, 0], [2.4, 4, 3], '#b8cdd4'),
-    B([1.3, 2, 0], [2.4, 4, 3], '#e0d0a8'), B([4, 2, 0], [2.4, 4, 3], '#c8b8c4'),
-    B([0, 4.4, 0], [10.6, 0.8, 3.2], '#5a5450'),
+    ...ladyHouse(-10.8, '#d8788c', '#e9a0ae', 0),
+    ...ladyHouse(-7.2, '#e8c274', '#f4dca6', 1),
+    ...ladyHouse(-3.6, '#9fc4a8', '#c6ddcb', 0),
+    ...ladyHouse(0, '#8fb4d4', '#bcd4e6', 1),
+    ...ladyHouse(3.6, '#c9a8cc', '#e0cbe2', 0),
+    ...ladyHouse(7.2, '#e2a07c', '#f0c6ad', 1),
+    ...ladyHouse(10.8, '#cfc4b2', '#e6dece', 0),
   ],
 };
 

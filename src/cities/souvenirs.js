@@ -58,6 +58,41 @@ export function makeCollectible(theme) {
       }));
     win.position.y = -0.04;
     g.add(win);
+  } else if (theme.id === 'sf') {
+    // a little cable car: maroon lower body, cream upper, clerestory roof
+    const cream = new THREE.MeshStandardMaterial({
+      color: 0xf2e8d0, roughness: 0.4, emissive: 0x8a8060, emissiveIntensity: 0.3,
+    });
+    const maroon = new THREE.MeshStandardMaterial({
+      color: 0x9a2230, roughness: 0.35, emissive: 0x4a0a12, emissiveIntensity: 0.45,
+    });
+    const lower = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.2, 0.3), maroon);
+    lower.position.y = -0.12;
+    g.add(lower);
+    const upper = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.24, 0.3), cream);
+    upper.position.y = 0.1;
+    g.add(upper);
+    const win = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.13, 0.31),
+      new THREE.MeshStandardMaterial({
+        color: 0xfff2cc, roughness: 0.3, emissive: 0xffe1a0, emissiveIntensity: 0.9,
+      }));
+    win.position.y = 0.11;
+    g.add(win);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.05, 0.36), cream);
+    roof.position.y = 0.245;
+    g.add(roof);
+    const clere = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.07, 0.2), cream);
+    clere.position.y = 0.3;
+    g.add(clere);
+    // Light enough to survive the souvenir-icon capture: the icon is keyed
+    // against a 0x141a30 backdrop, and a near-black wheel keys out with it.
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x55555f, roughness: 0.6 });
+    for (const wx of [-0.2, 0.2]) {
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.32, 10), wheelMat);
+      w.rotation.x = Math.PI / 2;
+      w.position.set(wx, -0.26, 0);
+      g.add(w);
+    }
   } else {
     const marble = new THREE.MeshStandardMaterial({
       color: 0xf4efe4, roughness: 0.3, emissive: 0x9a9280, emissiveIntensity: 0.25,

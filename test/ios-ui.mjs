@@ -86,7 +86,14 @@ const AUDIT = ({ selector, MIN_TAP }) => {
     if (cs.display === 'none' || cs.visibility === 'hidden' || (!r.width && !r.height)) return;
     const name = el.tagName.toLowerCase() + (el.id ? '#' + el.id : '')
       + (typeof el.className === 'string' && el.className ? '.' + el.className.trim().split(/\s+/)[0] : '');
-    if (r.right > vw + 1 || r.left < -1) issues.push(`OVERFLOW-X ${name} [${Math.round(r.left)}..${Math.round(r.right)}] vw=${vw}`);
+    // Content inside a horizontal scroller is SUPPOSED to extend past the
+    // viewport — that is what makes it scrollable. The city picker is one
+    // (more cities than fit, so it scrolls sideways rather than growing the
+    // menu taller). What still has to hold is that the scroller ITSELF fits,
+    // which is checked when the loop reaches it, so a runaway layout is
+    // caught either way.
+    const scroller = el.parentElement && el.closest('[data-xscroll]');
+    if (!scroller && (r.right > vw + 1 || r.left < -1)) issues.push(`OVERFLOW-X ${name} [${Math.round(r.left)}..${Math.round(r.right)}] vw=${vw}`);
     if (r.bottom > vh + 1 && cs.position !== 'absolute' && !el.closest('.sheet') && !el.closest('#facts-list'))
       issues.push(`BELOW-FOLD ${name} bottom=${Math.round(r.bottom)} vh=${vh}`);
     const tappable = el.tagName === 'BUTTON' || el.tagName === 'A' || el.tagName === 'INPUT';

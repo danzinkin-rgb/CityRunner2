@@ -464,8 +464,18 @@ export class Track {
           const busChance = this.level === 1 ? 0.18 : 0.4;
           const isBus = t.vehicle === 'bus' && rand() < busChance;
           mesh.userData.asCab = t.vehicle === 'bus' && !isBus;
-          y0 = 0; y1 = isBus ? 3.2 : 1.6;
-          halfLen = isBus ? 2.6 : t.vehicle === 'vespa' ? 1.1 : 2.1;
+          // San Francisco's cable car is the same kind of wall as the bus and
+          // is exactly as rare. When one is not drawn, the lane gets an
+          // ordinary car instead: a 3m cable car with a 1.6m hitbox would let
+          // the player jump through something they can plainly see is taller.
+          // (London shrinks its bus into a cab; a shrunk cable car is not a
+          // thing anyone has seen.) The cable-car roll happens only for this
+          // vehicle, so no other city's seeded stream moves.
+          const isCable = t.vehicle === 'cablecar' && rand() < busChance;
+          if (t.vehicle === 'cablecar' && !isCable) mesh = makeParkedCar(t);
+          const tall = isBus || isCable;
+          y0 = 0; y1 = tall ? 3.2 : 1.6;
+          halfLen = tall ? 2.6 : t.vehicle === 'vespa' ? 1.1 : 2.1;
           if (mesh.userData.asCab) mesh.scale.set(0.82, 0.5, 0.86);
         } else if (kind === 'low') {
           mesh = new THREE.Group();

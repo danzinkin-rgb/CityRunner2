@@ -240,7 +240,10 @@ export const CITIES = [
         key: 'lombard', facade: 'rowhouse',
         roadStyle: 'brick', road: '#9c5638', lane: '#9c5638', sidewalk: '#b4a898',
         palette: ['#e4c4a0', '#d4b8c8', '#c8d4c0', '#e8d0b0', '#c4b8d0', '#dcc8a8'],
-        setback: 2.6, hBase: 9, hVar: 2, secondRow: 0,
+        // 3.6, not tighter: the bay windows stand ~0.9m proud of the facade
+        // and the curb props reach 2.7m in, so anything less puts lamps
+        // inside the bays.
+        setback: 3.6, hBase: 9, hVar: 2, secondRow: 0,
         fogDensity: 0.0145,
         props: ['lamp_sf', 'flowerbed', 'flowerbed', 'hydrant'],
         storefront: ['#6a8a5a', '#8a6a4a', '#5a6a8a', '#8a5a6a'],
@@ -256,6 +259,7 @@ export const CITIES = [
         props: ['lamp_sf', 'streetcar_pole', 'flagbanner', 'newsstand'],
         storefront: ['#1c5a7a', '#8a2a3a', '#2e6b4a', '#7a5a1e'],
         ads: ['EMBARCADERO BANK', 'FERRY PLAZA', 'MARKET & CO', 'GOLDEN STATE TRUST'],
+        span: 'wires', spanFreq: 0.7, spanY: 7.2,   // trolley wires, just above the poles
         cameo: 'ferrytower', lit: 0.18,
       },
       { // Haight-Ashbury — painted Victorians with bay windows and bright trim.

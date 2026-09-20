@@ -16,7 +16,8 @@
     "test:clearance": "node test/road-clearance.mjs",
     "test:puzzle": "node test/puzzle-solvable.mjs",
     "review": "node test/contact-sheet.mjs",
-    "shots:store": "node test/store-shots.mjs"
+    "shots:store": "node test/store-shots.mjs",
+    "assets:city": "node test/capture-city-assets.mjs"
   },
   "keywords": [],
   "author": "",

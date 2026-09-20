@@ -655,6 +655,28 @@ function panoTex(cityId, P, fogHex, fogF) {
     const sx = W * 0.78, pale = hz(S.accent, FAR * 0.74);   // St Paul's
     g.fillStyle = pale; g.fillRect(sx - 62, HOR - 66, 124, 72);
     panoDome(g, sx, HOR - 66, 42, pale, hz(S.accent, FAR * 0.88));
+  } else if (cityId === 'sf') {
+    // No buildings back here: San Francisco's far layer is topography.
+    // The ridge height is a sum of whole-number harmonics of the angle
+    // around the cylinder, so it undulates several times in a full turn and
+    // still joins seamlessly at the wrap. A single sin(t*PI) swell across
+    // the whole 4096px strip would be almost flat inside any one camera
+    // view, which is the trap here: the player only ever sees a narrow arc.
+    const ridge = (baseY, amp, h1, a1, h2, a2, col) => {
+      g.fillStyle = col;
+      g.beginPath();
+      g.moveTo(-80, PANO_H);
+      for (let x = -80; x <= W + 80; x += 12) {
+        const a = (x / W) * Math.PI * 2;
+        const y = baseY - amp - h1 * Math.sin(3 * a + a1) - h2 * Math.sin(5 * a + a2);
+        g.lineTo(x, y);
+      }
+      g.lineTo(W + 80, PANO_H);
+      g.closePath(); g.fill();
+    };
+    // back ridge, hazed almost into the fog, then a firmer one in front
+    ridge(HOR + 26, 54, 30, 0.7, 16, 2.1, hz(S.far, FAR + 0.14));
+    ridge(HOR + 10, 78, 40, 2.4, 20, 0.5, farCol);
   } else {
     farRow(20, 46, 10, 22, 0.5, 4, 51, (x, y, bw, bh, i) => {
       if (dRand(i, 6) > 0.7) {
@@ -835,6 +857,41 @@ function panoTex(cityId, P, fogHex, fogF) {
     // u=0.30 is 70° behind the camera and might as well not exist.
     panoShard(g, W * 0.57, HOR + 8, 12 * U, 46 * U, hz(S.trim, NEAR * 0.78), win);
     panoGherkin(g, W * 0.43, HOR + 8, 9.5 * U, 26 * U, hz(S.trim, NEAR * 0.84), win);
+  } else if (cityId === 'sf') {
+    // Narrow bay-windowed Victorians marching over the hills. The baseline
+    // uses the same whole-harmonic trick as the far ridge above, so the row
+    // visibly climbs and drops inside a single view instead of sitting on a
+    // flat horizon the way every other city's near layer does.
+    const baseline = (x) => {
+      const a = (x / W) * Math.PI * 2;
+      return 30 + 26 * Math.sin(2 * a + 1.3) + 14 * Math.sin(4 * a + 0.4);
+    };
+    let x = -60, i = 0;
+    while (x < W + 70) {
+      const bw = (6.5 + dRand(i, 1) * 3.2) * U;              // narrow lots
+      const bh = (7.2 + dRand(i, 2) * 2.4) * U;
+      const lift = baseline(x + bw / 2) * (U / 5);
+      const y = HOR + 8 - lift - bh;
+      g.fillStyle = nearCol;
+      g.fillRect(x, y, bw, bh + lift + 16);
+      g.fillStyle = shade1;
+      g.fillRect(x + bw * 0.78, y, bw * 0.22, bh + lift + 16);
+      // bay window: a shallow box proud of the facade, full height
+      const bx0 = x + bw * 0.16, bwid = bw * 0.5;
+      g.fillStyle = trimCol;
+      g.fillRect(bx0, y + bh * 0.16, bwid, bh * 0.76);
+      panoWindows(g, bx0 + 1, y + bh * 0.22, bwid - 2, bh * 0.6, i,
+        { cw: 3, ch: 6, gx: 4, gy: 6, p: 0.55, win });
+      // steep gable, and a cornice line to separate it from its neighbour
+      g.fillStyle = roofCol;
+      g.beginPath();
+      g.moveTo(x - 2, y); g.lineTo(x + bw + 2, y);
+      g.lineTo(x + bw * 0.5, y - bh * 0.38);
+      g.closePath(); g.fill();
+      g.fillStyle = trimCol;
+      g.fillRect(x - 2, y - 2, bw + 4, 3);
+      x += bw + 1.2 * U; i++;
+    }
   } else {
     // Manhattan: every tower is a stack of setbacks, never a single slab
     let x = -60, i = 0;

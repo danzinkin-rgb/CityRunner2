@@ -227,12 +227,18 @@ const browser = await webkit.launch();
 // one actually on screen.
 {
   const ctx = await browser.newContext();
-  await ctx.addInitScript((freeIds) => {
+  // Seed a star in every city BEFORE the target, not just the free ones.
+  // Progression is a chain: each city opens when the one before it has a
+  // star. While there was a single paid city sitting right after the free
+  // three, starring the free ones happened to open it. With a second paid
+  // city added the chain got longer and that shortcut stopped working, so
+  // the earned state is derived from the city order instead of assumed.
+  await ctx.addInitScript((ids) => {
     window.Capacitor = { isNativePlatform: () => true };
     const stars = {};
-    for (const id of freeIds) stars[id] = 3;
+    for (const id of ids) stars[id] = 3;
     localStorage.setItem('cityrunner2', JSON.stringify({ stars, coins: 0, best: 0 }));
-  }, FREE);
+  }, CITIES.slice(0, -1));
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
@@ -365,11 +371,12 @@ const browser = await webkit.launch();
 
   // Earning the star must hand the city over -- the purchase already stands,
   // so the only thing that was missing is now present and the card must play.
-  await page.evaluate((free) => {
+  // One star in the city immediately before the target is what opens it.
+  await page.evaluate((prevIds) => {
     const save = JSON.parse(localStorage.getItem('cityrunner2'));
-    save.stars[free] = 1;
+    for (const id of prevIds) save.stars[id] = 1;
     localStorage.setItem('cityrunner2', JSON.stringify(save));
-  }, FREE[FREE.length - 1]);
+  }, CITIES.slice(0, -1));
   await page.reload({ waitUntil: 'load' });
   await page.waitForTimeout(900);
   const opened = await page.evaluate(() => {

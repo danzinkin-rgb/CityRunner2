@@ -262,7 +262,15 @@
   .city-card .thumb{width:100%;height:86px;border-radius:12px;background-size:135%;background-position:center 32%;
     position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 4px 12px rgba(0,0,0,.35)}
   .city-card .thumb-flag{position:absolute;right:5px;bottom:3px;font-size:17px;filter:drop-shadow(0 1px 2px #000)}
-  .city-card .name{font-weight:800;margin-top:6px}
+  /* One line, always. A name that wraps makes its card taller, and because
+     the picker is a two-row grid that taller card stretches every other
+     card in its row — and the placeholder cards, which cannot know the
+     name, then no longer match the real ones, so the menu jumps as they
+     load (test/boot.mjs). SAN FRANCISCO is the first name long enough to
+     do it. Ellipsis rather than shrink-to-fit so a longer name still
+     cannot change the height. */
+  .city-card .name{font-weight:800;margin-top:6px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .city-card .stars{color:var(--gold);font-size:13px;margin-top:4px;letter-spacing:2px}
   #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .5s;z-index:50}
   @media (max-width:520px){
@@ -771,7 +779,7 @@
     #city-select{gap:20px;margin-bottom:48px;--card-w:200px}
     .city-card{padding:24px 14px}
     .city-card .thumb{height:118px}
-    .city-card .name{font-size:17px;margin-top:8px}
+    .city-card .name{font-size:14px;margin-top:8px}   /* fits SAN FRANCISCO on one line */
     .city-card .stars{font-size:16px;margin-top:5px}
     .btn{font-size:25px;padding:20px 68px}
     .btn.ghost{font-size:19px;padding:15px 44px}
@@ -852,7 +860,11 @@
        opens with wrap.innerHTML = '', so these are cleared by the code that
        replaces them and need no dismissal of their own.
        KEEP THE COUNT IN STEP WITH CITIES — test/boot.mjs fails if it drifts. -->
-  <div id="city-select" aria-busy="true">
+  <!-- data-xscroll marks this as a horizontal scroller: its cards may sit
+       outside the viewport on purpose, and test/ios-ui.mjs skips its
+       children in the overflow-x audit for that reason. -->
+  <div id="city-select" data-xscroll aria-busy="true">
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
@@ -915,6 +927,7 @@
       <div class="souv"><img src="assets/souvenirs/paris.png" alt="Croissant"><span>Paris<br><b>Croissants</b></span></div>
       <div class="souv"><img src="assets/souvenirs/london.png" alt="Red phone box"><span>London<br><b>Phone boxes</b></span></div>
       <div class="souv"><img src="assets/souvenirs/rome.png" alt="Caesar bust"><span>Rome<br><b>Caesar busts</b></span></div>
+      <div class="souv"><img src="assets/souvenirs/sf.png" alt="Cable car"><span>San Francisco<br><b>Cable cars</b></span></div>
     </div>
 
     <h3>Building the monument</h3>

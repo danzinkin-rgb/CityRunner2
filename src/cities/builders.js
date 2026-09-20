@@ -59,8 +59,19 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         g.fillStyle = 'rgba(255,255,255,.04)';
         for (let y = 3; y < H; y += 14) g.fillRect(0, y, W, 1);
       }
+      // San Francisco: painted timber clapboard on the houses, and contrasting
+      // corner boards — the trim colour is half of what makes them "painted"
+      if (style === 'rowhouse' || style === 'victorian') {
+        g.fillStyle = 'rgba(0,0,0,.07)';
+        for (let y = 0; y < H; y += 9) g.fillRect(0, y, W, 2);
+        g.fillStyle = 'rgba(255,255,255,.06)';
+        for (let y = 2; y < H; y += 9) g.fillRect(0, y, W, 1);
+        g.fillStyle = theme.trim || '#f2ece0';
+        g.fillRect(0, 0, 7, H);
+        g.fillRect(W - 7, 0, 7, H);
+      }
       // rusticated stone joints for stone styles
-      if (style === 'flagship' || style === 'arcade' || style === 'hotel' || style === 'baroque' || style === 'deptstore') {
+      if (style === 'flagship' || style === 'arcade' || style === 'hotel' || style === 'baroque' || style === 'deptstore' || style === 'beauxarts') {
         g.fillStyle = 'rgba(0,0,0,.07)';
         for (let y = 0; y < H; y += 26) g.fillRect(0, y, W, 2);
       }
@@ -85,7 +96,7 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         }
 
         for (let cIdx = 0; cIdx < cols; cIdx++) {
-          const tall = theme.id === 'paris';
+          const tall = theme.id === 'paris' || style === 'rowhouse' || style === 'victorian';
           const x = cIdx * ww + ww * (tall ? 0.22 : 0.18);
           const y = rowY + wh * (tall ? 0.12 : 0.2);
           const w = ww * (tall ? 0.56 : 0.64);
@@ -104,10 +115,17 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
             }
           }
 
-          // London / Paris: bright trim surround
-          if (theme.id === 'london' || theme.id === 'paris') {
+          // London / Paris / San Francisco houses: bright trim surround
+          if (theme.id === 'london' || theme.id === 'paris' || style === 'rowhouse' || style === 'victorian') {
             g.fillStyle = theme.trim || '#f0ecdc';
             g.fillRect(x - 4, y - 4, w + 8, h + 8);
+          }
+          // Victorian: a small pediment over every window
+          if (style === 'victorian') {
+            g.fillStyle = theme.trim || '#f8f2e0';
+            g.beginPath();
+            g.moveTo(x - 7, y - 4); g.lineTo(x + w / 2, y - 15); g.lineTo(x + w + 7, y - 4);
+            g.fill();
           }
 
           if (lit) {
@@ -183,6 +201,8 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
       else if (style === 'ochre') paintOchreGround(G);
       else if (style === 'hotel') paintHotelGround(G);
       else if (style === 'baroque') paintBaroqueGround(G);
+      else if (style === 'rowhouse') paintRowhouseGround(G);
+      else if (style === 'beauxarts') paintBeauxGround(G);
       else paintDefaultShops(G);
 
       g.fillStyle = 'rgba(0,0,0,.3)';
@@ -590,15 +610,76 @@ function paintBaroqueGround({ g, W, H, shopY, SHOP_H, theme }) {
 }
 
 // ---------- road / sidewalk ----------
+// San Francisco row house: a garage at street level and the front door up a
+// short flight of steps beside it. A residential block, so no shopfronts.
+function paintRowhouseGround({ g, W, H, shopY, SHOP_H, theme, variant }) {
+  g.fillStyle = 'rgba(0,0,0,.12)';
+  g.fillRect(0, shopY, W, SHOP_H);
+  const garLeft = variant % 2 === 0;
+  // garage door: a panelled roller door set in a trim-coloured frame
+  const gw = W * 0.48, gx = garLeft ? W * 0.08 : W * 0.44;
+  const gh = SHOP_H * 0.72, gy = H - 4 - gh;
+  g.fillStyle = theme.trim || '#f2ece0';
+  g.fillRect(gx - 5, gy - 6, gw + 10, gh + 6);
+  g.fillStyle = 'rgba(246,242,232,.96)';
+  g.fillRect(gx, gy, gw, gh);
+  g.fillStyle = 'rgba(0,0,0,.13)';
+  for (let yy = gy + gh / 4; yy < gy + gh; yy += gh / 4) g.fillRect(gx, yy, gw, 2);
+  // front door in the house's accent colour, with a glazed transom
+  const doors = theme.storefront && theme.storefront.length ? theme.storefront : ['#5a6a8a'];
+  const dw = W * 0.2, dx = garLeft ? W * 0.68 : W * 0.12;
+  const step = SHOP_H * 0.06;
+  const dh = SHOP_H * 0.6, dy = H - 4 - dh - step * 3;
+  g.fillStyle = theme.trim || '#f2ece0';
+  g.fillRect(dx - 6, dy - 10, dw + 12, dh + 10);
+  g.fillStyle = doors[variant % doors.length];
+  g.fillRect(dx, dy, dw, dh);
+  g.fillStyle = 'rgba(200,225,245,.85)';
+  g.fillRect(dx + dw * 0.18, dy + dh * 0.1, dw * 0.64, dh * 0.3);
+  // three stone steps down to the pavement
+  for (let i = 0; i < 3; i++) {
+    g.fillStyle = i % 2 ? '#bdb6a8' : '#cfc8ba';
+    g.fillRect(dx - 8 - i * 4, dy + dh + i * step, dw + 16 + i * 8, step);
+  }
+}
+
+// Market Street: a Beaux-Arts banking hall. Rusticated stone with tall
+// round-headed windows, bronze doors in the middle bay.
+function paintBeauxGround({ g, W, H, shopY, SHOP_H, theme }) {
+  g.fillStyle = 'rgba(0,0,0,.07)';
+  g.fillRect(0, shopY, W, SHOP_H);
+  g.fillStyle = 'rgba(0,0,0,.1)';
+  for (let yy = shopY + 10; yy < H; yy += 14) g.fillRect(0, yy, W, 2);
+  const bays = 3, bw = W / bays;
+  for (let i = 0; i < bays; i++) {
+    const cx = bw * i + bw / 2, r = bw * 0.26;
+    const top = shopY + SHOP_H * 0.14, bot = H - 6;
+    g.fillStyle = i === 1 ? '#5a4630' : 'rgba(40,56,80,.92)';
+    g.beginPath();
+    g.moveTo(cx - r, bot); g.lineTo(cx - r, top + r);
+    g.arc(cx, top + r, r, Math.PI, 0);
+    g.lineTo(cx + r, bot);
+    g.fill();
+    g.fillStyle = theme.trim || '#efe8d6';
+    g.fillRect(cx - 5, top - 5, 10, 12);                 // keystone
+    if (i !== 1) {
+      g.fillStyle = 'rgba(210,190,130,.55)';               // bronze glazing bars
+      g.fillRect(cx - 1, top + r * 0.5, 2, bot - top - r * 0.5);
+      g.fillRect(cx - r, top + r + (bot - top - r) * 0.45, r * 2, 2);
+    }
+  }
+}
+
 export function roadTexture(theme) {
   return cached(`road:${sKey(theme)}`, () =>
     canvasTexture(512, 512, (g) => {
       const style = theme.roadStyle || 'asphalt';
       g.fillStyle = theme.road; g.fillRect(0, 0, 512, 512);
-      if (style === 'cobble' || style === 'travertine') {
-        // fan-set cobbles / travertine setts
-        const cw = style === 'cobble' ? 26 : 42;
-        const ch = style === 'cobble' ? 20 : 30;
+      if (style === 'cobble' || style === 'travertine' || style === 'brick') {
+        // fan-set cobbles / travertine setts / Lombard's red brick
+        const cw = style === 'cobble' ? 26 : style === 'brick' ? 40 : 42;
+        const ch = style === 'cobble' ? 20 : style === 'brick' ? 15 : 30;
+        if (style === 'brick') { g.fillStyle = '#9a8c80'; g.fillRect(0, 0, 512, 512); }   // mortar
         for (let y = 0; y < 512; y += ch) {
           for (let x = ((y / ch) % 2) * cw / 2 - cw; x < 512 + cw; x += cw) {
             const l = Math.random() * 18 - 9;
@@ -626,6 +707,13 @@ export function roadTexture(theme) {
           g.fillStyle = theme.lane;
           for (const x of [512 / 3, 1024 / 3]) {
             for (let y = 0; y < 512; y += 84) g.fillRect(x - 5, y, 10, 46);
+          }
+        }
+        // Market Street: streetcar rails set into the centre lane
+        if (style === 'streetcar') {
+          for (const rx of [256 - 34, 256 + 34]) {
+            g.fillStyle = 'rgba(28,28,32,.55)'; g.fillRect(rx - 5, 0, 10, 512);
+            g.fillStyle = 'rgba(206,210,216,.92)'; g.fillRect(rx - 2, 0, 4, 512);
           }
         }
         // crisp edge lines
@@ -662,13 +750,56 @@ export function sidewalkTexture(theme) {
   );
 }
 
+// ---------- San Francisco bay windows and gables ----------
+// A three-sided bay: half a hexagonal prism, three facets over pi radians.
+// Unscaled it bulges +x; makeBuilding turns it to face the street.
+const bayGeo = new THREE.CylinderGeometry(1, 1, 1, 3, 1, false, 0, Math.PI);
+// A front gable: a triangle in the street-facing plane, extruded back into
+// the block. Unit size, centred; makeBuilding scales it to the house.
+const gableGeo = (() => {
+  const s = new THREE.Shape();
+  s.moveTo(-0.5, 0); s.lineTo(0.5, 0); s.lineTo(0, 1); s.closePath();
+  const geo = new THREE.ExtrudeGeometry(s, { depth: 1, bevelEnabled: false });
+  geo.translate(0, 0, -0.5);
+  geo.rotateY(Math.PI / 2);
+  return geo;
+})();
+SHARED_GEO.add(bayGeo); SHARED_GEO.add(gableGeo);
+
+function bayMat(theme, color, floors) {
+  return cached(`bayMat:${sKey(theme)}:${color}:${floors}`, () => new THREE.MeshStandardMaterial({
+    map: canvasTexture(192, 96, (g) => {
+      g.fillStyle = color; g.fillRect(0, 0, 192, 96);
+      g.fillStyle = 'rgba(0,0,0,.07)';
+      for (let y = 0; y < 96; y += 9) g.fillRect(0, y, 192, 2);
+      for (let i = 0; i < 3; i++) {
+        const x = i * 64 + 16;
+        g.fillStyle = theme.trim || '#f2ece0';
+        g.fillRect(x - 5, 12, 42, 70);
+        const gl = g.createLinearGradient(0, 16, 0, 78);
+        gl.addColorStop(0, theme.windowDay || '#a8c4d8');
+        gl.addColorStop(1, 'rgba(38,54,84,.95)');
+        g.fillStyle = gl; g.fillRect(x, 16, 32, 62);
+        g.fillStyle = 'rgba(30,34,44,.55)'; g.fillRect(x, 44, 32, 2);
+      }
+    }, 1, floors),
+    roughness: 0.8,
+  }));
+}
+function bayTopMat(theme) {
+  return cached(`bayTop:${sKey(theme)}`, () =>
+    new THREE.MeshStandardMaterial({ color: theme.trim || '#f2ece0', roughness: 0.85 }));
+}
+
 // ---------- buildings ----------
 export function makeBuilding(theme, w, h, d, rng = Math.random, side = 0) {
   if (theme.facade === 'georgian') return makeVilla(theme, w, d, rng, side);
 
   const color = theme.palette[(rng() * theme.palette.length) | 0];
   const floors = Math.max(4, Math.round(h / 3.2));
-  const cols = Math.max(3, Math.round(w / 2.2));
+  // Beaux-Arts banks are mostly pier, not window: widening the bay spacing
+  // is what keeps Market Street reading as pale stone rather than dark glass.
+  const cols = Math.max(3, Math.round(w / (theme.facade === 'beauxarts' ? 3.6 : 2.2)));
   const variant = (rng() * 4) | 0;
   // one material per (street, colour, floors, cols, variant) — buildings that
   // share a facade texture share the material too, so chunk churn allocates none.
@@ -752,6 +883,36 @@ export function makeBuilding(theme, w, h, d, rng = Math.random, side = 0) {
     can.position.set(-side * (w / 2 + 0.9), 0, 0);
     can.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
     group.add(can);
+  }
+
+  // San Francisco: a three-sided bay window running up the street face of
+  // every house, and a front gable on the Victorians. No rng() here: both are
+  // placed from the building's own dimensions, so they cannot shift the
+  // seeded stream the rest of the street is laid out from.
+  if ((theme.facade === 'rowhouse' || theme.facade === 'victorian') && side !== 0) {
+    const bayH = h - 3.4;
+    if (bayH > 2) {
+      const floorsB = Math.max(1, Math.round(bayH / 3.2));
+      const zs = d > 9 ? [-d * 0.24, d * 0.24] : [0];
+      for (const zz of zs) {
+        const bay = new THREE.Mesh(bayGeo, [bayMat(theme, color, floorsB), bayTopMat(theme), bayTopMat(theme)]);
+        bay.scale.set(1.0, bayH, 1.15);
+        bay.position.set(-side * (w / 2), 3.4 + bayH / 2, zz);
+        bay.rotation.y = side > 0 ? Math.PI : 0;
+        bay.castShadow = true;
+        group.add(bay);
+      }
+    }
+    if (theme.facade === 'victorian' && Math.round(d * 10) % 2 === 0) {
+      const gable = new THREE.Mesh(gableGeo, [
+        cached(`mat:gableEnd:${color}`, () => new THREE.MeshStandardMaterial({ color, roughness: 0.85 })),
+        cached(`mat:gableRoof:${sKey(theme)}`, () => new THREE.MeshStandardMaterial({ color: theme.roof || '#5a5450', roughness: 0.8 })),
+      ]);
+      gable.scale.set(w, Math.min(3.2, d * 0.42), d * 0.98);
+      gable.position.y = h + 0.44;
+      gable.castShadow = true;
+      group.add(gable);
+    }
   }
 
   // rooftop details: water tank (NYC), chimneys (London), pergola (Rome)
@@ -1895,9 +2056,50 @@ function makeParkedVespa() {
   return g;
 }
 
+// Lombard Street: a brick planter packed with hydrangeas.
+const BLOOMS = [0x6a8ad8, 0xd87aa8, 0x9a78d0, 0xeef0f8];
+function makeFlowerbed() {
+  const g = new THREE.Group();
+  const box = new THREE.Mesh(boxGeo, cached('mat:planter', () =>
+    new THREE.MeshStandardMaterial({ color: 0x8a4a34, roughness: 0.9 })));
+  box.scale.set(1.1, 0.5, 2.6);
+  box.position.y = 0.25; box.castShadow = true; box.receiveShadow = true;
+  g.add(box);
+  const leaves = new THREE.Mesh(ballGeo, mats.leafDark);
+  leaves.scale.set(0.52, 0.3, 1.26);
+  leaves.position.y = 0.56;
+  g.add(leaves);
+  for (let i = 0; i < 7; i++) {
+    const b = new THREE.Mesh(ballGeo, cached(`mat:bloom:${i % 4}`, () =>
+      new THREE.MeshStandardMaterial({ color: BLOOMS[i % 4], roughness: 0.8 })));
+    b.scale.setScalar(0.24 + (i % 3) * 0.03);
+    b.position.set((i % 2 ? 0.22 : -0.2), 0.74 + (i % 3) * 0.04, -1.05 + i * 0.35);
+    g.add(b);
+  }
+  return g;
+}
+
+// Market Street: a trolley-wire pole. The wires themselves are street spans.
+function makeTrolleyPole() {
+  const g = new THREE.Group();
+  const m = cached('mat:trolleyPole', () =>
+    new THREE.MeshStandardMaterial({ color: 0x2e4a3a, roughness: 0.6, metalness: 0.4 }));
+  const pole = new THREE.Mesh(cylGeo, m);
+  pole.scale.set(0.13, 7.4, 0.13);
+  pole.position.y = 3.7; pole.castShadow = true;
+  g.add(pole);
+  const cap = new THREE.Mesh(ballGeo, m);
+  cap.scale.setScalar(0.2);
+  cap.position.y = 7.45;
+  g.add(cap);
+  return g;
+}
+
 export function makeProp(kind, theme) {
   switch (kind) {
-    case 'lamp': case 'lamp_paris': case 'lamp_london': case 'lamp_rome': return makeLamp(theme);
+    case 'lamp': case 'lamp_paris': case 'lamp_london': case 'lamp_rome': case 'lamp_sf': return makeLamp(theme);
+    case 'flowerbed': return makeFlowerbed();
+    case 'streetcar_pole': return makeTrolleyPole();
     case 'tree': return makeTree('round');
     case 'cypress': return makeTree('cypress');
     case 'chestnut': return makeTree('chestnut');
@@ -1984,6 +2186,17 @@ export function makeStreetSpan(theme, width = 13) {
     cached('mat:wire', () => new THREE.MeshStandardMaterial({ color: 0x4a4a54, roughness: 0.8 })));
   wire.scale.set(width, 0.022, 0.022);
   g.add(wire);
+  if (style === 'wires') {
+    // Market Street: a trolley cross-span, with the two hangers that hold
+    // the contact wire over the centre lane. Wire only, no decoration.
+    for (const hx of [-0.9, 0.9]) {
+      const hanger = new THREE.Mesh(boxGeo, cache.get('mat:wire'));
+      hanger.scale.set(0.03, 0.5, 0.03);
+      hanger.position.set(hx, -0.25, 0);
+      g.add(hanger);
+    }
+    return g;
+  }
   const n = 11;
   if (style === 'string' || style === 'festoon') {
     // shallow sag: a deep catenary dips straight through the vanishing point
@@ -2080,6 +2293,37 @@ export function makeVehicle(theme) {
     const helm = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8),
       cached('mat:helm', () => new THREE.MeshStandardMaterial({ color: 0xf4f4f4, roughness: 0.3 })));
     helm.position.y = 2.15; g.add(helm);
+  } else if (kind === 'cablecar') {
+    // Powell Street cable car: maroon lower body, cream upper panels, a blue
+    // belt line, open running boards and a clerestory roof. Tall: track.js
+    // treats it as an unjumpable wall, as it does London's bus, so its
+    // height here has to match that hitbox (3.2m).
+    const livery = cached('ccTex', () => canvasTexture(256, 128, (c) => {
+      c.fillStyle = '#f2e8d0'; c.fillRect(0, 0, 256, 128);
+      c.fillStyle = '#8a1f2a'; c.fillRect(0, 78, 256, 50);
+      c.fillStyle = '#2a4a8a'; c.fillRect(0, 72, 256, 6);
+      c.fillStyle = '#cfe4ff';
+      for (let x = 10; x < 250; x += 30) c.fillRect(x, 12, 22, 46);
+      c.fillStyle = '#d8a838'; c.font = '900 13px Arial'; c.textAlign = 'center';
+      c.fillText('POWELL & HYDE', 128, 106);
+    }));
+    const wood = cached('mat:ccWood', () => new THREE.MeshStandardMaterial({ color: 0x7a5a3a, roughness: 0.85 }));
+    const cream = cached('mat:ccRoof', () => new THREE.MeshStandardMaterial({ color: 0xe8dcc0, roughness: 0.6 }));
+    const body = new THREE.Mesh(boxGeo, cached('mat:ccBody', () =>
+      new THREE.MeshStandardMaterial({ map: cache.get('ccTex'), roughness: 0.45 })));
+    body.scale.set(2.0, 2.3, 5.0);
+    body.position.y = 1.75; body.castShadow = true; g.add(body);
+    const roof = new THREE.Mesh(boxGeo, cream);
+    roof.scale.set(2.3, 0.16, 5.4);
+    roof.position.y = 2.98; g.add(roof);
+    const clere = new THREE.Mesh(boxGeo, cream);
+    clere.scale.set(1.2, 0.26, 4.6);
+    clere.position.y = 3.19; g.add(clere);
+    const boards = new THREE.Mesh(boxGeo, wood);
+    boards.scale.set(2.5, 0.08, 4.6);
+    boards.position.y = 0.6; g.add(boards);
+    const lampF = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), mats.glow);
+    lampF.position.set(0, 2.3, 2.52); g.add(lampF);
   } else { // citroen — rounded classic car, readable head-on
     const bodyMat = cached('mat:citroen', () =>
       new THREE.MeshStandardMaterial({ color: 0x4a7ac8, roughness: 0.28, metalness: 0.3 }));
@@ -2803,6 +3047,36 @@ function skylineTexture(theme) {
       g.bezierCurveTo(CX + 548, GY - 130, CX + 566, GY - 196, CX + 596, GY - 200);
       g.bezierCurveTo(CX + 626, GY - 196, CX + 644, GY - 130, CX + 632, GY);
       g.fill();
+    } else if (theme.id === 'sf') {
+      // San Francisco: hills in the marine layer with houses climbing them.
+      // A far ridge (Twin Peaks' double hump right of centre), then a nearer
+      // one carrying rows of narrow gabled houses. No named buildings: the
+      // three landmarks appear as monuments and cameos, and the Transamerica
+      // Pyramid's shape is a registered trademark.
+      const ridge = (f, hFn) => {
+        g.fillStyle = dark(f);
+        g.beginPath(); g.moveTo(0, GY);
+        for (let x = 0; x <= 1600; x += 16) g.lineTo(x, GY - hFn(x));
+        g.lineTo(1600, GY); g.fill();
+      };
+      const bump = (x, c, w, a) => a * Math.exp(-(((x - c) / w) ** 2));
+      const farH = (x) => 34 + bump(x, 1090, 105, 70) + bump(x, 1270, 95, 58) + bump(x, 380, 230, 40);
+      const nearH = (x) => 12 + bump(x, 560, 190, 52) + bump(x, 1420, 150, 34) + bump(x, 110, 120, 20);
+      ridge(0.1, farH);
+      ridge(0.18, nearH);
+      // houses packed shoulder to shoulder up the nearer hills
+      for (let x = 8, i = 0; x < 1592; i++) {
+        const bw = 10 + (i * 7) % 5;
+        const base = nearH(x + bw / 2);
+        if (base > 22) {
+          const hh = 9 + (i * 13) % 6;
+          box(x, bw, base + hh, 0.24);
+          g.beginPath();
+          g.moveTo(x, GY - base - hh); g.lineTo(x + bw / 2, GY - base - hh - 6); g.lineTo(x + bw, GY - base - hh);
+          g.fill();
+        }
+        x += bw + 1;
+      }
     } else {
       // Rome: dome after dome over a soft ridge, framed by umbrella pines
       g.fillStyle = dark(0.12);
@@ -2924,6 +3198,54 @@ export function makeCameo(theme) {
       g.fillStyle = dark(0.28);
       g.fillRect(bx - 130, GY - 180, 70, 180);
       g.fillRect(bx + 60, GY - 150, 80, 150);
+    } else if (key === 'coit') {
+      // Coit Tower on Telegraph Hill, up ahead at the end of the street
+      g.fillStyle = dark(0.3);
+      g.beginPath(); g.ellipse(cx, GY, 300, 74, 0, Math.PI, 0); g.fill();
+      g.fillStyle = dark(0.36);
+      for (const [ox, oy, r] of [[-190, 22, 22], [-108, 50, 26], [136, 46, 24], [214, 20, 19], [54, 64, 17]]) {
+        g.beginPath(); g.arc(cx + ox, GY - oy, r, 0, 7); g.fill();
+      }
+      // Scale note: the plane is 268m away at 0.2925 world units per pixel,
+      // so 1px is ~0.29m of apparent height. Every other cameo tops out
+      // around 250px; the tower and its hill are kept inside that.
+      const top = GY - 68, tw = 30;
+      g.fillStyle = dark(0.24);
+      g.beginPath();
+      g.moveTo(cx - tw / 2 - 4, top); g.lineTo(cx - tw / 2, top - 142);
+      g.lineTo(cx + tw / 2, top - 142); g.lineTo(cx + tw / 2 + 4, top);
+      g.fill();
+      g.fillRect(cx - tw / 2 - 5, top - 164, tw + 10, 24);           // observation ring
+      g.fillStyle = light(0.22);
+      for (let i = 0; i < 4; i++) {
+        const ax = cx - tw / 2 + 1 + i * 8;
+        g.fillRect(ax, top - 157, 4, 11);
+        g.beginPath(); g.arc(ax + 2, top - 157, 2, Math.PI, 0); g.fill();
+      }
+      g.fillStyle = dark(0.27);
+      g.fillRect(cx - tw / 2 + 2, top - 174, tw - 4, 11);            // cap
+    } else if (key === 'ferrytower') {
+      // the Ferry Building's clock tower, closing the end of Market Street
+      g.fillStyle = dark(0.3);
+      g.fillRect(cx - 240, GY - 54, 480, 54);                        // long terminal
+      g.fillStyle = light(0.12);
+      for (let x = cx - 224; x < cx + 224; x += 32) {
+        if (Math.abs(x - cx) < 40) continue;
+        g.fillRect(x, GY - 42, 16, 24);
+        g.beginPath(); g.arc(x + 8, GY - 42, 8, Math.PI, 0); g.fill();
+      }
+      g.fillStyle = dark(0.34);
+      g.fillRect(cx - 23, GY - 196, 46, 196);                        // tower shaft
+      g.fillRect(cx - 18, GY - 228, 36, 34);                         // belfry stage
+      g.fillRect(cx - 12, GY - 252, 24, 25);                         // lantern
+      g.beginPath();
+      g.moveTo(cx - 14, GY - 252); g.lineTo(cx, GY - 272); g.lineTo(cx + 14, GY - 252);
+      g.fill();
+      g.fillRect(cx - 1.5, GY - 290, 3, 20);                         // flagpole
+      g.fillStyle = light(0.45);
+      g.beginPath(); g.arc(cx, GY - 178, 11, 0, 7); g.fill();        // clock face
+      g.fillStyle = dark(0.4);
+      g.fillRect(cx - 1, GY - 186, 2, 8); g.fillRect(cx, GY - 179, 6, 2);
     } else if (key === 'sacre') {
       // The white basilica crowning the hill — the thing you are running
       // toward, so it is drawn big, bright and high-contrast.
