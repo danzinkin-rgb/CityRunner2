@@ -44,6 +44,49 @@ function ac() {
   return ctx;
 }
 
+// ---- unlocking audio on iOS
+// iOS will only start an AudioContext from inside a user gesture. A context
+// created anywhere else starts 'suspended', and resume() called from outside
+// a gesture is silently refused. Nothing used to create the context inside a
+// gesture: the first audio call was startMusic(), which runs in a setTimeout
+// ~520ms AFTER the player taps a city. So every run began silent, sound only
+// woke up on the first swipe (sfx.lane() happens to run inside touchend), and
+// a player who tapped rather than swiped could hear nothing at all.
+//
+// So every gesture gets a chance to create or resume the context, on the
+// capture phase so nothing further down the page can swallow it first. The
+// listeners stay on for the whole session rather than removing themselves
+// after the first success: iOS suspends the context again on interruptions
+// (a call, Siri, backgrounding), and ac() replaces one iOS has closed with a
+// brand-new context that starts suspended too. Either way the very next tap
+// brings sound back. Once the context is running each call is one state check.
+//
+// SILENT MODE IS RESPECTED, ON PURPOSE. Web Audio on iOS is muted by the
+// silent switch / Action button's silent mode, and that is left alone: it is
+// Apple's guidance for games whose sound is secondary, and a kids' game that
+// plays out loud on a phone someone has deliberately silenced is worse than
+// one that is quiet. Do not set navigator.audioSession.type = 'playback' to
+// "fix" silence on a muted phone — that is this behaviour, decided 22
+// September 2026.
+function unlock() {
+  const a = ac();                  // creates the context here, inside the gesture
+  if (!a || a.state === 'running') return;
+  a.resume().catch(() => {});
+  // Older iOS only treats the context as unlocked once something has actually
+  // been started from inside the gesture, so start one silent sample.
+  try {
+    const src = a.createBufferSource();
+    src.buffer = a.createBuffer(1, 1, 22050);
+    src.connect(a.destination);
+    src.start(0);
+  } catch { /* unlocking is best-effort; it must never break input */ }
+}
+if (typeof window !== 'undefined') {
+  for (const type of ['touchend', 'pointerup', 'click', 'keydown']) {
+    window.addEventListener(type, unlock, { capture: true, passive: true });
+  }
+}
+
 function tone(freq, dur, type = 'sine', vol = 0.5, when = 0, slide = 0, isMusic = false) {
   if (isMusic ? !prefs.music : !prefs.sfx) return;
   const a = ac();

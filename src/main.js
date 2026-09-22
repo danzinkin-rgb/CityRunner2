@@ -15,7 +15,7 @@ import { initIAP, getOffer, purchase, restore, onEntitlementGranted } from './co
 import { STORAGE } from './core/storage-keys.js';
 import { DEBUG_HOOKS } from './core/debug.js';
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.0.1';
 import { Player, DEFAULT_STYLE } from './run/player.js';
 import { Track } from './run/track.js';
 import { Puzzle } from './puzzle/puzzle.js';
