@@ -295,6 +295,7 @@ function startRun() {
     dressScene(scene, city());
     player = new Player(scene, characterById(save.equipped).style);
     track = new Track(scene, city(), level, runSeed);
+    track.onWeave = () => hint('That Vespa is signalling — it\'s about to change lanes!');
     speed = 14 + (level - 1) * 3;
     coins = 0; score = 0; shake = 0;
     continuesUsed = 0;

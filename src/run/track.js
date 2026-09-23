@@ -72,6 +72,35 @@ const OB_GEO = {
 };
 for (const g of Object.values(OB_GEO)) SHARED_GEO.add(g);
 
+// ---- Rome: Vespas that change lanes, and signal first ----------------------
+// Rome's move. Some Vespas flick an indicator on and, a moment later, drift
+// one lane over. The skill is reading the signal: the lane it LEAVES becomes
+// safe, the lane it is heading INTO does not. No other runner asks for that,
+// and it is true to how Rome's traffic moves.
+//
+// Timing, in seconds before the Vespa reaches the player: the indicator
+// starts at 2.6, the swerve starts at 1.1 and takes 0.55. So there is always
+// at least 1.5s of warning before anything moves.
+//
+// Fairness rules, applied once the whole row is laid out:
+//   - only a row with a SINGLE vehicle can weave; in a two-vehicle wall it
+//     could close the one free lane
+//   - never into a lane that already has an obstacle in the row
+//   - never into the row's coin lane, which would lure the player into it
+// Every draw here comes from the seeded stream, and only for Rome's Vespas,
+// so every other city's course is exactly as before.
+const WEAVE_CHANCE = [0.25, 0.4, 0.55];     // of single-vehicle rows, by level
+const WEAVE_BLINK = 2.6, WEAVE_START = 1.1, WEAVE_DUR = 0.55;
+const BLINK_MAT = new THREE.MeshStandardMaterial({
+  color: 0xffb020, emissive: 0xff9a00, emissiveIntensity: 2.4,
+});
+// A real Vespa's indicator is a few centimetres across and unreadable at
+// 30m on a phone. These are deliberately oversized, and a chevron over the
+// rider says which way in a form a four-year-old can read.
+const BLINK_GEO = new THREE.BoxGeometry(0.34, 0.26, 0.2);
+const CHEVRON_GEO = new THREE.ConeGeometry(0.62, 1.15, 3);
+SHARED_GEO.add(BLINK_GEO); SHARED_GEO.add(CHEVRON_GEO);
+
 // Obstacle kinds:
 //   'low'  — barrier, jump over
 //   'high' — overhead sign/scaffold, roll under
@@ -449,6 +478,7 @@ export class Track {
       const worldZ = chunkZ - zRow;
       const pattern = rand();
       const usedLanes = new Set();
+      let weaver = null, coinLane = -1;
 
       const addObstacle = (lane, kind) => {
         usedLanes.add(lane);
@@ -515,6 +545,9 @@ export class Track {
       const fullCut = this.level === 1 ? 0.18 : 0.3;
       if (pattern < fullCut) {
         addObstacle(randInt(3), 'full');
+        if (t.vehicle === 'vespa' && rand() < WEAVE_CHANCE[this.level - 1]) {
+          weaver = this.obstacles[this.obstacles.length - 1];
+        }
         if (this.level >= 2 && rand() < 0.5) addObstacle(pick3(usedLanes), 'low');
       } else if (pattern < 0.55) {
         addObstacle(randInt(3), 'low');
@@ -530,6 +563,7 @@ export class Track {
       const freeLanes = [0, 1, 2].filter((l) => !usedLanes.has(l));
       if (freeLanes.length && rand() < 0.75) {
         const lane = freeLanes[randInt(freeLanes.length)];
+        coinLane = lane;
         const arc = rand() < 0.35;
         // An arc traces the player's ACTUAL jump parabola, spaced by how far
         // they travel while airborne, and lifted clear of running height.
@@ -557,6 +591,31 @@ export class Track {
           this.coins.push({ mesh: coin, chunk: chunkGroup, taken: false });
         }
       }
+      // Rome: now the row is complete, decide where (if anywhere) the Vespa
+      // can go — see the fairness rules above WEAVE_CHANCE.
+      if (weaver) {
+        const opts = [weaver.lane - 1, weaver.lane + 1]
+          .filter((l) => l >= 0 && l <= 2 && !usedLanes.has(l) && l !== coinLane);
+        if (opts.length) {
+          const to = opts[randInt(opts.length)];
+          weaver.weave = to - weaver.lane;
+          weaver.x = LANES[weaver.lane];
+          weaver.blinkers = [];
+          for (const zz of [-0.95, 0.95]) {
+            const b = new THREE.Mesh(BLINK_GEO, BLINK_MAT);
+            b.position.set(weaver.weave * 0.58, 1.0, zz);
+            b.visible = false;
+            weaver.mesh.add(b);
+            weaver.blinkers.push(b);
+          }
+          const chev = new THREE.Mesh(CHEVRON_GEO, BLINK_MAT);
+          chev.rotation.z = -weaver.weave * Math.PI / 2;   // points the way it will go
+          chev.position.set(weaver.weave * 0.5, 3.3, 0);   // clear above the rider's helmet
+          chev.visible = false;
+          weaver.mesh.add(chev);
+          weaver.blinkers.push(chev);
+        }
+      }
     }
   }
 
@@ -566,6 +625,33 @@ export class Track {
     this.distance += dz;
     this.group.position.z += dz;
     this.coinSpin += dt * 4;
+    this.clock = (this.clock || 0) + dt;
+
+    // Rome's weaving Vespas: blink, then swerve (see WEAVE_CHANCE)
+    for (const o of this.obstacles) {
+      if (!o.weave || o.weaveDone) continue;
+      const wz = o.localZ + o.chunk.position.z + this.group.position.z;
+      const ahead = -wz / Math.max(1, speed);      // seconds until it reaches the player
+      if (ahead < WEAVE_BLINK) {
+        const on = Math.floor(this.clock * 3.2) % 2 === 0;   // a steady, readable blink
+        for (const b of o.blinkers) b.visible = on;
+        o.mesh.rotation.z = -o.weave * 0.12;      // the rider leans into it
+        if (!this.weaveSeen) { this.weaveSeen = true; if (this.onWeave) this.onWeave(); }
+      }
+      if (ahead < WEAVE_START) {
+        o.weaveT = Math.min(1, (o.weaveT || 0) + dt / WEAVE_DUR);
+        const k = o.weaveT * o.weaveT * (3 - 2 * o.weaveT);
+        o.x = LANES[o.lane] + (LANES[o.lane + o.weave] - LANES[o.lane]) * k;
+        o.mesh.position.x = o.x;
+        if (o.weaveT >= 1) {
+          o.lane += o.weave;
+          o.x = LANES[o.lane];
+          o.weaveDone = true;
+          o.mesh.rotation.z = 0;
+          for (const b of o.blinkers) b.visible = false;
+        }
+      }
+    }
 
     // recycle chunks that passed behind the camera
     while (this.chunks.length && this.chunks[0].position.z + this.group.position.z > CHUNK_LEN + 14) {
@@ -600,7 +686,7 @@ export class Track {
     for (const o of this.obstacles) {
       const wz = o.localZ + o.chunk.position.z + this.group.position.z;
       const zw = (o.halfLen || 0.35) * 0.55 + 0.3;
-      if (wz > -zw && wz < zw && Math.abs(LANES[o.lane] - hb.x) < 1.15) {
+      if (wz > -zw && wz < zw && Math.abs((o.x ?? LANES[o.lane]) - hb.x) < 1.15) {
         const overlap = hb.y0 < o.y1 && hb.y1 > o.y0;
         if (overlap) { onHit(); return; }
       }
