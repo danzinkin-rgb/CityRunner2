@@ -998,7 +998,7 @@ function blockMaterial(def, isGhost) {
   return mat;
 }
 
-function makeBlockMesh(def, isGhost = false) {
+function makeBlockMesh(def, isGhost = false, isChild = false) {
   const [w, h, d] = def.s;
   const mat = blockMaterial(def, isGhost);
   const setEm = (n) => {
@@ -1016,20 +1016,25 @@ function makeBlockMesh(def, isGhost = false) {
       break;
     case 'eifleg': {
       // curved lattice leg easing vertical into the platform corner
+      // y0 lets a leg start above the ground: the Eiffel's four piers carry on
+      // as separate legs from the first platform up to the second.
       const L = def.leg;
+      const y0 = L.y0 || 0, span = L.h - y0;
       const [px, py, pz] = def.p;
-      const P0 = new THREE.Vector3(L.x0 - px, -py, L.z0 - pz);
+      const P0 = new THREE.Vector3(L.x0 - px, y0 - py, L.z0 - pz);
       const P3 = new THREE.Vector3(L.x1 - px, L.h - py, L.z1 - pz);
       const P1 = new THREE.Vector3(
-        P0.x + (P3.x - P0.x) * 0.12, -py + L.h * 0.38, P0.z + (P3.z - P0.z) * 0.12);
-      const P2 = new THREE.Vector3(P3.x, -py + L.h * 0.74, P3.z);
+        P0.x + (P3.x - P0.x) * 0.12, y0 - py + span * 0.38, P0.z + (P3.z - P0.z) * 0.12);
+      const P2 = new THREE.Vector3(P3.x, y0 - py + span * 0.74, P3.z);
       const curve = new THREE.CubicBezierCurve3(P0, P1, P2, P3);
       out = new THREE.Group();
       out.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 20, L.r, 8), mat));
-      // broad foot pad
-      const foot = new THREE.Mesh(new THREE.BoxGeometry(L.r * 3.2, 0.3, L.r * 3.2), mat);
-      foot.position.set(P0.x, P0.y + 0.15, P0.z);
-      out.add(foot);
+      // broad foot pad, on the ground legs only
+      if (!y0) {
+        const foot = new THREE.Mesh(new THREE.BoxGeometry(L.r * 3.2, 0.3, L.r * 3.2), mat);
+        foot.position.set(P0.x, P0.y + 0.15, P0.z);
+        out.add(foot);
+      }
       break;
     }
     case 'chain': {
@@ -1258,6 +1263,42 @@ function makeBlockMesh(def, isGhost = false) {
       }
       break;
     }
+    case 'lathe': {
+      // A profile spun round the vertical axis: domes with drums, spires,
+      // balusters, columns with entasis, lanterns. `profile` is a list of
+      // [radius, height] pairs as FRACTIONS — radius of w/2, height of h from
+      // the bottom — so the block's s still sizes it like any other shape.
+      const pts = def.profile.map(([r, y]) => new THREE.Vector2(Math.max(0.001, r * w / 2), y * h - h / 2));
+      geo = new THREE.LatheGeometry(pts, def.seg || 24);
+      break;
+    }
+    case 'extrude': {
+      // A flat outline pushed back through the block's depth, with openings
+      // cut right through it — real arches you can see the sky through, stepped
+      // Art Deco profiles, gables with carved trim. `outline` is [x, y] pairs
+      // as fractions of w and h, centred on 0; `holes` are
+      // {x, y, w, h, arch} in the same fractions, x/y being the hole's centre,
+      // and `arch: true` rounds the top into a semicircle.
+      const shape = new THREE.Shape(def.outline.map(([x, y]) => new THREE.Vector2(x * w, y * h)));
+      for (const o of def.holes || []) {
+        const hw = (o.w * w) / 2, cx = o.x * w, y0 = (o.y - o.h / 2) * h, y1 = (o.y + o.h / 2) * h;
+        const path = new THREE.Path();
+        if (o.arch) {
+          const spring = y1 - hw;                  // where the semicircle begins
+          path.moveTo(cx - hw, y0); path.lineTo(cx + hw, y0);
+          path.lineTo(cx + hw, spring);
+          path.absarc(cx, spring, hw, 0, Math.PI, false);
+          path.lineTo(cx - hw, y0);
+        } else {
+          path.moveTo(cx - hw, y0); path.lineTo(cx + hw, y0);
+          path.lineTo(cx + hw, y1); path.lineTo(cx - hw, y1); path.lineTo(cx - hw, y0);
+        }
+        shape.holes.push(path);
+      }
+      geo = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: false, curveSegments: 10 });
+      geo.translate(0, 0, -d / 2);
+      break;
+    }
     case 'rock': {
       geo = new THREE.DodecahedronGeometry(w / 2, 0);
       geo.scale(1, h / w, d / w);
@@ -1267,6 +1308,23 @@ function makeBlockMesh(def, isGhost = false) {
   }
 
   if (!out) out = new THREE.Mesh(geo, mat);
+  // `adorn`: detail that belongs to this piece and arrives with it — railings,
+  // pinnacles, lamps, trim. Each entry is a block def whose p is RELATIVE to
+  // this piece's centre. It is how a monument gains realism without gaining
+  // taps: the player places one pier, and the pier comes with its lamps.
+  // Children are ordinary meshes under this one, so picking (which walks up to
+  // the piece's root), desaturate/resaturate and the ghost all include them.
+  // Keep adornments inside the piece's own s box: the scatter layout sizes a
+  // loose piece from s alone.
+  if (def.adorn && def.adorn.length) {
+    if (!out.isGroup) { const g = new THREE.Group(); g.add(out); out = g; }
+    for (const a of def.adorn) {
+      const child = makeBlockMesh(a, isGhost, true);
+      child.position.set(...a.p);
+      child.rotation.set(a.rotX || 0, a.rotY || 0, a.rotZ || 0);
+      out.add(child);
+    }
+  }
   out.traverse((n) => {
     if (n.isMesh) {
       n.castShadow = !isGhost;
@@ -1275,7 +1333,7 @@ function makeBlockMesh(def, isGhost = false) {
     }
   });
   // invisible fat hit-proxy so thin blocks (spires, cables) are easy to tap
-  if (!isGhost) {
+  if (!isGhost && !isChild) {
     const hit = new THREE.Mesh(
       new THREE.BoxGeometry(Math.max(w, 1.2), Math.max(h, 1.2), Math.max(d, 1.2)),
       new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }),
