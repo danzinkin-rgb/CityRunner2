@@ -25,9 +25,15 @@
  *   node test/capture-city-assets.mjs sf            one city
  *   node test/capture-city-assets.mjs sf nyc rome   several
  *   node test/capture-city-assets.mjs --all         every city in themes.js
+ *   ... --force                                     also overwrite existing
+ *
+ * Monument images are always re-rendered: they are meant to track the
+ * monuments as they change. Thumbnails and souvenir icons that already exist
+ * are LEFT ALONE unless --force is given, because the original four cities'
+ * were made by hand and a re-render is not the same picture.
  */
 import { webkit } from 'playwright';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startStaticServer } from './serve.mjs';
@@ -39,6 +45,8 @@ const themesSrc = readFileSync(join(ROOT, 'src', 'cities', 'themes.js'), 'utf8')
 const ALL = [...themesSrc.matchAll(/^\s{2}\{\s*$\n\s*id:\s*'([a-z]+)'/gm)].map((m) => m[1]);
 
 const args = process.argv.slice(2);
+const FORCE = args.includes('--force');
+const keep = (path) => !FORCE && existsSync(path);
 const cities = args.includes('--all') ? ALL : args.filter((a) => !a.startsWith('--'));
 if (!cities.length) {
   console.log('usage: node test/capture-city-assets.mjs <cityId...> | --all');
@@ -134,7 +142,9 @@ for (const city of cities) {
   // ?ui=souvenir renders the collectible alone on a flat backdrop. That flat
   // backdrop is what makes keying reliable: every pixel close to it in all
   // three channels is background, everything else is the souvenir.
-  {
+  if (keep(join(ROOT, 'assets', 'souvenirs', `${city}.png`))) {
+    console.log(`-- ${city}: assets/souvenirs/${city}.png exists, kept (--force to redo)`);
+  } else {
     const ctx = await browser.newContext({ viewport: { width: 700, height: 700 }, deviceScaleFactor: 2 });
     const page = await ctx.newPage();
     await page.goto(`${base}/?ui=souvenir&city=${city}`, { waitUntil: 'load' });
@@ -154,7 +164,9 @@ for (const city of cities) {
   // ---------------------------------------------------- menu thumbnail
   // A square crop of the city's first street, matching the existing four at
   // 256x256. god=1 keeps a collision from ending the run mid-capture.
-  {
+  if (keep(join(ROOT, 'assets', 'thumbs', `${city}.png`))) {
+    console.log(`-- ${city}: assets/thumbs/${city}.png exists, kept (--force to redo)`);
+  } else {
     const ctx = await browser.newContext({ viewport: { width: 520, height: 900 }, deviceScaleFactor: 2 });
     const page = await ctx.newPage();
     await page.goto(`${base}/?view=run&city=${city}&level=1&god=1&seed=7`, { waitUntil: 'load' });
