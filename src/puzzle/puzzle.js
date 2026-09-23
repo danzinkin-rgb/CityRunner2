@@ -1277,13 +1277,22 @@ function makeBlockMesh(def, isGhost = false, isChild = false) {
       // cut right through it — real arches you can see the sky through, stepped
       // Art Deco profiles, gables with carved trim. `outline` is [x, y] pairs
       // as fractions of w and h, centred on 0; `holes` are
-      // {x, y, w, h, arch} in the same fractions, x/y being the hole's centre,
-      // and `arch: true` rounds the top into a semicircle.
+      // {x, y, w, h, arch} in the same fractions, x/y being the hole's centre.
+      // `arch: true` rounds the top into a semicircle; `arch: 'pointed'` gives
+      // an equilateral Gothic arch (two arcs, each centred on the opposite
+      // springing point), as on Brooklyn Bridge and the Palace of Westminster.
       const shape = new THREE.Shape(def.outline.map(([x, y]) => new THREE.Vector2(x * w, y * h)));
       for (const o of def.holes || []) {
         const hw = (o.w * w) / 2, cx = o.x * w, y0 = (o.y - o.h / 2) * h, y1 = (o.y + o.h / 2) * h;
         const path = new THREE.Path();
-        if (o.arch) {
+        if (o.arch === 'pointed') {
+          const spring = y1 - Math.sqrt(3) * hw;   // apex sits sqrt(3)*hw above the springing line
+          path.moveTo(cx - hw, y0); path.lineTo(cx + hw, y0);
+          path.lineTo(cx + hw, spring);
+          path.absarc(cx - hw, spring, 2 * hw, 0, Math.PI / 3, false);
+          path.absarc(cx + hw, spring, 2 * hw, 2 * Math.PI / 3, Math.PI, false);
+          path.lineTo(cx - hw, y0);
+        } else if (o.arch) {
           const spring = y1 - hw;                  // where the semicircle begins
           path.moveTo(cx - hw, y0); path.lineTo(cx + hw, y0);
           path.lineTo(cx + hw, spring);
@@ -1297,6 +1306,26 @@ function makeBlockMesh(def, isGhost = false, isChild = false) {
       }
       geo = new THREE.ExtrudeGeometry(shape, { depth: d, bevelEnabled: false, curveSegments: 10 });
       geo.translate(0, 0, -d / 2);
+      break;
+    }
+    case 'fan': {
+      // Stay cables radiating from one point down to a run of points on the
+      // deck, doubled either side of the bridge: Brooklyn Bridge's web.
+      // fan: { ax, ay } apex, { x0, x1, deckY } deck run, n cables, z offset,
+      // r thickness — all relative to the block centre.
+      const f = def.fan;
+      out = new THREE.Group();
+      for (const zz of [f.z, -f.z]) {
+        for (let i = 0; i < f.n; i++) {
+          const x = f.x0 + (i / Math.max(1, f.n - 1)) * (f.x1 - f.x0);
+          const dx = x - f.ax, dy = f.deckY - f.ay;
+          const len = Math.hypot(dx, dy);
+          const stay = new THREE.Mesh(new THREE.BoxGeometry(f.r || 0.05, len, f.r || 0.05), mat);
+          stay.position.set((f.ax + x) / 2, (f.ay + f.deckY) / 2, zz);
+          stay.rotation.z = Math.atan2(dx, dy) * -1;
+          out.add(stay);
+        }
+      }
       break;
     }
     case 'rock': {

@@ -129,7 +129,10 @@ for (const city of cities) {
     const id = LANDMARKS[city][lv - 1];
     const ctx = await browser.newContext({ viewport: { width: 600, height: 700 }, deviceScaleFactor: 2 });
     const page = await ctx.newPage();
-    await page.goto(`${base}/?ui=monument&city=${city}&level=${lv}&built=1`, { waitUntil: 'load' });
+    // Brooklyn's twin arches face along the bridge, so its image is taken
+    // from further round than the others.
+    const yaw = { brooklyn: 0.95 }[id] || 0.44;
+    await page.goto(`${base}/?ui=monument&city=${city}&level=${lv}&built=1&yaw=${yaw}`, { waitUntil: 'load' });
     await page.waitForTimeout(1800);
     const url = await page.evaluate(KEY_AND_CROP, 320);
     await ctx.close();

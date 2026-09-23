@@ -72,16 +72,39 @@ function eifleg(x0, z0, x1, z1, h, r, c, y0 = 0) {
     c, 'eifleg', { leg: { x0, z0, x1, z1, h, r, y0 }, em: '#ff9d5a', emI: 0.08 });
 }
 
-// Painted Ladies row house: a narrow gabled body with a bay window bulge.
-// `roofI` picks between two slate tones. They are deliberately close: San
-// Francisco's Victorians are painted in every colour but their roofs are all
-// dark slate, so the variety belongs in the walls, not the roofline.
-function ladyHouse(x, body, bay, roofI) {
+// Painted Ladies row house: the body, and the gable roof above it. The body
+// arrives with what makes it a Victorian: a three-sided bay window running
+// up both storeys, a cornice band in the trim colour, and a stoop. The roof
+// arrives with its carved bargeboards and a gable window. The trim colour
+// is half of what "painted" means here — every house is in two or three
+// colours, not one.
+function ladyHouse(x, body, trim, roofI) {
   const roof = ['#403c38', '#4a4640'][roofI];
+  // the bay: a trapezoid extruded upward (rotX turns the extrusion to vertical)
+  const bay = (y, h) => B([0, y, 2.62], [2.1, 0.84, h], body, 'extrude', {
+    rotX: Math.PI / 2, outline: [[-0.5, -0.5], [0.5, -0.5], [0.3, 0.5], [-0.3, 0.5]],
+  });
+  const win = (bx, y) => B([bx, y, 3.06], [0.62, 1.2, 0.05], '#4d6278');
   return [
-    B([x, 4.1, 0], [3.4, 8.2, 4.4], body, 'box', { tex: 'win', tx: { cols: 2, rows: 4 } }),
-    B([x, 5.0, 2.5], [2.1, 5.2, 1.1], bay, 'box', { tex: 'win', tx: { cols: 1, rows: 3 } }),
-    B([x, 10.0, 0], [3.7, 3.6, 4.4], roof, 'prism'),
+    B([x, 4.1, 0], [3.4, 8.2, 4.4], body, 'box', {
+      tex: 'win', tx: { cols: 2, rows: 4 },
+      adorn: [
+        bay(-0.4, 5.6),
+        win(0, 0.9), win(0, -1.9),
+        B([0, 2.35, 3.05], [1.4, 0.18, 0.1], trim),        // bay cornice
+        B([0, 4.0, 0.1], [3.62, 0.34, 4.6], trim),          // cornice band
+        B([-1.72, 0, 2.21], [0.14, 8.2, 0.08], trim),       // corner boards
+        B([1.72, 0, 2.21], [0.14, 8.2, 0.08], trim),
+        B([1.05, -3.75, 2.7], [1.0, 0.7, 1.0], trim),       // stoop
+      ],
+    }),
+    B([x, 10.0, 0], [3.7, 3.6, 4.4], roof, 'prism', {
+      adorn: [
+        B([-0.925, 0, 2.24], [4.05, 0.22, 0.1], trim, 'box', { rotZ: 1.096 }),
+        B([0.925, 0, 2.24], [4.05, 0.22, 0.1], trim, 'box', { rotZ: -1.096 }),
+        B([0, -0.55, 2.23], [0.7, 0.9, 0.06], '#4d6278'),
+      ],
+    }),
   ];
 }
 
@@ -134,25 +157,61 @@ const defs = {
     B([0, 21.3, 0], [0.13, 2.9, 0.13], '#f4f7fb', 'cyl', { metal: 1, em: '#fff2d8', emI: 0.35 }),
   ],
 
-  // Brooklyn Bridge: scaled up ~30%, deck approach ramps reaching the plaza
-  // edges, main catenary cables 3x thicker (suspenders stay thin).
+  // Brooklyn Bridge. Seen side-on, what makes it Brooklyn is the WEB: the
+  // diagonal stays that fan out from each tower top across the main cables,
+  // which the old model did not have at all. The granite towers are cut
+  // right through with their twin pointed Gothic arches — oriented as the
+  // real ones are, with the roadway passing THROUGH them, so they show as
+  // the camera comes round. Towers rise well clear of the deck, and the
+  // cables land on masonry anchorages rather than on ramps into the plaza.
   brooklyn: [
-    B([-10.8, 2.2, 0], [2.5, 3.4, 4.3], '#a89a80', 'box', { tex: 'relief' }),
-    B([10.8, 2.2, 0], [2.5, 3.4, 4.3], '#a89a80', 'box', { tex: 'relief' }),
-    // approach ramps sloping down to the plaza edges
-    B([-14.9, 2.2, 0], [7.0, 0.6, 3.9], '#7d6f5a', 'box', { rotZ: -0.35 }),
-    B([14.9, 2.2, 0], [7.0, 0.6, 3.9], '#7d6f5a', 'box', { rotZ: 0.35 }),
-    B([-7.4, 3.4, 0], [7.2, 0.6, 3.9], '#867860'),
-    B([0, 3.4, 0], [8.1, 0.6, 3.9], '#93846c'),
-    B([7.4, 3.4, 0], [7.2, 0.6, 3.9], '#867860'),
-    B([-6.0, 7.0, 0], [3.3, 8.6, 4.3], '#b2a488', 'box', { tex: 'gothic' }),
-    B([6.0, 7.0, 0], [3.3, 8.6, 4.3], '#b2a488', 'box', { tex: 'gothic' }),
-    B([-6.0, 11.6, 0], [3.8, 0.65, 4.8], '#c4b294'),
-    B([6.0, 11.6, 0], [3.8, 0.65, 4.8], '#c4b294'),
-    B([0, 3.5, 1.7], [22.6, 0.7, 0.3], '#efeadb', 'cable',
-      { sortY: 12, cable: { towerX: 6.0, topY: 11.2, midY: 4.35, endX: 11.2, endY: 3.5, deckY: 3.7, hangers: 11, r: 0.27 } }),
-    B([0, 3.5, -1.7], [22.6, 0.7, 0.3], '#efeadb', 'cable',
-      { sortY: 12, cable: { towerX: 6.0, topY: 11.2, midY: 4.35, endX: 11.2, endY: 3.5, deckY: 3.7, hangers: 11, r: 0.27 } }),
+    // tower foundations and the two masonry anchorages
+    B([-6.2, 0.6, 0], [3.4, 1.2, 5.4], '#9d917b', 'box', { tex: 'relief' }),
+    B([6.2, 0.6, 0], [3.4, 1.2, 5.4], '#9d917b', 'box', { tex: 'relief' }),
+    B([-12.6, 2.1, 0], [3.2, 4.2, 5.0], '#a89a80', 'box', { tex: 'ashlar' }),
+    B([12.6, 2.1, 0], [3.2, 4.2, 5.0], '#a89a80', 'box', { tex: 'ashlar' }),
+    // the deck, with the raised timber promenade down its middle
+    B([-8.9, 3.7, 0], [5.4, 0.5, 4.0], '#6f675d'),
+    B([8.9, 3.7, 0], [5.4, 0.5, 4.0], '#6f675d'),
+    B([0, 3.7, 0], [9.0, 0.5, 4.0], '#766d62', 'box', {
+      adorn: [B([0, 0.42, 0], [9.0, 0.16, 1.2], '#b08a5c')],
+    }),
+    // granite towers: an extruded face with two pointed arches cut through,
+    // turned so the roadway runs through the arches
+    ...[-6.2, 6.2].map((x) => B([x, 6.9, 0], [4.8, 11.6, 2.8], '#b9aa8e', 'extrude', {
+      rotY: Math.PI / 2,
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [
+        { x: -0.22, y: -0.07, w: 0.25, h: 0.4, arch: 'pointed' },
+        { x: 0.22, y: -0.07, w: 0.25, h: 0.4, arch: 'pointed' },
+      ],
+      adorn: [
+        // cornice and crown across the top of the tower
+        B([0, 5.95, 0], [5.0, 0.45, 3.0], '#c9ba9c'),
+        B([0, 6.35, 0], [4.6, 0.4, 2.6], '#b3a488'),
+        // the narrow faces are what the camera sees side-on. A tall sunk
+        // panel and three string courses stop them reading as blank slabs.
+        // (Local x is across the bridge here: the tower is turned 90deg.)
+        ...[-1, 1].flatMap((sd) => [
+          B([sd * 2.42, 0.8, 0], [0.06, 7.8, 1.5], '#9e9078'),
+          ...[-3.9, -0.9, 3.9].map((y) => B([sd * 2.43, y, 0], [0.08, 0.26, 2.8], '#cbbc9e')),
+        ]),
+      ],
+    })),
+    // the four main cables, hung after the towers
+    B([0, 3.9, 1.7], [25.2, 0.7, 0.3], '#e6e0d0', 'cable',
+      { sortY: 12.5, cable: { towerX: 6.2, topY: 12.9, midY: 4.6, endX: 12.4, endY: 4.0, deckY: 4.0, hangers: 13, r: 0.2 } }),
+    B([0, 3.9, -1.7], [25.2, 0.7, 0.3], '#e6e0d0', 'cable',
+      { sortY: 12.5, cable: { towerX: 6.2, topY: 12.9, midY: 4.6, endX: 12.4, endY: 4.0, deckY: 4.0, hangers: 13, r: 0.2 } }),
+    // the web: stays fanning from each tower top, inward and outward
+    B([-3.4, 8.3, 0], [5.8, 9.2, 3.6], '#ddd6c4', 'fan',
+      { sortY: 13, fan: { ax: -2.8, ay: 4.4, x0: -2.0, x1: 2.6, deckY: -4.4, n: 6, z: 1.7, r: 0.06 } }),
+    B([3.4, 8.3, 0], [5.8, 9.2, 3.6], '#ddd6c4', 'fan',
+      { sortY: 13, fan: { ax: 2.8, ay: 4.4, x0: 2.0, x1: -2.6, deckY: -4.4, n: 6, z: 1.7, r: 0.06 } }),
+    B([-9.2, 8.3, 0], [5.8, 9.2, 3.6], '#ddd6c4', 'fan',
+      { sortY: 13, fan: { ax: 3.0, ay: 4.4, x0: 2.2, x1: -2.4, deckY: -4.4, n: 6, z: 1.7, r: 0.06 } }),
+    B([9.2, 8.3, 0], [5.8, 9.2, 3.6], '#ddd6c4', 'fan',
+      { sortY: 13, fan: { ax: -3.0, ay: 4.4, x0: -2.2, x1: 2.4, deckY: -4.4, n: 6, z: 1.7, r: 0.06 } }),
   ],
 
   // ================= PARIS =================
@@ -260,23 +319,56 @@ const defs = {
   ],
 
   // ================= LONDON =================
-  // Big Ben: limestone ashlar panels with gothic ribs, glowing warm-ivory
-  // clock faces with bold hands and a gold ring, stretched belfry.
+  // Big Ben (the Elizabeth Tower). The pieces are the same thirteen; what
+  // changed is what they carry. The shaft is Gothic panelling rather than
+  // plain ashlar above the base; each clock stage arrives with its gablets
+  // and corner pinnacles; the belfry is a real open arcade of pointed arches
+  // round a dark core; and the iron spire carries its four corner pinnacles
+  // and the Ayrton Light lantern below the finial.
   bigben: [
     B([0, 0.35, 0], [4.0, 0.7, 4.0], '#b6ab8d'),                 // plinth
     B([0, 2.9, 0], [3.5, 4.4, 3.5], '#d4c9a8', 'box', { tex: 'ashlar' }),
-    B([0, 7.2, 0], [3.25, 4.2, 3.25], '#cbbf9e', 'box', { tex: 'ashlar' }),
-    B([0, 11.3, 0], [3.25, 4.0, 3.25], '#d4c9a8', 'box', { tex: 'ashlar' }),
-    B([0, 14.35, 0], [3.7, 2.4, 3.7], '#ded3b0', 'box', { tex: 'relief', em: '#ffd9a0', emI: 0.14 }),
+    B([0, 7.2, 0], [3.25, 4.2, 3.25], '#cbbf9e', 'box', { tex: 'gothic' }),
+    B([0, 11.3, 0], [3.25, 4.0, 3.25], '#d4c9a8', 'box', { tex: 'gothic' }),
+    B([0, 14.35, 0], [3.7, 2.4, 3.7], '#ded3b0', 'box', {
+      tex: 'relief', em: '#ffd9a0', emI: 0.14,
+      adorn: [
+        // a gablet over each clock face
+        B([0, 1.55, 1.78], [2.4, 0.9, 0.3], '#e2d7b4', 'prism'),
+        B([0, 1.55, -1.78], [2.4, 0.9, 0.3], '#e2d7b4', 'prism'),
+        B([1.78, 1.55, 0], [2.4, 0.9, 0.3], '#e2d7b4', 'prism', { rotY: Math.PI / 2 }),
+        B([-1.78, 1.55, 0], [2.4, 0.9, 0.3], '#e2d7b4', 'prism', { rotY: Math.PI / 2 }),
+        // corner pinnacles, gold-tipped
+        ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([a, b]) => B([a * 1.75, 1.5, b * 1.75], [0.34, 1.1, 0.34], '#cfae6c', 'cone4', { metal: 1 })),
+      ],
+    }),
     B([0, 14.35, 1.93], [2.55, 2.55, 0.22], '#f8f1da', 'clock'),
     B([0, 14.35, -1.93], [2.55, 2.55, 0.22], '#f8f1da', 'clock'),
     B([1.93, 14.35, 0], [2.55, 2.55, 0.22], '#f8f1da', 'clock', { rotY: Math.PI / 2 }),
     B([-1.93, 14.35, 0], [2.55, 2.55, 0.22], '#f8f1da', 'clock', { rotY: Math.PI / 2 }),
-    // belfry stretched ~20%
-    B([0, 16.5, 0], [3.05, 1.95, 3.05], '#cbbf9e', 'box', { tex: 'arch', tx: { n: 3 } }),
-    B([0, 19.05, 0], [2.75, 3.2, 2.75], '#5e7258', 'cone4'),
-    B([0, 21.15, 0], [1.15, 1.75, 1.15], '#cfae6c', 'cone4', { metal: 1, em: '#ffd9a0', emI: 0.45 }),
-    B([0, 22.5, 0], [0.18, 1.3, 0.18], '#e6d29e', 'cyl', { metal: 1, em: '#ffd9a0', emI: 0.55 }),
+    // belfry: a dark core behind four arcaded screens of pointed arches
+    B([0, 16.65, 0], [3.05, 1.95, 3.05], '#3d3a35', 'box', {
+      adorn: [
+        ...[[0, 1.46, 0], [0, -1.46, 0], [1.46, 0, Math.PI / 2], [-1.46, 0, Math.PI / 2]].map(([x, z, r]) =>
+          B([x, 0, z], [3.1, 1.95, 0.14], '#d4c9a8', 'extrude', {
+            rotY: r,
+            outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+            holes: [-0.3, 0, 0.3].map((hx) => ({ x: hx, y: -0.06, w: 0.2, h: 0.66, arch: 'pointed' })),
+          })),
+      ],
+    }),
+    // cast-iron spire, with its four corner pinnacles
+    B([0, 19.25, 0], [2.85, 3.2, 2.85], '#5a6d55', 'cone4', {
+      adorn: [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([a, b]) => B([a * 1.25, -0.6, b * 1.25], [0.3, 2.0, 0.3], '#6f8568', 'cone4', {
+        adorn: [B([0, 1.05, 0], [0.12, 0.3, 0.12], '#cfae6c', 'cyl', { metal: 1 })],
+      })),
+    }),
+    // the Ayrton Light: a small lantern, lit when Parliament sits
+    B([0, 21.2, 0], [1.1, 1.8, 1.1], '#cfae6c', 'lathe', {
+      profile: [[0.8, 0], [0.8, 0.18], [0.55, 0.22], [0.55, 0.6], [0.72, 0.64], [0.3, 0.88], [0.08, 1]],
+      seg: 8, metal: 1, em: '#ffd9a0', emI: 0.5,
+    }),
+    B([0, 22.7, 0], [0.18, 1.3, 0.18], '#e6d29e', 'cyl', { metal: 1, em: '#ffd9a0', emI: 0.55 }),
   ],
 
   // Tower Bridge: pale stone towers with corner turrets, saturated
@@ -434,43 +526,47 @@ const defs = {
       { sortY: 19, cable: { towerX: 6.4, topY: 17.2, midY: 5.0, endX: 13.4, endY: 3.9, deckY: 4.0, hangers: 13, r: 0.17 } }),
   ],
 
-  // Coit Tower: a plain unpainted-concrete fluted column. The real thing is
-  // pale grey-cream, not white, and is NOT shaped like a fire-hose nozzle —
-  // that is a myth, so the shaft stays a clean taper. 'strip' gives the
-  // fluting; 'archcut' punches the observation-deck arches through.
+  // Coit Tower: a plain unpainted-concrete fluted column, pale grey-cream,
+  // and NOT shaped like a fire-hose nozzle — that is a myth. The flutes are
+  // real ribs now, arriving with each lift of the shaft, not a painted
+  // stripe; the gallery is a ring of tall round-headed openings; and it
+  // stands on the two-storey base building where the 1934 murals are.
   coit: [
-    B([0, 0.4, 0], [5.2, 0.8, 5.2], '#b7b1a4'),
-    B([0, 1.6, 0], [4.2, 1.6, 4.2], '#c3bdae', 'cyl'),
-    B([0, 2.6, 2.0], [1.3, 2.0, 0.5], '#a8a294', 'box', { tex: 'arch' }),
-    B([0, 3.6, 0], [3.5, 2.2, 3.5], '#d2ccbd', 'cyl', { tex: 'strip' }),
-    B([0, 5.8, 0], [3.4, 2.2, 3.4], '#d4cec0', 'cyl', { tex: 'strip' }),
-    B([0, 8.0, 0], [3.3, 2.2, 3.3], '#d2ccbd', 'cyl', { tex: 'strip' }),
-    B([0, 10.2, 0], [3.2, 2.2, 3.2], '#d4cec0', 'cyl', { tex: 'strip' }),
-    B([0, 12.4, 0], [3.05, 2.2, 3.05], '#d2ccbd', 'cyl', { tex: 'strip' }),
-    B([0, 14.6, 0], [2.9, 2.2, 2.9], '#d4cec0', 'cyl', { tex: 'strip' }),
-    B([0, 16.8, 0], [2.8, 2.2, 2.8], '#d2ccbd', 'cyl', { tex: 'strip' }),
-    B([0, 18.2, 0], [3.2, 0.5, 3.2], '#c9c3b4', 'cyl'),
-    B([0, 19.6, 0], [3.3, 2.4, 3.3], '#dcd6c6', 'cyl', { tex: 'archcut' }),
-    B([0, 21.1, 0], [2.9, 0.6, 2.9], '#c9c3b4', 'cyl'),
-    B([0, 21.9, 0], [2.3, 0.9, 2.3], '#d4cec0', 'cyl'),
-    B([0, 22.9, 0], [2.0, 1.1, 2.0], '#dcd6c6', 'dome'),
-    B([0, 24.2, 0], [0.13, 2.4, 0.13], '#efe9da', 'cyl', { metal: 1 }),
-    // hillside lamps either side of the entrance path
-    B([-2.6, 1.5, 2.6], [0.16, 1.8, 0.16], '#8e887c', 'cyl', { em: '#ffe6b0', emI: 0.5 }),
-    B([2.6, 1.5, 2.6], [0.16, 1.8, 0.16], '#8e887c', 'cyl', { em: '#ffe6b0', emI: 0.5 }),
+    // the base building, with its arched entrance
+    B([0, 1.1, 0], [6.6, 2.2, 6.6], '#c3bdae', 'box', {
+      tex: 'arch', tx: { n: 5 },
+      adorn: [B([0, 1.25, 0], [7.0, 0.3, 7.0], '#b7b1a4')],
+    }),
+    // the fluted shaft, in seven lifts, each carrying its own ribs
+    ...[0, 1, 2, 3, 4, 5, 6].map((i) => {
+      const w = 3.5 - i * 0.1;
+      return B([0, 3.3 + i * 2.2, 0], [w, 2.2, w], i % 2 ? '#d4cec0' : '#d2ccbd', 'cyl', {
+        adorn: ring(0, 0, w / 2 + 0.02, 16, [0.12, 2.2, 0.16], '#c6c0b1'),
+      });
+    }),
+    // corbel, then the observation gallery of tall arched openings
+    // stacked flush: the shaft's last lift tops out at 17.7
+    B([0, 17.95, 0], [3.2, 0.5, 3.2], '#c9c3b4', 'cyl'),
+    B([0, 19.4, 0], [3.3, 2.4, 3.3], '#dcd6c6', 'cyl', { tex: 'archcut' }),
+    B([0, 20.9, 0], [2.9, 0.6, 2.9], '#c9c3b4', 'cyl'),
+    B([0, 21.65, 0], [2.3, 0.9, 2.3], '#d4cec0', 'cyl'),
+    B([0, 22.1, 0], [2.0, 1.1, 2.0], '#dcd6c6', 'dome'),
+    B([0, 24.3, 0], [0.13, 2.4, 0.13], '#efe9da', 'cyl', { metal: 1 }),
   ],
 
   // Painted Ladies: seven narrow houses shoulder to shoulder, each its own
   // colour, each with a bay window and a steep gable. The jagged roofline is
   // the whole picture; the colour variety is in the walls, not the roofs.
   paintedladies: [
-    ...ladyHouse(-10.8, '#d8788c', '#e9a0ae', 0),
-    ...ladyHouse(-7.2, '#e8c274', '#f4dca6', 1),
-    ...ladyHouse(-3.6, '#9fc4a8', '#c6ddcb', 0),
-    ...ladyHouse(0, '#8fb4d4', '#bcd4e6', 1),
-    ...ladyHouse(3.6, '#c9a8cc', '#e0cbe2', 0),
-    ...ladyHouse(7.2, '#e2a07c', '#f0c6ad', 1),
-    ...ladyHouse(10.8, '#cfc4b2', '#e6dece', 0),
+    // body and trim colours in the spirit of Steiner Street: each house a
+    // pastel with a contrasting trim, no two neighbours alike
+    ...ladyHouse(-10.8, '#d8788c', '#f4ecd8', 0),
+    ...ladyHouse(-7.2, '#e8c274', '#7a3a4a', 1),
+    ...ladyHouse(-3.6, '#9fc4a8', '#f4ecd8', 0),
+    ...ladyHouse(0, '#8fb4d4', '#e8c274', 1),
+    ...ladyHouse(3.6, '#c9a8cc', '#f4ecd8', 0),
+    ...ladyHouse(7.2, '#e2a07c', '#3f5a6a', 1),
+    ...ladyHouse(10.8, '#cfc4b2', '#8a3a3a', 0),
   ],
 };
 

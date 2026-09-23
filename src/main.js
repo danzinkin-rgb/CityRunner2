@@ -1317,7 +1317,11 @@ if (DEBUG_HOOKS && q.get('ui')) {
     camera.fov = 30; camera.updateProjectionMatrix();
     const fit = Math.max(sz.y, sz.x / camera.aspect, sz.z / camera.aspect);
     const d = (fit / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * 1.25;
-    camera.position.set(c.x + d * 0.42, c.y + d * 0.16, c.z + d * 0.9);
+    // &yaw= swings the camera round for monuments whose defining feature
+    // faces sideways (Brooklyn's arches face along the bridge, not at the
+    // default three-quarter view).
+    const yaw = parseFloat(q.get('yaw')) || 0.44;
+    camera.position.set(c.x + Math.sin(yaw) * d, c.y + d * 0.16, c.z + Math.cos(yaw) * d);
     camera.lookAt(c);
     showScreen(null);
     hud.classList.remove('on');
