@@ -92,7 +92,9 @@ const AUDIT = ({ selector, MIN_TAP }) => {
     // menu taller). What still has to hold is that the scroller ITSELF fits,
     // which is checked when the loop reaches it, so a runaway layout is
     // caught either way.
-    const scroller = el.parentElement && el.closest('[data-xscroll]');
+    // parentElement first: closest() matches the element itself, which would
+    // exempt the scroller along with its cards.
+    const scroller = el.parentElement?.closest('[data-xscroll]');
     if (!scroller && (r.right > vw + 1 || r.left < -1)) issues.push(`OVERFLOW-X ${name} [${Math.round(r.left)}..${Math.round(r.right)}] vw=${vw}`);
     if (r.bottom > vh + 1 && cs.position !== 'absolute' && !el.closest('.sheet') && !el.closest('#facts-list'))
       issues.push(`BELOW-FOLD ${name} bottom=${Math.round(r.bottom)} vh=${vh}`);

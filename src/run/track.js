@@ -454,7 +454,10 @@ export class Track {
         usedLanes.add(lane);
         let mesh, y0 = 0, y1 = 0, halfLen = 0.35;
         if (kind === 'full') {
-          mesh = makeVehicle(t);
+          // San Francisco decides cable car or car BEFORE building anything,
+          // so the car lanes do not build a whole cable car and throw it away.
+          const isCable = t.vehicle === 'cablecar' && rand() < (this.level === 1 ? 0.18 : 0.4);
+          mesh = t.vehicle === 'cablecar' && !isCable ? makeParkedCar(t) : makeVehicle(t);
           // Honest hitboxes: buses are walls you must dodge; cars/taxis/vespas
           // are low enough that a well-timed jump clears them.
           // A bus is an unjumpable wall. If every London vehicle were a bus,
@@ -471,8 +474,6 @@ export class Track {
           // (London shrinks its bus into a cab; a shrunk cable car is not a
           // thing anyone has seen.) The cable-car roll happens only for this
           // vehicle, so no other city's seeded stream moves.
-          const isCable = t.vehicle === 'cablecar' && rand() < busChance;
-          if (t.vehicle === 'cablecar' && !isCable) mesh = makeParkedCar(t);
           const tall = isBus || isCable;
           y0 = 0; y1 = tall ? 3.2 : 1.6;
           halfLen = tall ? 2.6 : t.vehicle === 'vespa' ? 1.1 : 2.1;
