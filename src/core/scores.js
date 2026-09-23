@@ -57,6 +57,9 @@ export function startSession(mode, cityId, level, seed) {
   session = {
     token: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
     mode, cityId, level, seed,
+    // Stamped now, not at submit: a daily started at 23:58 UTC and finished
+    // after midnight belongs to the day whose course it was, not the next one.
+    day: dailyKey(),
     startedAt: Date.now(),
     submitted: false,
   };
@@ -105,7 +108,7 @@ export function submit(score) {
     cityId: session.cityId,
     level: session.level,
     seed: session.seed,
-    day: dailyKey(),
+    day: session.day,
     at: new Date().toISOString(),
   };
   // See the note above: mark the session used only once the write is real.
