@@ -188,9 +188,15 @@ export async function purchase(productId) {
   if (!store) return false;
   try {
     const p = store.get?.(productId);
-    if (!p) return false;
-    await p.getOffer()?.order();
-    return true;
+    const offerObj = p?.getOffer?.();
+    if (!offerObj) return false;
+    // order() does NOT throw when the purchase fails or the player cancels
+    // the sheet: in cordova-plugin-purchase v13 it resolves with an error
+    // object, and with undefined on success. Treating "it resolved" as
+    // success put the paywall into "Waiting for confirmation" after a plain
+    // cancel, and it stayed there.
+    const err = await offerObj.order();
+    return !err;
   } catch {
     // Includes the ordinary case of the player cancelling the sheet, which is
     // not an error and must not surface as one.

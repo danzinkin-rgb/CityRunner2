@@ -282,9 +282,12 @@ function startRun() {
   // THE DAILY CHALLENGE IS DELIBERATELY EXEMPT. It is a single seeded run whose
   // score goes on a leaderboard shared by every player that day. Clamping it to
   // free cities for unpaid players would put two genuinely different challenges
-  // on one board and quietly make the rankings meaningless. One run a day in a
-  // locked city is a taster, not the city — its monuments and its own progress
-  // stay behind the paywall.
+  // on one board and quietly make the rankings meaningless. So everyone plays
+  // the same street and builds the same monument, locked or not — the monument
+  // is part of the score. What a daily never gives is PROGRESS: no stars, in
+  // any city (see finishPuzzle), and no way to carry on past it (NEXT LEVEL is
+  // hidden after a daily). One run a day in a locked city is a taster, and it
+  // ends there.
   if (!dailyMode && !isLevelEntitled(city().id, level)) { openPaywall(); return; }
   doFade(() => {
     disposeAll();
@@ -381,18 +384,27 @@ function declineContinue() {
   endRun();
 }
 
-// The run has TRULY ended (crash declined/exhausted, or a puzzle finished).
-// Score is submitted here and ONLY here for a crash-ending run, so a
-// continued run's higher final score is the one that gets recorded —
-// submit() itself also refuses a second call for the same session, so
-// calling this twice would silently drop the better score.
-function endRun() {
+// Bank a run that has truly ended: best score, souvenirs, the score entry,
+// the daily streak and Game Center. Every way a run can end goes through
+// here — a crash, a puzzle won, a puzzle timed out, quitting from a paused
+// puzzle — because the three copies this replaced had drifted: the timeout
+// path never counted towards the daily streak, and quitting a puzzle banked
+// nothing at all, throwing away the souvenirs from a street already finished.
+//
+// Score is submitted here and ONLY here, so a continued run's higher final
+// score is the one that gets recorded. submit() refuses a second call for the
+// same session, so a second settle would silently drop the better score.
+function settleRun() {
   save.best = Math.max(save.best, score);
   save.coins += coins;
   persist();
   submit(score);   // validated + recorded locally; ignores its own failures
   if (dailyMode) recordDailyPlayed();
   reportRun({ cityId: city().id, score, dailyMode, save });
+}
+
+function endRun() {
+  settleRun();
   $('over-score').textContent = Math.round(score);
   $('over-coins').textContent = coins;
   showScreen('over');
@@ -549,13 +561,16 @@ function finishPuzzle(won) {
     hapticSuccess();
     puzzleBonus = Math.round(puzzle.time) * 50;
     score += puzzleBonus;
-    save.stars[city().id] = Math.max(save.stars[city().id] || 0, level);
-    save.best = Math.max(save.best, score);
-    save.coins += coins;
-    persist();
-    submit(score);
-    if (dailyMode) recordDailyPlayed();
-    reportRun({ cityId: city().id, score, dailyMode, save });
+    // A daily awards no stars. Its city and street come from the date, not
+    // from the player's progress, so a star here would open cities out of
+    // order — and, in a city the player has not bought, hand out progress in
+    // paid content. See the note on the daily exemption in startRun().
+    if (!dailyMode) save.stars[city().id] = Math.max(save.stars[city().id] || 0, level);
+    settleRun();
+    // A daily is one course: there is no next level to carry on to. Showing
+    // the button carried dailyMode — and with it the paywall exemption — into
+    // whatever came next.
+    $('btn-next').style.display = dailyMode ? 'none' : '';
     // Let the celebration play out un-dimmed before the modal appears.
     setTimeout(() => {
       $('pw-name').textContent = LANDMARK_NAMES[lm];
@@ -570,10 +585,7 @@ function finishPuzzle(won) {
     }, 4300);
     state = 'pwin-wait';
   } else {
-    save.best = Math.max(save.best, score);
-    save.coins += coins; persist();
-    submit(score);          // the run still counts even if the puzzle timed out
-    reportRun({ cityId: city().id, score, dailyMode, save });
+    settleRun();            // the run still counts even if the puzzle timed out
     $('over-score').textContent = Math.round(score);
     $('over-coins').textContent = coins;
     showScreen('over');
@@ -985,8 +997,19 @@ $('set-reroll').onclick = () => { rerollName(); renderSettings(); };
 $('set-erase').onclick = () => {
   if (!confirm('Erase your nickname, progress and scores from this device?\n\nThis is immediate and cannot be undone.')) return;
   eraseAllData();
-  save.stars = {}; save.coins = 0; save.best = 0;
+  // Reset the in-memory save to a fresh one, not just three fields of it.
+  // persist() below writes this straight back to the key eraseAllData() just
+  // removed, so anything left on the object survives the erase: it used to
+  // keep every character bought with souvenirs, the daily streak and the fact
+  // cursor. Two fields are kept on purpose, for the same reason audio prefs
+  // are (src/core/storage-keys.js): reduced motion and on-screen controls are
+  // accessibility settings on this device, not progress, and silently
+  // switching someone's accessibility settings off is a bug, not privacy.
+  const keep = { reducedMotion: save.reducedMotion, touchButtons: save.touchButtons };
+  for (const k of Object.keys(save)) delete save[k];
+  Object.assign(save, { stars: {}, coins: 0, best: 0, characters: ['runner'], equipped: 'runner' }, keep);
   persist();
+  buildCitySelect();
   renderSettings();
   alert('Erased. A fresh anonymous profile has been created.');
 };
@@ -1032,6 +1055,9 @@ padAction('t-jump', () => player.jump(sfx));
 padAction('t-roll', () => player.roll(sfx));
 $('btn-resume').onclick = resumeGame;
 $('btn-quit').onclick = () => {
+  // Quitting a paused PUZZLE still banks the run: the street is already
+  // finished, so its souvenirs were earned. Quitting mid-street abandons it.
+  if (pausedFrom === 'puzzle') settleRun();
   pausedFrom = null;
   doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; });
 };
@@ -1046,6 +1072,9 @@ $('btn-continue-no').onclick = declineContinue;
 $('btn-retry').onclick = () => startRun();
 $('btn-menu').onclick = $('btn-menu2').onclick = () => doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; });
 $('btn-next').onclick = () => {
+  // Belt and braces: the button is hidden after a daily (finishPuzzle), but a
+  // next level is never a daily, whatever route reached this handler.
+  dailyMode = false; runSeed = null;
   if (level < 3) level++;
   else if (cityIdx < CITIES.length - 1) { cityIdx++; level = 1; }
   else { doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; }); return; }
