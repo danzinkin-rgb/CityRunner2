@@ -1416,6 +1416,23 @@ function vExtent(d) {
   return [base, base + h];
 }
 
+// Can this piece look wrong when turned a quarter? Round and square-plan
+// pieces cannot (a cylinder, a dome, a square tower block), so they never
+// ask the player to turn them.
+function needsTurning(d) {
+  if (['cyl', 'dome', 'sphere', 'lathe', 'cone4', 'pyramid', 'tier', 'water', 'clock', 'eifleg'].includes(d.shape)) return false;
+  const [w, , dp] = d.s;
+  return Math.abs(w - dp) > 0.25 * Math.max(w, dp);
+}
+
+// Two pieces are interchangeable if they would look the same in place: the
+// Eiffel's four legs, a bridge's two towers. Dropping one on the other's spot
+// has to count, or the player is punished for a choice the game made.
+function sig(d) {
+  return JSON.stringify([d.shape || 'box', d.s.map((v) => v.toFixed(2)), d.c, d.tex || '',
+    Math.abs(Math.cos(d.rotY || 0)).toFixed(2)]);
+}
+
 // scattered pieces keep their final materials, pulled to ~70% saturation
 function desaturate(mesh) {
   forEachMat(mesh, (m) => {
@@ -1445,8 +1462,23 @@ export class Puzzle {
     this.done = false;
     this.failed = false;
     this.celebT = -1;
-    this.time = 60;
+    this.time = 60;                // replaced once the loose pieces are counted
     this.elapsed = 0;
+    // ---- difficulty, by street ----------------------------------------------
+    // Street 1: tap a glowing piece and it flies home.
+    // Street 2: drag each piece to its spot yourself; the next course glows.
+    // Street 3: drag, NO glow, and some pieces arrive a quarter-turn out and
+    //           must be turned (tap) before they fit. The ghost silhouette
+    //           still shows the whole monument, but not which piece is next —
+    //           working out what goes on next is the puzzle.
+    // The order rule (bottom-up by course, with authored sortY for things like
+    // a bridge deck hung after its cables) is the same on every street.
+    this.level = level;
+    this.mode = level >= 2 ? 'drag' : 'tap';
+    this.glow = level < 3;
+    this.turning = level >= 3;
+    this.dragging = null;
+    this.hintFn = null;            // set by main.js: shows a short line of text
     // Bob is driven by its own accumulator rather than by elapsed time, so the
     // urgency pass can raise the rate without the sine phase jumping.
     this.bobT = 0;
@@ -1479,7 +1511,6 @@ export class Puzzle {
     // &time=N starts the clock at N seconds. Review-only: it is the only way a
     // single headless screenshot can catch the last-10-seconds urgency pass.
     const t0 = parseFloat(q.get('time'));
-    if (t0 > 0) this.time = Math.min(60, t0);
 
     // sort blocks bottom-up (sortY lets cables etc. come after their towers)
     this.blocks = def.map((d, i) => ({ def: d, idx: i }))
@@ -1655,6 +1686,26 @@ export class Puzzle {
       this.group.add(mesh);
       return item;
     });
+
+    // ---- the clock scales with the work --------------------------------------
+    // A fixed 60s made a 12-piece street-1 build a stroll and a 25-piece
+    // street-3 build, now dragged and turned by hand, impossible. Time is a
+    // base plus an allowance per loose piece, heavier on the streets where
+    // each piece costs more handling. The bonus in main.js is a SHARE of
+    // this clock, so it still tops out at 3000 whatever the total.
+    const looseCount = this.items.length - this.placedCount;
+    const PER = { 1: 2.6, 2: 3.4, 3: 4.2 }[level] || 3.4;
+    this.timeTotal = Math.round(Math.min(120, Math.max(40, 20 + PER * looseCount)));
+    this.time = t0 > 0 ? Math.min(this.timeTotal, t0) : this.timeTotal;
+
+    // Street 3: some pieces start a quarter-turn out. Only pieces whose
+    // footprint is NOT square can look wrong turned, so only they are turned;
+    // deterministic, so the same monument deals the same hand.
+    for (const it of this.items) {
+      it.turns = 0;
+      if (this.turning && !it.placed && needsTurning(it.def) && dRand(it.order, 29) < 0.55) it.turns = 1;
+      it.parkPos = it.mesh.position.clone();
+    }
 
     // celebration camera target derived from monument bounds
     let top = 0, spread = 0;
@@ -1963,6 +2014,128 @@ export class Puzzle {
     sfx.place();
   }
 
+  // ---------- drag to place (streets 2 and 3) ----------
+  // The loose piece under the finger, preferring one that can go on now —
+  // the same ray walk as tryPick, so reachability is identical.
+  hitTest(nx, ny) {
+    if (this.done || this.failed) return null;
+    this.raycaster.setFromCamera({ x: nx, y: ny }, this.camera);
+    const meshes = this.items.filter((it) => !it.placed && !this.flying.includes(it)).map((it) => it.mesh);
+    let front = null;
+    for (const hit of this.raycaster.intersectObjects(meshes, true)) {
+      let obj = hit.object;
+      while (obj && !meshes.includes(obj)) obj = obj.parent;
+      const cand = obj && this.items.find((it) => it.mesh === obj);
+      if (!cand) continue;
+      if (!front) front = cand;
+      if (this.pickable(cand)) return cand;
+    }
+    return front;
+  }
+
+  // Where the finger is, on a plane facing the camera through the piece's
+  // own target point: over the ghost on screen means over the ghost in the
+  // world, so "drop it where it looks right" is exactly the test.
+  pointOnTargetPlane(nx, ny, item) {
+    this.raycaster.setFromCamera({ x: nx, y: ny }, this.camera);
+    const normal = new THREE.Vector3();
+    this.camera.getWorldDirection(normal);
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, new THREE.Vector3(...item.def.p));
+    return this.raycaster.ray.intersectPlane(plane, new THREE.Vector3());
+  }
+
+  beginDrag(item) {
+    this.dragging = item;
+    resaturate(item.mesh);
+    forEachMat(item.mesh, (m) => { m.emissiveIntensity = Math.max(m.userData.baseEm || 0, 0.35); });
+  }
+
+  dragTo(nx, ny) {
+    const it = this.dragging;
+    if (!it) return;
+    const pt = this.pointOnTargetPlane(nx, ny, it);
+    if (!pt) return;
+    it.mesh.position.lerp(pt, 0.55);
+    // shown in the orientation it would land in, so a piece that is a
+    // quarter-turn out visibly does not match its ghost
+    it.mesh.rotation.set(it.def.rotX || 0, (it.def.rotY || 0) + it.turns * Math.PI / 2, it.def.rotZ || 0);
+  }
+
+  // Drop. Returns 'placed' | 'order' (right spot, not yet) | 'turn' (right
+  // spot, wrong way round) | 'miss'.
+  endDrag() {
+    const it = this.dragging;
+    this.dragging = null;
+    if (!it) return 'miss';
+    const s = sig(it.def);
+    let best = null, bestD = Infinity;
+    for (const o of this.items) {
+      if (o.placed || this.flying.includes(o) || sig(o.def) !== s) continue;
+      const d = it.mesh.position.distanceTo(new THREE.Vector3(...o.def.p));
+      if (d < bestD) { bestD = d; best = o; }
+    }
+    const snap = Math.max(1.6, 0.3 * Math.max(...it.def.s));
+    let result = 'miss';
+    if (best && bestD < snap) {
+      if (!this.pickable(best) && !(best === it && it.layer === this.currentLayer())) result = 'order';
+      else if (it.turns % 2) result = 'turn';
+      else result = 'placed';
+    }
+    if (result === 'placed') {
+      // Interchangeable pieces trade places: this mesh takes the spot it was
+      // dropped on, and the other piece keeps the parked mesh.
+      if (best !== it) {
+        [it.mesh, best.mesh] = [best.mesh, it.mesh];
+        [it.parkPos, best.parkPos] = [best.parkPos, it.parkPos];
+        [it.rotY0, best.rotY0] = [best.rotY0, it.rotY0];
+        [it.turns, best.turns] = [best.turns, it.turns];
+      }
+      this.flying.push(best);
+      best.t = 0.55;               // already close: a short settle, not a full flight
+      best.from = best.mesh.position.clone();
+      best.fromRot = best.mesh.rotation.clone();
+      sfx.place();
+      return result;
+    }
+    // back to where it was parked
+    const from = it.mesh.position.clone(), to = it.parkPos.clone();
+    let t = 0;
+    this.effects.push({
+      update: (dt) => {
+        t = Math.min(1, t + dt * 3);
+        it.mesh.position.lerpVectors(from, to, 1 - Math.pow(1 - t, 3));
+        if (t >= 1) { it.mesh.rotation.set(0, it.rotY0 || 0, 0); desaturate(it.mesh); return false; }
+        return true;
+      },
+    });
+    sfx.tick();
+    if (this.hintFn) {
+      if (result === 'order') this.hintFn('Not yet — something goes under it first');
+      else if (result === 'turn') this.hintFn('Right spot — tap it to turn it round');
+    }
+    return result;
+  }
+
+  // Street 2 tap: a nudge showing where it goes. Street 3 tap: turn it.
+  tapPiece(item) {
+    if (!item || item.placed) return;
+    if (this.turning && needsTurning(item.def)) {
+      item.turns = (item.turns + 1) % 2;
+      const r0 = item.mesh.rotation.y;
+      let t = 0;
+      this.effects.push({
+        update: (dt) => {
+          t = Math.min(1, t + dt * 5);
+          item.mesh.rotation.y = r0 + (Math.PI / 2) * t;
+          return t < 1;
+        },
+      });
+      sfx.lane();
+      return;
+    }
+    this.hintFn && this.hintFn('Drag it to where it belongs');
+  }
+
   // ---------- transient effects ----------
   shakeEffect(mesh) {
     const ox = mesh.position.x;
@@ -2192,9 +2365,10 @@ export class Puzzle {
     // The WHOLE current course glows and bobs, so the player can see every
     // legal choice at once rather than guessing which four are unlocked.
     const layerNow = this.currentLayer();
-    const pending = this.items.filter((it) => !it.placed && !this.flying.includes(it));
+    const pending = this.items.filter((it) => !it.placed && !this.flying.includes(it) && it !== this.dragging);
     for (const it of pending) {
-      const pickNow = it.layer === layerNow;
+      // street 3 gives nothing away: no piece glows or bobs as "next"
+      const pickNow = this.glow && it.layer === layerNow;
       const target = pickNow ? 0.6 : 0;
       forEachMat(it.mesh, (m) => {
         const base = m.userData.baseEm || 0;
@@ -2214,9 +2388,9 @@ export class Puzzle {
       // stacked up brighter than a single-piece live course at 0.26 and stole
       // the eye. Distant courses are therefore pushed well back, and the live
       // course pushed up, so "what to build next" always wins on contrast.
-      it.ghost.userData.blockMat.opacity = pickNow
-        ? 0.30 + Math.sin(T * 5 + it.bobPhase) * 0.09
-        : it.layer === layerNow + 1 ? 0.13 : 0.055;
+      it.ghost.userData.blockMat.opacity = !this.glow ? 0.12
+        : pickNow ? 0.30 + Math.sin(T * 5 + it.bobPhase) * 0.09
+          : it.layer === layerNow + 1 ? 0.13 : 0.055;
     }
 
     // built pieces that rotate (the Eye's wheel)

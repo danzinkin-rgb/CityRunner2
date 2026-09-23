@@ -551,6 +551,7 @@ function startPuzzle() {
     dressScene(scene, city());
     const lm = city().landmarks[level - 1];
     puzzle = new Puzzle(scene, camera, lm, level);
+    puzzle.hintFn = hint;
     cam.angle = 0; cam.vel = 0; cam.userActive = 0; cam.dragging = false;
     const d0 = fitPuzzleCamera();
     camera.position.set(0, d0 * 0.45, d0);
@@ -560,7 +561,9 @@ function startPuzzle() {
     $('hud-coin-icon').src = `assets/souvenirs/${city().id}.png`;
     state = 'puzzle';
     showScreen(null);
-    hint('Tap the glowing blocks — drag to look around');
+    hint(puzzle.mode === 'tap' ? 'Tap the glowing blocks — drag to look around'
+      : puzzle.glow ? 'Drag the glowing blocks into place'
+        : 'Drag each block into place — tap one to turn it');
   });
 }
 
@@ -568,7 +571,10 @@ function finishPuzzle(won) {
   const lm = city().landmarks[level - 1];
   if (won) {
     hapticSuccess();
-    puzzleBonus = Math.round(puzzle.time) * 50;
+    // A share of the clock rather than raw seconds: the total now scales with
+    // the monument, and this keeps the bonus's ceiling at 3000 either way —
+    // which is also what the score plausibility bound in scores.js assumes.
+    puzzleBonus = Math.round((puzzle.time / puzzle.timeTotal) * 60) * 50;
     score += puzzleBonus;
     // A daily awards no stars. Its city and street come from the date, not
     // from the player's progress, so a star here would open cities out of
@@ -654,8 +660,22 @@ function fitPuzzleCamera() {
 const canvasEl = renderer.domElement;
 canvasEl.style.touchAction = 'none';   // let us own drag gestures
 
+// On streets 2 and 3 a press that lands on a loose piece drags THAT piece;
+// anywhere else it orbits the camera, as on street 1.
+let pieceDrag = null;
+const ndc = (e) => [(e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1];
+
 canvasEl.addEventListener('pointerdown', (e) => {
   if (state !== 'puzzle') return;
+  if (puzzle.mode === 'drag') {
+    const hit = puzzle.hitTest(...ndc(e));
+    if (hit) {
+      pieceDrag = hit;
+      cam.downX = e.clientX; cam.downY = e.clientY; cam.moved = false;
+      canvasEl.setPointerCapture(e.pointerId);
+      return;
+    }
+  }
   cam.dragging = true;
   cam.moved = false;
   cam.lastX = e.clientX;
@@ -666,6 +686,14 @@ canvasEl.addEventListener('pointerdown', (e) => {
 });
 
 canvasEl.addEventListener('pointermove', (e) => {
+  if (pieceDrag && state === 'puzzle') {
+    if (!cam.moved && Math.hypot(e.clientX - cam.downX, e.clientY - cam.downY) > 10) {
+      cam.moved = true;
+      puzzle.beginDrag(pieceDrag);
+    }
+    if (cam.moved) puzzle.dragTo(...ndc(e));
+    return;
+  }
   if (!cam.dragging || state !== 'puzzle') return;
   const dx = e.clientX - cam.lastX;
   cam.lastX = e.clientX;
@@ -676,16 +704,28 @@ canvasEl.addEventListener('pointermove', (e) => {
 });
 
 canvasEl.addEventListener('pointerup', (e) => {
+  if (pieceDrag) {
+    const it = pieceDrag;
+    pieceDrag = null;
+    if (state !== 'puzzle') return;
+    if (cam.moved) puzzle.endDrag();
+    else puzzle.tapPiece(it);
+    return;
+  }
   if (state !== 'puzzle') { cam.dragging = false; return; }
   const wasDrag = cam.moved;
   cam.dragging = false;
-  if (!wasDrag) {
-    // A clean tap — place a block.
-    puzzle.tryPick((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+  if (!wasDrag && puzzle.mode === 'tap') {
+    // A clean tap — place a block (street 1).
+    puzzle.tryPick(...ndc(e));
   }
 });
 
-canvasEl.addEventListener('pointercancel', () => { cam.dragging = false; });
+canvasEl.addEventListener('pointercancel', () => {
+  cam.dragging = false;
+  if (pieceDrag && cam.moved && state === 'puzzle') puzzle.endDrag();
+  pieceDrag = null;
+});
 
 $('btn-play').onclick = () => {
   dailyMode = false; runSeed = null;

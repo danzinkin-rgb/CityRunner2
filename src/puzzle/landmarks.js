@@ -171,9 +171,11 @@ const defs = {
     B([-12.6, 2.1, 0], [3.2, 4.2, 5.0], '#a89a80', 'box', { tex: 'ashlar' }),
     B([12.6, 2.1, 0], [3.2, 4.2, 5.0], '#a89a80', 'box', { tex: 'ashlar' }),
     // the deck, with the raised timber promenade down its middle
-    B([-8.9, 3.7, 0], [5.4, 0.5, 4.0], '#6f675d'),
-    B([8.9, 3.7, 0], [5.4, 0.5, 4.0], '#6f675d'),
+    // hung from the cables once they were spun, so placed after them
+    B([-8.9, 3.7, 0], [5.4, 0.5, 4.0], '#6f675d', 'box', { sortY: 14 }),
+    B([8.9, 3.7, 0], [5.4, 0.5, 4.0], '#6f675d', 'box', { sortY: 14 }),
     B([0, 3.7, 0], [9.0, 0.5, 4.0], '#766d62', 'box', {
+      sortY: 14,
       adorn: [B([0, 0.42, 0], [9.0, 0.16, 1.2], '#b08a5c')],
     }),
     // granite towers: an extruded face with two pointed arches cut through,
@@ -497,12 +499,14 @@ const defs = {
   ggbridge: [
     B([-6.4, 1.6, 0], [3.4, 3.2, 5.2], '#8c857a', 'box', { tex: 'relief' }),
     B([6.4, 1.6, 0], [3.4, 3.2, 5.2], '#8c857a', 'box', { tex: 'relief' }),
-    B([0, 3.6, 0], [10.4, 0.5, 3.8], '#6e6a66'),
-    B([-8.6, 3.6, 0], [7.2, 0.5, 3.8], '#66625e'),
-    B([8.6, 3.6, 0], [7.2, 0.5, 3.8], '#66625e'),
+    // Built as the real one was: towers, then cables, then the deck HUNG
+    // from them (sortY puts it after the cables' 19) — not laid first.
+    B([0, 3.6, 0], [10.4, 0.5, 3.8], '#6e6a66', 'box', { sortY: 20 }),
+    B([-8.6, 3.6, 0], [7.2, 0.5, 3.8], '#66625e', 'box', { sortY: 20 }),
+    B([8.6, 3.6, 0], [7.2, 0.5, 3.8], '#66625e', 'box', { sortY: 20 }),
     // orange kerb rails: two thin lines that carry the colour along the deck
-    B([0, 4.06, 1.85], [25.6, 0.22, 0.16], '#c1440e'),
-    B([0, 4.06, -1.85], [25.6, 0.22, 0.16], '#c1440e'),
+    B([0, 4.06, 1.85], [25.6, 0.22, 0.16], '#c1440e', 'box', { sortY: 21 }),
+    B([0, 4.06, -1.85], [25.6, 0.22, 0.16], '#c1440e', 'box', { sortY: 21 }),
     // south tower
     B([-6.4, 6.0, 0], [2.4, 4.8, 4.6], '#c1440e', 'box', { tex: 'lattice' }),
     B([-6.4, 8.55, 0], [2.8, 0.55, 4.8], '#a9380c'),
