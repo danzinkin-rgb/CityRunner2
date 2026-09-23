@@ -307,17 +307,25 @@ function startRun() {
     state = 'run';
     showScreen(null);
     hint('◀ ▶ move · ▲ jump · ▼ roll — or swipe');
-    setTimeout(() => {
-      if (state === 'run') {
-        const lm = city().landmarks[level - 1];
-        const article = (lm === 'bigben' || lm === 'towerbridge') ? '' : 'the ';   // "Big Ben", but "the Colosseum"
-        hint(`${city().streets[level - 1]} — run to ${article}${LANDMARK_NAMES[lm]}!`);
-      }
-    }, 3000);
+    showGoal(city().landmarks[level - 1]);
     startMusic(city().id);
     state = 'run';
   });
 }
+
+// Where this street leads, shown as the run starts. It replaces a text hint
+// that appeared three seconds in and was easy to miss: players did not know a
+// monument was coming until the street ended.
+let goalTimer = 0;
+function showGoal(lm) {
+  $('hud-goal-img').src = `assets/monuments/${lm}.png`;
+  $('hud-goal-name').textContent = LANDMARK_NAMES[lm];
+  const el = $('hud-goal');
+  el.classList.add('on');
+  clearTimeout(goalTimer);
+  goalTimer = setTimeout(() => el.classList.remove('on'), 2800);
+}
+function hideGoal() { clearTimeout(goalTimer); $('hud-goal').classList.remove('on'); }
 
 let hintTimer = 0;
 function hint(text) {
@@ -536,6 +544,7 @@ function startPuzzle() {
   // debug URL that survives into a shipped build is a one-tap bypass.
   if (!dailyMode && !isLevelEntitled(city().id, level)) { openPaywall(); return; }
   stopMusic();
+  hideGoal();
   doFade(() => {
     disposeAll();
     scene = new THREE.Scene();
@@ -1284,6 +1293,35 @@ if (DEBUG_HOOKS && q.get('ui')) {
     showScreen(null);
     hud.classList.remove('on');
     state = 'souvenir';
+  }
+  else if (which === 'monument') {
+    // Renders one finished monument alone on a flat backdrop, for capturing
+    // the goal-card images (test/capture-city-assets.mjs). Everything the
+    // puzzle builds apart from the placed pieces — plaza, panorama, ghosts,
+    // particles — is hidden, and the camera frames the monument's own bounds.
+    // Needs &built=1 so every piece starts in place.
+    disposeAll();
+    scene = new THREE.Scene();
+    dressScene(scene, city());
+    const lm = city().landmarks[level - 1];
+    puzzle = new Puzzle(scene, camera, lm, level);
+    for (const it of puzzle.items) it.mesh.traverse((n) => { n.userData.keep = true; });
+    scene.traverse((n) => {
+      if ((n.isMesh || n.isPoints || n.isSprite || n.isLine) && !n.userData.keep) n.visible = false;
+    });
+    scene.fog = null;
+    scene.background = new THREE.Color(0x141a30);
+    const box = new THREE.Box3();
+    for (const it of puzzle.items) box.expandByObject(it.mesh);
+    const c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+    camera.fov = 30; camera.updateProjectionMatrix();
+    const fit = Math.max(sz.y, sz.x / camera.aspect, sz.z / camera.aspect);
+    const d = (fit / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * 1.25;
+    camera.position.set(c.x + d * 0.42, c.y + d * 0.16, c.z + d * 0.9);
+    camera.lookAt(c);
+    showScreen(null);
+    hud.classList.remove('on');
+    state = 'souvenir';     // render-only: the frame loop does nothing but draw
   }
   else if (which === 'portrait') {
     // Renders one character alone for capturing shop portraits. Deliberately

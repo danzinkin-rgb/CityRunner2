@@ -1,6 +1,7 @@
 /**
- * Capture the two PNGs every city needs: its menu-card thumbnail and its
- * souvenir icon.
+ * Capture the PNGs every city needs: its menu-card thumbnail, its souvenir
+ * icon, and one image per finished monument for the goal card shown when a
+ * run starts.
  *
  * WHY THIS FILE EXISTS. Both sets were originally made by hand — someone
  * opened the game, screenshotted it, keyed out the backdrop and cropped the
@@ -54,6 +55,47 @@ if (unknown.length) {
 const { base, close } = await startStaticServer();
 const browser = await webkit.launch();
 
+/**
+ * Runs IN THE PAGE: key out the flat 0x141a30 backdrop the render routes use,
+ * crop square around what is left, and return it as a PNG data URL. `size`
+ * scales the result to that many pixels square; 0 keeps full resolution.
+ */
+const KEY_AND_CROP = (size) => {
+  const src = document.querySelector('canvas');
+  const w = src.width, h = src.height;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  g.drawImage(src, 0, 0);
+  const img = g.getImageData(0, 0, w, h);
+  const d = img.data;
+  // Tolerance has to stay tight: a subject's own dark parts can sit close to
+  // this backdrop (the cable car's wheels are 0x2a2a30, only 22 away in red),
+  // and at a loose tolerance they get keyed out into holes.
+  const BR = 0x14, BG = 0x1a, BB = 0x30, TOL = 13;
+  let minX = w, minY = h, maxX = -1, maxY = -1;
+  for (let i = 0; i < d.length; i += 4) {
+    const near = Math.abs(d[i] - BR) < TOL && Math.abs(d[i + 1] - BG) < TOL
+      && Math.abs(d[i + 2] - BB) < TOL;
+    if (near) { d[i + 3] = 0; continue; }
+    const px = (i / 4) % w, py = ((i / 4) / w) | 0;
+    if (px < minX) minX = px;
+    if (px > maxX) maxX = px;
+    if (py < minY) minY = py;
+    if (py > maxY) maxY = py;
+  }
+  if (maxX < 0) return null;                       // nothing but backdrop
+  g.putImageData(img, 0, 0);
+  const pad = 10;
+  const side = Math.max(maxX - minX, maxY - minY) + pad * 2;
+  const cxm = (minX + maxX) / 2, cym = (minY + maxY) / 2;
+  const outSide = size || side;
+  const out = document.createElement('canvas');
+  out.width = outSide; out.height = outSide;
+  out.getContext('2d').drawImage(c, cxm - side / 2, cym - side / 2, side, side, 0, 0, outSide, outSide);
+  return out.toDataURL('image/png');
+};
+
 /** Write a `data:image/png;base64,...` string out as a real file. */
 function writeDataUrl(path, dataUrl) {
   const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
@@ -61,9 +103,33 @@ function writeDataUrl(path, dataUrl) {
 }
 
 mkdirSync(join(ROOT, 'assets', 'souvenirs'), { recursive: true });
+mkdirSync(join(ROOT, 'assets', 'monuments'), { recursive: true });
+
+// Monument ids per city, in street order, read from the same file as the
+// city ids so a new city's monuments are captured without editing this.
+const LANDMARKS = {};
+for (const m of themesSrc.matchAll(/^\s{4}id:\s*'([a-z]+)'[\s\S]*?^\s{4}landmarks:\s*\[([^\]]*)\]/gm)) {
+  LANDMARKS[m[1]] = [...m[2].matchAll(/'([a-z]+)'/g)].map((x) => x[1]);
+}
 mkdirSync(join(ROOT, 'assets', 'thumbs'), { recursive: true });
 
 for (const city of cities) {
+  // ---------------------------------------------------- monuments
+  // Same flat-backdrop keying as the souvenir, on the ?ui=monument route,
+  // which hides the plaza and frames the finished monument alone.
+  for (let lv = 1; lv <= (LANDMARKS[city] || []).length; lv++) {
+    const id = LANDMARKS[city][lv - 1];
+    const ctx = await browser.newContext({ viewport: { width: 600, height: 700 }, deviceScaleFactor: 2 });
+    const page = await ctx.newPage();
+    await page.goto(`${base}/?ui=monument&city=${city}&level=${lv}&built=1`, { waitUntil: 'load' });
+    await page.waitForTimeout(1800);
+    const url = await page.evaluate(KEY_AND_CROP, 320);
+    await ctx.close();
+    if (!url) { console.log(`x ${city}: monument ${id} rendered empty`); process.exitCode = 1; continue; }
+    writeDataUrl(join(ROOT, 'assets', 'monuments', `${id}.png`), url);
+    console.log(`ok ${city}: assets/monuments/${id}.png`);
+  }
+
   // ---------------------------------------------------- souvenir icon
   // ?ui=souvenir renders the collectible alone on a flat backdrop. That flat
   // backdrop is what makes keying reliable: every pixel close to it in all
@@ -73,42 +139,7 @@ for (const city of cities) {
     const page = await ctx.newPage();
     await page.goto(`${base}/?ui=souvenir&city=${city}`, { waitUntil: 'load' });
     await page.waitForTimeout(1400);
-    const url = await page.evaluate(() => {
-      const src = document.querySelector('canvas');
-      const w = src.width, h = src.height;
-      const c = document.createElement('canvas');
-      c.width = w; c.height = h;
-      const g = c.getContext('2d');
-      g.drawImage(src, 0, 0);
-      const img = g.getImageData(0, 0, w, h);
-      const d = img.data;
-      // the backdrop set by the souvenir route, 0x141a30
-      // Tolerance has to stay tight: a souvenir's own dark parts sit close to
-      // this backdrop (the cable car's wheels are 0x2a2a30, only 22 away in
-      // red), and at a loose tolerance they get keyed out into holes.
-      const BR = 0x14, BG = 0x1a, BB = 0x30, TOL = 13;
-      let minX = w, minY = h, maxX = -1, maxY = -1;
-      for (let i = 0; i < d.length; i += 4) {
-        const near = Math.abs(d[i] - BR) < TOL && Math.abs(d[i + 1] - BG) < TOL
-          && Math.abs(d[i + 2] - BB) < TOL;
-        if (near) { d[i + 3] = 0; continue; }
-        const px = (i / 4) % w, py = ((i / 4) / w) | 0;
-        if (px < minX) minX = px;
-        if (px > maxX) maxX = px;
-        if (py < minY) minY = py;
-        if (py > maxY) maxY = py;
-      }
-      if (maxX < 0) return null;                       // nothing but backdrop
-      g.putImageData(img, 0, 0);
-      // square crop around the souvenir, with a little breathing room
-      const pad = 10;
-      const side = Math.max(maxX - minX, maxY - minY) + pad * 2;
-      const cxm = (minX + maxX) / 2, cym = (minY + maxY) / 2;
-      const out = document.createElement('canvas');
-      out.width = side; out.height = side;
-      out.getContext('2d').drawImage(c, cxm - side / 2, cym - side / 2, side, side, 0, 0, side, side);
-      return out.toDataURL('image/png');
-    });
+    const url = await page.evaluate(KEY_AND_CROP, 0);
     await ctx.close();
     if (!url) {
       console.log(`x ${city}: souvenir render was empty — does makeCollectible() have a branch for it?`);

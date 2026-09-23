@@ -54,6 +54,33 @@
     background:linear-gradient(90deg,var(--gold),#ff9e42);width:0%;transition:width .3s;
     box-shadow:0 1px 8px rgba(255,190,80,.55)}
   #hud-progress::after{content:"";position:absolute;inset:0 0 55% 0;background:rgba(255,255,255,.35);border-radius:inherit}
+  /* The goal card sits in the sky, above the horizon line (39% down the
+     frame in every aspect ratio, see track.js), so it never covers the
+     first obstacles coming up the road. */
+  #hud-goal{position:absolute;top:calc(88px + env(safe-area-inset-top));left:50%;
+    transform:translate(-50%,-8px) scale(.92);opacity:0;pointer-events:none;
+    transition:opacity .35s,transform .35s;text-align:center;padding:10px 20px 12px;
+    border-radius:18px;background:radial-gradient(ellipse at center,rgba(8,12,28,.62),rgba(8,12,28,0) 72%)}
+  #hud-goal.on{opacity:1;transform:translate(-50%,0) scale(1)}
+  #hud-goal .goal-kicker{font-size:11px;letter-spacing:4px;color:var(--gold);font-weight:800;
+    text-shadow:0 1px 6px rgba(0,0,0,.9)}
+  #hud-goal img{display:block;width:112px;height:112px;margin:4px auto 2px;
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,.55))}
+  #hud-goal-name{font-size:16px;font-weight:800;text-shadow:0 1px 8px rgba(0,0,0,.95);white-space:nowrap}
+  body.reduced-motion #hud-goal{transform:translate(-50%,0);transition:opacity .2s}
+  /* Landscape: below the street-name line, and small enough to finish
+     at about the horizon so the road stays clear. */
+  @media (max-height:430px){
+    #hud-goal{top:80px;padding:2px 14px 4px}
+    #hud-goal .goal-kicker{font-size:9px;letter-spacing:3px}
+    #hud-goal img{width:52px;height:52px;margin:1px auto 0}
+    #hud-goal-name{font-size:12px}
+  }
+  @media (min-width:900px) and (min-height:600px){
+    #hud-goal img{width:170px;height:170px}
+    #hud-goal-name{font-size:22px}
+    #hud-goal .goal-kicker{font-size:14px}
+  }
   #hud-hint{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);font-size:15px;opacity:0;
     transition:opacity .4s;background:var(--glass);padding:8px 20px;border-radius:999px;backdrop-filter:blur(8px);
     white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
@@ -836,6 +863,9 @@
   <div id="hud-city">NEW YORK · LEVEL 1</div>
   <div id="hud-timer">60</div>
   <div id="hud-hint"></div>
+  <!-- Shown for a few seconds as each run starts: where this street leads.
+       Players reported not knowing a monument was coming at all. -->
+  <div id="hud-goal"><div class="goal-kicker">RUN TO</div><img id="hud-goal-img" alt=""><div id="hud-goal-name"></div></div>
   <button id="btn-pause" aria-label="Pause">❚❚</button>
   <div id="touchpad" aria-hidden="true">
     <button class="tbtn" id="t-left"  aria-label="Move left">◀</button>
