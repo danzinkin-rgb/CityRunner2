@@ -18,7 +18,7 @@ import { DEBUG_HOOKS } from './core/debug.js';
 export const VERSION = '1.0.1';
 import { Player, DEFAULT_STYLE } from './run/player.js';
 import { Track } from './run/track.js';
-import { Puzzle } from './puzzle/puzzle.js';
+import { Puzzle, looseDefs } from './puzzle/puzzle.js';
 import { CHARACTERS, characterById } from './run/characters.js';
 import { makeCollectible } from './cities/souvenirs.js';
 
@@ -74,6 +74,7 @@ function showScreen(name) {
   hud.classList.toggle('on', !name || name === 'paused' || name === 'continue');
   $('btn-pause').style.display = (!name && (state === 'run' || state === 'puzzle')) ? 'flex' : 'none';
   syncSheetScroll();
+  syncFetchButton();
 }
 
 /**
@@ -294,7 +295,20 @@ function startRun() {
     scene = new THREE.Scene();
     dressScene(scene, city());
     player = new Player(scene, characterById(save.equipped).style);
-    track = new Track(scene, city(), level, runSeed);
+    const pieceDefs = looseDefs(city().landmarks[level - 1], level);
+    track = new Track(scene, city(), level, runSeed, pieceDefs);
+    piecesGot = 0;
+    track.onPiece = () => {
+      piecesGot++;
+      score += 50;
+      sfx.powerup();
+      hapticMedium();
+      $('hud-pieces').textContent = `${piecesGot}/${pieceDefs.length}`;
+      if (!pieceHintShown) { pieceHintShown = true; hint('A piece of the monument! Collect them to build it'); }
+    };
+    $('hud-pieces').textContent = `0/${pieceDefs.length}`;
+    $('hud-piece-icon').src = `assets/monuments/${city().landmarks[level - 1]}.png`;
+    document.body.classList.add('run-pieces');
     track.onWeave = () => hint('That Vespa is signalling — it\'s about to change lanes!');
     speed = 14 + (level - 1) * 3;
     coins = 0; score = 0; shake = 0;
@@ -318,9 +332,14 @@ function startRun() {
 // that appeared three seconds in and was easy to miss: players did not know a
 // monument was coming until the street ended.
 let goalTimer = 0;
+let piecesGot = 0, pieceHintShown = false;
+// Handed from the finished street to the puzzle: one boolean per loose piece.
+let lastRunPieces = null;
 function showGoal(lm) {
   $('hud-goal-img').src = `assets/monuments/${lm}.png`;
   $('hud-goal-name').textContent = LANDMARK_NAMES[lm];
+  const n = looseDefs(lm, level).length;
+  $('hud-goal-sub').textContent = n ? `Collect its ${n} pieces on the way` : '';
   const el = $('hud-goal');
   el.classList.add('on');
   clearTimeout(goalTimer);
@@ -526,6 +545,7 @@ function applyCityPalette() {
 }
 
 function showStreetFacts() {
+  lastRunPieces = track ? track.piecesCollected.slice() : null;
   stopMusic();
   state = 'facts';
   applyCityPalette();
@@ -551,8 +571,10 @@ function startPuzzle() {
     scene = new THREE.Scene();
     dressScene(scene, city());
     const lm = city().landmarks[level - 1];
-    puzzle = new Puzzle(scene, camera, lm, level);
+    puzzle = new Puzzle(scene, camera, lm, level, { collected: lastRunPieces });
+    lastRunPieces = null;
     puzzle.hintFn = hint;
+    document.body.classList.remove('run-pieces');
     cam.angle = 0; cam.vel = 0; cam.userActive = 0; cam.dragging = false;
     const d0 = fitPuzzleCamera();
     camera.position.set(0, d0 * 0.45, d0);
@@ -562,9 +584,13 @@ function startPuzzle() {
     $('hud-coin-icon').src = `assets/souvenirs/${city().id}.png`;
     state = 'puzzle';
     showScreen(null);
-    hint(puzzle.mode === 'tap' ? 'Tap the glowing blocks — drag to look around'
-      : puzzle.glow ? 'Drag the glowing blocks into place'
-        : 'Drag each block into place — tap one to turn it');
+    const missing = puzzle.missingLeft();
+    hint(missing
+      ? `${missing} piece${missing > 1 ? 's' : ''} missed on the street — they'll arrive as you build`
+      : puzzle.mode === 'tap' ? 'Tap the glowing blocks — drag to look around'
+        : puzzle.glow ? 'Drag the glowing blocks into place'
+          : 'Drag each block into place — tap one to turn it');
+    syncFetchButton();
   });
 }
 
@@ -608,6 +634,36 @@ function finishPuzzle(won) {
     state = 'over';
   }
 }
+
+// ---------- missed pieces: bring them now, for souvenirs ----------
+// Missed pieces arrive on their own during the build. This spends souvenirs
+// to bring them all at once — this run's first, then the bank. A calm
+// choice: it has no timer of its own and is only shown when affordable.
+const FETCH_PRICE = 10;
+let fetchShownFor = -1;
+function syncFetchButton() {
+  const btn = $('btn-fetch');
+  const n = state === 'puzzle' && puzzle && !puzzle.done && !puzzle.failed ? puzzle.missingLeft() : 0;
+  const price = n * FETCH_PRICE;
+  const show = n > 0 && coins + save.coins >= price;
+  const key = show ? n : 0;
+  if (key === fetchShownFor) return;
+  fetchShownFor = key;
+  btn.style.display = show ? '' : 'none';
+  if (show) btn.textContent = `BRING ${n} NOW · ${price}`;
+}
+$('btn-fetch').onclick = (e) => {
+  e.stopPropagation();
+  if (state !== 'puzzle' || !puzzle) return;
+  const price = puzzle.missingLeft() * FETCH_PRICE;
+  if (!price || coins + save.coins < price) return;
+  const fromRun = Math.min(coins, price);
+  coins -= fromRun;
+  save.coins -= price - fromRun;
+  persist();
+  puzzle.deliverAllNow();
+  syncFetchButton();
+};
 
 // ---------- input ----------
 createInput((action, px, py) => {
@@ -1195,9 +1251,11 @@ function frame() {
     $('hud-timer').classList.toggle('low', tl <= 10);
     if (tl <= 10 && tl !== lastTickSec) { lastTickSec = tl; sfx.tick(); }
     $('hud-progress').style.width = `${(puzzle.placedCount / puzzle.items.length) * 100}%`;
+    syncFetchButton();
     if (puzzle.done) finishPuzzle(true);
     else if (puzzle.failed) finishPuzzle(false);
   } else if (state === 'pwin-wait') {
+    syncFetchButton();
     puzzle.update(dt);
   }
 

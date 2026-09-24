@@ -67,6 +67,20 @@
   #hud-goal img{display:block;width:112px;height:112px;margin:4px auto 2px;
     filter:drop-shadow(0 4px 10px rgba(0,0,0,.55))}
   #hud-goal-name{font-size:16px;font-weight:800;text-shadow:0 1px 8px rgba(0,0,0,.95);white-space:nowrap}
+  #hud-goal-sub{font-size:12px;margin-top:3px;color:var(--gold);text-shadow:0 1px 6px rgba(0,0,0,.95);white-space:nowrap}
+  /* Monument pieces collected this run, sharing the souvenir pill: a separate
+     pill had nowhere to go on a 320px phone without colliding with the
+     street name. Shown only while running (body.run-pieces). */
+  .hud-pieces-wrap{display:none;align-items:center;gap:5px;margin-left:4px;padding-left:9px;
+    border-left:1px solid rgba(255,255,255,.22)}
+  body.run-pieces .hud-pieces-wrap{display:flex}
+  #hud-piece-icon{width:20px;height:20px;object-fit:contain;display:block}
+  #hud-pieces{font-size:14px}
+  /* Missed pieces: bring them now, for souvenirs. Above the hint, clear of
+     the plaza pieces, and tappable although the HUD itself is not. */
+  #btn-fetch{position:absolute;left:50%;transform:translateX(-50%);
+    bottom:calc(132px + env(safe-area-inset-bottom));pointer-events:auto;
+    font-size:14px;padding:10px 22px;min-height:44px;white-space:nowrap}
   body.reduced-motion #hud-goal{transform:translate(-50%,0);transition:opacity .2s}
   /* Landscape: below the street-name line, and small enough to finish
      at about the horizon so the road stays clear. */
@@ -75,6 +89,7 @@
     #hud-goal .goal-kicker{font-size:9px;letter-spacing:3px}
     #hud-goal img{width:52px;height:52px;margin:1px auto 0}
     #hud-goal-name{font-size:12px}
+    #hud-goal-sub{display:none}   /* it would push the card below the horizon */
   }
   @media (min-width:900px) and (min-height:600px){
     #hud-goal img{width:170px;height:170px}
@@ -857,7 +872,7 @@
   <div id="hud-progress-track"></div>
   <div id="hud-progress"></div>
   <div class="hud-top">
-    <div class="pill"><img id="hud-coin-icon" src="assets/souvenirs/nyc.png" alt=""><span id="hud-coins">0</span></div>
+    <div class="pill"><img id="hud-coin-icon" src="assets/souvenirs/nyc.png" alt=""><span id="hud-coins">0</span><span class="hud-pieces-wrap"><img id="hud-piece-icon" alt="Monument pieces"><span id="hud-pieces">0/0</span></span></div>
     <div class="pill"><span id="hud-score">0</span></div>
   </div>
   <div id="hud-city">NEW YORK · LEVEL 1</div>
@@ -865,7 +880,8 @@
   <div id="hud-hint"></div>
   <!-- Shown for a few seconds as each run starts: where this street leads.
        Players reported not knowing a monument was coming at all. -->
-  <div id="hud-goal"><div class="goal-kicker">RUN TO</div><img id="hud-goal-img" alt=""><div id="hud-goal-name"></div></div>
+  <div id="hud-goal"><div class="goal-kicker">RUN TO</div><img id="hud-goal-img" alt=""><div id="hud-goal-name"></div><div id="hud-goal-sub"></div></div>
+  <button class="btn" id="btn-fetch" style="display:none"></button>
   <button id="btn-pause" aria-label="Pause">❚❚</button>
   <div id="touchpad" aria-hidden="true">
     <button class="tbtn" id="t-left"  aria-label="Move left">◀</button>
