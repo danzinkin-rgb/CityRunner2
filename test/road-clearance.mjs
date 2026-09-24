@@ -92,6 +92,8 @@ async function auditCorridor(page, lanes) {
     const allowed = new Set();
     for (const o of track.obstacles || []) o.mesh && o.mesh.traverse((n) => allowed.add(n));
     for (const c of track.coins || []) c.mesh && c.mesh.traverse((n) => allowed.add(n));
+    // Monument pieces are collectibles that belong in the lanes, like coins.
+    for (const pc of track.pieces || []) pc.mesh && pc.mesh.traverse((n) => allowed.add(n));
 
     const box = new THREE.Box3();
     const hits = [];

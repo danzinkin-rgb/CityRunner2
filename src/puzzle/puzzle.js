@@ -998,7 +998,7 @@ function blockMaterial(def, isGhost) {
   return mat;
 }
 
-function makeBlockMesh(def, isGhost = false, isChild = false) {
+export function makeBlockMesh(def, isGhost = false, isChild = false) {
   const [w, h, d] = def.s;
   const mat = blockMaterial(def, isGhost);
   const setEm = (n) => {
@@ -1447,9 +1447,28 @@ function resaturate(mesh) {
   forEachMat(mesh, (m) => { if (m.userData.origCol) m.color.copy(m.userData.origCol); });
 }
 
+// ---- which pieces a street leaves loose --------------------------------------
+// Shared by the puzzle AND the run: the run lays these exact pieces along the
+// street for the player to collect, so both must agree on the order and on
+// how many start pre-placed. One definition, used by both, is what keeps them
+// agreeing.
+export function preplacedFor(len, level) {
+  return level === 1 ? Math.floor(len * 0.35) : level === 2 ? Math.floor(len * 0.15) : 0;
+}
+export function buildOrder(def) {
+  return def.map((d, i) => ({ def: d, idx: i }))
+    .sort((a, b) => (a.def.sortY ?? a.def.p[1]) - (b.def.sortY ?? b.def.p[1]));
+}
+/** The block defs a street leaves loose, in build order. */
+export function looseDefs(landmarkId, level) {
+  const def = getLandmark(landmarkId);
+  if (!def) return [];
+  return buildOrder(def).slice(preplacedFor(def.length, level)).map((e) => e.def);
+}
+
 // ============================================================
 export class Puzzle {
-  constructor(scene, camera, landmarkId, level) {
+  constructor(scene, camera, landmarkId, level, opts = {}) {
     this.scene = scene;
     this.camera = camera;
     this.raycaster = new THREE.Raycaster();
@@ -1490,8 +1509,7 @@ export class Puzzle {
     this.buildPlaza(P, CITY_OF[landmarkId]);
 
     // Difficulty: level 1 pre-places some base blocks, level 3 scatters everything.
-    let preplaced = level === 1 ? Math.floor(def.length * 0.35)
-      : level === 2 ? Math.floor(def.length * 0.15) : 0;
+    let preplaced = preplacedFor(def.length, level);
     // Visual-review harness: ?built=1 shows the finished monument, ?auto=1
     // self-plays a block every half second. Compiled out of release builds
     // (src/core/debug.js): ?built=1 completes the monument outright, which
@@ -1513,8 +1531,7 @@ export class Puzzle {
     const t0 = parseFloat(q.get('time'));
 
     // sort blocks bottom-up (sortY lets cables etc. come after their towers)
-    this.blocks = def.map((d, i) => ({ def: d, idx: i }))
-      .sort((a, b) => (a.def.sortY ?? a.def.p[1]) - (b.def.sortY ?? b.def.p[1]));
+    this.blocks = buildOrder(def);
 
     // ---- build COURSES (layers) -------------------------------------------
     // A monument is built bottom-up, but a single visual course is rarely at
@@ -1706,6 +1723,28 @@ export class Puzzle {
       if (this.turning && !it.placed && needsTurning(it.def) && dRand(it.order, 29) < 0.55) it.turns = 1;
       it.parkPos = it.mesh.position.clone();
     }
+
+    // ---- pieces the run did not collect ------------------------------------
+    // `opts.collected` is one boolean per LOOSE piece, in build order, from
+    // the street just run. A missed piece starts off the plaza: its ghost
+    // shows the gap, and it is delivered during the build, one every few
+    // seconds, lowest course first — so missing an early piece costs real
+    // time. Or the player can pay souvenirs to have them all brought now
+    // (deliverAllNow, wired to a button in main.js). No `collected` (the debug
+    // ?view=puzzle route, or any path that did not come from a run) means
+    // every piece was collected. ?missing=N marks the first N missing, for
+    // tests and review.
+    const looseItems = this.items.filter((it) => !it.placed);
+    let collected = opts.collected || null;
+    const qMissing = parseInt(q.get('missing'), 10);
+    if (!collected && qMissing > 0) collected = looseItems.map((_, i) => i >= qMissing);
+    for (const [i, it] of looseItems.entries()) {
+      it.missing = !!collected && collected[i] === false;
+      if (it.missing) it.mesh.visible = false;
+    }
+    const nMissing = this.missingLeft();
+    this.deliverEvery = nMissing ? Math.min(3.5, Math.max(1.2, this.timeTotal * 0.45 / nMissing)) : 0;
+    this.deliverAt = 2.5;
 
     // celebration camera target derived from monument bounds
     let top = 0, spread = 0;
@@ -1948,7 +1987,42 @@ export class Puzzle {
 
   // ---------- interaction ----------
   nextNeeded() {
-    return this.items.find((it) => !it.placed && !this.flying.includes(it));
+    return this.items.find((it) => !it.placed && !it.missing && !this.flying.includes(it));
+  }
+
+  missingLeft() { return this.items.filter((it) => it.missing).length; }
+
+  // A missed piece arrives: dropped onto its parking spot from above.
+  deliver(it) {
+    if (!it || !it.missing) return;
+    it.missing = false;
+    it.dropping = true;
+    it.mesh.visible = true;
+    const to = it.parkPos.clone(), from = to.clone().setY(to.y + 9);
+    it.mesh.position.copy(from);
+    let t = 0;
+    this.effects.push({
+      update: (dt) => {
+        t = Math.min(1, t + dt * 2.2);
+        it.mesh.position.lerpVectors(from, to, t * t);
+        if (t >= 1) {
+          it.dropping = false;
+          this.ringPulse(to.clone().setY(0.06), 0xffd166, 0.8);
+          return false;
+        }
+        return true;
+      },
+    });
+    sfx.place();
+  }
+
+  deliverNext() {
+    const next = this.items.filter((it) => it.missing).sort((a, b) => a.order - b.order)[0];
+    this.deliver(next);
+  }
+
+  deliverAllNow() {
+    for (const it of this.items.filter((x) => x.missing)) this.deliver(it);
   }
 
   // lowest course that still has a piece waiting to be picked; a piece already
@@ -1964,14 +2038,16 @@ export class Puzzle {
 
   // any order within a course, strict bottom-up across courses
   pickable(item) {
-    if (item.placed || this.flying.includes(item)) return false;
+    if (item.placed || item.missing || item.dropping || this.flying.includes(item)) return false;
     return item.layer === this.currentLayer();
   }
 
   tryPick(nx, ny) {
     if (this.done || this.failed) return;
     this.raycaster.setFromCamera({ x: nx, y: ny }, this.camera);
-    const meshes = this.items.filter((it) => !it.placed && !this.flying.includes(it)).map((it) => it.mesh);
+    // Missing pieces are hidden, and three's raycaster does not skip hidden
+    // meshes, so they have to be left out here explicitly.
+    const meshes = this.items.filter((it) => !it.placed && !it.missing && !this.flying.includes(it)).map((it) => it.mesh);
     const hits = this.raycaster.intersectObjects(meshes, true);
     if (!hits.length) return;
 
@@ -2020,7 +2096,7 @@ export class Puzzle {
   hitTest(nx, ny) {
     if (this.done || this.failed) return null;
     this.raycaster.setFromCamera({ x: nx, y: ny }, this.camera);
-    const meshes = this.items.filter((it) => !it.placed && !this.flying.includes(it)).map((it) => it.mesh);
+    const meshes = this.items.filter((it) => !it.placed && !it.missing && !this.flying.includes(it)).map((it) => it.mesh);
     let front = null;
     for (const hit of this.raycaster.intersectObjects(meshes, true)) {
       let obj = hit.object;
@@ -2076,8 +2152,12 @@ export class Puzzle {
     }
     const snap = Math.max(1.6, 0.3 * Math.max(...it.def.s));
     let result = 'miss';
+    // "Could go on now" for the spot's owner. A MISSING twin's spot counts:
+    // the collected leg fills it, and the missing role passes to the leg's
+    // own spot instead (swapped below), to be delivered later.
+    const fits = (o) => !o.placed && !o.dropping && !this.flying.includes(o) && o.layer === this.currentLayer();
     if (best && bestD < snap) {
-      if (!this.pickable(best) && !(best === it && it.layer === this.currentLayer())) result = 'order';
+      if (!fits(best)) result = 'order';
       else if (it.turns % 2) result = 'turn';
       else result = 'placed';
     }
@@ -2089,6 +2169,7 @@ export class Puzzle {
         [it.parkPos, best.parkPos] = [best.parkPos, it.parkPos];
         [it.rotY0, best.rotY0] = [best.rotY0, it.rotY0];
         [it.turns, best.turns] = [best.turns, it.turns];
+        [it.missing, best.missing] = [best.missing, it.missing];
       }
       this.flying.push(best);
       best.t = 0.55;               // already close: a short settle, not a full flight
@@ -2361,11 +2442,25 @@ export class Puzzle {
     // shimmer on placed water / chrome
     for (const m of this.shimmer) m.emissiveIntensity = m.userData.baseEm * (0.8 + Math.sin(T * 3 + m.id) * 0.35);
 
+    // missed pieces arriving during the build
+    if (!this.done && !this.failed && this.deliverEvery) {
+      this.deliverAt -= dt;
+      if (this.deliverAt <= 0 && this.missingLeft()) {
+        this.deliverNext();
+        this.deliverAt = this.deliverEvery;
+      }
+    }
+    // a missing piece's ghost breathes, so the gap it leaves is visible
+    for (const it of this.items) {
+      if (it.missing) it.ghost.userData.blockMat.opacity = 0.2 + Math.sin(T * 4 + it.order) * 0.08;
+    }
+
     // pickable highlight + bob; ghost guidance pulse.
     // The WHOLE current course glows and bobs, so the player can see every
     // legal choice at once rather than guessing which four are unlocked.
     const layerNow = this.currentLayer();
-    const pending = this.items.filter((it) => !it.placed && !this.flying.includes(it) && it !== this.dragging);
+    const pending = this.items.filter((it) => !it.placed && !it.missing && !it.dropping
+      && !this.flying.includes(it) && it !== this.dragging);
     for (const it of pending) {
       // street 3 gives nothing away: no piece glows or bobs as "next"
       const pickNow = this.glow && it.layer === layerNow;

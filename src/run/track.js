@@ -11,6 +11,7 @@ import {
   SHARED_GEO,
 } from '../cities/builders.js';
 import { makeCollectible } from '../cities/souvenirs.js';
+import { makeBlockMesh } from '../puzzle/puzzle.js';
 import { startRun, randomSeed, rand, randInt } from '../core/rng.js';
 
 const CHUNK_LEN = 36;
@@ -72,13 +73,38 @@ const OB_GEO = {
 };
 for (const g of Object.values(OB_GEO)) SHARED_GEO.add(g);
 
+// ---- the monument's pieces, laid along the street ------------------------------
+// Each piece the puzzle will leave loose appears on the run as a small,
+// glowing model of itself; running through it collects it, and what you
+// collect is what you build with (missed ones arrive late in the puzzle).
+//
+// None of this draws from the seeded stream: lane and position come from the
+// piece's index, so every existing course — obstacles, coins, the daily
+// challenge — is exactly what it was. Pieces sit MIDWAY between obstacle
+// rows, never on one, from 80m (after the two obstacle-free opening chunks)
+// to 50m short of the monument.
+// Bigger than a souvenir on purpose: at 1.3m a pale stone piece was lost
+// among the croissants. It is the special pickup and has to read as one.
+const PIECE_SIZE = 2.0;
+const PIECE_RING_GEO = new THREE.TorusGeometry(1.2, 0.09, 8, 36);
+const PIECE_RING_MAT = new THREE.MeshStandardMaterial({
+  color: 0xffd166, emissive: 0xffb400, emissiveIntensity: 1.6, roughness: 0.4,
+});
+// A soft beam over each piece, so it can be spotted down the street before
+// the piece itself is big enough to recognise.
+const PIECE_BEAM_GEO = new THREE.CylinderGeometry(0.32, 0.5, 7, 12, 1, true);
+const PIECE_BEAM_MAT = new THREE.MeshBasicMaterial({
+  color: 0xffd166, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide,
+});
+SHARED_GEO.add(PIECE_RING_GEO); SHARED_GEO.add(PIECE_BEAM_GEO);
+
 // Obstacle kinds:
 //   'low'  — barrier, jump over
 //   'high' — overhead sign/scaffold, roll under
 //   'full' — vehicle, must change lane
 //   'coin' — collectible
 export class Track {
-  constructor(scene, theme, level, seed) {
+  constructor(scene, theme, level, seed, pieceDefs = []) {
     this.scene = scene;
     // Every draw THIS FILE makes — obstacle spacing/pattern/lane/kind, bus
     // chance, collectible placement, and also the chunk layout (building
@@ -105,6 +131,14 @@ export class Track {
     this.coins = [];
     this.distance = 0;
     this.goal = 900 + (level - 1) * 350;   // meters to the monument
+    // monument pieces: evenly spaced by run distance (see PIECE_SIZE)
+    this.pieceDefs = pieceDefs || [];
+    const nP = this.pieceDefs.length;
+    this.pieceDist = this.pieceDefs.map((_, i) => 80 + (this.goal - 130) * (i + 0.5) / nP);
+    this.pieceSpawned = new Array(nP).fill(false);
+    this.piecesCollected = new Array(nP).fill(false);
+    this.pieces = [];
+    this.onPiece = null;
     this.coinSpin = 0;
     this.chunkCount = 0;           // drives set-piece cadence per street
     this.lastBannerChunk = -99;    // spacing guard for road-spanning boards
@@ -558,7 +592,58 @@ export class Track {
         }
       }
     }
-  }
+
+    // monument pieces falling in this chunk, placed between obstacle rows
+    const step = 12 / density;
+    const rows = [];
+    for (let zr = 8; zr < CHUNK_LEN - 4; zr += step) rows.push(zr);
+    const mids = [];
+    for (let r = 0; r + 1 < rows.length; r++) mids.push((rows[r] + rows[r + 1]) / 2);
+    if (rows.length) {
+      const last = rows[rows.length - 1];
+      mids.push((last + CHUNK_LEN + 8) / 2, (8 + last - CHUNK_LEN) / 2);
+    }
+    const slots = mids.filter((m) => m > 1 && m < CHUNK_LEN - 1);
+    for (let k = 0; k < this.pieceDefs.length; k++) {
+      if (this.pieceSpawned[k]) continue;
+      const zp = this.pieceDist[k] + chunkZ;          // distance into this chunk
+      if (zp < 0 || zp >= CHUNK_LEN) continue;
+      const zz = slots.length ? slots.reduce((a, b) => (Math.abs(b - zp) < Math.abs(a - zp) ? b : a)) : zp;
+      const lane = (k * 2 + 1) % 3;
+      const d = this.pieceDefs[k];
+      const piece = makeBlockMesh(d);
+      piece.rotation.set(d.rotX || 0, d.rotY || 0, d.rotZ || 0);
+      piece.scale.setScalar(PIECE_SIZE / Math.max(...d.s));
+      piece.traverse((n) => {
+        if (!n.isMesh || n.userData.isHitProxy) return;
+        for (const m of Array.isArray(n.material) ? n.material : [n.material]) {
+          m.emissiveIntensity = Math.max(m.userData.baseEm || 0, 0.6);
+        }
+      });
+      const holder = new THREE.Group();
+      holder.add(piece);
+      const ring = new THREE.Mesh(PIECE_RING_GEO, PIECE_RING_MAT);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = -1.1;
+      holder.add(ring);
+      const beam = new THREE.Mesh(PIECE_BEAM_GEO, PIECE_BEAM_MAT);
+      beam.position.y = 3.4;
+      holder.add(beam);
+      holder.position.set(LANES[lane], 1.5, -zz);
+      chunkGroup.add(holder);
+      // A row's souvenir line trails several metres back into the gap where
+      // the piece sits, and in the same lane it hides the piece behind a wall
+      // of souvenirs. Those few are dropped: removing meshes draws nothing
+      // from the seeded stream, so the course is otherwise unchanged.
+      this.coins = this.coins.filter((c) => {
+        const clash = c.chunk === chunkGroup && Math.abs(c.mesh.position.x - LANES[lane]) < 0.1
+          && Math.abs(c.mesh.position.z + zz) < 4;
+        if (clash) chunkGroup.remove(c.mesh);
+        return !clash;
+      });
+      this.pieces.push({ mesh: holder, chunk: chunkGroup, idx: k, taken: false });
+      this.pieceSpawned[k] = true;
+    }  }
 
   update(dt, speed, player, onCoin, onHit) {
     this.speed = speed;   // arcs spawned later match the ramped-up pace
@@ -572,6 +657,7 @@ export class Track {
       const old = this.chunks.shift();
       this.obstacles = this.obstacles.filter((o) => o.chunk !== old);
       this.coins = this.coins.filter((c) => c.chunk !== old);
+      this.pieces = this.pieces.filter((p) => p.chunk !== old);
       this.group.remove(old);
       disposeGroup(old);
       const lastZ = this.chunks[this.chunks.length - 1].position.z;
@@ -590,6 +676,20 @@ export class Track {
         c.taken = true;
         c.mesh.visible = false;
         onCoin();
+      }
+    }
+
+    // monument pieces
+    for (const p of this.pieces) {
+      if (p.taken) continue;
+      p.mesh.rotation.y = this.coinSpin * 0.5;
+      const wz = p.mesh.position.z + p.chunk.position.z + this.group.position.z;
+      if (Math.abs(wz) < 1.0 && Math.abs(p.mesh.position.x - hb.x) < 1.0 &&
+          p.mesh.position.y > hb.y0 - 0.8 && p.mesh.position.y < hb.y1 + 0.8) {
+        p.taken = true;
+        p.mesh.visible = false;
+        this.piecesCollected[p.idx] = true;
+        if (this.onPiece) this.onPiece(p.idx);
       }
     }
 
