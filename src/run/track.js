@@ -90,7 +90,7 @@ for (const g of Object.values(OB_GEO)) SHARED_GEO.add(g);
 //   - never into the row's coin lane, which would lure the player into it
 // Every draw here comes from the seeded stream, and only for Rome's Vespas,
 // so every other city's course is exactly as before.
-const WEAVE_CHANCE = [0.25, 0.4, 0.55];     // of single-vehicle rows, by level
+const WEAVE_CHANCE = [0.6, 0.45, 0.4];      // of single-vehicle rows, by level: about 3, 5, 6 a street
 const WEAVE_BLINK = 2.6, WEAVE_START = 1.1, WEAVE_DUR = 0.55;
 const BLINK_MAT = new THREE.MeshStandardMaterial({
   color: 0xffb020, emissive: 0xff9a00, emissiveIntensity: 2.4,
