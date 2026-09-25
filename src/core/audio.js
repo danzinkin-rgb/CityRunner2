@@ -1,7 +1,7 @@
 // Procedural WebAudio: no audio files, everything synthesized.
 import { STORAGE } from './storage-keys.js';
 
-let ctx = null, master = null, musicTimer = null;
+let ctx = null, master = null, musicBus = null, musicTimer = null;
 
 // ---- user preferences (persisted; every mobile game is expected to have these)
 // Deliberately NOT cleared by "erase my data" — see src/core/storage-keys.js.
@@ -43,7 +43,18 @@ function ac() {
     try { ctx = new AC(); } catch { ctx = null; return null; }
     master = ctx.createGain();
     master.gain.value = 0.35 * prefs.volume;
-    master.connect(ctx.destination);
+    // A limiter last in the chain: sounds that stack (a coin run over the
+    // piece chime over the music) are held under full scale instead of
+    // clipping, which a phone speaker plays as a harsh buzz.
+    try {
+      const lim = ctx.createDynamicsCompressor();
+      lim.threshold.value = -6; lim.knee.value = 4; lim.ratio.value = 12;
+      lim.attack.value = 0.003; lim.release.value = 0.12;
+      master.connect(lim); lim.connect(ctx.destination);
+    } catch { master.connect(ctx.destination); }
+    // music has its own bus so it can be faded out, not cut
+    musicBus = ctx.createGain();
+    musicBus.connect(master);
   }
   // 'interrupted' is WebKit's own state for an audio session taken away
   // (a call, Siri, another app's audio). It needs resuming just as much.
@@ -123,7 +134,7 @@ function tone(freq, dur, type = 'sine', vol = 0.5, when = 0, slide = 0, isMusic 
     g.gain.setValueAtTime(0, a.currentTime + when);
     g.gain.linearRampToValueAtTime(vol, a.currentTime + when + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + when + dur);
-    o.connect(g); g.connect(master);
+    o.connect(g); g.connect(isMusic && musicBus ? musicBus : master);
     o.start(a.currentTime + when); o.stop(a.currentTime + when + dur + 0.05);
   } catch { /* see above — a dropped note, not a broken run */ }
 }
@@ -154,6 +165,10 @@ export function startMusic(cityId) {
   if (!prefs.music) return;
   const a = ac();
   if (!a) return;
+  try {
+    musicBus.gain.cancelScheduledValues(a.currentTime);
+    musicBus.gain.setValueAtTime(1, a.currentTime);
+  } catch { /* a dropped fade, not a broken run */ }
   const scale = SCALES[cityId] || SCALES.nyc;
   const root = 110;
   let step = 0;
@@ -169,4 +184,21 @@ export function startMusic(cityId) {
 
 export function stopMusic() {
   if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+}
+
+/**
+ * Stop the music with a short fade, for the end of a street. Stopping only
+ * the loop leaves its last low notes ringing into the switch to the facts
+ * page, the heaviest moment of the run, and on a phone that was heard as a
+ * buzz just before the page appeared (device feedback, Rome street 2).
+ */
+export function fadeOutMusic(secs = 0.15) {
+  stopMusic();
+  if (!ctx || !musicBus || ctx.state !== 'running') return;
+  try {
+    const t = ctx.currentTime, g = musicBus.gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(0, t + secs);
+  } catch { /* a dropped fade, not a broken run */ }
 }

@@ -1,7 +1,7 @@
 import * as THREE from '../vendor/three.module.js';
 import { createRenderer, makeCamera, handleResize, dressScene } from './core/engine.js';
 import { createInput } from './core/input.js';
-import { sfx, startMusic, stopMusic, prefs as audioPrefs, saveAudioPrefs } from './core/audio.js';
+import { sfx, startMusic, stopMusic, fadeOutMusic, prefs as audioPrefs, saveAudioPrefs } from './core/audio.js';
 import { CITIES, LANDMARK_NAMES } from './cities/themes.js';
 import { STREET_FACTS, MONUMENT_FACTS } from './facts.js';
 import { renderHero, renderCompact, paintScale, countUp } from './factviz.js';
@@ -550,7 +550,7 @@ function applyCityPalette() {
 
 function showStreetFacts() {
   lastRunPieces = track ? track.piecesCollected.slice() : null;
-  stopMusic();
+  fadeOutMusic();
   state = 'facts';
   applyCityPalette();
   const entry = STREET_FACTS[city().id]?.[level - 1];
