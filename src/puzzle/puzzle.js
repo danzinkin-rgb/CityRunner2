@@ -2146,6 +2146,13 @@ export class Puzzle {
 
   beginDrag(item) {
     this.dragging = item;
+    // Identical pieces (the Eye's capsules, a bridge's two towers) fit any of
+    // their outlines. Say so once, the first time one is picked up.
+    if (!this.twinHinted && this.hintFn) {
+      const s = sig(item.def);
+      const n = this.items.filter((o) => !o.placed && sig(o.def) === s).length;
+      if (n > 1) { this.twinHinted = true; this.hintFn(`This fits any of the ${n} matching outlines`); }
+    }
     // A Louvre wing at full size, carried under the finger, covers the very
     // outline it is meant to be dropped on. Carried pieces are capped at 5m.
     item.mesh.scale.setScalar(Math.min(parkScale(item.def), 5 / Math.max(...effSize(item.def))));
@@ -2156,6 +2163,7 @@ export class Puzzle {
   dragTo(nx, ny) {
     const it = this.dragging;
     if (!it) return;
+    this.dragNdc = { x: nx, y: ny };
     const pt = this.pointOnTargetPlane(nx, ny, it);
     if (!pt) return;
     it.mesh.position.lerp(pt, 0.55);
@@ -2173,11 +2181,20 @@ export class Puzzle {
     it.mesh.scale.setScalar(parkScale(it.def));
     const s = sig(it.def);
     let best = null, bestD = Infinity;
+    // Each candidate spot is measured where the finger's ray crosses a plane
+    // through THAT spot. The carried piece moves on a plane through its own
+    // spot, so a twin at another depth (Brooklyn's far tower, a capsule at
+    // the top of the Eye) would otherwise sit metres off that plane and never
+    // accept a drop that is right on its outline on screen.
+    const ndc = this.dragNdc;
     for (const o of this.items) {
       if (o.placed || this.flying.includes(o) || sig(o.def) !== s) continue;
-      const d = it.mesh.position.distanceTo(new THREE.Vector3(...o.def.p));
+      const target = new THREE.Vector3(...o.def.p);
+      const at = (ndc && this.pointOnTargetPlane(ndc.x, ndc.y, o)) || it.mesh.position;
+      const d = at.distanceTo(target);
       if (d < bestD) { bestD = d; best = o; }
     }
+    this.dragNdc = null;
     // Forgiving on purpose (first device feedback: "a tiny bit too precise").
     const snap = Math.max(2.2, 0.4 * Math.max(...it.def.s));
     let result = 'miss';
@@ -2191,14 +2208,29 @@ export class Puzzle {
       else result = 'placed';
     }
     if (result === 'placed') {
-      // Interchangeable pieces trade places: this mesh takes the spot it was
-      // dropped on, and the other piece keeps the parked mesh.
+      // Interchangeable pieces trade places. The spot's own mesh takes over
+      // at the drop point and flies in, and the carried mesh goes to wherever
+      // the spot's piece was parked. Meshes are never moved between spots:
+      // mirrored twins (Brooklyn's stay fans, the Eiffel's legs) look alike
+      // parked but are built for one side, and a swapped one lands backwards.
       if (best !== it) {
-        [it.mesh, best.mesh] = [best.mesh, it.mesh];
+        const bm = best.mesh, im = it.mesh;
+        bm.position.copy(im.position);
+        bm.rotation.copy(im.rotation);
+        bm.scale.copy(im.scale);
+        bm.visible = true;
+        resaturate(bm);
+        forEachMat(bm, (m) => { m.emissiveIntensity = Math.max(m.userData.baseEm || 0, 0.35); });
         [it.parkPos, best.parkPos] = [best.parkPos, it.parkPos];
         [it.rotY0, best.rotY0] = [best.rotY0, it.rotY0];
         [it.turns, best.turns] = [best.turns, it.turns];
         [it.missing, best.missing] = [best.missing, it.missing];
+        im.scale.setScalar(parkScale(it.def));
+        im.rotation.set(0, it.rotY0 || 0, 0);
+        im.position.copy(it.parkPos);
+        im.visible = !it.missing;
+        forEachMat(im, (m) => { m.emissiveIntensity = m.userData.baseEm || 0; });
+        desaturate(im);
       }
       this.flying.push(best);
       best.t = 0.55;               // already close: a short settle, not a full flight

@@ -13,6 +13,7 @@
  *   street 3: a piece from a later course is refused, even on its own spot
  *   street 3: a piece that is a quarter-turn out is refused until tapped
  *   every street: the clock scales with the loose pieces
+ *   twins: an identical piece fits its twin's outline at any camera angle
  *
  * Usage: node test/puzzle-drag.mjs [baseUrl]
  */
@@ -154,6 +155,51 @@ async function candidates(page, filterSrc) {
   check(turnRefused === true, 'street 3: a piece a quarter-turn out is refused');
   check(turnedThenPlaced === true, 'street 3: tapping it turns it, and then it fits');
   check(!errors.length, 'street 3: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
+// ------------------------------------------------------------- twins
+// Brooklyn's two tower foundations are identical, so either fits either spot
+// (device feedback: "identical but only fit on one of the 2"). With the camera
+// swung round, the far one is metres deeper than the near one; a drop right on
+// its outline on screen must still count. And the spot keeps its OWN mesh:
+// mirrored twins (stay fans, Eiffel legs) are built for one side only.
+{
+  const { ctx, page, errors } = await openPuzzle('nyc', 3);
+  await page.evaluate(() => { window.__cr.cam.angle = 0.9; window.__cr.cam.userActive = 99; });
+  await page.waitForTimeout(800);
+  const r = await page.evaluate(async () => {
+    const p = window.__cr.puzzle, cam = window.__cr.camera;
+    const key = (it) => JSON.stringify([it.def.shape, it.def.s, it.def.c]);
+    const pick = p.items.filter((it) => !it.placed && p.pickable(it));
+    let A = null, B = null;
+    for (const a of pick) {
+      const b = pick.find((o) => o !== a && key(o) === key(a) && Math.abs(o.def.p[0] - a.def.p[0]) > 5);
+      if (b) { A = a; B = b; break; }
+    }
+    if (!A) return { found: false };
+    A.turns = 0; B.turns = 0;
+    const meshA = A.mesh, meshB = B.mesh;
+    const v = new cam.position.constructor(...B.def.p).project(cam);
+    // how far off its own plane the far spot is: what the old matching measured
+    const own = p.pointOnTargetPlane(v.x, v.y, A);
+    const offOwnPlane = own.distanceTo(new cam.position.constructor(...B.def.p));
+    p.beginDrag(A);
+    for (let i = 0; i < 8; i++) p.dragTo(v.x, v.y);
+    const result = p.endDrag();
+    for (let i = 0; i < 40 && !B.placed; i++) await new Promise((res) => setTimeout(res, 50));
+    return {
+      found: true, result, offOwnPlane: +offOwnPlane.toFixed(1),
+      spotPlaced: B.placed, spotKeptItsMesh: B.mesh === meshB, carriedWentBack: A.mesh === meshA && !A.placed,
+      carriedVisible: meshA.visible,
+    };
+  });
+  check(r.found, 'Brooklyn street 3 has a pair of identical first-course pieces');
+  check(r.result === 'placed' && r.spotPlaced, 'a twin dropped on the far twin\'s outline is placed there',
+    JSON.stringify(r));
+  check(r.spotKeptItsMesh && r.carriedWentBack && r.carriedVisible,
+    'the spot keeps its own mesh; the carried piece takes the parked place', JSON.stringify(r));
+  check(!errors.length, 'twins: no page errors', errors[0] || '');
   await ctx.close();
 }
 

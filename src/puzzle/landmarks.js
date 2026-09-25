@@ -133,20 +133,27 @@ const defs = {
   // chrome sunburst crown tiers (dark triangular cutouts) ~40% of the
   // height, tall needle. (+20% overall)
   chrysler: [
-    B([0, 1.25, 0], [6.4, 2.5, 6.4], '#d8d2c4', 'box', { tex: 'win', tx: { cols: 8, rows: 2 } }),
-    // corner setback shoulders
-    B([2.55, 3.1, 2.55], [1.5, 1.2, 1.5], '#ccc6b6'),
-    B([-2.55, 3.1, 2.55], [1.5, 1.2, 1.5], '#ccc6b6'),
-    B([2.55, 3.1, -2.55], [1.5, 1.2, 1.5], '#ccc6b6'),
-    B([-2.55, 3.1, -2.55], [1.5, 1.2, 1.5], '#ccc6b6'),
+    // the base arrives with its four corner setback shoulders
+    B([0, 1.25, 0], [6.4, 2.5, 6.4], '#d8d2c4', 'box', {
+      tex: 'win', tx: { cols: 8, rows: 2 },
+      adorn: [[1, 1], [-1, 1], [1, -1], [-1, -1]].map(([sx, sz]) =>
+        B([sx * 2.55, 1.85, sz * 2.55], [1.5, 1.2, 1.5], '#ccc6b6')),
+    }),
     B([0, 4.8, 0], [5.2, 4.6, 5.2], '#ded8ca', 'box', { tex: 'win', tx: { cols: 7, rows: 5 } }),
     B([0, 8.8, 0], [4.3, 3.4, 4.3], '#d4cec0', 'box', { tex: 'win', tx: { cols: 6, rows: 4 } }),
-    B([0, 11.6, 0], [3.6, 2.2, 3.6], '#ded8ca', 'box', { tex: 'win', tx: { cols: 5, rows: 2 } }),
-    // chrome eagles, 3x bigger so they read from the plaza
-    B([2.1, 13.1, 2.1], [1.0, 0.85, 2.7], '#e6ebf4', 'box', { rotY: -Math.PI / 4, metal: 1 }),
-    B([-2.1, 13.1, 2.1], [1.0, 0.85, 2.7], '#e6ebf4', 'box', { rotY: Math.PI / 4, metal: 1 }),
-    B([2.1, 13.1, -2.1], [1.0, 0.85, 2.7], '#e6ebf4', 'box', { rotY: -3 * Math.PI / 4, metal: 1 }),
-    B([-2.1, 13.1, -2.1], [1.0, 0.85, 2.7], '#e6ebf4', 'box', { rotY: 3 * Math.PI / 4, metal: 1 }),
+    // The top block carries the chrome eagle heads at its corners, craning
+    // out diagonally with hooked beaks. As four loose boxes they read as
+    // random blocks stuck on the corners (device feedback).
+    B([0, 11.6, 0], [3.6, 2.2, 3.6], '#ded8ca', 'box', {
+      tex: 'win', tx: { cols: 5, rows: 2 },
+      adorn: [[1, 1], [-1, 1], [1, -1], [-1, -1]].map(([sx, sz]) =>
+        B([sx * 1.72, 0.95, sz * 1.72], [1.25, 0.62, 0.34], '#e6ebf4', 'extrude', {
+          metal: 1, rotY: Math.atan2(-sz, sx),
+          // side profile: neck from the corner, head, beak hooked down
+          outline: [[-0.5, -0.35], [0.12, -0.3], [0.3, -0.12], [0.5, -0.32], [0.46, 0.02],
+            [0.3, 0.3], [0.02, 0.5], [-0.5, 0.3]],
+        })),
+    }),
     // chrome sunburst crown: telescoping tiers with dark triangular windows
     B([0, 13.55, 0], [3.6, 1.7, 2.75], '#e6ebf4', 'tier', { tex: 'crown', metal: 1, em: '#fff2d8', emI: 0.16 }),
     B([0, 15.1, 0], [2.75, 1.55, 2.05], '#dde3ee', 'tier', { tex: 'crown', metal: 1, em: '#fff2d8', emI: 0.18 }),
@@ -170,8 +177,9 @@ const defs = {
     B([6.2, 0.6, 0], [3.4, 1.2, 5.4], '#9d917b', 'box', { tex: 'relief' }),
     B([-12.6, 2.1, 0], [3.2, 4.2, 5.0], '#a89a80', 'box', { tex: 'ashlar' }),
     B([12.6, 2.1, 0], [3.2, 4.2, 5.0], '#a89a80', 'box', { tex: 'ashlar' }),
-    // the deck, with the raised timber promenade down its middle
-    // hung from the cables once they were spun, so placed after them
+    // the deck, with the raised timber promenade down its middle: hung from
+    // the cables once they were spun, and the stays added after it — the
+    // real order: towers, cables, deck, stays
     B([-8.9, 3.7, 0], [5.4, 0.5, 4.0], '#6f675d', 'box', { sortY: 14 }),
     B([8.9, 3.7, 0], [5.4, 0.5, 4.0], '#6f675d', 'box', { sortY: 14 }),
     B([0, 3.7, 0], [9.0, 0.5, 4.0], '#766d62', 'box', {
@@ -200,20 +208,21 @@ const defs = {
         ]),
       ],
     })),
-    // the four main cables, hung after the towers
-    B([0, 3.9, 1.7], [25.2, 0.7, 0.3], '#e6e0d0', 'cable',
-      { sortY: 12.5, cable: { towerX: 6.2, topY: 12.9, midY: 4.6, endX: 12.4, endY: 4.0, deckY: 4.0, hangers: 13, r: 0.2 } }),
-    B([0, 3.9, -1.7], [25.2, 0.7, 0.3], '#e6e0d0', 'cable',
-      { sortY: 12.5, cable: { towerX: 6.2, topY: 12.9, midY: 4.6, endX: 12.4, endY: 4.0, deckY: 4.0, hangers: 13, r: 0.2 } }),
-    // the web: stays fanning from each tower top, inward and outward
-    B([-3.4, 8.3, 0], [5.8, 9.2, 3.6], '#ddd6c4', 'fan',
-      { sortY: 13, fan: { ax: -2.8, ay: 4.4, x0: -2.0, x1: 2.6, deckY: -4.4, n: 6, z: 1.7, r: 0.06 } }),
-    B([3.4, 8.3, 0], [5.8, 9.2, 3.6], '#ddd6c4', 'fan',
-      { sortY: 13, fan: { ax: 2.8, ay: 4.4, x0: 2.0, x1: -2.6, deckY: -4.4, n: 6, z: 1.7, r: 0.06 } }),
-    B([-9.2, 8.3, 0], [5.8, 9.2, 3.6], '#ddd6c4', 'fan',
-      { sortY: 13, fan: { ax: 3.0, ay: 4.4, x0: 2.2, x1: -2.4, deckY: -4.4, n: 6, z: 1.7, r: 0.06 } }),
-    B([9.2, 8.3, 0], [5.8, 9.2, 3.6], '#ddd6c4', 'fan',
-      { sortY: 13, fan: { ax: -3.0, ay: 4.4, x0: -2.2, x1: 2.4, deckY: -4.4, n: 6, z: 1.7, r: 0.06 } }),
+    // The main cables, all four spun together: one piece, after the towers.
+    B([0, 3.9, 1.7], [25.2, 0.7, 0.3], '#e6e0d0', 'cable', {
+      sortY: 12.5,
+      cable: { towerX: 6.2, topY: 12.9, midY: 4.6, endX: 12.4, endY: 4.0, deckY: 4.0, hangers: 13, r: 0.2 },
+      adorn: [B([0, 0, -3.4], [25.2, 0.7, 0.3], '#e6e0d0', 'cable',
+        { cable: { towerX: 6.2, topY: 12.9, midY: 4.6, endX: 12.4, endY: 4.0, deckY: 4.0, hangers: 13, r: 0.2 } })],
+    }),
+    // The web: one piece per tower, stays fanning both ways from its top.
+    // Both are the same shape, so either fits either tower.
+    ...[-6.2, 6.2].map((x) => B([x, 8.3, 0], [11.6, 9.2, 3.6], '#ddd6c4', 'fan', {
+      sortY: 14.5,
+      fan: { ax: 0, ay: 4.4, x0: 0.8, x1: 5.4, deckY: -4.4, n: 6, z: 1.7, r: 0.06 },
+      adorn: [B([0, 0, 0], [11.6, 9.2, 3.6], '#ddd6c4', 'fan',
+        { fan: { ax: 0, ay: 4.4, x0: -0.8, x1: -5.4, deckY: -4.4, n: 6, z: 1.7, r: 0.06 } })],
+    })),
   ],
 
   // ================= PARIS =================
@@ -407,11 +416,17 @@ const defs = {
     B([0, 5.6, 1.0], [2.6, 0.24, 0.24], '#e0dcd2', 'box', { rotX: -0.25 }),
     B([-0.62, 4.15, -1.35], [0.34, 8.6, 0.34], '#c5ccd6', 'cyl', { rotZ: -0.14, rotX: 0.3 }),
     B([0.62, 4.15, -1.35], [0.34, 8.6, 0.34], '#c5ccd6', 'cyl', { rotZ: 0.14, rotX: 0.3 }),
-    // rim + a warm gold rim-light ring just inside it
-    B([0, 8.2, 0], [13.0, 13.0, 0.40], '#f4f6fa', 'torus', { em: '#ffd9a0', emI: 0.55 }),
-    B([0, 8.2, 0], [12.1, 12.1, 0.16], '#e8b45e', 'torus', { metal: 1, em: '#ffc46a', emI: 0.95 }),
-    B([0, 8.2, 0], [12.4, 0.13, 0.13], '#d6dbe4', 'spokes', { n: 12, spin: 0.11, em: '#ffd9a0', emI: 0.3 }),
-    B([0, 8.2, 0], [1.9, 1.5, 1.9], '#8d97a6', 'cyl', { rotX: Math.PI / 2, em: '#ffc266', emI: 1.0 }),
+    // The wheel is ONE piece: rim, gold rim-light ring, spokes and hub.
+    // As four separate pieces, each parked at under half size, a thin ring
+    // and a bundle of sticks did not read as a wheel (device feedback).
+    B([0, 8.2, 0], [13.0, 13.0, 0.40], '#f4f6fa', 'torus', {
+      em: '#ffd9a0', emI: 0.55, spin: 0.11,
+      adorn: [
+        B([0, 0, 0], [12.1, 12.1, 0.16], '#e8b45e', 'torus', { metal: 1, em: '#ffc46a', emI: 0.95 }),
+        B([0, 0, 0], [12.4, 0.13, 0.13], '#d6dbe4', 'spokes', { n: 12, em: '#ffd9a0', emI: 0.3 }),
+        B([0, 0, 0], [1.9, 1.5, 1.9], '#8d97a6', 'cyl', { rotX: Math.PI / 2, em: '#ffc266', emI: 1.0 }),
+      ],
+    }),
     // capsules: big readable ovoids mounted outboard of the rim
     ...vring(8.2, 7.35, 10, [3.0, 1.6, 1.6], '#2b93c4', 'pod', { glass: 1, op: 0.96, em: '#ffb85a', emI: 0.16, sortY: 9.5 }),
   ],

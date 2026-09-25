@@ -385,7 +385,7 @@ function paintNeonGround({ g, W, H, shopY, SHOP_H, theme }) {
   g.fillStyle = gr; g.fillRect(4, shopY + 4, W - 8, SHOP_H * 0.34);
   g.fillStyle = 'rgba(255,255,255,.95)';
   g.font = `900 ${(SHOP_H * 0.22) | 0}px Arial`; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillText(pickR(theme.ads || BRANDS.show), W / 2, shopY + 4 + SHOP_H * 0.17, W - 24);
+  g.fillText(pickR(adWords(theme, BRANDS.show)), W / 2, shopY + 4 + SHOP_H * 0.17, W - 24);
   // glass lobby with cool interior
   const gy = shopY + SHOP_H * 0.44;
   const gl = g.createLinearGradient(0, gy, 0, H - 6);
@@ -414,7 +414,7 @@ function paintNeonBody(g, W, H, bodyTop, bodyH, theme) {
     g.fillStyle = 'rgba(255,255,255,.92)';
     g.font = `900 ${Math.max(12, bh * 0.4) | 0}px Arial`;
     g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(pickR(theme.ads || BRANDS.show), bx + bw / 2, by + bh / 2, bw - 10);
+    g.fillText(pickR(adWords(theme, BRANDS.show)), bx + bw / 2, by + bh / 2, bw - 10);
   }
   // news ticker band
   const ty = bodyTop + bodyH * (0.3 + Math.random() * 0.4);
@@ -1099,7 +1099,7 @@ export function makeGardenWall(theme, len) {
 
 // Bulb-chase marquee canopy with a fictional show name.
 function marqueeFace(theme) {
-  const words = theme.ads || BRANDS.show;
+  const words = adWords(theme, BRANDS.show);
   const wi = (Math.random() * words.length) | 0;
   return cached(`marqMat:${sKey(theme)}:${wi}`, () => {
     const tex = canvasTexture(256, 64, (g) => {
@@ -1529,6 +1529,13 @@ export function makeColumn() {
 }
 
 // Times Square style billboard with per-street ad text.
+// A street's own ad words, or the fallback. An empty list counts as none:
+// SF's Lombard street sets `ads: []`, and indexing an empty list painted
+// "undefined" on its signs.
+function adWords(theme, fallback) {
+  return theme.ads?.length ? theme.ads : fallback;
+}
+
 const ADS = {
   nyc: ['BROADWAY', 'LIVE!', 'CITY RUN', '42nd ST', 'NEON', 'PIZZA', 'JAZZ CLUB'],
   paris: ['CAFÉ', 'MODE', 'PARFUM', 'BISTRO'],
@@ -1538,7 +1545,7 @@ const ADS = {
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
-  const words = theme.ads || ADS[theme.id] || ADS.nyc;
+  const words = adWords(theme, ADS[theme.id] || ADS.nyc);
   // Pool the board faces per street: one texture+material per ad word x hue
   // bucket. Same variety on screen, but nothing new allocated per chunk.
   const wi = (Math.random() * words.length) | 0;
@@ -1723,7 +1730,7 @@ function makeBeacon() {
 // Standing playbill poster board (Broadway).
 function makePlaybill(theme) {
   const g = new THREE.Group();
-  const words = theme.ads || BRANDS.show;
+  const words = adWords(theme, BRANDS.show);
   const wi = (Math.random() * words.length) | 0;
   const boardMat = cached(`playbillMat:${sKey(theme)}:${wi}`, () => {
     const tex = canvasTexture(128, 192, (c) => {
@@ -2696,7 +2703,7 @@ export function makeCurvedLED(theme) {
   const boardGeo = cached('geo:ledBoard', () =>
     new THREE.CylinderGeometry(8.15, 8.15, 3.6, 18, 1, true, 0.05, Math.PI * 0.6 - 0.1));
   for (let i = 0; i < 4; i++) {
-    const words = theme.ads || ['WEST END', 'REVUE ROYALE', 'GINGER SNAP', 'LITES'];
+    const words = adWords(theme, ['WEST END', 'REVUE ROYALE', 'GINGER SNAP', 'LITES']);
     const text = words[i % words.length];
     const hue = (30 + i * 85) % 360;
     const tex = cached(`ledTex:${sKey(theme)}:${i}`, () => canvasTexture(512, 96, (c) => {
