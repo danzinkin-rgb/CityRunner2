@@ -585,6 +585,7 @@ function startPuzzle() {
     state = 'puzzle';
     showScreen(null);
     const missing = puzzle.missingLeft();
+    if (missing && !save.seenMissingHelp) showMissingHelp();
     hint(missing
       ? `${missing} piece${missing > 1 ? 's' : ''} missed on the street — they'll arrive as you build`
       : puzzle.mode === 'tap' ? 'Tap the glowing blocks — drag to look around'
@@ -641,17 +642,52 @@ function finishPuzzle(won) {
 // choice: it has no timer of its own and is only shown when affordable.
 const FETCH_PRICE = 10;
 let fetchShownFor = -1;
+let deliverText = '';
 function syncFetchButton() {
   const btn = $('btn-fetch');
   const n = state === 'puzzle' && puzzle && !puzzle.done && !puzzle.failed ? puzzle.missingLeft() : 0;
   const price = n * FETCH_PRICE;
   const show = n > 0 && coins + save.coins >= price;
+  // What is happening, in words: "2 missing pieces on the way · next in 3s".
+  // First device feedback was that nothing said pieces were coming at all.
+  const dt = n ? `${n} missing piece${n > 1 ? 's' : ''} on the way · next in ${Math.ceil(puzzle.nextDeliveryIn())}s` : '';
+  if (dt !== deliverText) {
+    deliverText = dt;
+    $('hud-deliver').textContent = dt;
+    $('hud-deliver').style.display = dt ? '' : 'none';
+  }
   const key = show ? n : 0;
   if (key === fetchShownFor) return;
   fetchShownFor = key;
   btn.style.display = show ? '' : 'none';
-  if (show) btn.textContent = `BRING ${n} NOW · ${price}`;
+  if (show) btn.innerHTML = `BRING THEM NOW · ${price} <img src="assets/souvenirs/${city().id}.png" alt="souvenirs">`;
 }
+
+// The first time a build starts with pieces missing, say what that means
+// before the clock starts. The clock and the deliveries are both held while
+// the card is up (state 'puzzle-intro' skips the puzzle's update).
+function showMissingHelp() {
+  const n = puzzle.missingLeft();
+  const price = n * FETCH_PRICE;
+  $('mh-text').textContent = `You missed ${n} piece${n > 1 ? 's' : ''} of the ${LANDMARK_NAMES[city().landmarks[level - 1]]} `
+    + 'on the street. They are on their way and will drop in one at a time — watch for the flashing outlines. '
+    + 'Anything that sits on top of a missing piece has to wait for it.';
+  const canPay = coins + save.coins >= price;
+  $('mh-bring').style.display = canPay ? '' : 'none';
+  $('mh-bring').innerHTML = `BRING THEM NOW · ${price} <img src="assets/souvenirs/${city().id}.png" alt="souvenirs">`;
+  $('missing-help').classList.add('on');
+  state = 'puzzle-intro';
+}
+function closeMissingHelp(bring) {
+  $('missing-help').classList.remove('on');
+  save.seenMissingHelp = true;
+  persist();
+  state = 'puzzle';
+  clock.getDelta();                 // the card's time is not the player's
+  if (bring) $('btn-fetch').onclick(new Event('click'));
+}
+$('mh-ok').onclick = () => closeMissingHelp(false);
+$('mh-bring').onclick = () => closeMissingHelp(true);
 $('btn-fetch').onclick = (e) => {
   e.stopPropagation();
   if (state !== 'puzzle' || !puzzle) return;
