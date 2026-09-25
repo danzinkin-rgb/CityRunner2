@@ -34,13 +34,20 @@ function ac() {
   if (ctx && ctx.state === 'closed') ctx = null;
   if (!ctx) {
     const AC = window.AudioContext || window.webkitAudioContext;
+    // Only a MISSING API is permanent. A constructor that throws once (iOS
+    // right after the WebView was killed and reloaded, or with its audio
+    // session busy) used to latch audioBroken for the rest of the session —
+    // no sound whatever the player did, until the app was restarted. Now
+    // the next gesture simply tries again.
     if (!AC) { audioBroken = true; return null; }
-    try { ctx = new AC(); } catch { audioBroken = true; return null; }
+    try { ctx = new AC(); } catch { ctx = null; return null; }
     master = ctx.createGain();
     master.gain.value = 0.35 * prefs.volume;
     master.connect(ctx.destination);
   }
-  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  // 'interrupted' is WebKit's own state for an audio session taken away
+  // (a call, Siri, another app's audio). It needs resuming just as much.
+  if (ctx.state === 'suspended' || ctx.state === 'interrupted') ctx.resume().catch(() => {});
   return ctx;
 }
 
@@ -68,10 +75,23 @@ function ac() {
 // one that is quiet. Do not set navigator.audioSession.type = 'playback' to
 // "fix" silence on a muted phone — that is this behaviour, decided 22
 // September 2026.
+// A context that is still not running shortly after a gesture resumed it
+// is stuck, and resume() will never fix it — reported as sound gone after a
+// crash-and-reload, with the settings toggles doing nothing. The next gesture
+// throws it away and builds a fresh one, inside that gesture, which is the one
+// thing iOS reliably honours. The music loop and every sound go through ac(),
+// so they follow the new context without knowing.
+let stuck = false;
 function unlock() {
+  if (stuck && ctx) {
+    stuck = false;
+    try { ctx.close(); } catch { /* already gone */ }
+    ctx = null;
+  }
   const a = ac();                  // creates the context here, inside the gesture
   if (!a || a.state === 'running') return;
   a.resume().catch(() => {});
+  setTimeout(() => { if (ctx === a && a.state !== 'running' && a.state !== 'closed') stuck = true; }, 700);
   // Older iOS only treats the context as unlocked once something has actually
   // been started from inside the gesture, so start one silent sample.
   try {

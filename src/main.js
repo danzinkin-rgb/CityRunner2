@@ -17,6 +17,7 @@ import { DEBUG_HOOKS } from './core/debug.js';
 
 export const VERSION = '1.0.1';
 import { Player, DEFAULT_STYLE } from './run/player.js';
+import { releaseStreetCaches } from './cities/builders.js';
 import { Track } from './run/track.js';
 import { Puzzle } from './puzzle/puzzle.js';
 import { CHARACTERS, characterById } from './run/characters.js';
@@ -1085,9 +1086,22 @@ function disposeAll() {
   if (track) { track.dispose(); track = null; }
   if (puzzle) { puzzle.dispose(); puzzle = null; }
   if (scene) {
-    scene.traverse((n) => { if (n.geometry) n.geometry.dispose(); });
+    // Geometry AND materials and their textures. Only geometry used to be
+    // freed, so the sky and sun textures dressScene() paints fresh for every
+    // street piled up on the GPU. Disposing something that is also shared is
+    // safe: three re-uploads it the next time it is drawn.
+    scene.traverse((n) => {
+      if (n.geometry) n.geometry.dispose();
+      for (const m of Array.isArray(n.material) ? n.material : n.material ? [n.material] : []) {
+        for (const k of ['map', 'emissiveMap', 'alphaMap']) if (m[k] && m[k].isTexture) m[k].dispose();
+        m.dispose();
+      }
+    });
+    if (scene.background && scene.background.isTexture) scene.background.dispose();
     scene = null;
   }
+  // and everything the street builders cached for the street just left
+  releaseStreetCaches();
   player = null;
 }
 
@@ -1197,6 +1211,15 @@ if (DEBUG_HOOKS && q.get('view')) {
   level = Math.min(3, Math.max(1, +(q.get('level') || 1)));
   // Debug handle for automated review only (never exposed in normal play).
   window.__cr = {
+    // memory probes: GPU resource counts, and a way to change street
+    // in-session (a page reload would reset memory and hide a leak)
+    get gpu() { return { ...renderer.info.memory, programs: renderer.info.programs?.length }; },
+    go(cityId, lv, asPuzzle = false) {
+      const ci = CITIES.findIndex((c) => c.id === cityId);
+      if (ci < 0) return;
+      cityIdx = ci; level = lv; dailyMode = false; runSeed = 7;
+      if (asPuzzle) startPuzzle(); else startRun();
+    },
     get puzzle() { return puzzle; },
     get camera() { return camera; },
     get state() { return state; },
