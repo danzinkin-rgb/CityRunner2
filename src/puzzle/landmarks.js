@@ -7,6 +7,7 @@
 //        | 'pod' | 'clock' | 'archvault' | 'prism' | 'spokes' | 'water' | 'cable'
 //        | 'arcseg' | 'colonnade' | 'turrets' | 'statue' | 'rock' | 'arch'
 //        | 'tier' | 'eifleg' | 'chain' | 'walkway'
+//        | 'group' (no mesh of its own: the piece is its adorn parts)
 // tex (canvas texture painted in the block color): 'win' | 'strip' | 'arch'
 //        | 'archcut' | 'gothic' | 'relief' | 'glass' | 'crown' | 'lattice'
 //        | 'ashlar' | 'niche'
@@ -217,11 +218,11 @@ const defs = {
     }),
     // The web: one piece per tower, stays fanning both ways from its top.
     // Both are the same shape, so either fits either tower.
-    ...[-6.2, 6.2].map((x) => B([x, 8.3, 0], [11.6, 9.2, 3.6], '#ddd6c4', 'fan', {
+    ...[-6.2, 6.2].map((x) => B([x, 8.3, 0], [11.6, 9.2, 3.6], '#f2ecdc', 'fan', {
       sortY: 14.5,
-      fan: { ax: 0, ay: 4.4, x0: 0.8, x1: 5.4, deckY: -4.4, n: 6, z: 1.7, r: 0.06 },
-      adorn: [B([0, 0, 0], [11.6, 9.2, 3.6], '#ddd6c4', 'fan',
-        { fan: { ax: 0, ay: 4.4, x0: -0.8, x1: -5.4, deckY: -4.4, n: 6, z: 1.7, r: 0.06 } })],
+      fan: { ax: 0, ay: 4.4, x0: 0.8, x1: 5.4, deckY: -4.4, n: 6, z: 1.7, r: 0.11 },
+      adorn: [B([0, 0, 0], [11.6, 9.2, 3.6], '#f2ecdc', 'fan',
+        { fan: { ax: 0, ay: 4.4, x0: -0.8, x1: -5.4, deckY: -4.4, n: 6, z: 1.7, r: 0.11 } })],
     })),
   ],
 
@@ -409,13 +410,22 @@ const defs = {
   // big readable ovoid capsules mounted outboard of the rim, slow rotation.
   eye: [
     B([0, 0.7, 2.4], [6.4, 0.7, 2.6], '#767f8d'),
-    // A-frame front legs (base splayed wide + forward, meeting at the hub)
-    B([-1.27, 4.1, 1.25], [0.62, 8.9, 0.62], '#f0ece2', 'cyl', { rotZ: -0.3, rotX: -0.25, em: '#ffd9a0', emI: 0.16 }),
-    B([1.27, 4.1, 1.25], [0.62, 8.9, 0.62], '#f0ece2', 'cyl', { rotZ: 0.3, rotX: -0.25, em: '#ffd9a0', emI: 0.16 }),
-    // A-frame cross-brace + rear back-leaning stay struts
-    B([0, 5.6, 1.0], [2.6, 0.24, 0.24], '#e0dcd2', 'box', { rotX: -0.25 }),
-    B([-0.62, 4.15, -1.35], [0.34, 8.6, 0.34], '#c5ccd6', 'cyl', { rotZ: -0.14, rotX: 0.3 }),
-    B([0.62, 4.15, -1.35], [0.34, 8.6, 0.34], '#c5ccd6', 'cyl', { rotZ: 0.14, rotX: 0.3 }),
+    // The A-frame is one piece: both raked front legs and the cross-brace.
+    // The brace on its own was a short thin bar, hard to find and to drop
+    // (device feedback). The two back stays are one piece likewise.
+    B([0, 4.1, 1.25], [3.6, 8.9, 1.4], '#f0ece2', 'group', {
+      adorn: [
+        B([-1.27, 0, 0], [0.62, 8.9, 0.62], '#f0ece2', 'cyl', { rotZ: -0.3, rotX: -0.25, em: '#ffd9a0', emI: 0.16 }),
+        B([1.27, 0, 0], [0.62, 8.9, 0.62], '#f0ece2', 'cyl', { rotZ: 0.3, rotX: -0.25, em: '#ffd9a0', emI: 0.16 }),
+        B([0, 1.5, -0.25], [2.6, 0.24, 0.24], '#e0dcd2', 'box', { rotX: -0.25 }),
+      ],
+    }),
+    B([0, 4.15, -1.35], [1.8, 8.6, 1.2], '#c5ccd6', 'group', {
+      adorn: [
+        B([-0.62, 0, 0], [0.34, 8.6, 0.34], '#c5ccd6', 'cyl', { rotZ: -0.14, rotX: 0.3 }),
+        B([0.62, 0, 0], [0.34, 8.6, 0.34], '#c5ccd6', 'cyl', { rotZ: 0.14, rotX: 0.3 }),
+      ],
+    }),
     // The wheel is ONE piece: rim, gold rim-light ring, spokes and hub.
     // As four separate pieces, each parked at under half size, a thin ring
     // and a bundle of sticks did not read as a wheel (device feedback).

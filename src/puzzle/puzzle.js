@@ -1010,6 +1010,9 @@ export function makeBlockMesh(def, isGhost = false, isChild = false) {
 
   switch (def.shape) {
     case 'cyl': geo = new THREE.CylinderGeometry(w / 2, w / 2, h, 24); break;
+    // nothing of its own: a piece made entirely of its adorn parts, such as
+    // the Eye's A-frame (two raked legs and a brace). s still sizes it.
+    case 'group': out = new THREE.Group(); break;
     case 'tier':
       // truncated cone tier: bottom diameter w, top diameter d
       geo = new THREE.CylinderGeometry(Math.max(0.02, d / 2), w / 2, h, 20);
@@ -1349,6 +1352,9 @@ export function makeBlockMesh(def, isGhost = false, isChild = false) {
     if (!out.isGroup) { const g = new THREE.Group(); g.add(out); out = g; }
     for (const a of def.adorn) {
       const child = makeBlockMesh(a, isGhost, true);
+      // a ghost is one outline: its parts share the root's ghost material, so
+      // the whole outline pulses together when its course is live
+      if (isGhost) child.traverse((n) => { if (n.isMesh && !n.userData.isHitProxy) n.material = mat; });
       child.position.set(...a.p);
       child.rotation.set(a.rotX || 0, a.rotY || 0, a.rotZ || 0);
       out.add(child);
@@ -1595,6 +1601,28 @@ export class Puzzle {
     // radius of ~14 world units pieces fall off the sides of the frame and
     // become unreachable, so this packs them dense rather than wide: a piece
     // you can see and tap beats a piece with elbow room you can never reach.
+    // Street 3: some pieces start a quarter-turn out, decided here because
+    // every piece is parked at the angle it would LAND at and the layout needs
+    // to know. Only non-square pieces can look wrong turned. Deterministic,
+    // so the same monument deals the same hand. At most TWO per monument: with
+    // half the non-square pieces turned (the first version), the Louvre's wings
+    // were a pile of pieces all refusing to fit.
+    const turnsOf = new Map();
+    {
+      let turned = 0;
+      this.blocks.forEach(({ def: d }, order) => {
+        if (this.turning && order >= preplaced && turned < 2 && needsTurning(d) && dRand(order, 29) < 0.45) {
+          turnsOf.set(order, 1);
+          turned++;
+        }
+      });
+    }
+    // Parked pieces face the way they will land. A parked piece and its
+    // outline then turn together as the camera pans: lined up means it fits,
+    // a quarter out means tap it. (They used to park at whatever angle framed
+    // best, so how a piece looked parked said nothing about how it would fit
+    // — device feedback: "aligned but dont fit", "not aligned but do fit".)
+    const landYaw = (d, order) => (d.rotY || 0) + (turnsOf.get(order) || 0) * Math.PI / 2;
     const SCATTER_R = 13.2;                       // hard radial cap (<14)
     const XBUD = 11.0;                            // budget for |x| + half the piece's screen width
     let xExt = 0, zExt = 0;
@@ -1650,7 +1678,7 @@ export class Puzzle {
       // the extra distance shrinks them without hiding them behind the (still
       // half-built) monument.
       if (Math.min(w, dp) > 8 || Math.max(w, dp) > 15 || hh > 9) {
-        const yaw = (dp < w ? 1.52 : 0.05) * (back % 2 ? 1 : -1);
+        const yaw = landYaw(x.e.def, x.order);
         const a = -Math.PI / 2 + (back % 2 ? 0.36 : -0.36) + (Math.floor(back / 2) % 2 ? 0.13 : -0.13);
         layout.set(x.order, { a, r: 10.8 + (back % 3) * 0.9, yaw });
         back++;
@@ -1659,8 +1687,7 @@ export class Puzzle {
       // Wide pieces are turned toward the camera so they stop spearing out
       // past the frame edge — but never fully edge-on, or a Louvre wing would
       // read as a blank sliver instead of a wing you can recognise.
-      const yaw = (w > 9 ? 1.30 : w > 5 ? 0.95 : 0.42) * (side > 0 ? -1 : 1)
-        + (dRand(k, 13) - 0.5) * 0.34;
+      const yaw = landYaw(x.e.def, x.order);
       const sw = Math.abs(Math.cos(yaw)) * w + Math.abs(Math.sin(yaw)) * dp;
       let off = OFFS[slot] + band * 0.06 + dRand(k, 11) * 0.05;
       let r = Math.min(SCATTER_R,
@@ -1730,19 +1757,9 @@ export class Puzzle {
     this.timeTotal = Math.round(Math.min(120, Math.max(40, 20 + PER * looseCount)));
     this.time = t0 > 0 ? Math.min(this.timeTotal, t0) : this.timeTotal;
 
-    // Street 3: some pieces start a quarter-turn out. Only pieces whose
-    // footprint is NOT square can look wrong turned, so only they are turned;
-    // deterministic, so the same monument deals the same hand.
-    // At most TWO per monument: with half the non-square pieces turned (the
-    // first version), the Louvre's wings were a pile of pieces all refusing
-    // to fit. One or two is a thing to notice; eight is noise.
-    let turned = 0;
+    // Street 3's quarter-turned pieces were chosen before the layout (turnsOf).
     for (const it of this.items) {
-      it.turns = 0;
-      if (this.turning && !it.placed && turned < 2 && needsTurning(it.def) && dRand(it.order, 29) < 0.45) {
-        it.turns = 1;
-        turned++;
-      }
+      it.turns = it.placed ? 0 : (turnsOf.get(it.order) || 0);
       it.parkPos = it.mesh.position.clone();
     }
     this.lastProgress = 0;                 // for street 3's stuck-for-a-while nudge
@@ -2280,12 +2297,17 @@ export class Puzzle {
     if (!item || item.placed) return;
     if (this.turning && needsTurning(item.def)) {
       item.turns = (item.turns + 1) % 2;
+      // the parked angle is the landing angle, so the turn is kept (the idle
+      // sway used to put it straight back)
       const r0 = item.mesh.rotation.y;
+      item.rotY0 = (item.rotY0 || 0) + Math.PI / 2;
+      item.turningAnim = true;
       let t = 0;
       this.effects.push({
         update: (dt) => {
           t = Math.min(1, t + dt * 5);
-          item.mesh.rotation.y = r0 + (Math.PI / 2) * t;
+          item.mesh.rotation.y = r0 + (item.rotY0 - r0) * t;
+          if (t >= 1) item.turningAnim = false;
           return t < 1;
         },
       });
@@ -2552,7 +2574,9 @@ export class Puzzle {
           Math.abs(Math.sin(this.bobT + it.bobPhase)) * 0.3;
         // sway around the parked yaw rather than spinning freely: a long piece
         // that kept turning would eventually swing out past the frame edge
-        it.mesh.rotation.y = (it.rotY0 || 0) + Math.sin(T * 0.9 + it.bobPhase) * 0.26;
+        // kept small: the parked angle is the landing angle, and a big sway
+        // blurs whether it lines up with its outline
+        if (!it.turningAnim) it.mesh.rotation.y = (it.rotY0 || 0) + Math.sin(T * 0.9 + it.bobPhase) * 0.05;
       }
       // Ghost hint: warm-gold silhouette; the whole live course breathes, the
       // courses still to come stay a faint hint of what is coming.

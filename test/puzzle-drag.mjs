@@ -14,6 +14,7 @@
  *   street 3: a piece that is a quarter-turn out is refused until tapped
  *   every street: the clock scales with the loose pieces
  *   twins: an identical piece fits its twin's outline at any camera angle
+ *   street 3: parked pieces face the way they land; a tapped turn sticks
  *
  * Usage: node test/puzzle-drag.mjs [baseUrl]
  */
@@ -200,6 +201,36 @@ async function candidates(page, filterSrc) {
   check(r.spotKeptItsMesh && r.carriedWentBack && r.carriedVisible,
     'the spot keeps its own mesh; the carried piece takes the parked place', JSON.stringify(r));
   check(!errors.length, 'twins: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
+// ------------------------------------------------------------- parked angle
+// A parked piece faces the way it will land, so it and its outline turn
+// together as the camera pans (device feedback: "aligned but dont fit", "not
+// aligned but do fit" — pieces used to park at whatever angle framed best).
+// And a tap's quarter-turn sticks: the idle sway used to undo it on screen.
+{
+  const { ctx, page, errors } = await openPuzzle('paris', 3);
+  await page.waitForTimeout(600);
+  const r = await page.evaluate(async () => {
+    const p = window.__cr.puzzle;
+    const off = (a, b, m) => { const d = (((a - b) % m) + m) % m; return Math.min(d, m - d); };
+    const land = (it) => (it.def.rotY || 0) + it.turns * Math.PI / 2;
+    const loose = p.items.filter((it) => !it.placed && !it.missing);
+    const worst = Math.max(...loose.map((it) => off(it.mesh.rotation.y, land(it), Math.PI * 2)));
+    const turned = loose.find((it) => it.turns === 1);
+    let afterTap = null;
+    if (turned) {
+      p.tapPiece(turned);
+      await new Promise((res) => setTimeout(res, 1200));
+      afterTap = { turns: turned.turns, off: off(turned.mesh.rotation.y, land(turned), Math.PI) };
+    }
+    return { n: loose.length, worst: +worst.toFixed(3), hasTurned: !!turned, afterTap };
+  });
+  check(r.n > 0 && r.worst < 0.08, 'street 3: every parked piece faces the way it will land', JSON.stringify(r));
+  check(r.hasTurned && r.afterTap.turns === 0 && r.afterTap.off < 0.08,
+    'street 3: a tapped quarter-turn stays turned', JSON.stringify(r.afterTap));
+  check(!errors.length, 'parked angle: no page errors', errors[0] || '');
   await ctx.close();
 }
 
