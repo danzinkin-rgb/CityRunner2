@@ -45,7 +45,8 @@
  */
 import { webkit } from 'playwright';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startStaticServer } from './serve.mjs';
@@ -58,6 +59,10 @@ const check = (ok, label, detail = '') => {
   console.log(`${ok ? 'ok ' : 'x  '} ${label}${detail ? `  ${detail}` : ''}`);
   if (!ok) failures++;
 };
+
+/** Every .js file under a built folder. */
+const bundleFiles = (dir) => readdirSync(dir, { recursive: true })
+  .map((f) => join(dir, String(f))).filter((f) => f.endsWith('.js'));
 
 // ---- static: every debug surface knows about the gate ---------------------
 {
@@ -124,6 +129,7 @@ async function probe(base, query) {
     hooks: typeof window.__cr,
     screen: document.querySelector('.screen.on')?.id || null,
     alive: document.querySelectorAll('#city-select .city-card').length,
+    tester: !!(document.getElementById('tester') || document.getElementById('tester-tag')),
   }));
   out.errors = errors;
   await ctx.close();
@@ -158,7 +164,32 @@ const FORCE_RUN = '?view=run&god=1&built=1&seed=7';
   check(inertScreen(run.screen), 'release: ?view= cannot start a run',
     String(run.screen));
   check(run.hooks === 'undefined', 'release: window.__cr is not exposed', `typeof=${run.hooks}`);
+  // The tester build (play any street, invincible runs) must never reach a
+  // player: not switched on by a query string, and not in the bundle at all.
+  const asTester = await probe(base, '?tester=1');
+  check(!asTester.tester, 'release: ?tester=1 cannot open the tester section');
+  const leaked = bundleFiles(DIST).filter((f) => /TESTER BUILD|tst-run/.test(readFileSync(f, 'utf8')));
+  check(leaked.length === 0, 'release: the tester section is not in the bundle', leaked.join(', '));
   await close();
+}
+
+// ---- the tester build: has the section, and still none of the harness -----
+// Built to a temp folder, never dist/, so a later `cap sync` can't pick it up.
+{
+  const out = join(tmpdir(), `cr-tester-${process.pid}`);
+  const tb = spawnSync(process.execPath, [viteBin, 'build', '--mode', 'tester', '--outDir', out, '--emptyOutDir'],
+    { cwd: REPO, encoding: 'utf8' });
+  check(tb.status === 0, 'tester: vite build --mode tester succeeds');
+  if (tb.status === 0) {
+    const { base, close } = await startStaticServer(out);
+    const t = await probe(base, '');
+    const run = await probe(base, FORCE_RUN);
+    check(t.tester && t.errors.length === 0, 'tester: the tester build shows its section and banner', t.errors[0] || '');
+    check(run.hooks === 'undefined' && run.screen !== null, 'tester: the debug harness stays off in a tester build',
+      `typeof=${run.hooks} screen=${run.screen}`);
+    await close();
+  }
+  rmSync(out, { recursive: true, force: true });
 }
 
 // ---- the raw repo: the same hooks must still work -------------------------
@@ -178,6 +209,8 @@ const FORCE_RUN = '?view=run&god=1&built=1&seed=7';
   check(run.screen === null,
     'control: the unbundled source DOES start a run from ?view= (no menu overlay left)',
     String(run.screen));
+  const asTester = await probe(base, '?tester=1');
+  check(asTester.tester, 'control: the unbundled source DOES open the tester section with ?tester=1');
   await close();
 }
 

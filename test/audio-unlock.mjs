@@ -39,6 +39,7 @@ const browser = await webkit.launch();
 const ctx = await browser.newContext({ ...devices['iPhone 13'] });
 await ctx.addInitScript(() => {
   window.__audioBirths = [];
+  window.__stuckLeft = location.search.includes('stuck') ? 1 : 0;
   window.__audioResumes = [];
   const during = () => (window.event ? window.event.type : null);
   // Playwright's WebKit on Windows ships NO Web Audio at all — AudioContext
@@ -55,7 +56,13 @@ await ctx.addInitScript(() => {
   }
   class FakeAC {
     constructor() { this.state = 'suspended'; this.currentTime = 0; this.destination = {}; }
-    resume() { this.state = 'running'; return Promise.resolve(); }
+    resume() {
+      // ?stuck: the first context never leaves 'interrupted', like iOS after
+      // the WebView was killed and reloaded
+      if (window.__stuckLeft > 0) { this.state = 'interrupted'; return Promise.resolve(); }
+      this.state = 'running'; return Promise.resolve();
+    }
+    close() { this.state = 'closed'; if (window.__stuckLeft > 0) window.__stuckLeft--; return Promise.resolve(); }
     createGain() { return new N(); }
     createOscillator() { return new N(); }
     createBuffer() { return {}; }
@@ -105,6 +112,24 @@ check(resumes.length > 0 && GESTURES.has(resumes[0]),
   'the first resume() also happens inside the gesture',
   `resumed during: ${JSON.stringify(resumes[0] ?? 'nothing')}`);
 check(!errors.length, 'no page errors', errors[0] || '');
+
+// ---- recovery: a context stuck after resume() is rebuilt on the next tap
+// (only meaningful with the stand-in: real WebKit here has no Web Audio to
+// get stuck, and on the Mac the real one is wrapped, not faked)
+{
+  const p2 = await ctx.newPage();
+  await p2.goto(`${BASE}/?stuck`, { waitUntil: 'load' });
+  await p2.waitForFunction(() => !document.getElementById('city-select').hasAttribute('aria-busy'), null, { timeout: 15000 });
+  await p2.tap('#btn-help');                   // first gesture: context made, but stuck
+  await p2.waitForTimeout(900);                // past the 700ms stuck check
+  await p2.tap('#btn-help-close');             // next gesture: must rebuild it
+  await p2.waitForTimeout(300);
+  const r = await p2.evaluate(() => ({ births: window.__audioBirths.slice() }));
+  check(r.births.length === 2, 'a context stuck after resume() is replaced on the next tap', JSON.stringify(r.births));
+  check(r.births.length === 2 && GESTURES.has(r.births[1]), 'and the replacement is also made inside a gesture',
+    `made during: ${JSON.stringify(r.births[1] ?? 'nothing')}`);
+  await p2.close();
+}
 
 await browser.close();
 await close();

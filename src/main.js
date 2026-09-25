@@ -13,10 +13,11 @@ import { reportRun } from './core/gamecenter.js';
 import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild } from './core/entitlements.js';
 import { initIAP, getOffer, purchase, restore, onEntitlementGranted } from './core/iap.js';
 import { STORAGE } from './core/storage-keys.js';
-import { DEBUG_HOOKS } from './core/debug.js';
+import { DEBUG_HOOKS, TESTER } from './core/debug.js';
 
 export const VERSION = '1.0.1';
 import { Player, DEFAULT_STYLE } from './run/player.js';
+import { releaseStreetCaches } from './cities/builders.js';
 import { Track } from './run/track.js';
 import { Puzzle, looseDefs } from './puzzle/puzzle.js';
 import { CHARACTERS, characterById } from './run/characters.js';
@@ -289,7 +290,7 @@ function startRun() {
   // any city (see finishPuzzle), and no way to carry on past it (NEXT LEVEL is
   // hidden after a daily). One run a day in a locked city is a taster, and it
   // ends there.
-  if (!dailyMode && !isLevelEntitled(city().id, level)) { openPaywall(); return; }
+  if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall(); return; }
   doFade(() => {
     disposeAll();
     scene = new THREE.Scene();
@@ -335,6 +336,7 @@ let goalTimer = 0;
 let piecesGot = 0, pieceHintShown = false;
 // Handed from the finished street to the puzzle: one boolean per loose piece.
 let lastRunPieces = null;
+let testerInvincible = false;   // tester builds only; see the Tester section below
 function showGoal(lm) {
   $('hud-goal-img').src = `assets/monuments/${lm}.png`;
   $('hud-goal-name').textContent = LANDMARK_NAMES[lm];
@@ -366,7 +368,7 @@ const CONTINUE_PRICES = [150, 300, 600];
 let continuesUsed = 0;
 
 function crash() {
-  if (GOD) return;
+  if (GOD || testerInvincible) return;
   sfx.crash();
   hapticHeavy();
   stopMusic();
@@ -423,6 +425,8 @@ function declineContinue() {
 // score is the one that gets recorded. submit() refuses a second call for the
 // same session, so a second settle would silently drop the better score.
 function settleRun() {
+  // an invincible tester run proves nothing, so it never reaches the scores
+  if (testerInvincible) { save.coins += coins; persist(); return; }
   save.best = Math.max(save.best, score);
   save.coins += coins;
   persist();
@@ -563,7 +567,7 @@ function startPuzzle() {
   // parameter reaches this directly. The normal path (the BUILD button after a
   // run) is already entitled, so this only ever fires on a debug URL — but a
   // debug URL that survives into a shipped build is a one-tap bypass.
-  if (!dailyMode && !isLevelEntitled(city().id, level)) { openPaywall(); return; }
+  if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall(); return; }
   stopMusic();
   hideGoal();
   doFade(() => {
@@ -585,6 +589,7 @@ function startPuzzle() {
     state = 'puzzle';
     showScreen(null);
     const missing = puzzle.missingLeft();
+    if (missing && !save.seenMissingHelp) showMissingHelp();
     hint(missing
       ? `${missing} piece${missing > 1 ? 's' : ''} missed on the street — they'll arrive as you build`
       : puzzle.mode === 'tap' ? 'Tap the glowing blocks — drag to look around'
@@ -641,17 +646,52 @@ function finishPuzzle(won) {
 // choice: it has no timer of its own and is only shown when affordable.
 const FETCH_PRICE = 10;
 let fetchShownFor = -1;
+let deliverText = '';
 function syncFetchButton() {
   const btn = $('btn-fetch');
   const n = state === 'puzzle' && puzzle && !puzzle.done && !puzzle.failed ? puzzle.missingLeft() : 0;
   const price = n * FETCH_PRICE;
   const show = n > 0 && coins + save.coins >= price;
+  // What is happening, in words: "2 missing pieces on the way · next in 3s".
+  // First device feedback was that nothing said pieces were coming at all.
+  const dt = n ? `${n} missing piece${n > 1 ? 's' : ''} on the way · next in ${Math.ceil(puzzle.nextDeliveryIn())}s` : '';
+  if (dt !== deliverText) {
+    deliverText = dt;
+    $('hud-deliver').textContent = dt;
+    $('hud-deliver').style.display = dt ? '' : 'none';
+  }
   const key = show ? n : 0;
   if (key === fetchShownFor) return;
   fetchShownFor = key;
   btn.style.display = show ? '' : 'none';
-  if (show) btn.textContent = `BRING ${n} NOW · ${price}`;
+  if (show) btn.innerHTML = `BRING THEM NOW · ${price} <img src="assets/souvenirs/${city().id}.png" alt="souvenirs">`;
 }
+
+// The first time a build starts with pieces missing, say what that means
+// before the clock starts. The clock and the deliveries are both held while
+// the card is up (state 'puzzle-intro' skips the puzzle's update).
+function showMissingHelp() {
+  const n = puzzle.missingLeft();
+  const price = n * FETCH_PRICE;
+  $('mh-text').textContent = `You missed ${n} piece${n > 1 ? 's' : ''} of the ${LANDMARK_NAMES[city().landmarks[level - 1]]} `
+    + 'on the street. They are on their way and will drop in one at a time — watch for the flashing outlines. '
+    + 'Anything that sits on top of a missing piece has to wait for it.';
+  const canPay = coins + save.coins >= price;
+  $('mh-bring').style.display = canPay ? '' : 'none';
+  $('mh-bring').innerHTML = `BRING THEM NOW · ${price} <img src="assets/souvenirs/${city().id}.png" alt="souvenirs">`;
+  $('missing-help').classList.add('on');
+  state = 'puzzle-intro';
+}
+function closeMissingHelp(bring) {
+  $('missing-help').classList.remove('on');
+  save.seenMissingHelp = true;
+  persist();
+  state = 'puzzle';
+  clock.getDelta();                 // the card's time is not the player's
+  if (bring) $('btn-fetch').onclick(new Event('click'));
+}
+$('mh-ok').onclick = () => closeMissingHelp(false);
+$('mh-bring').onclick = () => closeMissingHelp(true);
 $('btn-fetch').onclick = (e) => {
   e.stopPropagation();
   if (state !== 'puzzle' || !puzzle) return;
@@ -1191,9 +1231,22 @@ function disposeAll() {
   if (track) { track.dispose(); track = null; }
   if (puzzle) { puzzle.dispose(); puzzle = null; }
   if (scene) {
-    scene.traverse((n) => { if (n.geometry) n.geometry.dispose(); });
+    // Geometry AND materials and their textures. Only geometry used to be
+    // freed, so the sky and sun textures dressScene() paints fresh for every
+    // street piled up on the GPU. Disposing something that is also shared is
+    // safe: three re-uploads it the next time it is drawn.
+    scene.traverse((n) => {
+      if (n.geometry) n.geometry.dispose();
+      for (const m of Array.isArray(n.material) ? n.material : n.material ? [n.material] : []) {
+        for (const k of ['map', 'emissiveMap', 'alphaMap']) if (m[k] && m[k].isTexture) m[k].dispose();
+        m.dispose();
+      }
+    });
+    if (scene.background && scene.background.isTexture) scene.background.dispose();
     scene = null;
   }
+  // and everything the street builders cached for the street just left
+  releaseStreetCaches();
   player = null;
 }
 
@@ -1281,6 +1334,57 @@ buildCitySelect();
 if (isFirstRun && !DEBUG_HOOKS) openOverlay('help');
 frame();
 
+// ---------- tester build ----------
+// Only in a tester build (npm run ios:sync:tester) or the raw source with
+// ?tester=1. Adds a Tester section to Settings so every street and monument
+// can be checked on a device without earning it: play any street, go straight
+// to its monument, or run invincible. The whole section is created here rather
+// than in index.html so a release bundle carries none of it, and the menu says
+// TESTER BUILD so it can't be mistaken for a release.
+if (TESTER) {
+  const tag = document.createElement('div');
+  tag.id = 'tester-tag';
+  tag.textContent = 'TESTER BUILD';
+  tag.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top) + 4px);left:50%;transform:translateX(-50%);'
+    + 'z-index:9999;background:#c8102e;color:#fff;font:700 11px system-ui;padding:3px 10px;border-radius:9px;pointer-events:none';
+  document.body.append(tag);
+
+  const box = document.createElement('div');
+  box.id = 'tester';
+  const sel = 'style="font:inherit;padding:4px;border-radius:6px;max-width:48%"';
+  box.innerHTML = `<h3>Tester</h3>
+    <div class="row"><select id="tst-city" aria-label="City" ${sel}>${
+      CITIES.map((c) => `<option value="${c.id}">${c.name}</option>`).join('')}</select>
+      <select id="tst-street" aria-label="Street" ${sel}></select></div>
+    <div class="row"><button class="linkbtn" id="tst-run">Run the street</button>
+      <button class="linkbtn" id="tst-build">Build the monument</button></div>
+    <div class="row"><span>Invincible (no scores)</span><button class="toggle" id="tst-god" aria-label="Invincible">OFF</button></div>`;
+  const sheet = $('screen-settings').querySelector('.sheet');
+  sheet.insertBefore(box, [...sheet.querySelectorAll('h3')].find((h) => h.textContent === 'Privacy'));
+
+  const fillStreets = () => {
+    const c = CITIES.find((x) => x.id === $('tst-city').value);
+    $('tst-street').innerHTML = c.streets.map((s, i) => `<option value="${i + 1}">${i + 1} · ${s}</option>`).join('');
+  };
+  $('tst-city').onchange = fillStreets;
+  fillStreets();
+  const play = (asPuzzle) => {
+    cityIdx = CITIES.findIndex((c) => c.id === $('tst-city').value);
+    level = +$('tst-street').value;
+    dailyMode = false; runSeed = null; lastRunPieces = null; pausedFrom = null;
+    if (asPuzzle) startPuzzle(); else startRun();
+  };
+  $('tst-run').onclick = () => play(false);
+  $('tst-build').onclick = () => play(true);
+  $('tst-god').onclick = () => {
+    testerInvincible = !testerInvincible;
+    const el = $('tst-god');
+    el.textContent = testerInvincible ? 'ON' : 'OFF';
+    el.classList.toggle('on', testerInvincible);
+    el.setAttribute('aria-pressed', String(testerInvincible));
+  };
+}
+
 // ---------- automated screenshot / test harness ----------
 // ?view=run|puzzle&city=nyc|paris|london|rome&level=1..3&god=1
 //
@@ -1305,6 +1409,15 @@ if (DEBUG_HOOKS && q.get('view')) {
   level = Math.min(3, Math.max(1, +(q.get('level') || 1)));
   // Debug handle for automated review only (never exposed in normal play).
   window.__cr = {
+    // memory probes: GPU resource counts, and a way to change street
+    // in-session (a page reload would reset memory and hide a leak)
+    get gpu() { return { ...renderer.info.memory, programs: renderer.info.programs?.length }; },
+    go(cityId, lv, asPuzzle = false) {
+      const ci = CITIES.findIndex((c) => c.id === cityId);
+      if (ci < 0) return;
+      cityIdx = ci; level = lv; dailyMode = false; runSeed = 7;
+      if (asPuzzle) startPuzzle(); else startRun();
+    },
     get puzzle() { return puzzle; },
     get camera() { return camera; },
     get state() { return state; },

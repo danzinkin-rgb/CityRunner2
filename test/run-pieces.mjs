@@ -110,6 +110,20 @@ const VIEW = { viewport: { width: 390, height: 844 } };
   // the first two loose pieces (the bottom of the monument) were missed
   await page.goto(`${BASE}/?view=puzzle&city=paris&level=3&missing=2`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__cr?.puzzle?.items?.length, null, { timeout: 20000 });
+  await page.waitForTimeout(300);
+  // the first build with missing pieces explains itself, clock held
+  const help = await page.evaluate(() => ({
+    on: document.getElementById('missing-help').classList.contains('on'),
+    state: window.__cr.state,
+    text: document.getElementById('mh-text').textContent,
+  }));
+  check(help.on && help.state === 'puzzle-intro', 'the first build with missed pieces explains them first',
+    JSON.stringify(help).slice(0, 120));
+  const heldAt = await page.evaluate(() => window.__cr.puzzle.time);
+  await page.waitForTimeout(1200);
+  check(await page.evaluate((t) => window.__cr.puzzle.time === t, heldAt), 'the clock is held while it is up');
+  await page.click('#mh-ok');
+  await page.waitForTimeout(300);
   const s0 = await page.evaluate(() => {
     const p = window.__cr.puzzle;
     const missing = p.items.filter((it) => it.missing);
@@ -121,11 +135,13 @@ const VIEW = { viewport: { width: 390, height: 844 } };
       aboveLocked: above.length > 0 && above.every((it) => !p.pickable(it)),
       fetchShown: getComputedStyle(document.getElementById('btn-fetch')).display !== 'none',
       fetchText: document.getElementById('btn-fetch').textContent,
+      deliver: document.getElementById('hud-deliver').textContent,
     };
   });
+  check(/2 missing pieces on the way · next in \d+s/.test(s0.deliver), 'the HUD says pieces are on the way', s0.deliver);
   check(s0.missing === 2 && s0.hidden, 'missed pieces start off the plaza', JSON.stringify(s0));
   check(s0.aboveLocked, 'pieces resting on a missed piece cannot go on until it arrives');
-  check(s0.fetchShown && /BRING 2 NOW · 20/.test(s0.fetchText), 'the souvenir button offers to bring them', s0.fetchText);
+  check(s0.fetchShown && /BRING THEM NOW · 20/.test(s0.fetchText), 'the souvenir button offers to bring them', s0.fetchText);
 
   // delivery on its own clock
   await page.waitForFunction(() => window.__cr.puzzle.missingLeft() < 2, null, { timeout: 8000 }).catch(() => {});
@@ -145,6 +161,12 @@ const VIEW = { viewport: { width: 390, height: 844 } };
   check(s1 === 0 || before - s2.coins === s1 * 10, 'and charges 10 souvenirs a piece', `${before} -> ${s2.coins}`);
   check(!s2.fetchShown, 'the button goes once nothing is missing');
   check(!errors.length, 'puzzle: no page errors', errors[0] || '');
+  // once seen, never again: a second build with pieces missing starts straight away
+  await page.goto(`${BASE}/?view=puzzle&city=paris&level=3&missing=1`, { waitUntil: 'load' });
+  await page.waitForFunction(() => window.__cr?.puzzle?.items?.length, null, { timeout: 20000 });
+  await page.waitForTimeout(300);
+  check(!(await page.evaluate(() => document.getElementById('missing-help').classList.contains('on'))),
+    'the explainer is shown once, not every time');
   await ctx.close();
 }
 

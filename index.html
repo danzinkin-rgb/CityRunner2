@@ -67,7 +67,10 @@
   #hud-goal img{display:block;width:112px;height:112px;margin:4px auto 2px;
     filter:drop-shadow(0 4px 10px rgba(0,0,0,.55))}
   #hud-goal-name{font-size:16px;font-weight:800;text-shadow:0 1px 8px rgba(0,0,0,.95);white-space:nowrap}
-  #hud-goal-sub{font-size:12px;margin-top:3px;color:var(--gold);text-shadow:0 1px 6px rgba(0,0,0,.95);white-space:nowrap}
+  /* Bold, on its own dark pill: first device feedback was that the line was
+     too faint to read against a bright sky. */
+  #hud-goal-sub{display:inline-block;font-size:13px;font-weight:800;margin-top:5px;padding:4px 11px;
+    border-radius:999px;background:rgba(8,12,28,.72);color:#fff;white-space:nowrap}
   /* Monument pieces collected this run, sharing the souvenir pill: a separate
      pill had nowhere to go on a 320px phone without colliding with the
      street name. Shown only while running (body.run-pieces). */
@@ -76,6 +79,20 @@
   body.run-pieces .hud-pieces-wrap{display:flex}
   #hud-piece-icon{width:20px;height:20px;object-fit:contain;display:block}
   #hud-pieces{font-size:14px}
+  #hud-deliver{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;
+    bottom:calc(186px + env(safe-area-inset-bottom));font-size:13px;font-weight:700;
+    padding:6px 12px;border-radius:999px;background:rgba(8,12,28,.62);text-shadow:0 1px 4px #000}
+  #btn-fetch img,#mh-bring img{width:18px;height:18px;vertical-align:-3px;margin-left:2px}
+  /* First-time explainer for missing pieces. Inside the HUD so the plaza
+     stays visible behind it; holds input while it is up. */
+  #missing-help{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(4,6,16,.55);pointer-events:auto;padding:16px}
+  #missing-help.on{display:flex}
+  .mh-card{max-width:340px;text-align:center;padding:20px 22px;border-radius:18px;
+    background:rgba(14,20,44,.94);border:1px solid rgba(255,209,102,.35)}
+  .mh-title{font-size:18px;font-weight:900;letter-spacing:3px;color:var(--gold)}
+  .mh-card p{font-size:15px;line-height:1.45;margin:10px 0 14px}
+  .mh-card .btn{display:block;margin:8px auto 0;font-size:15px;padding:11px 26px;min-height:44px}
   /* Missed pieces: bring them now, for souvenirs. Above the hint, clear of
      the plaza pieces, and tappable although the HUD itself is not. */
   #btn-fetch{position:absolute;left:50%;transform:translateX(-50%);
@@ -881,7 +898,16 @@
   <!-- Shown for a few seconds as each run starts: where this street leads.
        Players reported not knowing a monument was coming at all. -->
   <div id="hud-goal"><div class="goal-kicker">RUN TO</div><img id="hud-goal-img" alt=""><div id="hud-goal-name"></div><div id="hud-goal-sub"></div></div>
+  <div id="hud-deliver" style="display:none"></div>
   <button class="btn" id="btn-fetch" style="display:none"></button>
+  <div id="missing-help" role="dialog" aria-modal="true" aria-labelledby="mh-title">
+    <div class="mh-card">
+      <div class="mh-title" id="mh-title">MISSING PIECES</div>
+      <p id="mh-text"></p>
+      <button class="btn" id="mh-ok">GOT IT</button>
+      <button class="btn ghost" id="mh-bring"></button>
+    </div>
+  </div>
   <button id="btn-pause" aria-label="Pause">❚❚</button>
   <div id="touchpad" aria-hidden="true">
     <button class="tbtn" id="t-left"  aria-label="Move left">◀</button>

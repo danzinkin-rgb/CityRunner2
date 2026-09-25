@@ -1416,6 +1416,17 @@ function vExtent(d) {
   return [base, base + h];
 }
 
+// Waiting pieces are parked SMALLER than they will be built: capped at 5.5m,
+// never below 40% (a long cable parked at a fifth of its size is too thin to
+// grab). The Louvre's 9m wings used to be parked at full size, and there was
+// only room for them at the back of the plaza — squarely over the build site,
+// where they blended into its outlines and a monument with nothing yet built
+// looked almost finished. Parked small, big pieces sit round the plaza like
+// every other monument's, and grow into place as they fly home.
+function parkScale(d) {
+  return Math.min(1, Math.max(0.4, 5.5 / Math.max(...effSize(d))));
+}
+
 // Can this piece look wrong when turned a quarter? Round and square-plan
 // pieces cannot (a cylinder, a dome, a square tower block), so they never
 // ask the player to turn them.
@@ -1587,10 +1598,12 @@ export class Puzzle {
     const SCATTER_R = 13.2;                       // hard radial cap (<14)
     const XBUD = 11.0;                            // budget for |x| + half the piece's screen width
     let xExt = 0, zExt = 0;
+    this.foot = { x: 0, z: 0 };            // filled below, read by endDrag
     for (const d of def) {
       xExt = Math.max(xExt, Math.abs(d.p[0]) + d.s[0] / 2);
       zExt = Math.max(zExt, Math.abs(d.p[2]) + d.s[2] / 2);
     }
+    this.foot = { x: xExt, z: zExt };
     // Footprint clearance in a given direction, so nothing is parked ON the
     // monument: the Colosseum needs 9m of elbow room all round, while the
     // bridges are 18m wide but only 3m deep and take pieces close in front.
@@ -1613,7 +1626,7 @@ export class Puzzle {
 
     // Bulky pieces are laid out first and land in the BACK slots, where the
     // extra distance shrinks them; the small pieces fill the camera-side slots.
-    const bulkOf = (d) => { const e = effSize(d); return Math.max(e[0], e[1], e[2]); };
+    const bulkOf = (d) => { const e = effSize(d); return Math.max(e[0], e[1], e[2]) * parkScale(d); };
     const loose = this.blocks
       .map((e, order) => ({ e, order }))
       .filter((x) => x.order >= preplaced)
@@ -1623,7 +1636,8 @@ export class Puzzle {
     loose.forEach((x, k) => {
       const side = k % 2 ? 1 : -1;
       const rank = (k / 2) | 0;
-      const [w, hh, dp] = effSize(x.e.def);
+      const psc = parkScale(x.e.def);
+      const [w, hh, dp] = effSize(x.e.def).map((v) => v * psc);
       // Tall pieces (the Eye's 9m A-frame legs) go in the far slots: near the
       // camera they overshoot the TOP of a portrait frame, not the sides.
       const tall = hh > 7.5;
@@ -1695,7 +1709,8 @@ export class Puzzle {
         // two wings either side of the plaza, nothing left standing on the
         // sightline between the player and the build site.
         const L = layout.get(order);
-        mesh.position.set(Math.cos(L.a) * L.r, restingY(entry.def), Math.sin(L.a) * L.r);
+        mesh.scale.setScalar(parkScale(entry.def));
+        mesh.position.set(Math.cos(L.a) * L.r, restingY(entry.def) * parkScale(entry.def), Math.sin(L.a) * L.r);
         mesh.rotation.y = L.yaw;
         item.rotY0 = L.yaw;
         desaturate(mesh);
@@ -1718,11 +1733,19 @@ export class Puzzle {
     // Street 3: some pieces start a quarter-turn out. Only pieces whose
     // footprint is NOT square can look wrong turned, so only they are turned;
     // deterministic, so the same monument deals the same hand.
+    // At most TWO per monument: with half the non-square pieces turned (the
+    // first version), the Louvre's wings were a pile of pieces all refusing
+    // to fit. One or two is a thing to notice; eight is noise.
+    let turned = 0;
     for (const it of this.items) {
       it.turns = 0;
-      if (this.turning && !it.placed && needsTurning(it.def) && dRand(it.order, 29) < 0.55) it.turns = 1;
+      if (this.turning && !it.placed && turned < 2 && needsTurning(it.def) && dRand(it.order, 29) < 0.45) {
+        it.turns = 1;
+        turned++;
+      }
       it.parkPos = it.mesh.position.clone();
     }
+    this.lastProgress = 0;                 // for street 3's stuck-for-a-while nudge
 
     // ---- pieces the run did not collect ------------------------------------
     // `opts.collected` is one boolean per LOOSE piece, in build order, from
@@ -1991,6 +2014,7 @@ export class Puzzle {
   }
 
   missingLeft() { return this.items.filter((it) => it.missing).length; }
+  nextDeliveryIn() { return Math.max(0, this.deliverAt); }
 
   // A missed piece arrives: dropped onto its parking spot from above.
   deliver(it) {
@@ -2122,6 +2146,9 @@ export class Puzzle {
 
   beginDrag(item) {
     this.dragging = item;
+    // A Louvre wing at full size, carried under the finger, covers the very
+    // outline it is meant to be dropped on. Carried pieces are capped at 5m.
+    item.mesh.scale.setScalar(Math.min(parkScale(item.def), 5 / Math.max(...effSize(item.def))));
     resaturate(item.mesh);
     forEachMat(item.mesh, (m) => { m.emissiveIntensity = Math.max(m.userData.baseEm || 0, 0.35); });
   }
@@ -2143,6 +2170,7 @@ export class Puzzle {
     const it = this.dragging;
     this.dragging = null;
     if (!it) return 'miss';
+    it.mesh.scale.setScalar(parkScale(it.def));
     const s = sig(it.def);
     let best = null, bestD = Infinity;
     for (const o of this.items) {
@@ -2150,7 +2178,8 @@ export class Puzzle {
       const d = it.mesh.position.distanceTo(new THREE.Vector3(...o.def.p));
       if (d < bestD) { bestD = d; best = o; }
     }
-    const snap = Math.max(1.6, 0.3 * Math.max(...it.def.s));
+    // Forgiving on purpose (first device feedback: "a tiny bit too precise").
+    const snap = Math.max(2.2, 0.4 * Math.max(...it.def.s));
     let result = 'miss';
     // "Could go on now" for the spot's owner. A MISSING twin's spot counts:
     // the collected leg fills it, and the missing role passes to the leg's
@@ -2178,6 +2207,23 @@ export class Puzzle {
       sfx.place();
       return result;
     }
+    // A drop nowhere near any outline puts the piece down THERE: it is how a
+    // player clears a crowded plaza (first device feedback — there was no way
+    // to move pieces out of the way). It lands on the ground under the drop
+    // point, kept off the build site and inside the reachable plaza. A drop
+    // ON an outline that fails (wrong order, wrong way round) still springs
+    // back, because the player needs to see that it did not go in.
+    if (result === 'miss') {
+      const p = it.mesh.position.clone();
+      if (Math.abs(p.x) < this.foot.x + 1 && Math.abs(p.z) < this.foot.z + 1) {
+        p.z = (p.z >= 0 ? 1 : -1) * (this.foot.z + 2);
+      }
+      const r = Math.hypot(p.x, p.z);
+      if (r > 12.5) { p.x *= 12.5 / r; p.z *= 12.5 / r; }
+      p.y = restingY(it.def) * parkScale(it.def);
+      it.parkPos = p;
+      it.rotY0 = it.mesh.rotation.y;
+    }
     // back to where it was parked
     const from = it.mesh.position.clone(), to = it.parkPos.clone();
     let t = 0;
@@ -2189,7 +2235,7 @@ export class Puzzle {
         return true;
       },
     });
-    sfx.tick();
+    if (result !== 'miss') sfx.tick();
     if (this.hintFn) {
       if (result === 'order') this.hintFn('Not yet — something goes under it first');
       else if (result === 'turn') this.hintFn('Right spot — tap it to turn it round');
@@ -2470,7 +2516,7 @@ export class Puzzle {
         m.emissiveIntensity += (Math.max(base, target) - m.emissiveIntensity) * dt * 6;
       });
       if (pickNow) {
-        it.mesh.position.y = restingY(it.def) +
+        it.mesh.position.y = (it.parkPos ? it.parkPos.y : restingY(it.def)) +
           Math.abs(Math.sin(this.bobT + it.bobPhase)) * 0.3;
         // sway around the parked yaw rather than spinning freely: a long piece
         // that kept turning would eventually swing out past the frame edge
@@ -2483,9 +2529,33 @@ export class Puzzle {
       // stacked up brighter than a single-piece live course at 0.26 and stole
       // the eye. Distant courses are therefore pushed well back, and the live
       // course pushed up, so "what to build next" always wins on contrast.
-      it.ghost.userData.blockMat.opacity = !this.glow ? 0.12
-        : pickNow ? 0.30 + Math.sin(T * 5 + it.bobPhase) * 0.09
-          : it.layer === layerNow + 1 ? 0.13 : 0.055;
+      // The live course's outlines pulse on EVERY street: that is WHERE the
+      // next pieces go. Street 3 still does not say WHICH piece — no piece
+      // glows — so matching a piece to an outline is the puzzle. With no
+      // outline lit at all (the first street-3 version) it was guesswork.
+      const live = it.layer === layerNow;
+      it.ghost.userData.blockMat.opacity = live ? 0.30 + Math.sin(T * 5 + it.bobPhase) * 0.09
+        : it.layer === layerNow + 1 ? 0.13 : 0.055;
+    }
+
+    // Street 3, stuck: after 6s without placing anything, one piece that
+    // fits glows for a moment. A nudge for a young player, not a solution —
+    // it points at a piece, not at where it goes.
+    if (!this.glow && !this.done && !this.failed && !this.dragging
+        && this.elapsed - this.lastProgress > 6) {
+      const cand = this.items.find((it) => this.pickable(it));
+      if (cand) {
+        this.lastProgress = this.elapsed - 2;      // next nudge in ~4s if still stuck
+        let t = 0;
+        this.effects.push({
+          update: (d) => {
+            t += d;
+            const k = Math.max(0, Math.sin(Math.min(1, t / 1.6) * Math.PI));
+            forEachMat(cand.mesh, (m) => { m.emissiveIntensity = Math.max(m.userData.baseEm || 0, 0.9 * k); });
+            return t < 1.6;
+          },
+        });
+      }
     }
 
     // built pieces that rotate (the Eye's wheel)
@@ -2497,9 +2567,11 @@ export class Puzzle {
     for (let i = this.flying.length - 1; i >= 0; i--) {
       const it = this.flying[i];
       it.t += dt * 1.8;
+      if (it.fromScale === undefined) it.fromScale = it.mesh.scale.x;
       const k = Math.min(1, it.t);
       const e = 1 - Math.pow(1 - k, 3);
       const target = new THREE.Vector3(...it.def.p);
+      it.mesh.scale.setScalar(it.fromScale + (1 - it.fromScale) * e);
       it.mesh.position.lerpVectors(it.from, target, e);
       it.mesh.position.y += Math.sin(e * Math.PI) * 3.4;
       it.mesh.rotation.set(
@@ -2509,9 +2581,11 @@ export class Puzzle {
       );
       if (k >= 1) {
         placeAtTarget(it.mesh, it.def);
+        delete it.fromScale;
         it.placed = true;
         it.pop = 0;
         it.ghost.visible = false;
+        this.lastProgress = this.elapsed;
         this.placedCount++;
         this.flying.splice(i, 1);
         forEachMat(it.mesh, (m) => { m.emissiveIntensity = m.userData.baseEm || 0; });

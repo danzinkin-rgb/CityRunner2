@@ -13,6 +13,7 @@ npm test              # all 11 gates, serially — a failure stops the chain
 npm run build         # vite build -> dist/
 npm run ios:sync      # vite build && cap sync ios   (Mac)
 npm run ios:open      # cap open ios                 (Mac)
+npm run ios:sync:tester  # tester build: Settings > Tester plays any street (Mac)
 npm run serve         # static server on :4173 for manual poking
 ```
 
@@ -21,6 +22,8 @@ Run one suite directly — every test file is standalone and starts its own serv
 ```bash
 node test/menu-fit.mjs
 ```
+
+The tester build (`vite build --mode tester`, `TESTER` in `src/core/debug.js`) adds a Tester section to Settings: play any street or monument past its locks, and run invincible without recording scores. It is for installing straight from Xcode to a device. Run plain `npm run ios:sync` again before archiving for the App Store; `test/release-build.mjs` checks a normal build carries none of it.
 
 Named shortcuts exist for a few: `test:ios`, `test:fit`, `test:determinism`, `test:coins`, `test:clearance`, `test:puzzle`.
 

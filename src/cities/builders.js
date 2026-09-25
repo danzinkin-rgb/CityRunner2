@@ -3,6 +3,40 @@ import { canvasTexture } from '../core/engine.js';
 
 // ---------- shared texture cache (per street) ----------
 const cache = new Map();
+
+// Free everything this module cached for the street just left.
+//
+// The cache is what lets a street's hundreds of buildings share a few dozen
+// textures, but it was never emptied: every street visited added its facade,
+// road, sky-line and cameo textures for the rest of the session. Measured in
+// WebKit: 209 GPU textures after the first street, 902 after seventeen, each
+// up to half a megabyte, with revisits still adding more. On a phone that is
+// the WebView being killed for memory mid-run. Everything here is rebuilt on
+// demand, so the next street simply makes what it needs.
+//
+// Canvases are shrunk to 0x0 as well as dropped: iOS counts canvas backing
+// stores against a fixed budget, and waiting for GC to find them is too slow.
+function freeTexture(t) {
+  t.dispose();
+  const img = t.image;
+  if (img && typeof img.getContext === 'function') { img.width = 0; img.height = 0; }
+}
+export function releaseStreetCaches() {
+  for (const v of cache.values()) {
+    if (!v) continue;
+    if (v.isTexture) freeTexture(v);
+    else if (v.isMaterial) {
+      for (const k of ['map', 'emissiveMap', 'alphaMap', 'bumpMap', 'normalMap', 'roughnessMap']) {
+        if (v[k] && v[k].isTexture) freeTexture(v[k]);
+      }
+      v.dispose();
+    } else if (v.isBufferGeometry) {
+      SHARED_GEO.delete(v);
+      v.dispose();
+    }
+  }
+  cache.clear();
+}
 // Every geometry that is reused across spawns lands here. The track recycles a
 // chunk every couple of seconds and disposes what it owns; without this set it
 // would also dispose the shared geometries, forcing a GPU re-upload each time.
