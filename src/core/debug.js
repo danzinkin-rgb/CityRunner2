@@ -32,3 +32,14 @@
  * would be a far worse bug than the one this flag exists to fix.
  */
 export const DEBUG_HOOKS = !import.meta.env?.PROD;
+
+/**
+ * Tester build: `vite build --mode tester` (npm run ios:sync:tester) adds a
+ * Tester section to Settings — play any street or monument, invincible runs —
+ * so every street can be checked on a device without earning it first. It
+ * never shows in a release build: a plain `vite build` has MODE 'production'
+ * and test/release-build.mjs checks the section is absent from the bundle. The raw
+ * served source turns it on with ?tester=1 so a suite can exercise it.
+ */
+export const TESTER = import.meta.env?.MODE === 'tester'
+  || (DEBUG_HOOKS && typeof location !== 'undefined' && new URLSearchParams(location.search).has('tester'));
