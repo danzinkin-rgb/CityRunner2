@@ -83,3 +83,18 @@ export function randRange(min, max) { return min + current() * (max - min); }
 
 /** Uniform pick from an array. */
 export function pick(arr) { return arr[Math.floor(current() * arr.length) | 0]; }
+
+// The daily challenge's cities, and the version of the daily they define.
+//
+// Every player on a given day must get the same course, whichever app version
+// they run. The daily used to pick from the full city list, so adding San
+// Francisco would have sent players on the old and new versions to different
+// cities on the same day, posting to one leaderboard. The pool is therefore an
+// explicit list tied to a version, and the Game Center daily leaderboard id
+// carries that version (src/core/gamecenter.js).
+//
+// Adding a city to the daily, or any change that alters the daily's courses
+// or scoring, means a new version: bump it, and create the matching
+// `...leaderboard.daily.v<N>` in App Store Connect before release.
+// test/determinism.mjs fails if the pool changes without a new version.
+export const DAILY = { version: 2, cities: ['nyc', 'paris', 'london', 'rome', 'sf'] };

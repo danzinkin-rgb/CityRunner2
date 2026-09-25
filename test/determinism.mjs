@@ -93,6 +93,28 @@ check('daily picks a valid city and street',
   && daily.morning.level >= 1 && daily.morning.level <= 3,
   `city ${daily.morning.cityIdx} level ${daily.morning.level}`);
 
+// 5. the daily is versioned. Each version's city pool is recorded here; a
+// changed pool under an old version number would put players on different
+// app versions on different courses, posting to one leaderboard.
+const KNOWN_DAILY = { 2: 'nyc,paris,london,rome,sf' };
+const dv = await page.evaluate(async () => {
+  const { DAILY } = await import('/src/core/rng.js');
+  const { LEADERBOARDS } = await import('/src/core/gamecenter.js');
+  const { CITIES } = await import('/src/cities/themes.js');
+  const ids = CITIES.map((c) => c.id);
+  const t = window.__cr.todaysDaily;
+  const dealt = new Set();
+  for (let d = 0; d < 200; d++) dealt.add(ids[t(new Date(Date.UTC(2026, 0, 1 + d, 12))).cityIdx]);
+  return { version: DAILY.version, pool: DAILY.cities.join(','), board: LEADERBOARDS.DAILY,
+    allExist: DAILY.cities.every((c) => ids.includes(c)), dealt: [...dealt].sort().join(',') };
+});
+check('the daily pool matches the one recorded for its version',
+  KNOWN_DAILY[dv.version] === dv.pool,
+  `v${dv.version}: ${dv.pool} (recorded: ${KNOWN_DAILY[dv.version] || 'none'}) — a new pool needs a new version`);
+check('the daily leaderboard id carries the version', dv.board.endsWith(`.daily.v${dv.version}`), dv.board);
+check('every daily city exists, and only pool cities are dealt',
+  dv.allExist && dv.dealt === dv.pool.split(',').sort().join(','), `dealt over 200 days: ${dv.dealt}`);
+
 if (errors.length) { failures++; console.log('✗ JS errors:\n    ' + [...new Set(errors)].join('\n    ')); }
 
 console.log(`\n${failures ? '✗' : '✓'} determinism — ${failures} failing`);

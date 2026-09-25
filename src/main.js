@@ -7,7 +7,7 @@ import { STREET_FACTS, MONUMENT_FACTS } from './facts.js';
 import { renderHero, renderCompact, paintScale, countUp } from './factviz.js';
 import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
 import { startSession, submit, top as topScores, personalBest, currentSession } from './core/scores.js';
-import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset } from './core/rng.js';
+import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset, DAILY } from './core/rng.js';
 import { initNative, onAppPause, hapticLight, hapticMedium, hapticHeavy, hapticSuccess } from './core/native.js';
 import { reportRun } from './core/gamecenter.js';
 import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild } from './core/entitlements.js';
@@ -15,7 +15,7 @@ import { initIAP, getOffer, purchase, restore, onEntitlementGranted } from './co
 import { STORAGE } from './core/storage-keys.js';
 import { DEBUG_HOOKS, TESTER } from './core/debug.js';
 
-export const VERSION = '1.0.1';
+export const VERSION = '1.1.0';
 import { Player, DEFAULT_STYLE } from './run/player.js';
 import { releaseStreetCaches } from './cities/builders.js';
 import { Track } from './run/track.js';
@@ -135,8 +135,11 @@ function todaysDaily(date = new Date()) {
   const seed = dailySeedFor(date);
   // Derive city and street from the seed itself, so the rotation is fixed for
   // the day and nobody can look ahead by changing their clock forward.
+  // The pool is fixed per daily version (DAILY in src/core/rng.js), not the
+  // city list, so a new city cannot change which city a day deals.
   const pick = makeRng(seed);
-  const ci = Math.floor(pick() * CITIES.length) % CITIES.length;
+  const id = DAILY.cities[Math.floor(pick() * DAILY.cities.length) % DAILY.cities.length];
+  const ci = CITIES.findIndex((c) => c.id === id);
   const lv = 1 + (Math.floor(pick() * 3) % 3);
   return { seed, cityIdx: ci, level: lv, day: dailyKey(date) };
 }

@@ -24,11 +24,14 @@ import { CITIES } from '../cities/themes.js';
 import { gkSubmitScore, gkReportAchievement } from './native.js';
 import { lifetimeScore } from './scores.js';
 import { isFounder } from './entitlements.js';
+import { DAILY } from './rng.js';
 
 const NS = 'uk.co.zinkin.cityrunner';
 
 export const LEADERBOARDS = {
-  DAILY: `${NS}.leaderboard.daily`,
+  // Versioned with the daily itself (DAILY in rng.js): players on different
+  // app versions must never share a daily board. v1 was `.leaderboard.daily`.
+  DAILY: `${NS}.leaderboard.daily.v${DAILY.version}`,
   OVERALL: `${NS}.leaderboard.overall`,
 };
 
