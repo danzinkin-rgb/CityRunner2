@@ -15,6 +15,7 @@ const CITY_OF = {
   bigben: 'london', towerbridge: 'london', eye: 'london',
   colosseum: 'rome', trevi: 'rome', pantheon: 'rome',
   ggbridge: 'sf', coit: 'sf', paintedladies: 'sf',
+  kotel: 'jerusalem', domerock: 'jerusalem', towerdavid: 'jerusalem',
 };
 // Plaza floors deliberately contrast their monuments. Every landmark in the
 // game is a warm stone/limestone/bronze hero, and every city theme lights the
@@ -31,6 +32,7 @@ const PLAZA = {
   london: { stone: '#5a6675', dark: '#434e5c', trim: '#8496a8', ground: '#2f3640', sky: '#2c3348' },
   rome: { stone: '#63737a', dark: '#4a5960', trim: '#95a8ae', ground: '#323b39', sky: '#4c3e56' },
   sf: { stone: '#6a6e76', dark: '#4e525a', trim: '#98a0aa', ground: '#30343a', sky: '#3a4656' },
+  jerusalem: { stone: '#667080', dark: '#4c5462', trim: '#96a0b0', ground: '#30343e', sky: '#3c4468' },
 };
 
 // Painted-panorama palette. Near layer is the darker, more saturated band the
@@ -41,6 +43,7 @@ const SKYPAL = {
   london: { near: '#3b2b2d', far: '#565b6e', trim: '#37414f', roof: '#26262f', win: '255,236,192', accent: '#8f95a6' },
   rome: { near: '#4a3a30', far: '#6d6055', trim: '#6b4e3a', roof: '#5c3324', win: '255,214,150', accent: '#cfc4b0' },
   sf: { near: '#3c4656', far: '#6a7686', trim: '#556070', roof: '#2e3440', win: '255,220,170', accent: '#c1440e' },
+  jerusalem: { near: '#6a5a44', far: '#8c7c62', trim: '#7a6a50', roof: '#5a4a36', win: '255,216,160', accent: '#d8b460' },
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 
@@ -85,7 +88,16 @@ function baseFill(g, S, color) {
 
 function makeBlockTexture(def) {
   const { tex, c } = def;
-  const tx = def.tx || {};
+  let tx = def.tx || {};
+  // Masonry is sized to the piece: roughly one stone per 1.2 m (one per
+  // 3.6 m for Herodian megaliths), so a long course is a row of stones, not
+  // one stone stretched into a plank.
+  if ((tex === 'stone' || tex === 'herodian') && tx.cols == null) {
+    const big = tex === 'herodian';
+    tx = { ...tx,
+      cols: Math.max(1, Math.round(def.s[0] / (big ? 3.4 : 1.2))),
+      rows: Math.max(1, Math.round(def.s[1] / (big ? 2.4 : 0.9))) };
+  }
   const key = `${tex}|${c}|${JSON.stringify(tx)}`;
   // the pyramid's mullion grid needs the extra resolution — a cylinder UV
   // gives each of the four faces only a quarter of the texture width
@@ -185,6 +197,64 @@ function makeBlockTexture(def) {
         g.moveTo(x - 5, S * 0.16); g.quadraticCurveTo(x, S * 0.05, x + 5, S * 0.16);
         g.lineTo(x + 5, S * 0.3); g.lineTo(x - 5, S * 0.3); g.closePath(); g.fill();
       }
+      return;
+    }
+    if (tex === 'herodian') {
+      // Herodian masonry: very large stones, each with a smooth, slightly
+      // raised face inside a recessed drafted margin (the chiselled border
+      // that marks the Western Wall's lowest courses). One per cell.
+      baseFill(g, S, c);
+      const cols = tx.cols || 1, rows = tx.rows || 1;
+      const w = S / cols, h = S / rows, m = Math.max(7, Math.min(w, h) * 0.09);
+      for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+        const x = i * w, y = j * h;
+        g.fillStyle = shade(c, -0.22); g.fillRect(x + 2, y + 2, w - 4, h - 4);      // margin
+        g.fillStyle = shade(c, 0.06 + dRand(i + j * 7, 5) * 0.05);
+        g.fillRect(x + m, y + m, w - 2 * m, h - 2 * m);                             // boss
+        g.fillStyle = shade(c, 0.2); g.fillRect(x + m, y + m, w - 2 * m, 3);
+        g.fillStyle = shade(c, -0.32); g.fillRect(x + m, y + h - m - 3, w - 2 * m, 3);
+        g.strokeStyle = shade(c, -0.42); g.lineWidth = 3; g.strokeRect(x + 1, y + 1, w - 2, h - 2);
+      }
+      return;
+    }
+    if (tex === 'stone') {
+      // Plain coursed stone, staggered, each stone a touch different in
+      // tone. tx.rough: irregular fieldstone for ancient foundations.
+      baseFill(g, S, c);
+      const rows = tx.rows || 4, cols = tx.cols || 4;
+      const h = S / rows;
+      for (let j = 0; j < rows; j++) {
+        let x = -(j % 2) * (S / cols) * 0.5;
+        let k = 0;
+        while (x < S) {
+          const w = (S / cols) * (tx.rough ? 0.7 + dRand(j * 13 + k, 3) * 0.6 : 0.9 + dRand(j * 13 + k, 3) * 0.2);
+          g.fillStyle = shade(c, (dRand(j * 13 + k, 4) - 0.5) * (tx.rough ? 0.2 : 0.1));
+          g.fillRect(x + 2, j * h + 2, w - 4, h - 4);
+          x += w; k++;
+        }
+        g.fillStyle = shade(c, -0.28); g.fillRect(0, j * h + h - 2, S, 2);
+      }
+      return;
+    }
+    if (tex === 'tile') {
+      // Geometric tilework in blue, white and gold: eight-pointed stars in a
+      // lattice, invented for the game and not a copy of any historic design.
+      g.fillStyle = shade(c, -0.1); g.fillRect(0, 0, S, S);
+      const n = 4, cell = S / n;
+      for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+        const cx = (i + 0.5) * cell, cy = (j + 0.5) * cell, r = cell * 0.42;
+        g.fillStyle = '#f2ecdc';
+        g.beginPath();
+        for (let k = 0; k < 16; k++) {
+          const a = (k / 16) * Math.PI * 2, rr = k % 2 ? r * 0.55 : r;
+          g.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+        }
+        g.closePath(); g.fill();
+        g.fillStyle = (i + j) % 2 ? '#e0b048' : shade(c, 0.12);
+        g.beginPath(); g.arc(cx, cy, r * 0.3, 0, Math.PI * 2); g.fill();
+      }
+      g.strokeStyle = '#e0b048'; g.lineWidth = 3;
+      g.strokeRect(1.5, 1.5, S - 3, S - 3);
       return;
     }
     if (tex === 'niche') {

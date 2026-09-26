@@ -44,7 +44,7 @@ async function street(city, level) {
   return { painted, errors };
 }
 
-const cities = ['nyc', 'paris', 'london', 'rome', 'sf'];
+const cities = ['nyc', 'paris', 'london', 'rome', 'sf', 'jerusalem'];
 const jobs = [];
 for (const c of cities) for (const lv of [1, 2, 3]) jobs.push([c, lv]);
 // a few at a time: every page runs WebGL

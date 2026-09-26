@@ -105,6 +105,28 @@ export const STREET_FACTS = {
         { text: 'The name comes from the corner where two streets meet: Haight Street and Ashbury Street.' },
       ] },
   ],
+  // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
+  // are architectural, historical and measurable; no claims about sovereignty.
+  jerusalem: [
+    { street: 'Jaffa Road', tag: 'The road to the sea',
+      facts: [
+        { big: '1860s', label: 'the first carriage road', text: 'Jaffa Road was cut in the 1860s as the first carriage road linking Jerusalem to the port of Jaffa, and pilgrims arriving by sea entered the city along it.' },
+        { big: '2011', label: 'reopened for light rail', text: 'Once choked with traffic, the street was rebuilt as a pedestrian and light-rail spine, reopening in 2011.' },
+        { text: 'It runs from Jaffa Gate in the Old City wall out to the modern city — the seam where old Jerusalem meets new.' },
+      ] },
+    { street: 'Mahane Yehuda', tag: 'The market',
+      facts: [
+        { big: '250', unit: 'stalls', label: 'traders', text: 'Around 250 traders sell spices, produce, halva and rugelach through the covered and open lanes.' },
+        { big: '1887', label: 'formalised under Ottoman rule', text: 'The market grew informally in the 1880s as farmers sold outside the walls, and was formalised under Ottoman rule.' },
+        { text: 'By day it is a market; after the shutters come down the same alleys become the city\'s bars and restaurants.' },
+      ] },
+    { street: 'The Cardo', tag: 'The Roman high street',
+      facts: [
+        { big: '6th', unit: 'century', label: 'Byzantine main street', text: 'The colonnaded Cardo was the main street of Byzantine Jerusalem, running north–south through the city.' },
+        { big: '22', unit: 'm', label: 'wide', text: 'Wide enough for carts down the centre with covered colonnades either side for traders.' },
+        { text: 'It appears on the Madaba Map — a 6th-century mosaic floor map in Jordan — which is how archaeologists knew where to dig for it.' },
+      ] },
+  ],
 };
 
 // scale: real height in metres, for the comparison graphic.
@@ -199,5 +221,30 @@ export const MONUMENT_FACTS = {
       { big: '1892', label: 'building began', text: 'The row was built between 1892 and 1896 by the builder Matthew Kavanagh.' },
       { big: '7', unit: 'houses', label: 'in the row', text: 'The famous row on Steiner Street has seven houses, sometimes called the Seven Sisters.' },
       { text: 'They got the name Painted Ladies from a 1978 book about brightly painted Victorian houses.' },
+    ] },
+  // Jerusalem (approved 6 September 2026). The Dome of the Rock alone has four
+  // facts, so it can say it is not the al-Aqsa Mosque. Neither it nor the
+  // Tower of David has a sourced height for the structure, so neither has the
+  // height comparison.
+  kotel: { scale: 19, compare: 'person',
+    facts: [
+      { big: '488', unit: 'm', label: 'total length', text: 'The Western Wall is the holiest place where Jews are permitted to pray, not the holiest site in Judaism — that is the Temple Mount above it. Only about 57 m of the wall is exposed at the prayer plaza; the rest runs on beneath later buildings.' },
+      { big: '19', unit: 'BCE', label: "Herod's expansion", text: 'The wall is a retaining wall built to support the enlarged platform of the Second Temple, not a wall of the Temple itself.' },
+      { big: '1M+', unit: 'notes', label: 'placed every year', text: 'Written prayers are placed in the cracks. They are collected twice a year and buried on the Mount of Olives, never thrown away.' },
+    ] },
+  domerock: {
+    facts: [
+      { big: '691', unit: 'CE', label: 'completed', text: 'One of the oldest surviving Islamic buildings in the world, built under Caliph Abd al-Malik.' },
+      { big: '80', unit: 'kg', label: 'of gold', text: 'The dome was re-covered in 1993; King Hussein of Jordan funded the work, reportedly selling a house in London to pay for it.' },
+      { big: '8', unit: 'sides', label: 'a perfect octagon', text: 'The plan is a perfect octagon around the rock at its centre, its exterior clad in Ottoman tilework added under Suleiman in the 1550s.' },
+      { text: 'It is not the al-Aqsa Mosque. They are two separate buildings on the same compound — the compound itself stands on the Temple Mount (Jewish tradition) and Haram al-Sharif, "the Noble Sanctuary" (Islamic tradition). The Dome of the Rock is the gold-domed octagon; al-Aqsa is the silver-domed mosque to its south. The two are very widely confused.' },
+    ] },
+  towerdavid: {
+    facts: [
+      { big: '1655', label: 'the minaret', text: 'The tower everyone photographs is an Ottoman minaret, added more than 2,500 years after David.' },
+      { big: '2nd', unit: 'c. BCE', label: 'Hasmonean foundations', text: "The citadel's foundations are Hasmonean — a Jewish ruling dynasty in Judea at that time — and were later rebuilt by Herod, Crusaders, Mamluks and Ottomans in turn." },
+      // 777 m: the Tower of David Museum's own figure for the top of the
+      // Phasael Tower (tod.org.il/en/event/jerusalem360), checked 26 Sept 2026.
+      { big: '777', unit: 'm', label: 'above sea level', text: 'The name is a misnomer: Byzantine visitors assumed the citadel was King David\'s palace, and it stuck. The top of its Phasael Tower stands 777 m above sea level.' },
     ] },
 };

@@ -1542,6 +1542,7 @@ const ADS = {
   london: ['WEST END', 'TEA & CO', 'THE TUBE', 'OXFORD ST'],
   rome: ['GELATO', 'CINEMA', 'MODA', 'ROMA'],
   sf: ['CABLE CAR', 'SOURDOUGH', 'BAY TOURS', 'CHOWDER'],
+  jerusalem: ['FALAFEL', 'BOOKS & MAPS', 'SPICE HOUSE', 'OLD CITY TOURS'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -2138,7 +2139,7 @@ function makeTrolleyPole() {
 
 export function makeProp(kind, theme) {
   switch (kind) {
-    case 'lamp': case 'lamp_paris': case 'lamp_london': case 'lamp_rome': case 'lamp_sf': return makeLamp(theme);
+    case 'lamp': case 'lamp_paris': case 'lamp_london': case 'lamp_rome': case 'lamp_sf': case 'lamp_jerusalem': return makeLamp(theme);
     case 'flowerbed': return makeFlowerbed();
     case 'streetcar_pole': return makeTrolleyPole();
     case 'tree': return makeTree('round');
@@ -2295,6 +2296,34 @@ export function makeVehicle(theme) {
       cached('mat:carGlass', () => new THREE.MeshStandardMaterial({ color: 0xa8d0ec, roughness: 0.12, metalness: 0.5 })));
     cabGlass.scale.set(1.9, 0.7, 0.1);
     cabGlass.position.set(0, 2.9, 2.62); g.add(cabGlass);
+  } else if (kind === 'citybus') {
+    // Jerusalem: a single-deck city bus, white with a green band, the livery
+    // Israeli buses are known for. No operator name or logo on it: every
+    // brand in the game is fictional (docs/COMPLIANCE.md). Same footprint as
+    // London's bus so collisions and road clearance are unchanged.
+    const busTex = cached('citybusTex', () => canvasTexture(256, 128, (c) => {
+      c.fillStyle = '#f2f2ee'; c.fillRect(0, 0, 256, 128);
+      c.fillStyle = '#1f7a45'; c.fillRect(0, 74, 256, 22);          // green band
+      c.fillStyle = '#2a5a3a'; c.fillRect(0, 100, 256, 6);
+      c.fillStyle = '#9cc4dc';
+      for (let x = 10; x < 246; x += 30) c.fillRect(x, 16, 24, 44);  // one row of windows
+      c.fillStyle = '#1c1c1c'; c.fillRect(0, 64, 256, 4);
+    }));
+    const body = new THREE.Mesh(boxGeo,
+      cached('mat:citybus', () => new THREE.MeshStandardMaterial({ map: cache.get('citybusTex'), roughness: 0.35, metalness: 0.15 })));
+    body.scale.set(2.0, 2.7, 5.2);
+    body.position.y = 1.7; body.castShadow = true; g.add(body);
+    const roof = new THREE.Mesh(boxGeo,
+      cached('mat:citybusRoof', () => new THREE.MeshStandardMaterial({ color: 0xe4e4de, roughness: 0.45 })));
+    roof.scale.set(1.9, 0.22, 4.9);
+    roof.position.y = 3.15; g.add(roof);
+    const cabGlass = new THREE.Mesh(boxGeo,
+      cached('mat:carGlass', () => new THREE.MeshStandardMaterial({ color: 0xa8d0ec, roughness: 0.12, metalness: 0.5 })));
+    cabGlass.scale.set(1.9, 1.1, 0.1);
+    cabGlass.position.set(0, 2.2, 2.62); g.add(cabGlass);
+    const dest = new THREE.Mesh(boxGeo, mats.glow);                 // destination board
+    dest.scale.set(1.3, 0.26, 0.08);
+    dest.position.set(0, 2.9, 2.64); g.add(dest);
   } else if (kind === 'taxi') {
     const body = new THREE.Mesh(boxGeo,
       cached('mat:taxi', () => new THREE.MeshStandardMaterial({ color: 0xffc020, roughness: 0.28, metalness: 0.25 })));
@@ -2957,6 +2986,7 @@ const SIL_TINT = {
   london: '#33455e',     // sooty blue-grey
   rome: '#6e4632',       // warm umber stone and pine
   sf: '#4a5a6a',         // fog-softened slate: hills and towers through the marine layer
+  jerusalem: '#6a5a44',  // warm stone-gold: limestone hills at dusk
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
@@ -3239,6 +3269,31 @@ export function makeCameo(theme) {
       g.fillStyle = dark(0.28);
       g.fillRect(bx - 130, GY - 180, 70, 180);
       g.fillRect(bx + 60, GY - 150, 80, 150);
+    } else if (key === 'towerdavid') {
+      // The Tower of David citadel by Jaffa Gate: the Old City wall with its
+      // battlements, the squat citadel, and the minaret rising off-centre.
+      g.fillStyle = dark(0.3);
+      g.fillRect(cx - 420, GY - 70, 840, 70);
+      for (let x = cx - 420; x < cx + 420; x += 24) g.fillRect(x, GY - 84, 13, 14);
+      g.fillStyle = dark(0.36);
+      g.fillRect(cx - 110, GY - 170, 200, 170);
+      for (let x = cx - 110; x < cx + 90; x += 22) g.fillRect(x, GY - 184, 12, 14);
+      g.fillStyle = dark(0.3);
+      g.fillRect(cx + 44, GY - 290, 20, 120);                        // minaret shaft
+      g.fillRect(cx + 38, GY - 260, 32, 7);                          // balcony
+      g.beginPath(); g.moveTo(cx + 40, GY - 290); g.lineTo(cx + 54, GY - 322); g.lineTo(cx + 68, GY - 290); g.fill();
+    } else if (key === 'domerock') {
+      // The Dome of the Rock beyond the Old City wall: the octagon, drum and
+      // the gold dome, which catches the light even at this distance.
+      g.fillStyle = dark(0.28);
+      g.fillRect(cx - 440, GY - 64, 880, 64);
+      for (let x = cx - 440; x < cx + 440; x += 24) g.fillRect(x, GY - 78, 13, 14);
+      g.fillStyle = dark(0.34);
+      g.fillRect(cx - 120, GY - 150, 240, 86);                        // octagon
+      g.fillRect(cx - 78, GY - 186, 156, 38);                         // drum
+      g.fillStyle = mixc(fogC, '#e8b840', 0.72);
+      g.beginPath(); g.ellipse(cx, GY - 186, 84, 92, 0, Math.PI, 0); g.fill();
+      g.fillRect(cx - 2, GY - 300, 4, 26);                            // finial
     } else if (key === 'coit') {
       // Coit Tower on Telegraph Hill, up ahead at the end of the street
       g.fillStyle = dark(0.3);

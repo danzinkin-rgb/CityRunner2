@@ -96,7 +96,11 @@ const AUDIT = ({ selector, MIN_TAP }) => {
     // exempt the scroller along with its cards.
     const scroller = el.parentElement?.closest('[data-xscroll]');
     if (!scroller && (r.right > vw + 1 || r.left < -1)) issues.push(`OVERFLOW-X ${name} [${Math.round(r.left)}..${Math.round(r.right)}] vw=${vw}`);
-    if (r.bottom > vh + 1 && cs.position !== 'absolute' && !el.closest('.sheet') && !el.closest('#facts-list'))
+    // Cards inside a capped, scrolling fact list may sit below the fold: that
+    // is what scrolling is for. The list itself is still checked, since
+    // parentElement skips it: Jerusalem's Dome of the Rock has a fourth fact.
+    const inFactList = el.parentElement?.closest('#facts-list, #pw-facts');
+    if (r.bottom > vh + 1 && cs.position !== 'absolute' && !el.closest('.sheet') && !inFactList)
       issues.push(`BELOW-FOLD ${name} bottom=${Math.round(r.bottom)} vh=${vh}`);
     const tappable = el.tagName === 'BUTTON' || el.tagName === 'A' || el.tagName === 'INPUT';
     if (tappable && (r.height < MIN_TAP - 0.5 || r.width < MIN_TAP - 0.5))

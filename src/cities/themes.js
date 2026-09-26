@@ -275,6 +275,59 @@ export const CITIES = [
       },
     ],
   },
+  {
+    id: 'jerusalem', name: 'JERUSALEM', flag: '🫒',
+    streets: ['Jaffa Road', 'Mahane Yehuda', 'The Cardo'],
+    // Jerusalem limestone by day, gold at dusk. The pale gold-cream stone is
+    // the constant; the sky pushes toward dusk gold rather than Rome's
+    // Mediterranean orange or Paris's rose. docs/cities/jerusalem.md.
+    sky: { top: '#5a6fb0', mid: '#b0a4d0', horizon: '#ffd9a0', glow: '#ffc478' },
+    fog: 0xffc478, fogDensity: 0.009,
+    sun: { color: 0xffe8c0, intensity: 2.5, pos: [55, 60, -50] },
+    hemi: { sky: 0xe8dcc8, ground: 0x9c8a68, intensity: 1.1 },
+    fill: { color: 0xffe8cc, intensity: 1.05 },
+    road: '#8a8070', lane: '#e4d8b8', sidewalk: '#c8b990',
+    palette: ['#e8d8ae', '#dfcd9e', '#ecdcb6', '#d4c290', '#e2d2a4', '#eaddb8'],
+    trim: '#f6ecd0', roof: '#a89468',
+    windowLit: '#ffd8a0', windowDay: '#a8c4dc', accent: '#c8962e',
+    storefront: ['#a0522e', '#2e6a4f', '#8a6a2e', '#5a3a7a', '#b0741e'],
+    props: ['lamp_jerusalem', 'cypress', 'awning'],
+    // A city bus in green and white. Deliberately no operator name or logo:
+    // every brand in the game is fictional (docs/COMPLIANCE.md).
+    vehicle: 'citybus',
+    landmarks: ['kotel', 'domerock', 'towerdavid'],
+    levels: [
+      { // Jaffa Road — the seam between old and new: the light-rail spine
+        // (rails and overhead wires), stone frontage near the Old City end.
+        key: 'jaffa',
+        palette: ['#e8d8ae', '#e0d0a0', '#ecdcb6', '#d8c898', '#e4d4a8', '#eaddb8'],
+        roadStyle: 'streetcar', road: '#7e7668', lane: '#e4d8b8',
+        props: ['lamp_jerusalem', 'streetcar_pole', 'planetree'],
+        ads: ['BEIT KAFE', 'JAFFA GATE 1KM', 'BOOKS & MAPS'],
+        span: 'wires', spanFreq: 0.7, spanY: 7.2,
+        cameo: 'towerdavid', lit: 0.18,
+      },
+      { // Mahane Yehuda — the market: stalls and awnings in narrow lanes,
+        // string lights for the bars the same alleys become after dark.
+        key: 'mahane',
+        palette: ['#dcc794', '#d2ba82', '#e2d0a2', '#c8b076', '#d8c48e', '#e6d4a6'],
+        setback: 3.0, hBase: 8, hVar: 3, secondRow: 0,
+        props: ['lamp_jerusalem', 'awning', 'souvenirstall'],
+        ads: ['MAHANE YEHUDA', 'SHUK', 'HALVA & SPICE'],
+        span: 'string', spanFreq: 0.7, lit: 0.4,
+      },
+      { // The Cardo — the Roman and Byzantine colonnaded high street:
+        // flagstone paving and columns, an archaeological set-piece.
+        key: 'cardo',
+        palette: ['#ecdfc0', '#e4d6b2', '#f0e4c8', '#d8caa0', '#eadcb8', '#f2e6ca'],
+        roadStyle: 'travertine', road: '#c4b48c', lane: '#c4b48c', sidewalk: '#cabb92',
+        setback: 5.2, hBase: 9, hVar: 3, secondRow: 0.2,
+        props: ['lamp_jerusalem', 'column', 'cypress'],
+        ads: ['CARDO', 'MOSAIC WORKSHOP'],
+        cameo: 'domerock', lit: 0.2,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -283,6 +336,7 @@ export const LANDMARK_NAMES = {
   bigben: 'Big Ben', towerbridge: 'Tower Bridge', eye: 'London Eye',
   colosseum: 'Colosseum', trevi: 'Trevi Fountain', pantheon: 'Pantheon',
   ggbridge: 'Golden Gate Bridge', coit: 'Coit Tower', paintedladies: 'Painted Ladies',
+  kotel: 'The Western Wall', domerock: 'The Dome of the Rock', towerdavid: 'Tower of David',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

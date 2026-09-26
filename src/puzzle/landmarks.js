@@ -109,6 +109,24 @@ function ladyHouse(x, body, trim, roofI) {
   ];
 }
 
+
+// Half of a regular octagon wall, as one piece: four flat panels meeting
+// edge to edge, with its twin half turned 180 degrees. r is the apothem (centre
+// to the middle of a face). Two identical halves beat eight panels that look
+// alike but each fit one spot only (the Colosseum's problem). Each panel's
+// width runs round the octagon: a box turned by -a has its local z along the
+// tangent at angle a, so the width goes in s[2].
+function octHalf(y, r, h, t, c, extra, flip) {
+  const side = 2 * r * Math.tan(Math.PI / 8);
+  const angles = [0, 1, 2, 3].map((k) => (Math.PI / 8) + k * (Math.PI / 4));
+  const cz = angles.reduce((acc, a) => acc + Math.sin(a) * r, 0) / 4;
+  return B([0, y, flip ? -cz : cz], [2 * r + t, h, r - cz + t + 1.4], c, 'group', {
+    rotY: flip ? Math.PI : 0,
+    adorn: angles.map((a) => B([Math.cos(a) * r, 0, Math.sin(a) * r - cz], [t, h, side + 0.04], c, 'box',
+      { rotY: -a, ...extra })),
+  });
+}
+
 const defs = {
   // ================= NEW YORK =================
   // Empire State: warm limestone-cream setbacks, halved window-stripe
@@ -596,6 +614,108 @@ const defs = {
     ...ladyHouse(3.6, '#c9a8cc', '#f4ecd8', 0),
     ...ladyHouse(7.2, '#e2a07c', '#3f5a6a', 1),
     ...ladyHouse(10.8, '#cfc4b2', '#8a3a3a', 0),
+  ],
+  // ================= JERUSALEM =================
+  // docs/cities/jerusalem.md, adapted: small details (cypresses, caper
+  // plants in the joints, the minaret's balcony and cap, battlements) arrive
+  // WITH a larger piece rather than as pieces of their own, and the stone uses
+  // plain masonry textures. The spec's 'relief' paints robed figures, which
+  // have no place on the Western Wall.
+
+  // The Western Wall: a long, low limestone wall you face, fronted by its
+  // plaza. Huge smooth Herodian stones at the base give way to smaller, later
+  // courses above. No figures, no partition, no prayer notes.
+  kotel: [
+    B([0, 0.15, 3.5], [15.6, 0.3, 3.0], '#d8c9a0', 'box', {
+      adorn: [-7.2, 7.2].map((x) => B([x, 1.85, -0.9], [0.9, 3.6, 0.9], '#2e4a30', 'lathe',
+        { profile: [[0, 0], [0.8, 0.06], [1, 0.3], [0.75, 0.7], [0, 1]], emI: 0 })),
+    }),
+    // Herodian base course: three megaliths with drafted margins
+    B([-3.6, 1.4, 1.4], [3.6, 2.6, 1.4], '#cabb8e', 'box', { tex: 'herodian' }),
+    B([0, 1.4, 1.4], [3.6, 2.6, 1.4], '#cabb8e', 'box', { tex: 'herodian' }),
+    B([3.6, 1.4, 1.4], [3.6, 2.6, 1.4], '#cabb8e', 'box', { tex: 'herodian' }),
+    // second Herodian course, one size down
+    B([-2.7, 3.4, 1.35], [5.4, 1.4, 1.3], '#d0c294', 'box', { tex: 'herodian', tx: { cols: 2, rows: 1 } }),
+    B([2.7, 3.4, 1.35], [5.4, 1.4, 1.3], '#d0c294', 'box', { tex: 'herodian', tx: { cols: 2, rows: 1 } }),
+    // end piers, full height, standing proud of the coursing
+    B([-6.2, 4.3, 1.4], [1.3, 7.4, 1.5], '#dccea2', 'box', { tex: 'stone' }),
+    B([6.2, 4.3, 1.4], [1.3, 7.4, 1.5], '#dccea2', 'box', { tex: 'stone' }),
+    // later courses, smaller stones, narrowing with height; caper plants
+    // grow from the joints (green tufts, no religious content)
+    B([0, 4.7, 1.3], [11.0, 1.1, 1.2], '#d8ca9e', 'box', {
+      tex: 'stone', adorn: [B([-4.4, 0.1, 0.62], [0.36, 0.3, 0.2], '#5a7a40'), B([3.9, -0.2, 0.62], [0.32, 0.28, 0.2], '#5a7a40')],
+    }),
+    B([0, 5.75, 1.25], [10.6, 1.0, 1.15], '#d2c496', 'box', { tex: 'stone' }),
+    B([0, 6.7, 1.2], [10.2, 0.9, 1.1], '#d8ca9e', 'box', {
+      tex: 'stone', adorn: [B([-1.2, 0.05, 0.58], [0.34, 0.3, 0.2], '#5a7a40'), B([2.6, -0.1, 0.58], [0.3, 0.26, 0.2], '#5a7a40')],
+    }),
+    B([0, 7.55, 1.15], [9.8, 0.8, 1.05], '#d2c496', 'box', { tex: 'stone' }),
+    B([0, 8.15, 1.2], [11.4, 0.5, 1.3], '#e2d4a8'),                        // cornice
+    // set back behind: the edge of the platform the wall holds up
+    B([0, 9.2, -0.6], [10.0, 1.6, 1.0], '#c2b284', 'box', { tex: 'stone', em: '#ffd9a0', emI: 0.08 }),
+  ],
+
+  // The Dome of the Rock: an octagon clad in marble below and blue tilework
+  // above, a round drum, and the gold dome. Four facts, one of which says it
+  // is not the al-Aqsa Mosque (src/facts.js).
+  domerock: [
+    B([0, 0.4, 0], [12.4, 0.8, 12.4], '#c8b98e', 'cyl'),                    // podium
+    octHalf(2.6, 5.2, 3.6, 0.9, '#eee3c8', { tex: 'stone' }, false),
+    octHalf(2.6, 5.2, 3.6, 0.9, '#eee3c8', { tex: 'stone' }, true),
+    octHalf(5.5, 5.2, 2.2, 0.9, '#3a6ea0', { tex: 'tile' }, false),
+    octHalf(5.5, 5.2, 2.2, 0.9, '#3a6ea0', { tex: 'tile' }, true),
+    B([0, 6.75, 0], [11.4, 11.4, 0.34], '#e8b45e', 'torus', { rotX: Math.PI / 2, metal: 1, em: '#ffc46a', emI: 0.7 }),
+    B([0, 8.2, 0], [8.6, 2.7, 8.6], '#ece2c4', 'cyl', { tex: 'win', tx: { cols: 16, rows: 1 } }),
+    B([0, 9.75, 0], [8.0, 0.7, 8.0], '#d8cba0', 'cyl'),
+    B([0, 10.35, 0], [7.2, 0.55, 7.2], '#d2c498', 'cyl'),
+    B([0, 10.62, 0], [7.6, 4.9, 7.6], '#e8b840', 'dome', {
+      metal: 1, em: '#ffcf5a', emI: 0.6,
+      adorn: [B([0, 4.5, 0], [0.16, 1.6, 0.16], '#f4d878', 'cyl', { metal: 1, em: '#ffe08a', emI: 0.7 })],
+    }),
+  ],
+
+  // The Tower of David citadel: a squat fortress of visibly different
+  // building phases, with the Ottoman minaret set off-centre on top, which is
+  // what makes it read as a tower with a minaret added later.
+  towerdavid: [
+    // dry moat wall, with excavated foundation stones below the plaza
+    B([0, 0.3, 5.2], [13.0, 0.6, 2.4], '#a89a7c', 'box', {
+      tex: 'stone',
+      adorn: [B([-2.6, 0.25, -0.5], [2.2, 0.9, 1.6], '#8c8064', 'rock'), B([2.4, 0.2, -0.4], [1.9, 0.8, 1.5], '#948866', 'rock')],
+    }),
+    B([-0.6, 2.0, 0], [8.2, 3.4, 8.0], '#c2b28e', 'box', { tex: 'stone', tx: { rough: 1 } }),   // rough ancient base
+    B([-0.6, 1.6, 4.0], [3.4, 3.0, 1.8], '#d0c19a', 'archvault'),           // gate
+    // stacked tower body, narrowing: the Crusader, Mamluk and Ottoman rebuilds
+    B([-0.6, 5.6, 0], [7.2, 3.2, 7.0], '#cabb92', 'box', { tex: 'stone' }),
+    B([-0.6, 8.9, 0], [6.2, 2.6, 6.0], '#d0c19a', 'box', {
+      tex: 'stone', adorn: [B([0, -0.2, 3.05], [1.6, 1.8, 0.3], '#b8a87e', 'archvault')],
+    }),
+    B([-0.6, 11.1, 0], [5.4, 1.6, 5.2], '#cabb92', 'box', { tex: 'stone' }),
+    // corner turrets
+    B([-2.9, 9.2, 2.6], [1.7, 3.4, 1.7], '#d4c59c', 'box', {
+      tex: 'stone', adorn: [-1, 1].flatMap((a) => [-1, 1].map((b) => B([a * 0.62, 1.9, b * 0.62], [0.42, 0.42, 0.42], '#d4c59c'))),
+    }),
+    B([2.1, 6.3, -2.6], [1.5, 3.0, 1.5], '#cec090', 'box', {
+      tex: 'stone', adorn: [-1, 1].flatMap((a) => [-1, 1].map((b) => B([a * 0.54, 1.7, b * 0.54], [0.38, 0.4, 0.38], '#cec090'))),
+    }),
+    // parapet, with its battlements
+    B([-0.6, 12.15, 0], [5.6, 0.7, 5.4], '#d8c9a0', 'box', {
+      tex: 'stone',
+      adorn: [-2.4, -1.2, 0, 1.2, 2.4].flatMap((u) => [
+        B([u, 0.55, 2.45], [0.55, 0.45, 0.5], '#d8c9a0'), B([u, 0.55, -2.45], [0.55, 0.45, 0.5], '#d8c9a0'),
+        B([2.55, 0.55, u * 0.95], [0.5, 0.45, 0.55], '#d8c9a0'), B([-2.55, 0.55, u * 0.95], [0.5, 0.45, 0.55], '#d8c9a0'),
+      ]),
+    }),
+    // the Ottoman minaret (1655), deliberately off the tower's centre line,
+    // with its balcony, cap and finial
+    B([1.6, 15.5, 1.2], [0.7, 6.4, 0.7], '#e2d4ac', 'cyl', {
+      tex: 'stone',
+      adorn: [
+        B([0, 2.0, 0], [1.3, 1.3, 0.2], '#e8dcb4', 'torus', { rotX: Math.PI / 2 }),
+        B([0, 3.9, 0], [0.9, 1.3, 0.9], '#d6c8a0', 'lathe', { profile: [[1, 0], [0.95, 0.4], [0.55, 0.85], [0, 1]] }),
+        B([0, 5.0, 0], [0.1, 0.9, 0.1], '#f0e4bc', 'cyl', { metal: 1, em: '#ffd9a0', emI: 0.4 }),
+      ],
+    }),
   ],
 };
 

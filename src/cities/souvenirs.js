@@ -136,6 +136,54 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'jerusalem') {
+    // A pomegranate cut open: the whole fruit with a quarter wedge taken out,
+    // so the red seeds show on the two cut faces, and its little crown on top.
+    const rind = new THREE.MeshStandardMaterial({
+      color: 0xb3202e, roughness: 0.45, emissive: 0x5a0a12, emissiveIntensity: 0.4, side: THREE.DoubleSide,
+    });
+    const pith = new THREE.MeshStandardMaterial({
+      color: 0xf2dcc0, roughness: 0.6, emissive: 0x6a5040, emissiveIntensity: 0.25, side: THREE.DoubleSide,
+    });
+    const seed = new THREE.MeshStandardMaterial({
+      color: 0xe0203a, roughness: 0.2, emissive: 0x900818, emissiveIntensity: 0.55,
+    });
+    const R = 0.27;
+    // built in its own group, turned so the cut faces the front
+    const fruit = new THREE.Group();
+    fruit.rotation.y = Math.PI * 0.8;
+    g.add(fruit);
+    // three quarters of a sphere: the missing wedge is the quadrant x<0, z<0
+    fruit.add(new THREE.Mesh(new THREE.SphereGeometry(R, 22, 16, 0, Math.PI * 1.5), rind));
+    const face = new THREE.CircleGeometry(R * 0.985, 20, Math.PI / 2, Math.PI);   // half disc, x<0
+    const seedGeo = new THREE.SphereGeometry(0.021, 6, 5);
+    for (const turn of [0, -Math.PI / 2]) {
+      const half = new THREE.Group();
+      half.add(new THREE.Mesh(face, pith));
+      // the seeds, packed edge to edge across the flesh, a pale rim of pith
+      // left round the outside
+      for (let row = -6; row <= 6; row++) {
+        for (let col = 0; col < 8; col++) {
+          const x = -(col + (row & 1 ? 0.5 : 0)) * 0.034 - 0.01, y = row * 0.03;
+          if (Math.hypot(x, y) > R * 0.84) continue;
+          const sd = new THREE.Mesh(seedGeo, seed);
+          const jig = Math.sin(row * 12.9 + col * 78.2) * 43758.5;   // fixed per seed
+          sd.position.set(x + ((jig % 1) - 0.5) * 0.012, y + (((jig * 7) % 1) - 0.5) * 0.012, -0.012);
+          half.add(sd);
+        }
+      }
+      half.rotation.y = turn;
+      fruit.add(half);
+    }
+    const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.065, 0.07, 6), rind);
+    crownBase.position.y = R + 0.02;
+    fruit.add(crownBase);
+    for (let i = 0; i < 5; i++) {                              // the pointed sepals
+      const a = (i / 5) * Math.PI * 2;
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.06, 4), rind);
+      tip.position.set(Math.cos(a) * 0.04, R + 0.075, Math.sin(a) * 0.04);
+      fruit.add(tip);
+    }
   } else {
     const marble = new THREE.MeshStandardMaterial({
       color: 0xf4efe4, roughness: 0.3, emissive: 0x9a9280, emissiveIntensity: 0.25,
