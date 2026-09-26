@@ -246,9 +246,11 @@ export class Player {
     this.body.add(strapR);
   }
 
+  // onAction, when set, hears every move that actually took effect — a jump
+  // while already airborne does not count. The ghost recorder listens here.
   moveLane(dir, sfx) {
     const next = THREE.MathUtils.clamp(this.lane + dir, 0, 2);
-    if (next !== this.lane) { this.lane = next; sfx.lane(); }
+    if (next !== this.lane) { this.lane = next; sfx.lane(); this.onAction?.(dir < 0 ? 'L' : 'R'); }
   }
 
   jump(sfx) {
@@ -256,6 +258,7 @@ export class Player {
       this.vy = JUMP_V;
       this.grounded = false;
       sfx.jump();
+      this.onAction?.('J');
     }
   }
 
@@ -264,6 +267,7 @@ export class Player {
       this.rolling = 0.62;
       if (!this.grounded) this.vy = -16; // slam down
       sfx.roll();
+      this.onAction?.('D');
     }
   }
 

@@ -1,6 +1,13 @@
 import * as THREE from '../../vendor/three.module.js';
 import { LANES, JUMP_V, GRAVITY } from './player.js';
 import { makeSky } from '../core/engine.js';
+
+// Which version of course generation this is. A seed builds the same street
+// only while this stays the same, so saved ghosts (src/run/ghost.js) carry it
+// and are dropped when it changes. Bump it with ANY change to what a seed
+// generates; test/determinism.mjs fingerprints the courses to catch a change
+// made without a bump.
+export const COURSE_VERSION = 1;
 import { resolveStreet } from '../cities/themes.js';
 import {
   roadTexture, sidewalkTexture, makeBuilding, makeProp, makeVehicle,

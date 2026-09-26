@@ -49,10 +49,12 @@ export const STORAGE = {
   ENTITLEMENTS: 'cityrunner2.ent',
   /** Music/sfx/volume preferences. src/core/audio.js */
   AUDIO: 'cityrunner2.audio',
+  /** Best run per street, replayed as a ghost: moves, scores, seed. src/run/ghost.js */
+  GHOSTS: 'cityrunner2.ghosts',
 };
 
 /** Removed by eraseAllData(). See the split rationale above. */
-export const ERASED_KEYS = [STORAGE.IDENTITY, STORAGE.SAVE, STORAGE.SCORES, STORAGE.LIFETIME_SCORE];
+export const ERASED_KEYS = [STORAGE.IDENTITY, STORAGE.SAVE, STORAGE.SCORES, STORAGE.LIFETIME_SCORE, STORAGE.GHOSTS];
 
 /** Deliberately survives eraseAllData(). Each entry is justified above. */
 export const KEPT_KEYS = [STORAGE.ENTITLEMENTS, STORAGE.AUDIO];

@@ -41,6 +41,10 @@
     border-radius:999px;padding:7px 16px;font-weight:700;font-size:17px;letter-spacing:.4px;
     display:flex;align-items:center;gap:8px;box-shadow:0 4px 18px rgba(0,0,0,.35)}
   .coin-dot{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff2b3,var(--gold) 55%,#b8860b);box-shadow:0 0 8px var(--gold)}
+  /* racing your best run: the score gap to the ghost, only on a ghost run */
+  #hud-ghost{display:none;margin-left:8px;font-size:.62em;font-weight:800;letter-spacing:.5px}
+  body.ghost-run #hud-ghost{display:inline}
+  #hud-ghost.ahead{color:#7dffa8} #hud-ghost.behind{color:#ff9a8a}
   #hud-city{position:absolute;top:60px;left:50%;transform:translateX(-50%);font-size:13px;font-weight:600;
     letter-spacing:3px;text-transform:uppercase;opacity:.85;text-shadow:0 2px 8px #000;white-space:nowrap}
   #hud-timer{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:34px;font-weight:800;
@@ -890,7 +894,7 @@
   <div id="hud-progress"></div>
   <div class="hud-top">
     <div class="pill"><img id="hud-coin-icon" src="assets/souvenirs/nyc.png" alt=""><span id="hud-coins">0</span><span class="hud-pieces-wrap"><img id="hud-piece-icon" alt="Monument pieces"><span id="hud-pieces">0/0</span></span></div>
-    <div class="pill"><span id="hud-score">0</span></div>
+    <div class="pill"><span id="hud-score">0</span><span id="hud-ghost"></span></div>
   </div>
   <div id="hud-city">NEW YORK · LEVEL 1</div>
   <div id="hud-timer">60</div>
@@ -1023,6 +1027,7 @@
     <div class="row"><span>Volume</span><input type="range" id="set-vol" min="0" max="100" step="5" aria-label="Volume"></div>
     <div class="row"><span>Reduced motion</span><button class="toggle" id="set-motion" aria-label="Reduced motion">OFF</button></div>
     <div class="row"><span>On-screen controls</span><button class="toggle" id="set-touchbtns" aria-label="On-screen controls">OFF</button></div>
+    <div class="row"><span>Race your best run</span><button class="toggle" id="set-ghost" aria-label="Race your best run">ON</button></div>
     <h3>Player</h3>
     <div class="row"><span id="set-name" class="muted">—</span>
       <button class="linkbtn" id="set-reroll" aria-label="Get a new nickname">new nickname</button></div>
