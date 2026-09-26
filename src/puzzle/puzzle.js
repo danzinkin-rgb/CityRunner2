@@ -214,6 +214,17 @@ function makeBlockTexture(def) {
         g.fillStyle = shade(c, 0.2); g.fillRect(x + m, y + m, w - 2 * m, 3);
         g.fillStyle = shade(c, -0.32); g.fillRect(x + m, y + h - m - 3, w - 2 * m, 3);
         g.strokeStyle = shade(c, -0.42); g.lineWidth = 3; g.strokeRect(x + 1, y + 1, w - 2, h - 2);
+        // two thousand years of weather: darker streaks running down from
+        // the joints, and pitting across the face
+        for (let k = 0; k < 3; k++) {
+          const sx = x + m + dRand(i * 5 + j * 11 + k, 8) * (w - 2 * m);
+          g.fillStyle = `rgba(60,48,30,${0.08 + dRand(i + k, 9) * 0.1})`;
+          g.fillRect(sx, y + m, 3 + dRand(k, i + 2) * 6, (h - 2 * m) * (0.4 + dRand(j + k, 3) * 0.6));
+        }
+        for (let k = 0; k < 26; k++) {
+          g.fillStyle = `rgba(40,30,18,${0.1 + dRand(k, i * 3 + j) * 0.15})`;
+          g.fillRect(x + m + dRand(k, i + 7 * j) * (w - 2 * m), y + m + dRand(k + 3, i + j) * (h - 2 * m), 3, 3);
+        }
       }
       return;
     }
@@ -747,6 +758,29 @@ function panoTex(cityId, P, fogHex, fogF) {
     // back ridge, hazed almost into the fog, then a firmer one in front
     ridge(HOR + 26, 54, 30, 0.7, 16, 2.1, hz(S.far, FAR + 0.14));
     ridge(HOR + 10, 78, 40, 2.4, 20, 0.5, farCol);
+  } else if (cityId === 'jerusalem') {
+    // The Judean hills: two soft ridges (same whole-harmonic trick as SF so
+    // they join at the wrap), with small flat-roofed stone houses stepping
+    // along the nearer one. Nothing tall: Jerusalem is low-rise stone.
+    const rY = (x, base, amp, h1, a1, h2, a2) => {
+      const a = (x / W) * Math.PI * 2;
+      return base - amp - h1 * Math.sin(2 * a + a1) - h2 * Math.sin(5 * a + a2);
+    };
+    const hill = (base, amp, h1, a1, h2, a2, col) => {
+      g.fillStyle = col;
+      g.beginPath(); g.moveTo(-80, PANO_H);
+      for (let x = -80; x <= W + 80; x += 12) g.lineTo(x, rY(x, base, amp, h1, a1, h2, a2));
+      g.lineTo(W + 80, PANO_H); g.closePath(); g.fill();
+    };
+    hill(HOR + 24, 50, 26, 1.1, 12, 2.6, hz(S.far, FAR + 0.14));
+    hill(HOR + 12, 34, 22, 2.2, 10, 0.4, farCol);
+    const houseCol = hz(S.accent, FAR + 0.05);
+    for (let x = -40, i = 0; x < W + 40; i++) {
+      const bw = (3 + dRand(i, 31) * 3.5) * U, bh = (1.6 + dRand(i, 32) * 1.6) * U;
+      const y = rY(x + bw / 2, HOR + 12, 34, 22, 2.2, 10, 0.4) + 2;
+      if (dRand(i, 33) > 0.35) { g.fillStyle = houseCol; g.fillRect(x, y - bh, bw, bh + 3); }
+      x += bw + (0.4 + dRand(i, 34) * 3) * U;
+    }
   } else {
     farRow(20, 46, 10, 22, 0.5, 4, 51, (x, y, bw, bh, i) => {
       if (dRand(i, 6) > 0.7) {
@@ -961,6 +995,51 @@ function panoTex(cityId, P, fogHex, fogF) {
       g.fillStyle = trimCol;
       g.fillRect(x - 2, y - 2, bw + 4, 3);
       x += bw + 1.2 * U; i++;
+    }
+  } else if (cityId === 'jerusalem') {
+    // Low stone houses with flat roofs and the odd small dome, then the Old
+    // City wall in front: crenellated, with square towers and an arched gate,
+    // all in the same pale limestone. Cypresses break the line.
+    const stone = hz(S.accent, NEAR * 1.6), stoneD = hz(S.trim, NEAR * 0.9);
+    let x = -60, i = 0;
+    while (x < W + 70) {
+      const bw = (5 + dRand(i, 1) * 6) * U, bh = (4 + dRand(i, 2) * 3) * U;
+      const y = HOR - 2 - bh;
+      g.fillStyle = nearCol; g.fillRect(x, y, bw, bh + 12);
+      g.fillStyle = shade1; g.fillRect(x + bw * 0.74, y, bw * 0.26, bh + 12);
+      panoWindows(g, x + 4, y + 6, bw - 8, bh - 10, i, { cw: 3, ch: 5, gx: 7, gy: 8, p: 0.3, win });
+      if (i % 5 === 2) panoDome(g, x + bw / 2, y, (1.8 + dRand(i, 5)) * U, trimCol, roofCol);
+      x += bw + 0.6 * U; i++;
+    }
+    // the wall
+    const wallTop = HOR + 8 - 5.2 * U;
+    g.fillStyle = stone; g.fillRect(-60, wallTop, W + 120, PANO_H - wallTop);
+    g.fillStyle = 'rgba(0,0,0,0.12)';
+    for (let yy = wallTop + 0.8 * U; yy < HOR + 8; yy += 0.8 * U) g.fillRect(-60, yy, W + 120, 1.5);
+    const merlon = 0.55 * U;
+    for (let mx = -60; mx < W + 60; mx += merlon * 2) {
+      g.fillStyle = stone; g.fillRect(mx, wallTop - merlon, merlon, merlon + 1);
+    }
+    for (let k = 0; k < 14; k++) {                       // square towers
+      const tx = (k / 14) * W + dRand(k, 11) * 60, tw = (2.4 + dRand(k, 12)) * U, th = (1.8 + dRand(k, 13) * 1.2) * U;
+      g.fillStyle = stone; g.fillRect(tx, wallTop - th, tw, th + 2);
+      g.fillStyle = shade1; g.fillRect(tx + tw * 0.7, wallTop - th, tw * 0.3, th + 5.2 * U);
+      for (let mx = tx; mx < tx + tw - 2; mx += merlon * 1.6) {
+        g.fillStyle = stone; g.fillRect(mx, wallTop - th - merlon * 0.9, merlon * 0.8, merlon);
+      }
+      if (k % 4 === 1) {                                   // a gate
+        const gx = tx + tw / 2, gw = 1.1 * U, gy = HOR + 8;
+        g.fillStyle = stoneD;
+        g.beginPath(); g.moveTo(gx - gw, gy); g.lineTo(gx - gw, gy - 2.2 * U);
+        g.arc(gx, gy - 2.2 * U, gw, Math.PI, 0); g.lineTo(gx + gw, gy); g.fill();
+      }
+    }
+    const cyp = hz('#2c3e28', NEAR * 0.8);
+    for (let k = 0; k < 9; k++) {
+      const cx = (0.06 + k * 0.11) * W + dRand(k, 21) * 80, h = (6 + dRand(k, 22) * 3) * U, w = 0.9 * U;
+      g.fillStyle = cyp;
+      g.beginPath(); g.moveTo(cx - w, wallTop + 4); g.quadraticCurveTo(cx - w, wallTop - h * 0.6, cx, wallTop - h);
+      g.quadraticCurveTo(cx + w, wallTop - h * 0.6, cx + w, wallTop + 4); g.fill();
     }
   } else {
     // Manhattan: every tower is a stack of setbacks, never a single slab

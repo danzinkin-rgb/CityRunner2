@@ -104,6 +104,19 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         g.fillRect(0, 0, 7, H);
         g.fillRect(W - 7, 0, 7, H);
       }
+      // Jerusalem stone: every building faced in pale limestone ashlar,
+      // each block a touch different in tone (a municipal rule since 1918)
+      if (theme.id === 'jerusalem') {
+        for (let y = 0, row = 0; y < H; y += 18, row++) {
+          for (let x = -(row % 2) * 17; x < W; x += 34) {
+            const t = Math.random();
+            g.fillStyle = t < 0.5 ? `rgba(0,0,0,${t * 0.1})` : `rgba(255,248,230,${(t - 0.5) * 0.14})`;
+            g.fillRect(x + 1, y + 1, 32, 16);
+            g.fillStyle = 'rgba(80,64,40,.18)'; g.fillRect(x, y, 1, 18);
+          }
+          g.fillStyle = 'rgba(80,64,40,.2)'; g.fillRect(0, y, W, 1);
+        }
+      }
       // rusticated stone joints for stone styles
       if (style === 'flagship' || style === 'arcade' || style === 'hotel' || style === 'baroque' || style === 'deptstore' || style === 'beauxarts') {
         g.fillStyle = 'rgba(0,0,0,.07)';
@@ -130,6 +143,31 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         }
 
         for (let cIdx = 0; cIdx < cols; cIdx++) {
+          if (theme.id === 'jerusalem') {
+            // tall arched windows with a stone sill, some behind green
+            // iron shutters, as on the stone houses of the city
+            const x = cIdx * ww + ww * 0.28, y = rowY + wh * 0.16, w = ww * 0.44, h = wh * 0.66;
+            const arch = () => {
+              g.beginPath(); g.moveTo(x, y + h); g.lineTo(x, y + w / 2);
+              g.arc(x + w / 2, y + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w, y + h); g.closePath();
+            };
+            g.fillStyle = 'rgba(255,248,230,.35)';                    // dressed surround
+            g.fillRect(x - 3, y + w / 2, w + 6, h - w / 2 + 2);
+            const shut = Math.random() < 0.3;
+            const lit = !shut && Math.random() < (theme.lit ?? 0.16);
+            g.fillStyle = shut ? '#3e6a58' : lit ? theme.windowLit : '#2c3a4c';
+            arch(); g.fill();
+            if (shut) {
+              g.fillStyle = 'rgba(0,0,0,.25)';
+              for (let ly = y + w / 2; ly < y + h; ly += 4) g.fillRect(x + 1, ly, w - 2, 1);
+            } else {
+              g.strokeStyle = 'rgba(30,30,30,.5)'; g.lineWidth = 1.5;
+              g.beginPath(); g.moveTo(x + w / 2, y); g.lineTo(x + w / 2, y + h); g.stroke();
+            }
+            g.fillStyle = theme.trim || '#f6ecd0';                    // sill
+            g.fillRect(x - 5, y + h, w + 10, 4);
+            continue;
+          }
           const tall = theme.id === 'paris' || style === 'rowhouse' || style === 'victorian';
           const x = cIdx * ww + ww * (tall ? 0.22 : 0.18);
           const y = rowY + wh * (tall ? 0.12 : 0.2);
@@ -237,6 +275,7 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
       else if (style === 'baroque') paintBaroqueGround(G);
       else if (style === 'rowhouse') paintRowhouseGround(G);
       else if (style === 'beauxarts') paintBeauxGround(G);
+      else if (style === 'market') paintMarketGround(G);
       else paintDefaultShops(G);
 
       g.fillStyle = 'rgba(0,0,0,.3)';
@@ -479,6 +518,56 @@ function paintArcadeGround({ g, W, H, shopY, SHOP_H, theme }) {
     g.fillRect(ax, shopY + SHOP_H * 0.3, w2, SHOP_H * 0.7);
   }
   g.fillStyle = 'rgba(0,0,0,.15)'; g.fillRect(0, shopY, W, 4);
+}
+
+// Mahane Yehuda: stall fronts. Some are open, crates of produce and sacks
+// of spice under a striped awning; the rest have their roll-down shutters
+// down, painted with motifs invented for the game (stars and tiles, a
+// pomegranate, an olive sprig). The real market's shutter paintings are the
+// work of a living artist and must never be copied or approximated.
+function paintMarketGround({ g, W, H, shopY, SHOP_H, theme }) {
+  const n = 3, sw = W / n;
+  const produce = ['#d8402a', '#f0a020', '#6aa040', '#e8c040', '#a0302a', '#8a5a2a'];
+  for (let i = 0; i < n; i++) {
+    const x = i * sw;
+    if (Math.random() < 0.55) {
+      g.fillStyle = '#3a2e22'; g.fillRect(x + 2, shopY, sw - 4, SHOP_H);
+      const cols = pickR(theme.storefront || ['#a0522e']);
+      for (let ax = x + 3; ax < x + sw - 3; ax += 10) {              // striped awning
+        g.fillStyle = ((ax - x) / 10) % 2 < 1 ? cols : '#f2ead6';
+        g.fillRect(ax, shopY, Math.min(10, x + sw - 3 - ax), SHOP_H * 0.16);
+      }
+      for (let r = 0; r < 2; r++) {                                   // crates and sacks
+        for (let cx = x + 6; cx < x + sw - 10; cx += 14) {
+          const cy = H - 6 - (r + 1) * SHOP_H * 0.2;
+          g.fillStyle = '#9a7040'; g.fillRect(cx, cy, 12, SHOP_H * 0.18);
+          g.fillStyle = pickR(produce);
+          for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(cx + 3 + k * 3, cy + 2, 2.4, 0, 7); g.fill(); }
+        }
+      }
+    } else {
+      g.fillStyle = '#8a8a86'; g.fillRect(x + 2, shopY, sw - 4, SHOP_H);   // roll-down shutter
+      g.fillStyle = 'rgba(0,0,0,.18)';
+      for (let y = shopY + 3; y < H; y += 5) g.fillRect(x + 2, y, sw - 4, 1);
+      const cx = x + sw / 2, cy = shopY + SHOP_H * 0.52, r = Math.min(sw, SHOP_H) * 0.28;
+      const motif = (Math.random() * 3) | 0;
+      if (motif === 0) {                                              // star and tile
+        g.fillStyle = '#2e5e8e'; g.fillRect(cx - r, cy - r, r * 2, r * 2);
+        g.fillStyle = '#f2e6c8'; g.beginPath();
+        for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, rr = k % 2 ? r * 0.45 : r * 0.9; g.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); }
+        g.fill();
+      } else if (motif === 1) {                                       // a pomegranate
+        g.fillStyle = '#b3202e'; g.beginPath(); g.arc(cx, cy + r * 0.1, r * 0.8, 0, 7); g.fill();
+        g.fillRect(cx - r * 0.18, cy - r * 0.95, r * 0.36, r * 0.3);
+      } else {                                                        // an olive sprig
+        g.strokeStyle = '#4a5a30'; g.lineWidth = 2;
+        g.beginPath(); g.moveTo(cx - r, cy + r * 0.6); g.lineTo(cx + r, cy - r * 0.6); g.stroke();
+        g.fillStyle = '#6a8040';
+        for (let k = 0; k < 5; k++) { g.beginPath(); g.ellipse(cx - r + k * r * 0.45, cy + r * 0.5 - k * r * 0.28, r * 0.28, r * 0.1, -0.6, 0, 7); g.fill(); }
+      }
+    }
+  }
+  g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(0, shopY, W, 3);
 }
 
 // Montmartre: bistro fronts, hand-painted signs, checked awnings.
@@ -961,6 +1050,18 @@ export function makeBuilding(theme, w, h, d, rng = Math.random, side = 0) {
       const lid = new THREE.Mesh(new THREE.ConeGeometry(1.0, 0.6, 10),
         cached('mat:tanklid', () => new THREE.MeshStandardMaterial({ color: 0x6a4a32, roughness: 0.9 })));
       lid.position.y = 1.2; top.add(lid);
+    } else if (theme.id === 'jerusalem') {
+      // a rooftop solar water heater: a tilted panel and its white tank,
+      // on nearly every flat roof in Israel
+      top = new THREE.Group();
+      const panel = new THREE.Mesh(boxGeo,
+        cached('mat:solarPanel', () => new THREE.MeshStandardMaterial({ color: 0x24344c, roughness: 0.3, metalness: 0.5 })));
+      panel.scale.set(1.8, 0.08, 1.4); panel.rotation.x = -0.6; panel.position.set(0, -0.3, 0.3);
+      top.add(panel);
+      const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.8, 10),
+        cached('mat:solarTank', () => new THREE.MeshStandardMaterial({ color: 0xe8e8e2, roughness: 0.5 })));
+      tank.rotation.z = Math.PI / 2; tank.position.set(0, 0.05, -0.45);
+      top.add(tank);
     } else if (theme.id === 'rome') {
       top = new THREE.Mesh(boxGeo,
         cached('mat:pergola', () => new THREE.MeshStandardMaterial({ color: 0x8a6a48, roughness: 0.9 })));

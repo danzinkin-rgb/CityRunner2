@@ -622,37 +622,71 @@ const defs = {
   // plain masonry textures. The spec's 'relief' paints robed figures, which
   // have no place on the Western Wall.
 
-  // The Western Wall: a long, low limestone wall you face, fronted by its
-  // plaza. Huge smooth Herodian stones at the base give way to smaller, later
-  // courses above. No figures, no partition, no prayer notes.
+  // The Western Wall, as it is seen from the prayer plaza. One sheer, flat
+  // face about three times as wide as it is tall (the first version stepped
+  // back like a staircase, which the real wall does not do), in three bands
+  // you can read from across the plaza: huge pale Herodian stones with
+  // drafted margins at the bottom, a band of mid-sized stones, then many
+  // courses of small stones at the top. Caper plants hang from the joints.
+  // Above, the trees of the platform, and the gold Dome of the Rock
+  // glimpsed behind on the left, as in every photograph of the place.
+  // Wilson's Arch opens at the left end; the wooden Mughrabi bridge climbs
+  // on its scaffolding on the right. No figures, partition or prayer notes.
   kotel: [
-    B([0, 0.15, 3.5], [15.6, 0.3, 3.0], '#d8c9a0', 'box', {
-      adorn: [-7.2, 7.2].map((x) => B([x, 1.85, -0.9], [0.9, 3.6, 0.9], '#2e4a30', 'lathe',
-        { profile: [[0, 0], [0.8, 0.06], [1, 0.3], [0.75, 0.7], [0, 1]], emI: 0 })),
+    B([0, 0.12, 3.2], [21, 0.24, 5.2], '#e4dac2', 'box', { tex: 'stone', tx: { cols: 14, rows: 4 } }),   // plaza
+    // Herodian courses: three rows, each in two identical halves
+    ...[0, 1, 2].flatMap((row) => [-1, 1].map((side) => B([side * 4.5, 0.89 + row * 1.3, -row * 0.05],
+      [9, 1.3, 1.2], row === 1 ? '#dccfaa' : '#d6c9a2', 'box', { tex: 'herodian', tx: { cols: 3, rows: 1 } }))),
+    // the band of mid-sized stones, with the first caper plants
+    ...[-1, 1].map((side) => B([side * 4.5, 4.74, -0.15], [9, 1.2, 1.2], '#cfc29c', 'box', {
+      tex: 'stone', tx: { cols: 6, rows: 1 },
+      adorn: [[-2.6, 0.2], [1.9, -0.1]].map(([x, y]) => B([side * x, y, 0.62], [0.7, 0.6, 0.4], '#5f8040', 'sphere')),
+    })),
+    // many courses of small stones at the top, thick with caper plants
+    ...[-1, 1].map((side) => B([side * 4.5, 6.64, -0.2], [9, 2.6, 1.2], '#c8bb96', 'box', {
+      tex: 'stone', tx: { cols: 12, rows: 4 },
+      adorn: [[-3.4, 0.6, 0.9], [-1.1, -0.4, 0.7], [0.8, 0.9, 1.0], [2.9, -0.2, 0.8], [3.8, 0.8, 0.6]].flatMap(([x, y, r]) => [
+        B([side * x, y, 0.64], [r, r * 0.85, 0.5], '#5f8040', 'sphere'),
+        B([side * x + 0.2, y - r * 0.5, 0.66], [r * 0.6, r * 0.8, 0.4], '#4e7034', 'sphere'),   // hanging down
+      ]),
+    })),
+    // the uneven top edge: odd stones of different heights
+    B([0, 8.25, -0.25], [18, 0.6, 1.2], '#c2b490', 'box', {
+      tex: 'stone', tx: { cols: 14, rows: 1 },
+      adorn: [-7.6, -5.1, -2.2, 0.9, 3.4, 6.2, 8.1].map((x, i) => B([x, 0.45 + (i % 3) * 0.12, 0], [1.1 + (i % 2) * 0.6, 0.3 + (i % 3) * 0.24, 1.1], '#c2b490')),
     }),
-    // Herodian base course: three megaliths with drafted margins
-    B([-3.6, 1.4, 1.4], [3.6, 2.6, 1.4], '#cabb8e', 'box', { tex: 'herodian' }),
-    B([0, 1.4, 1.4], [3.6, 2.6, 1.4], '#cabb8e', 'box', { tex: 'herodian' }),
-    B([3.6, 1.4, 1.4], [3.6, 2.6, 1.4], '#cabb8e', 'box', { tex: 'herodian' }),
-    // second Herodian course, one size down
-    B([-2.7, 3.4, 1.35], [5.4, 1.4, 1.3], '#d0c294', 'box', { tex: 'herodian', tx: { cols: 2, rows: 1 } }),
-    B([2.7, 3.4, 1.35], [5.4, 1.4, 1.3], '#d0c294', 'box', { tex: 'herodian', tx: { cols: 2, rows: 1 } }),
-    // end piers, full height, standing proud of the coursing
-    B([-6.2, 4.3, 1.4], [1.3, 7.4, 1.5], '#dccea2', 'box', { tex: 'stone' }),
-    B([6.2, 4.3, 1.4], [1.3, 7.4, 1.5], '#dccea2', 'box', { tex: 'stone' }),
-    // later courses, smaller stones, narrowing with height; caper plants
-    // grow from the joints (green tufts, no religious content)
-    B([0, 4.7, 1.3], [11.0, 1.1, 1.2], '#d8ca9e', 'box', {
-      tex: 'stone', adorn: [B([-4.4, 0.1, 0.62], [0.36, 0.3, 0.2], '#5a7a40'), B([3.9, -0.2, 0.62], [0.32, 0.28, 0.2], '#5a7a40')],
+    // Wilson's Arch, opening at the left end of the plaza
+    B([-10.6, 3.3, 1.2], [3.2, 6.6, 3.6], '#d2c49e', 'archvault'),
+    // the Mughrabi bridge: a covered wooden ramp on scaffolding, climbing
+    // from the plaza up to the gate at the top of the wall
+    // Seen side-on from the plaza it climbs diagonally from the right up to
+    // the gate at the top corner of the wall: deck, enclosed wooden sides,
+    // a roof, and the scaffolding it stands on.
+    B([12.8, 4.1, 0.8], [7.4, 6.8, 2.6], '#8a6a44', 'group', {
+      adorn: (() => {
+        const run = 7.0, rise = 6.4, th = -Math.atan2(rise, run), len = Math.hypot(run, rise);
+        const deckY = (x) => -x * (rise / run);          // deck height at x, relative
+        return [
+          B([0, 0, 0], [len, 0.22, 2.0], '#7a5c3a', 'box', { rotZ: th }),                      // deck
+          B([0, 1.5, 0], [len, 0.16, 2.4], '#5a4632', 'box', { rotZ: th }),                    // roof
+          B([0, 0.75, 1.0], [len, 1.3, 0.1], '#9a7a50', 'box', { rotZ: th }),                  // side facing the plaza
+          ...[-2.6, -0.9, 0.8, 2.5].flatMap((x) => [-0.8, 0.8].map((z) => {
+            const top = deckY(x) - 0.1, h = top + 4.0;                                        // down to the plaza
+            return B([x, top - h / 2, z], [0.14, h, 0.14], '#6e6e6e', 'cyl');
+          })),
+        ];
+      })(),
     }),
-    B([0, 5.75, 1.25], [10.6, 1.0, 1.15], '#d2c496', 'box', { tex: 'stone' }),
-    B([0, 6.7, 1.2], [10.2, 0.9, 1.1], '#d8ca9e', 'box', {
-      tex: 'stone', adorn: [B([-1.2, 0.05, 0.58], [0.34, 0.3, 0.2], '#5a7a40'), B([2.6, -0.1, 0.58], [0.3, 0.26, 0.2], '#5a7a40')],
+    // above and behind: the trees of the platform, and the gold dome
+    B([0, 10.0, -2.6], [20, 2.8, 3.0], '#c8b98e', 'group', {
+      adorn: [
+        ...[-8.2, -3.1, 1.8, 5.4, 8.6].map((x, i) => B([x, 0.3 + (i % 2) * 0.3, 0.3], [0.9, 3.4 + (i % 2) * 0.8, 0.9], '#2e4a30', 'lathe',
+          { profile: [[0, 0], [0.8, 0.06], [1, 0.3], [0.75, 0.7], [0, 1]], emI: 0 })),
+        ...[-0.6, 3.6, 7.0].map((x) => B([x, -0.4, 0.2], [2.0, 1.6, 1.8], '#56733c', 'sphere')),   // olive trees
+        B([-5.4, -0.6, -0.8], [3.0, 1.2, 3.0], '#d8cba0', 'cyl'),                                  // the Dome's drum
+        B([-5.4, 0.0, -0.8], [3.0, 2.0, 3.0], '#e8b840', 'dome', { metal: 1, em: '#ffcf5a', emI: 0.6 }),
+      ],
     }),
-    B([0, 7.55, 1.15], [9.8, 0.8, 1.05], '#d2c496', 'box', { tex: 'stone' }),
-    B([0, 8.15, 1.2], [11.4, 0.5, 1.3], '#e2d4a8'),                        // cornice
-    // set back behind: the edge of the platform the wall holds up
-    B([0, 9.2, -0.6], [10.0, 1.6, 1.0], '#c2b284', 'box', { tex: 'stone', em: '#ffd9a0', emI: 0.08 }),
   ],
 
   // The Dome of the Rock: an octagon clad in marble below and blue tilework

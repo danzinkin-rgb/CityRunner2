@@ -292,6 +292,8 @@ export const CITIES = [
     windowLit: '#ffd8a0', windowDay: '#a8c4dc', accent: '#c8962e',
     storefront: ['#a0522e', '#2e6a4f', '#8a6a2e', '#5a3a7a', '#b0741e'],
     props: ['lamp_jerusalem', 'cypress', 'awning'],
+    // Low-rise: three or four storeys of stone, not a city of towers.
+    hBase: 10, hVar: 4,
     // A city bus in green and white. Deliberately no operator name or logo:
     // every brand in the game is fictional (docs/COMPLIANCE.md).
     vehicle: 'citybus',
@@ -299,7 +301,7 @@ export const CITIES = [
     levels: [
       { // Jaffa Road — the seam between old and new: the light-rail spine
         // (rails and overhead wires), stone frontage near the Old City end.
-        key: 'jaffa',
+        key: 'jaffa', facade: 'arcade',
         palette: ['#e8d8ae', '#e0d0a0', '#ecdcb6', '#d8c898', '#e4d4a8', '#eaddb8'],
         roadStyle: 'streetcar', road: '#7e7668', lane: '#e4d8b8',
         props: ['lamp_jerusalem', 'streetcar_pole', 'planetree'],
@@ -309,16 +311,16 @@ export const CITIES = [
       },
       { // Mahane Yehuda — the market: stalls and awnings in narrow lanes,
         // string lights for the bars the same alleys become after dark.
-        key: 'mahane',
+        key: 'mahane', facade: 'market',
         palette: ['#dcc794', '#d2ba82', '#e2d0a2', '#c8b076', '#d8c48e', '#e6d4a6'],
-        setback: 3.0, hBase: 8, hVar: 3, secondRow: 0,
+        setback: 3.0, hBase: 7, hVar: 2, secondRow: 0,   // two or three storeys over the stalls
         props: ['lamp_jerusalem', 'awning', 'souvenirstall'],
         ads: ['MAHANE YEHUDA', 'SHUK', 'HALVA & SPICE'],
         span: 'string', spanFreq: 0.7, lit: 0.4,
       },
       { // The Cardo — the Roman and Byzantine colonnaded high street:
         // flagstone paving and columns, an archaeological set-piece.
-        key: 'cardo',
+        key: 'cardo', facade: 'arcade',
         palette: ['#ecdfc0', '#e4d6b2', '#f0e4c8', '#d8caa0', '#eadcb8', '#f2e6ca'],
         roadStyle: 'travertine', road: '#c4b48c', lane: '#c4b48c', sidewalk: '#cabb92',
         setback: 5.2, hBase: 9, hVar: 3, secondRow: 0.2,

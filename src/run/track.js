@@ -765,7 +765,10 @@ export class Track {
     // coins
     for (const c of this.coins) {
       if (c.taken) continue;
-      c.mesh.rotation.y = this.coinSpin;   // souvenirs spin about vertical axis
+      // Souvenirs sway to face the player rather than spin: a full turn at
+      // speed hid what they were (the pomegranate's cut, the phone box's
+      // glazing). About 45 degrees either way, once every three seconds.
+      c.mesh.rotation.y = Math.sin(this.coinSpin * 0.55) * 0.8;
       const wz = c.mesh.position.z + c.chunk.position.z + this.group.position.z;
       if (Math.abs(wz) < 0.9 && Math.abs(c.mesh.position.x - hb.x) < 0.9 &&
           c.mesh.position.y > hb.y0 - 0.6 && c.mesh.position.y < hb.y1 + 0.6) {

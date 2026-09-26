@@ -175,13 +175,20 @@ export function makeCollectible(theme) {
       half.rotation.y = turn;
       fruit.add(half);
     }
-    const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.065, 0.07, 6), rind);
-    crownBase.position.y = R + 0.02;
-    fruit.add(crownBase);
-    for (let i = 0; i < 5; i++) {                              // the pointed sepals
-      const a = (i / 5) * Math.PI * 2;
-      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.06, 4), rind);
-      tip.position.set(Math.cos(a) * 0.04, R + 0.075, Math.sin(a) * 0.04);
+    // The crown is what says "pomegranate" rather than "apple": a flared,
+    // trumpet-shaped neck with six pointed sepals bending outwards, drawn
+    // bigger than life so it reads at pickup size.
+    const neck = new THREE.Mesh(new THREE.LatheGeometry([
+      new THREE.Vector2(0.075, 0), new THREE.Vector2(0.05, 0.05), new THREE.Vector2(0.048, 0.1),
+      new THREE.Vector2(0.075, 0.15), new THREE.Vector2(0.1, 0.17),
+    ], 12), rind);
+    neck.position.y = R - 0.03;
+    fruit.add(neck);
+    for (let i = 0; i < 6; i++) {                              // the pointed sepals
+      const a = (i / 6) * Math.PI * 2;
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.1, 4), rind);
+      tip.position.set(Math.cos(a) * 0.1, R + 0.17, Math.sin(a) * 0.1);
+      tip.rotation.set(Math.sin(a) * 0.55, 0, -Math.cos(a) * 0.55);   // lean outwards
       fruit.add(tip);
     }
   } else {
