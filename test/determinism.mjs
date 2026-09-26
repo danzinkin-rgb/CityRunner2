@@ -40,8 +40,8 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(String(e).slice(0, 160)));
 
 /** Fingerprint the obstacle layout of a freshly-generated track. */
-async function layoutFor(seed) {
-  await page.goto(`${BASE}/?view=run&city=nyc&level=2&god=1&seed=${seed}`, { waitUntil: 'load' });
+async function layoutFor(seed, city = 'nyc', level = 2) {
+  await page.goto(`${BASE}/?view=run&city=${city}&level=${level}&god=1&seed=${seed}`, { waitUntil: 'load' });
   await page.waitForTimeout(2000);
   return page.evaluate(() => {
     const { track } = window.__cr;
@@ -114,6 +114,21 @@ check('the daily pool matches the one recorded for its version',
 check('the daily leaderboard id carries the version', dv.board.endsWith(`.daily.v${dv.version}`), dv.board);
 check('every daily city exists, and only pool cities are dealt',
   dv.allExist && dv.dealt === dv.pool.split(',').sort().join(','), `dealt over 200 days: ${dv.dealt}`);
+
+// 6. the courses are what COURSE_VERSION says they are. Saved ghosts replay a
+// seed, so a change to what a seed builds must come with a new COURSE_VERSION
+// (src/run/track.js), which retires the old ghosts. Three streets that cover
+// the city-specific branches (Rome's weaving Vespas, SF's cable cars).
+const KNOWN_COURSE = { 1: '6d6e0b32' };
+const fnv = (str) => { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, '0'); };
+const courseSrc = readFileSync(join(HERE, '..', 'src', 'run', 'track.js'), 'utf8');
+const courseVersion = +(courseSrc.match(/export const COURSE_VERSION = (\d+);/) || [])[1];
+const prints = [];
+for (const [c, lv] of [['nyc', 1], ['rome', 3], ['sf', 2]]) prints.push(await layoutFor(4242, c, lv));
+const courseHash = fnv(prints.join('#'));
+check('the courses match the fingerprint recorded for COURSE_VERSION',
+  KNOWN_COURSE[courseVersion] === courseHash,
+  `v${courseVersion}: ${courseHash} (recorded: ${KNOWN_COURSE[courseVersion] || 'none'}) — a changed course needs a new COURSE_VERSION`);
 
 if (errors.length) { failures++; console.log('✗ JS errors:\n    ' + [...new Set(errors)].join('\n    ')); }
 

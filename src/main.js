@@ -14,6 +14,7 @@ import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, 
 import { initIAP, getOffer, purchase, restore, onEntitlementGranted } from './core/iap.js';
 import { STORAGE } from './core/storage-keys.js';
 import { DEBUG_HOOKS, TESTER } from './core/debug.js';
+import { loadGhost, saveGhostIfBest, GhostRecorder, GhostRunner } from './run/ghost.js';
 
 export const VERSION = '1.1.0';
 import { Player, DEFAULT_STYLE } from './run/player.js';
@@ -294,6 +295,11 @@ function startRun() {
   // hidden after a daily). One run a day in a locked city is a taster, and it
   // ends there.
   if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall(); return; }
+  // Racing your best: a street you have finished before replays the course
+  // of your best run on it, with that run beside you as a ghost. Never on the
+  // daily (one course for everyone, and not yours to replay).
+  const best = !dailyMode && save.raceBest !== false ? loadGhost(city().id, level) : null;
+  if (best && runSeed == null) runSeed = best.seed;
   doFade(() => {
     disposeAll();
     scene = new THREE.Scene();
@@ -301,6 +307,11 @@ function startRun() {
     player = new Player(scene, characterById(save.equipped).style);
     const pieceDefs = looseDefs(city().landmarks[level - 1], level);
     track = new Track(scene, city(), level, runSeed, pieceDefs);
+    ghostRec = new GhostRecorder(track.seed);
+    player.onAction = (a) => ghostRec.move(track.distance, a);
+    ghost = best && best.seed === track.seed
+      ? new GhostRunner(scene, characterById(save.equipped).style, best) : null;
+    document.body.classList.toggle('ghost-run', !!ghost);
     piecesGot = 0;
     track.onPiece = () => {
       piecesGot++;
@@ -327,6 +338,7 @@ function startRun() {
     showScreen(null);
     hint('◀ ▶ move · ▲ jump · ▼ roll — or swipe');
     showGoal(city().landmarks[level - 1]);
+    if (ghost) setTimeout(() => { if (ghost && state === 'run') hint(`Racing your best run: ${ghost.data.score.toLocaleString()}`); }, 3000);
     startMusic(city().id);
     state = 'run';
   });
@@ -337,6 +349,7 @@ function startRun() {
 // monument was coming until the street ended.
 let goalTimer = 0;
 let piecesGot = 0, pieceHintShown = false;
+let ghostRec = null, ghost = null;   // this run's recording, and the best run replayed
 // Handed from the finished street to the puzzle: one boolean per loose piece.
 let lastRunPieces = null;
 let testerInvincible = false;   // tester builds only; see the Tester section below
@@ -553,6 +566,8 @@ function applyCityPalette() {
 
 function showStreetFacts() {
   lastRunPieces = track ? track.piecesCollected.slice() : null;
+  // a finished street that beats the saved one becomes the ghost to race
+  if (!dailyMode && ghostRec) saveGhostIfBest(city().id, level, ghostRec.result(score));
   fadeOutMusic();
   state = 'facts';
   applyCityPalette();
@@ -1068,6 +1083,7 @@ function renderSettings() {
   setToggle('set-music', audioPrefs.music);
   setToggle('set-sfx', audioPrefs.sfx);
   setToggle('set-motion', !!save.reducedMotion);
+  setToggle('set-ghost', save.raceBest !== false);
   setToggle('set-touchbtns', !!save.touchButtons);
   $('set-vol').value = Math.round(audioPrefs.volume * 100);
   $('set-name').textContent = getIdentity().name;
@@ -1138,6 +1154,10 @@ $('set-sfx').onclick = () => { audioPrefs.sfx = !audioPrefs.sfx; saveAudioPrefs(
 $('set-vol').oninput = (e) => { audioPrefs.volume = +e.target.value / 100; saveAudioPrefs(); };
 $('set-motion').onclick = () => {
   save.reducedMotion = !save.reducedMotion; persist(); applyReducedMotion(); renderSettings();
+};
+// Off: every street is a fresh random course, with no ghost.
+$('set-ghost').onclick = () => {
+  save.raceBest = save.raceBest === false; persist(); renderSettings();
 };
 $('set-touchbtns').onclick = () => {
   save.touchButtons = !save.touchButtons; persist(); applyTouchButtons(); renderSettings();
@@ -1232,6 +1252,8 @@ $('btn-next').onclick = () => {
 
 function disposeAll() {
   if (track) { track.dispose(); track = null; }
+  ghost = null; ghostRec = null;
+  document.body.classList.remove('ghost-run');
   if (puzzle) { puzzle.dispose(); puzzle = null; }
   if (scene) {
     // Geometry AND materials and their textures. Only geometry used to be
@@ -1270,6 +1292,14 @@ function frame() {
         () => { coins++; sfx.coin(); hapticLight(); score += 25; },
         () => crash());
       player.update(dt, speed);
+      ghostRec?.sample(track.distance, score);
+      if (ghost) {
+        ghost.update(dt, speed, track.distance);
+        const gap = Math.round(score - ghost.scoreAt(track.distance));
+        const el = $('hud-ghost');
+        el.textContent = `${gap >= 0 ? '▲' : '▼'}${Math.abs(gap).toLocaleString()} vs best`;
+        el.className = gap >= 0 ? 'ahead' : 'behind';
+      }
       if (track.done()) showStreetFacts();
     }
     // camera follow + speed shake
@@ -1426,6 +1456,7 @@ if (DEBUG_HOOKS && q.get('view')) {
     get state() { return state; },
     get cam() { return cam; },
     get track() { return track; },
+    get ghost() { return ghost; },
     get player() { return player; },
     get speed() { return speed; },
     get seed() { return runSeed; },
