@@ -250,12 +250,13 @@ export const MONUMENT_FACTS = {
     ] },
   // Not on a street at the moment (the Holy Sepulchre is the Cardo's
   // monument); kept for a fourth Jerusalem street.
-  towerdavid: {
+  // altitude: the Tower of David Museum's own figure for the top of the
+  // Phasael Tower, 777 m above sea level (tod.org.il/en/event/jerusalem360,
+  // checked 26 Sept 2026). Shown in place of a height, which is not sourced.
+  towerdavid: { altitude: 777,
     facts: [
       { big: '1655', label: 'the minaret', text: 'The tower everyone photographs is an Ottoman minaret, added more than 2,500 years after David.' },
       { big: '2nd', unit: 'c. BCE', label: 'Hasmonean foundations', text: "The citadel's foundations are Hasmonean — a Jewish ruling dynasty in Judea at that time — and were later rebuilt by Herod, Crusaders, Mamluks and Ottomans in turn." },
-      // 777 m: the Tower of David Museum's own figure for the top of the
-      // Phasael Tower (tod.org.il/en/event/jerusalem360), checked 26 Sept 2026.
-      { big: '777', unit: 'm', label: 'above sea level', text: 'The name is a misnomer: Byzantine visitors assumed the citadel was King David\'s palace, and it stuck. The top of its Phasael Tower stands 777 m above sea level.' },
+      { text: 'The name is a misnomer: Byzantine visitors assumed the citadel was King David\'s palace, and it stuck.' },
     ] },
 };

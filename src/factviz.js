@@ -300,9 +300,14 @@ const SCALE_REFS = {
  * Height of a monument against a familiar object, so "96 m" means something.
  * The reference is drawn as a real silhouette scaled to true relative height.
  */
-export function paintScale(container, metres, compare, name, reduced = false) {
+export function paintScale(container, metres, compare, name, reduced = false, altitude = 0) {
   container.innerHTML = '';
-  if (!metres) return;
+  if (!metres) {
+    // No sourced height for the building itself (the Tower of David, the
+    // Chapultepec Castle), but a sourced altitude: show that instead.
+    if (altitude) paintAltitude(container, altitude, reduced);
+    return;
+  }
   const ref = SCALE_REFS[compare] || SCALE_REFS.bus;
   const refPct = Math.max(3, (ref.h / metres) * 100);
 
@@ -322,6 +327,28 @@ export function paintScale(container, metres, compare, name, reduced = false) {
   el('div', 'fv-scap', small).textContent = ref.name;
 
   const grow = () => { col.style.height = '100%'; holder.style.height = `${refPct}%`; };
+  if (reduced) grow(); else requestAnimationFrame(grow);
+}
+
+/**
+ * Altitude, for a monument whose own height is not sourced but whose height
+ * above sea level is: a hill rising from the sea, the monument marked at the
+ * summit. Same slot, labels and rise animation as the height comparison.
+ * Set `altitude` (metres above sea level) on its MONUMENT_FACTS entry, with
+ * a source, and leave `scale` off.
+ */
+function paintAltitude(container, alt, reduced) {
+  const row = el('div', 'fv-scale fv-alt', container);
+  const bar = el('div', 'fv-sbar', row);
+  el('div', 'fv-sval', bar).textContent = `${alt.toLocaleString('en-GB')} m`;
+  const holder = el('div', 'fv-ahill', bar);
+  const svg = svgEl('svg', { viewBox: '0 0 160 100', preserveAspectRatio: 'none' });
+  svg.appendChild(svgEl('path', { class: 'hill', d: 'M0,100 L0,90 C30,86 50,40 80,9 C106,38 128,84 160,90 L160,100 Z' }));
+  svg.appendChild(svgEl('rect', { class: 'sea', x: 0, y: 92, width: 160, height: 8 }));
+  svg.appendChild(svgEl('rect', { class: 'pin', x: 77, y: 3, width: 6, height: 7 }));
+  holder.appendChild(svg);
+  el('div', 'fv-scap', bar).textContent = 'above sea level';
+  const grow = () => { holder.style.height = '100%'; };
   if (reduced) grow(); else requestAnimationFrame(grow);
 }
 
