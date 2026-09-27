@@ -105,8 +105,8 @@ export const STREET_FACTS = {
         { text: 'The name comes from the corner where two streets meet: Haight Street and Ashbury Street.' },
       ] },
   ],
-  // DRAFT, awaiting Dan's sign-off: docs/cities/mexico-city.md §3, sources
-  // listed there.
+  // Approved by Dan, 27 September 2026: docs/cities/mexico-city.md §3,
+  // sources listed there.
   mexico: [
     { street: 'Paseo de la Reforma', tag: 'A boulevard built for an emperor',
       facts: [
@@ -270,7 +270,7 @@ export const MONUMENT_FACTS = {
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
     ] },
-  // Mexico City: DRAFT, awaiting Dan's sign-off (docs/cities/mexico-city.md §3).
+  // Mexico City: approved by Dan, 27 September 2026 (docs/cities/mexico-city.md §3).
   templomayor: { scale: 45, compare: 'bus',
     facts: [
       { big: '1325', label: 'construction began', text: 'Building started here soon after 1325, when the Mexica people founded their city on an island in a lake.' },

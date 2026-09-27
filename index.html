@@ -348,6 +348,7 @@
     #hud-hint{font-size:13px;padding:7px 14px;bottom:calc(70px + env(safe-area-inset-bottom))}
     #hud-timer{font-size:28px;top:calc(10px + env(safe-area-inset-top))}
     #btn-pause{top:calc(56px + env(safe-area-inset-top));right:12px;width:40px;height:40px}
+    #btn-ghost{top:calc(104px + env(safe-area-inset-top));right:12px;width:40px;height:40px;font-size:18px}
   }
   /* Safari's toolbars leave far less height than the device spec suggests:
      an iPhone 15 gives ~659px, an SE ~568px. Compress so the whole menu —
@@ -600,6 +601,12 @@
     border-radius:50%;border:1px solid rgba(255,255,255,.18);background:var(--glass);backdrop-filter:blur(8px);
     color:#fff;font-size:14px;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center}
   #btn-pause:active{transform:scale(.93)}
+  #btn-ghost{pointer-events:auto;position:absolute;top:112px;right:16px;width:44px;height:44px;display:none;
+    border-radius:50%;border:1px solid rgba(255,255,255,.18);background:var(--glass);backdrop-filter:blur(8px);
+    font-size:20px;cursor:pointer;align-items:center;justify-content:center;padding:0}
+  body.ghost-run #btn-ghost{display:flex}
+  #btn-ghost.off{opacity:.45;background:linear-gradient(135deg,transparent 46%,#ff9a8a 46%,#ff9a8a 54%,transparent 54%),var(--glass)}
+  body.ghost-off #hud-ghost{display:none}
   /* Souvenir icons: rendered from the real in-game collectibles. Emoji were
      both inaccurate (a classical BUILDING standing in for Rome's Caesar bust)
      and rendered as flat coloured boxes on iOS. */
@@ -919,6 +926,9 @@
     </div>
   </div>
   <button id="btn-pause" aria-label="Pause">❚❚</button>
+  <!-- Only on a ghost run: one tap and the ghost is gone (fun, but it can
+       also get in the way). Tap again to bring it back. -->
+  <button id="btn-ghost" aria-label="Hide the ghost" aria-pressed="true">👻</button>
   <div id="touchpad" aria-hidden="true">
     <button class="tbtn" id="t-left"  aria-label="Move left">◀</button>
     <button class="tbtn" id="t-jump"  aria-label="Jump">▲</button>
@@ -932,6 +942,7 @@
   <div class="label" style="margin:6px 0 34px">Take a breath</div>
   <button class="btn" id="btn-resume">RESUME</button>
   <button class="btn ghost" id="btn-quit">QUIT TO CITIES</button>
+  <button class="linkbtn" id="btn-pause-ghost" aria-label="Race your best run">Race your best run: ON</button>
 </div>
 
 <div id="screen-menu" class="screen on">

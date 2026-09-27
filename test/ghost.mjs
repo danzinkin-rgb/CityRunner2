@@ -5,7 +5,8 @@
  * street's ghost. The next run on the street replays the same course with the
  * ghost beside you, making the same moves at the same distances, and the HUD
  * shows the score gap. With "Race your best run" off, the street is a fresh
- * random course with no ghost. The daily never has a ghost.
+ * random course with no ghost. The daily never has a ghost. A ghost run has a
+ * button to hide the ghost at once, and the pause screen carries the setting.
  *
  * Usage: node test/ghost.mjs [baseUrl]
  */
@@ -97,6 +98,36 @@ await page.goto(RUN, { waitUntil: 'load' });
 await page.waitForFunction(() => window.__cr?.track, null, { timeout: 20000 });
 const s3 = await page.evaluate(() => ({ seed: window.__cr.track.seed, ghost: !!window.__cr.ghost }));
 check(!s3.ghost && s3.seed !== g.seed, 'with "Race your best run" off there is no ghost and a fresh course', JSON.stringify(s3));
+
+// 4. turning it off in-game: the HUD button hides the ghost and the gap at
+// once and turns racing off; the pause screen says so; a second tap undoes it
+await page.evaluate(() => {
+  const s = JSON.parse(localStorage.getItem('cityrunner2') || '{}'); s.raceBest = true;
+  localStorage.setItem('cityrunner2', JSON.stringify(s));
+});
+await page.goto(RUN, { waitUntil: 'load' });
+await page.waitForFunction(() => window.__cr?.ghost, null, { timeout: 20000 });
+await page.waitForTimeout(800);
+const btnShown = await page.evaluate(() => getComputedStyle(document.getElementById('btn-ghost')).display !== 'none');
+await page.click('#btn-ghost');
+await page.waitForTimeout(300);
+const off = await page.evaluate(() => ({
+  ghostVisible: window.__cr.ghost.player.group.visible,
+  gapShown: getComputedStyle(document.getElementById('hud-ghost')).display !== 'none',
+  saved: JSON.parse(localStorage.getItem('cityrunner2')).raceBest,
+}));
+check(btnShown && !off.ghostVisible && !off.gapShown && off.saved === false,
+  'the in-game ghost button hides the ghost and the gap, and turns racing off', JSON.stringify({ btnShown, ...off }));
+await page.click('#btn-pause');
+await page.waitForTimeout(200);
+const pauseText = await page.textContent('#btn-pause-ghost');
+check(pauseText === 'Race your best run: OFF', 'the pause screen shows the setting', pauseText);
+await page.click('#btn-pause-ghost');
+await page.click('#btn-resume');
+await page.waitForTimeout(300);
+const on = await page.evaluate(() => ({ ghostVisible: window.__cr.ghost.player.group.visible,
+  saved: JSON.parse(localStorage.getItem('cityrunner2')).raceBest }));
+check(on.ghostVisible && on.saved === true, 'turning it back on (from the pause screen) brings the ghost back', JSON.stringify(on));
 
 check(!errors.length, 'no page errors', errors[0] || '');
 await browser.close();

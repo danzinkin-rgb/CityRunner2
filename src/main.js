@@ -312,6 +312,7 @@ function startRun() {
     ghost = best && best.seed === track.seed
       ? new GhostRunner(scene, characterById(save.equipped).style, best) : null;
     document.body.classList.toggle('ghost-run', !!ghost);
+    if (ghost) setRaceBest(true);
     piecesGot = 0;
     track.onPiece = () => {
       piecesGot++;
@@ -350,6 +351,22 @@ function startRun() {
 let goalTimer = 0;
 let piecesGot = 0, pieceHintShown = false;
 let ghostRec = null, ghost = null;   // this run's recording, and the best run replayed
+
+// Turning the ghost off, from the HUD button, the pause screen or Settings:
+// it goes at once (the ghost and the score gap), and later streets are fresh
+// courses with no ghost. Turning it back on mid-run brings this run's ghost
+// back. One setting, save.raceBest, behind all three.
+function setRaceBest(on) {
+  save.raceBest = on;
+  persist();
+  if (ghost) ghost.player.group.visible = on;
+  document.body.classList.toggle('ghost-off', !on);
+  const b = $('btn-ghost');
+  b.classList.toggle('off', !on);
+  b.setAttribute('aria-pressed', String(on));
+  b.setAttribute('aria-label', on ? 'Hide the ghost' : 'Show the ghost');
+  $('btn-pause-ghost').textContent = `Race your best run: ${on ? 'ON' : 'OFF'}`;
+}
 // Handed from the finished street to the puzzle: one boolean per loose piece.
 let lastRunPieces = null;
 let testerInvincible = false;   // tester builds only; see the Tester section below
@@ -1156,9 +1173,14 @@ $('set-motion').onclick = () => {
   save.reducedMotion = !save.reducedMotion; persist(); applyReducedMotion(); renderSettings();
 };
 // Off: every street is a fresh random course, with no ghost.
-$('set-ghost').onclick = () => {
-  save.raceBest = save.raceBest === false; persist(); renderSettings();
+$('set-ghost').onclick = () => { setRaceBest(save.raceBest === false); renderSettings(); };
+$('btn-ghost').onclick = (e) => {
+  e.stopPropagation();
+  const on = save.raceBest === false;
+  setRaceBest(on);
+  hint(on ? 'Ghost back on' : 'Ghost off: turn it back on here, or in Settings');
 };
+$('btn-pause-ghost').onclick = () => setRaceBest(save.raceBest === false);
 $('set-touchbtns').onclick = () => {
   save.touchButtons = !save.touchButtons; persist(); applyTouchButtons(); renderSettings();
 };
@@ -1201,6 +1223,7 @@ function pauseGame() {
   pausedFrom = state;
   state = 'paused';
   stopMusic();
+  $('btn-pause-ghost').textContent = `Race your best run: ${save.raceBest !== false ? 'ON' : 'OFF'}`;
   showScreen('paused');
 }
 function resumeGame() {
@@ -1253,7 +1276,7 @@ $('btn-next').onclick = () => {
 function disposeAll() {
   if (track) { track.dispose(); track = null; }
   ghost = null; ghostRec = null;
-  document.body.classList.remove('ghost-run');
+  document.body.classList.remove('ghost-run', 'ghost-off');
   if (puzzle) { puzzle.dispose(); puzzle = null; }
   if (scene) {
     // Geometry AND materials and their textures. Only geometry used to be
@@ -1293,7 +1316,7 @@ function frame() {
         () => crash());
       player.update(dt, speed);
       ghostRec?.sample(track.distance, score);
-      if (ghost) {
+      if (ghost && save.raceBest !== false) {
         ghost.update(dt, speed, track.distance);
         const gap = Math.round(score - ghost.scoreAt(track.distance));
         const el = $('hud-ghost');
