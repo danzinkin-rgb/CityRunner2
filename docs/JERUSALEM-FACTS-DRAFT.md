@@ -120,7 +120,7 @@ This clears the draft to move into `src/facts.js` per the note above.
 
 ---
 
-## Church of the Holy Sepulchre — DRAFT for sign-off (27 September 2026)
+## Church of the Holy Sepulchre — approved (27 September 2026)
 
 Added as the Cardo's monument in place of the Tower of David, so that each of
 the city's three faiths has its central site in the game (Dan, 27 September
@@ -153,5 +153,4 @@ Notes for review:
   fact names neither family.
 - No height comparison: no sourced figure for the building's height was used.
 
-Status: **awaiting Dan's sign-off.** The facts are in `src/facts.js` marked
-DRAFT so the monument can be built and played meanwhile.
+Status: **approved by Dan, 27 September 2026**, wording as above. In `src/facts.js`.

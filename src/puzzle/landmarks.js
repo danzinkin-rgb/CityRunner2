@@ -738,7 +738,7 @@ const defs = {
   // over the entrance since at least the 1700s; the bell tower on the left,
   // which lost its top storey long ago; and behind, the two grey domes, the
   // great Rotunda over the tomb and the smaller Katholikon, each with its
-  // cross. Its facts are a draft awaiting Dan's sign-off (src/facts.js).
+  // cross. Facts approved 27 September 2026 (src/facts.js).
   holysepulchre: [
     B([0, 0.12, 3.0], [15, 0.24, 5.6], '#d8ccae', 'box', { tex: 'stone', tx: { cols: 10, rows: 4 } }),   // courtyard
     // the mass of the church behind its front

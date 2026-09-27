@@ -239,9 +239,9 @@ export const MONUMENT_FACTS = {
       { big: '8', unit: 'sides', label: 'a perfect octagon', text: 'The plan is a perfect octagon around the rock at its centre, its exterior clad in Ottoman tilework added under Suleiman in the 1550s.' },
       { text: 'It is not the al-Aqsa Mosque. They are two separate buildings on the same compound — the compound itself stands on the Temple Mount (Jewish tradition) and Haram al-Sharif, "the Noble Sanctuary" (Islamic tradition). The Dome of the Rock is the gold-domed octagon; al-Aqsa is the silver-domed mosque to its south. The two are very widely confused.' },
     ] },
-  // DRAFT, awaiting Dan's sign-off (docs/JERUSALEM-FACTS-DRAFT.md, "Church of
-  // the Holy Sepulchre"). Architectural and historical, each community
-  // described in its own terms. No height chart: not sourced.
+  // Approved by Dan, 27 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md,
+  // "Church of the Holy Sepulchre"). Architectural and historical, each
+  // community described in its own terms. No height chart: not sourced.
   holysepulchre: {
     facts: [
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
