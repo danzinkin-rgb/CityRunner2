@@ -333,6 +333,62 @@ export const CITIES = [
       },
     ],
   },
+  {
+    id: 'mexico', name: 'MEXICO CITY', flag: '🇲🇽',
+    streets: ['Paseo de la Reforma', 'Coyoacán', 'Xochimilco'],
+    // High-altitude dusk: violet sky bleeding into deep marigold at the
+    // horizon. The highest-chroma city in the roster on purpose: Talavera
+    // blue, rosa mexicana, marigold, terracotta, lime. docs/cities/mexico-city.md
+    sky: { top: '#3a4fb0', mid: '#9070b8', horizon: '#ffab3e', glow: '#ff8a3a' },
+    fog: 0xff8a3a, fogDensity: 0.0092,
+    sun: { color: 0xffdca0, intensity: 2.5, pos: [55, 60, -50] },
+    hemi: { sky: 0xd8c8ec, ground: 0x9a7250, intensity: 1.1 },
+    fill: { color: 0xffe2c0, intensity: 1.05 },
+    road: '#57504a', lane: '#f2d33e', sidewalk: '#c2a978',
+    palette: ['#c96a3e', '#2f6f9e', '#d81b7a', '#e0a33e', '#8ab23e', '#d9a066'],
+    trim: '#f5e6c8', roof: '#8a4a34',
+    windowLit: '#ffd98a', windowDay: '#a8cbe4', accent: '#d81b7a',
+    storefront: ['#d81b7a', '#2f6f9e', '#e0a33e', '#8ab23e', '#c8461f'],
+    props: ['lamp', 'fountain', 'topiary', 'kiosk'],
+    // The pink-and-white taxi Mexico City has used since 2013 (a VW Beetle,
+    // the "vocho"). No operator name or logo.
+    vehicle: 'vocho',
+    landmarks: ['templomayor', 'catedral', 'castillo'],
+    levels: [
+      { // Paseo de la Reforma: the broad boulevard, glass and stone, a tree
+        // median, the castle visible far down the avenue
+        key: 'reforma',
+        setback: 6.4,
+        palette: ['#8fa4b8', '#a0b4c4', '#8098b0', '#98acc0', '#7890a8', '#a8bcc8'],
+        storefront: ['#2f6f9e', '#d81b7a', '#e0a33e', '#1f4a72'],
+        props: ['lamp', 'planetree', 'fountain'],
+        ads: ['TORRE SOL', 'CAFÉ REFORMA', 'JOYERÍA LUNA', 'LIBRERÍA'],
+        cameo: 'castillo', lit: 0.16,
+      },
+      { // Coyoacán: cobbled colonial village, low terracotta and Talavera
+        // facades, market stalls
+        key: 'coyoacan', facade: 'ochre',
+        roadStyle: 'cobble', road: '#7a6a56', lane: '#7a6a56', sidewalk: '#c4ae86',
+        palette: ['#d9a066', '#c96a3e', '#d81b7a', '#e0a33e', '#8ab23e', '#cf8850'],
+        trim: '#f6ecd4', roof: '#7a4a34',
+        setback: 3.6, hBase: 8, hVar: 4, secondRow: 0.3,
+        storefront: ['#c8461f', '#2f6f9e', '#e0a33e', '#8ab23e'],
+        props: ['lamp', 'fountain', 'souvenirstall', 'artstall'],
+        ads: ['MERCADO', 'CAFÉ AZUL', 'DULCERÍA', 'LIBROS'],
+        span: 'papel', spanFreq: 0.6, lit: 0.14,
+      },
+      { // Xochimilco: the canal village, low bright houses, papel picado
+        // strung overhead
+        key: 'xochimilco',
+        fogDensity: 0.008,
+        palette: ['#8ab23e', '#a8c85e', '#7ca034', '#c96a3e', '#d9a066', '#94b048'],
+        setback: 4.2, hBase: 5, hVar: 2, secondRow: 0,
+        props: ['lamp', 'tree', 'topiary'],
+        ads: ['TRAJINERAS', 'FLORES', 'ELOTES', 'MARIACHI'],
+        span: 'papel', spanFreq: 0.5, lit: 0.08,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -343,6 +399,7 @@ export const LANDMARK_NAMES = {
   ggbridge: 'Golden Gate Bridge', coit: 'Coit Tower', paintedladies: 'Painted Ladies',
   kotel: 'The Western Wall', domerock: 'The Dome of the Rock', towerdavid: 'Tower of David',
   holysepulchre: 'Church of the Holy Sepulchre',
+  templomayor: 'Templo Mayor', catedral: 'Metropolitan Cathedral', castillo: 'Chapultepec Castle',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

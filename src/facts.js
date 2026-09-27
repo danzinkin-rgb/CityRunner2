@@ -105,6 +105,28 @@ export const STREET_FACTS = {
         { text: 'The name comes from the corner where two streets meet: Haight Street and Ashbury Street.' },
       ] },
   ],
+  // DRAFT, awaiting Dan's sign-off: docs/cities/mexico-city.md §3, sources
+  // listed there.
+  mexico: [
+    { street: 'Paseo de la Reforma', tag: 'A boulevard built for an emperor',
+      facts: [
+        { big: '15', unit: 'km', label: 'end to end', text: 'Paseo de la Reforma runs fifteen kilometres across the city, from the historic centre to Chapultepec park.' },
+        { big: '1865', label: 'first laid out', text: 'Emperor Maximilian ordered the avenue built to link his palace downtown with his home at Chapultepec Castle.' },
+        { text: 'Its grand traffic circles, called glorietas, were added decades later, under President Porfirio Díaz.' },
+      ] },
+    { street: 'Coyoacán', tag: 'The place of coyotes',
+      facts: [
+        { big: '1521', label: "Cortés' first headquarters", text: 'After the fall of the Aztec capital, Hernán Cortés set up his first base here while Mexico City was rebuilt.' },
+        { big: '1907', label: "Frida Kahlo's birthplace", text: "Painter Frida Kahlo was born in Coyoacán's Blue House, which is now a museum of her life and work." },
+        { text: "Coyoacán means 'place of coyotes' in the Nahuatl language, and a coyote fountain still marks the main plaza." },
+      ] },
+    { street: 'Xochimilco', tag: 'The floating gardens',
+      facts: [
+        { big: '170', unit: 'km', label: 'of canals', text: "Xochimilco's canals stretch about 170 kilometres — nearly all that survives of the lake the Aztecs once sailed." },
+        { big: '1987', label: 'named a World Heritage Site', text: "UNESCO protects Xochimilco's floating gardens alongside the historic centre of Mexico City." },
+        { text: 'The gardens are built on chinampas — islands woven from lake mud and reeds — and farmers still grow flowers on them today.' },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -247,6 +269,27 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Mexico City: DRAFT, awaiting Dan's sign-off (docs/cities/mexico-city.md §3).
+  templomayor: { scale: 45, compare: 'bus',
+    facts: [
+      { big: '1325', label: 'construction began', text: 'Building started here soon after 1325, when the Mexica people founded their city on an island in a lake.' },
+      { big: '7', unit: 'layers', label: 'built again and again', text: 'Each ruler expanded the temple by building a new layer over the old one — archaeologists found seven layers stacked inside.' },
+      { text: 'It was rediscovered by accident in 1978, when electrical workers dug up a huge carved stone disc nearby.' },
+    ] },
+  catedral: { scale: 67, compare: 'bus',
+    facts: [
+      { big: '250', unit: 'years', label: 'to build', text: 'Building went on for two and a half centuries, from 1573 to 1813, so it mixes styles from early Baroque to Neoclassical.' },
+      { big: '25', unit: 'bells', label: 'in its towers', text: 'Twenty-five bells hang in the twin towers — the biggest alone weighs about as much as two elephants.' },
+      { text: 'The cathedral is slowly sinking into the soft old lakebed it stands on, and engineers have spent decades working to straighten it.' },
+    ] },
+  // altitude: 2,325 m above sea level (chapultepeccastletours.com/facts,
+  // checked 27 Sept 2026). No sourced height for the building itself.
+  castillo: { altitude: 2325,
+    facts: [
+      { big: '1785', label: 'building began', text: 'Construction started in 1785, on a hill where Aztec rulers once had a retreat.' },
+      { big: '1847', label: 'the cadets who defended it', text: 'During a battle here in 1847, a group of young military cadets are remembered in Mexico as the Niños Héroes for standing their ground.' },
+      { text: 'It later became home to Mexican presidents, and today it holds the National History Museum.' },
     ] },
   // Not on a street at the moment (the Holy Sepulchre is the Cardo's
   // monument); kept for a fourth Jerusalem street.

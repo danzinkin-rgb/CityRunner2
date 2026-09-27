@@ -798,6 +798,104 @@ const defs = {
       ],
     }),
   ],
+  // ================= MEXICO CITY =================
+  // docs/cities/mexico-city.md, adapted like Jerusalem's: small details come
+  // with a larger piece, and stone uses the plain masonry textures (the
+  // spec's 'relief' and 'statue' draw robed human figures).
+
+  // The Templo Mayor: a stepped platform of square tiers, each a sloping
+  // talud under a vertical tablero band, with the double staircase up the
+  // west face and the twin shrines on top: Tlaloc's, blue and white, on the
+  // left (north) and Huitzilopochtli's, red, on the right (south).
+  templomayor: [
+    B([0, 0.2, 0], [17, 0.4, 17], '#8a8070', 'box', { tex: 'stone', tx: { cols: 12, rows: 1 } }),
+    ...[[14.0, 12.4], [12.0, 10.4], [10.0, 8.4], [8.0, 6.6]].map(([bot, top], i) => B([0, 1.2 + i * 1.7, 0], [bot, 1.2, top], ['#8a7c68', '#8f8270', '#948878', '#9a8e7e'][i], 'tier', {
+      sides: 4,
+      adorn: [B([0, 0.85, 0], [top + 0.2, 0.5, top + 0.2], ['#a2947e', '#a69884', '#aa9c88', '#aea08c'][i], 'box', { tex: 'stone', tx: { cols: 8, rows: 1 } })],
+    })),
+    B([0, 8.05, -0.3], [6.4, 0.5, 6.0], '#a4987e', 'box', { tex: 'stone', tx: { cols: 6, rows: 1 } }),   // summit platform
+    // the double staircase: two flights side by side, each a stepped profile
+    ...[[-1.3, '#3a6a9a'], [1.3, '#b0402a']].map(([x, col]) => B([x, 4.0, 5.2], [2.4, 7.6, 4.2], col, 'extrude', {
+      rotY: -Math.PI / 2,
+      outline: (() => {
+        const pts = [[0.5, -0.5]];
+        for (let k = 0; k < 10; k++) { const y = -0.5 + (k + 1) / 10, z = 0.5 - (k + 1) / 10; pts.push([z + 0.1, y - 0.1], [z, y - 0.1]); }
+        pts.push([-0.5, 0.5], [-0.5, -0.5]);
+        return pts.map(([zz, yy]) => [zz, Math.min(0.5, yy + 0.1)]);
+      })(),
+      // a serpent head at the foot of each flight, in stone
+      adorn: [B([0.9, -3.4, 0.7], [0.9, 0.8, 1.2], '#8f8270', 'rock')],
+    })),
+    // the two shrines, each with its roof and roof comb
+    B([-1.6, 9.7, -0.6], [2.8, 2.8, 3.2], '#eae0c8', 'box', {
+      adorn: [
+        B([0, 0.6, 1.62], [2.8, 0.6, 0.05], '#3a6a9a'), B([0, -0.6, 1.62], [0.9, 1.6, 0.05], '#1e2430'),
+        B([0, 1.55, 0], [3.1, 0.3, 3.5], '#dcd0ae'), B([0, 2.2, 0], [2.4, 1.0, 0.3], '#3a6a9a'),
+      ],
+    }),
+    B([1.6, 9.7, -0.6], [2.8, 2.8, 3.2], '#c1432a', 'box', {
+      adorn: [
+        B([0, -0.6, 1.62], [0.9, 1.6, 0.05], '#1e2430'),
+        B([0, 1.55, 0], [3.1, 0.3, 3.5], '#a83a24'), B([0, 2.2, 0], [2.4, 1.0, 0.3], '#c1432a', 'box', { em: '#ffb070', emI: 0.1 }),
+      ],
+    }),
+  ],
+
+  // The Metropolitan Cathedral: a wide pale facade with three arched
+  // portals and a central clock storey, twin bell towers narrowing up to
+  // their bell-shaped roofs and crosses, and the tiled dome behind.
+  catedral: [
+    B([0, 0.3, 1.0], [20, 0.6, 9], '#c4b494', 'box', { tex: 'stone', tx: { cols: 14, rows: 1 } }),
+    B([-8.4, 3.8, -1.5], [3.2, 6.4, 7], '#d8d2c4', 'box', { tex: 'stone', tx: { cols: 3, rows: 5 } }),   // flanks
+    B([8.4, 3.8, -1.5], [3.2, 6.4, 7], '#d8d2c4', 'box', { tex: 'stone', tx: { cols: 3, rows: 5 } }),
+    B([0, 4.1, 0], [6.6, 7.0, 1.4], '#e6d8b6', 'extrude', {                      // three portals, between the towers
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: -0.32, y: -0.16, w: 0.17, h: 0.56, arch: true }, { x: 0, y: -0.1, w: 0.22, h: 0.68, arch: true }, { x: 0.32, y: -0.16, w: 0.17, h: 0.56, arch: true }],
+      adorn: [B([0, -0.6, -0.4], [6.2, 5.6, 0.2], '#3a2e24')],
+    }),
+    B([0, 9.0, 0], [5.6, 2.8, 1.4], '#ddd0ae', 'box', {                          // the clock storey
+      tex: 'stone', tx: { cols: 4, rows: 2 },
+      adorn: [B([0, 0.3, 0.72], [1.1, 1.1, 0.1], '#f4ecd4', 'cyl', { rotX: Math.PI / 2 }), B([0, 1.8, 0], [0.8, 0.9, 0.8], '#d8caa4', 'box')],
+    }),
+    ...[-5.1, 5.1].flatMap((x) => [
+      B([x, 6.2, 0], [3.6, 11.2, 3.6], '#d4c9a8', 'box', { tex: 'stone', tx: { cols: 3, rows: 9 } }),   // tower body
+      B([x, 13.3, 0], [3.1, 3.0, 3.1], '#dcd0b0', 'box', {                                            // belfry
+        adorn: [[0, 1.57], [0, -1.57], [1.57, 0], [-1.57, 0]].map(([ax, az]) => B([ax, -0.1, az], [ax ? 0.1 : 1.3, 2.0, az ? 0.1 : 1.3], '#2a2420')),
+      }),
+      B([x, 15.8, 0], [2.8, 2.0, 2.8], '#b8a880', 'lathe', {                                           // bell-shaped roof
+        profile: [[1, 0], [0.98, 0.25], [0.7, 0.55], [0.35, 0.75], [0.22, 0.95], [0, 1]],
+        adorn: [B([0, 1.45, 0], [0.12, 0.9, 0.12], '#e6d29e', 'box', { metal: 1 }), B([0, 1.6, 0], [0.55, 0.1, 0.1], '#e6d29e', 'box', { metal: 1 })],
+      }),
+    ]),
+    B([0, 8.6, -5.0], [5.4, 2.4, 5.4], '#c8baa0', 'cyl', { tex: 'win', tx: { cols: 12, rows: 1 } }),   // dome drum
+    B([0, 9.8, -5.0], [5.6, 3.6, 5.6], '#e0c070', 'dome', {                                              // tiled dome
+      adorn: [B([0, 3.3, 0], [0.9, 1.2, 0.9], '#e6cd9a', 'cyl', { em: '#ffce8a', emI: 0.8 })],
+    }),
+  ],
+
+  // Chapultepec Castle on its hill: two storeys of pale palace with wings,
+  // the arcaded gallery along the terrace, and the Caballero Alto tower
+  // with its flag. Only the 1860s exterior (docs/cities/mexico-city.md §0).
+  castillo: [
+    B([0, 1.4, 0], [22, 2.8, 14], '#6a7a4e', 'lathe', { profile: [[1, 0], [0.95, 0.35], [0.8, 0.75], [0.7, 1]] }),   // the hill
+    B([0, 3.1, 0], [16, 0.6, 9], '#b8a888', 'box', { tex: 'stone', tx: { cols: 12, rows: 1 } }),                     // terrace
+    B([-5.4, 5.2, -1.0], [5.6, 3.6, 5], '#e8dcc0', 'box', { tex: 'win', tx: { cols: 5, rows: 2 },
+      adorn: [B([0, 1.95, 0], [5.8, 0.3, 5.2], '#c4a878')] }),
+    B([5.4, 5.2, -1.0], [5.6, 3.6, 5], '#e8dcc0', 'box', { tex: 'win', tx: { cols: 5, rows: 2 },
+      adorn: [B([0, 1.95, 0], [5.8, 0.3, 5.2], '#c4a878')] }),
+    B([0, 5.4, -0.4], [5.4, 4.0, 5.4], '#ecdfc4', 'box', { tex: 'win', tx: { cols: 4, rows: 2 },
+      adorn: [B([0, 2.15, 0], [5.6, 0.3, 5.6], '#d5c8a8')] }),
+    B([0, 4.9, 3.6], [15.6, 3.0, 1.4], '#f0e6cc', 'colonnade', { cols: 12,                    // the gallery
+      adorn: [B([0, 1.7, 0], [15.8, 0.4, 1.8], '#c4a878')] }),
+    B([4.0, 8.9, -1.5], [2.6, 3.0, 2.6], '#e0d3b4', 'box', { tex: 'win', tx: { cols: 2, rows: 2 } }),            // Caballero Alto
+    B([4.0, 11.0, -1.5], [2.2, 1.2, 2.2], '#f2ead3', 'box', {
+      adorn: [
+        ...[-1, 1].flatMap((a) => [-1, 1].map((b) => B([a * 0.9, 0.8, b * 0.9], [0.4, 0.4, 0.4], '#f2ead3'))),
+        B([0, 2.0, 0], [0.08, 2.8, 0.08], '#cfcfcf', 'cyl', { metal: 1 }),
+        ...[['#2e7d4a', 0.24], ['#f4f4f0', 0.6], ['#c8202e', 0.96]].map(([c, x]) => B([x, 2.9, 0], [0.36, 0.7, 0.04], c)),
+      ],
+    }),
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }

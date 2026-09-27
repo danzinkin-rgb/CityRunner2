@@ -136,6 +136,38 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'mexico') {
+    // A marigold (cempasuchil), the flower of the Day of the Dead: a dense
+    // pompom of ruffled orange petals on a short stem with two leaves.
+    const cols = [0xf28a0c, 0xf9a21a, 0xe8740a];
+    const petal = new THREE.SphereGeometry(0.06, 7, 5);
+    const pm = cols.map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.5, emissive: 0x6a2a00, emissiveIntensity: 0.4 }));
+    // ~150 petals spread evenly over most of a ball (a golden-angle spiral),
+    // each a flattened disc facing outwards with a little ruffle: the round
+    // pompom a cempasuchil is, not a stack of tiers
+    const N = 150;
+    for (let i = 0; i < N; i++) {
+      const y = 1 - (i / (N - 1)) * 1.75;                  // top down to well below the equator
+      const rr = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996;
+      const dir = new THREE.Vector3(Math.cos(a) * rr, y, Math.sin(a) * rr);
+      const p = new THREE.Mesh(petal, pm[i % 3]);
+      p.position.copy(dir).multiplyScalar(0.24);
+      p.lookAt(dir.clone().multiplyScalar(2));
+      p.rotateZ((i * 0.7) % 3);
+      p.rotateX(((i * 0.37) % 1 - 0.5) * 0.8);
+      p.scale.set(1.35, 1.1, 0.45);
+      g.add(p);
+    }
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), pm[2]);
+    g.add(core);
+    const green = new THREE.MeshStandardMaterial({ color: 0x3a7a30, roughness: 0.6 });
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.34, 6), green);
+    stem.position.y = -0.4; g.add(stem);
+    for (const s of [-1, 1]) {
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), green);
+      leaf.scale.set(1.8, 0.3, 0.7); leaf.position.set(s * 0.11, -0.42, 0); leaf.rotation.z = s * 0.5;
+      g.add(leaf);
+    }
   } else if (theme.id === 'jerusalem') {
     // A pomegranate cut open: the whole fruit with a quarter wedge taken out,
     // so the red seeds show on the two cut faces, and its little crown on top.

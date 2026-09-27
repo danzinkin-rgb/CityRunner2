@@ -159,6 +159,7 @@ const SCALES = {
   nyc: [0, 3, 5, 7, 10], paris: [0, 2, 3, 7, 8], london: [0, 2, 4, 7, 9], rome: [0, 2, 4, 5, 9],
   sf: [0, 2, 4, 7, 11],   // major with a raised seventh: bright, a little wistful
   jerusalem: [0, 1, 4, 5, 7],   // a semitone then a third up: the scale heard across the region
+  mexico: [0, 4, 7, 9, 12],     // bright major, mariachi-like
 };
 
 export function startMusic(cityId) {

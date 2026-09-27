@@ -1644,6 +1644,7 @@ const ADS = {
   rome: ['GELATO', 'CINEMA', 'MODA', 'ROMA'],
   sf: ['CABLE CAR', 'SOURDOUGH', 'BAY TOURS', 'CHOWDER'],
   jerusalem: ['FALAFEL', 'BOOKS & MAPS', 'SPICE HOUSE', 'OLD CITY TOURS'],
+  mexico: ['TACOS', 'PAN DULCE', 'MERCADO', 'CAFÉ'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -2353,6 +2354,17 @@ export function makeStreetSpan(theme, width = 13) {
       bulb.position.set((t - 0.5) * width, -0.18 - Math.sin(t * Math.PI) * sag, 0);
       g.add(bulb);
     }
+  } else if (style === 'papel') {
+    // papel picado: rows of cut-paper flags in bright colours
+    const cols = [0xe8307a, 0xf28a0c, 0x2c8ed8, 0x4ab04a, 0xf4c400, 0x8a4ad0];
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1);
+      const f = new THREE.Mesh(boxGeo, cached(`mat:papel:${i % 6}`, () =>
+        new THREE.MeshStandardMaterial({ color: cols[i % 6], roughness: 0.7, side: THREE.DoubleSide })));
+      f.scale.set(0.42, 0.5, 0.02);
+      f.position.set((t - 0.5) * width, -0.32 - Math.sin(t * Math.PI) * 0.28, 0);
+      g.add(f);
+    }
   } else {
     const cols = style === 'bunting'
       ? [0xc8102e, 0xffffff, 0x012169]
@@ -2397,6 +2409,28 @@ export function makeVehicle(theme) {
       cached('mat:carGlass', () => new THREE.MeshStandardMaterial({ color: 0xa8d0ec, roughness: 0.12, metalness: 0.5 })));
     cabGlass.scale.set(1.9, 0.7, 0.1);
     cabGlass.position.set(0, 2.9, 2.62); g.add(cabGlass);
+  } else if (kind === 'vocho') {
+    // Mexico City's taxi: a VW Beetle (the vocho) in the pink and white the
+    // city's taxis have worn since 2013, with its roof sign. A car, not a
+    // wall: low enough to jump, like New York's taxis.
+    const pink = cached('mat:vocho', () => new THREE.MeshStandardMaterial({ color: 0xe0588e, roughness: 0.3, metalness: 0.2 }));
+    const white = cached('mat:vochoRoof', () => new THREE.MeshStandardMaterial({ color: 0xf4f2f0, roughness: 0.3 }));
+    const shell = new THREE.Mesh(cached('geo:vochoShell', () => new THREE.SphereGeometry(1, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2)), pink);
+    shell.scale.set(0.95, 0.85, 2.0); shell.position.y = 0.35; shell.castShadow = true; g.add(shell);
+    const cabin = new THREE.Mesh(cached('geo:vochoCab', () => new THREE.SphereGeometry(0.62, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2)), white);
+    cabin.scale.set(1.2, 1.0, 1.5); cabin.position.set(0, 0.92, -0.1); g.add(cabin);
+    const glass = new THREE.Mesh(cached('geo:vochoGlass', () => new THREE.SphereGeometry(0.635, 20, 12, 0, Math.PI * 2, 0.55, 0.45)),
+      cached('mat:carGlass', () => new THREE.MeshStandardMaterial({ color: 0xa8d0ec, roughness: 0.12, metalness: 0.5 })));
+    glass.scale.set(1.2, 1.0, 1.5); glass.position.set(0, 0.92, -0.1); g.add(glass);
+    for (const [x, z] of [[-0.8, 1.1], [0.8, 1.1], [-0.8, -1.15], [0.8, -1.15]]) {
+      const fender = new THREE.Mesh(cached('geo:vochoFender', () => new THREE.SphereGeometry(0.42, 14, 8)), pink);
+      fender.scale.set(0.55, 0.7, 1); fender.position.set(x, 0.42, z); g.add(fender);
+      const wheel = new THREE.Mesh(cached('geo:vochoWheel', () => new THREE.CylinderGeometry(0.3, 0.3, 0.22, 14)),
+        cached('mat:tyre', () => new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.9 })));
+      wheel.rotation.z = Math.PI / 2; wheel.position.set(x * 1.05, 0.3, z); g.add(wheel);
+    }
+    const sign = new THREE.Mesh(boxGeo, mats.glow);
+    sign.scale.set(0.5, 0.16, 0.2); sign.position.set(0, 1.6, -0.1); g.add(sign);
   } else if (kind === 'citybus') {
     // Jerusalem: a single-deck city bus, white with a green band, the livery
     // Israeli buses are known for. No operator name or logo on it: every
@@ -3088,6 +3122,7 @@ const SIL_TINT = {
   rome: '#6e4632',       // warm umber stone and pine
   sf: '#4a5a6a',         // fog-softened slate: hills and towers through the marine layer
   jerusalem: '#6a5a44',  // warm stone-gold: limestone hills at dusk
+  mexico: '#5a3a52',     // plum dusk over the volcano-ringed valley
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
@@ -3370,6 +3405,19 @@ export function makeCameo(theme) {
       g.fillStyle = dark(0.28);
       g.fillRect(bx - 130, GY - 180, 70, 180);
       g.fillRect(bx + 60, GY - 150, 80, 150);
+    } else if (key === 'castillo') {
+      // Chapultepec Castle on its wooded hill at the far end of Reforma
+      g.fillStyle = dark(0.28);
+      g.beginPath(); g.ellipse(cx, GY, 330, 96, 0, Math.PI, 0); g.fill();
+      g.fillStyle = dark(0.36);
+      for (const [ox, oy, r] of [[-230, 26, 26], [-150, 60, 30], [170, 56, 28], [250, 24, 24], [-60, 84, 22], [80, 82, 22]]) {
+        g.beginPath(); g.arc(cx + ox, GY - oy, r, 0, 7); g.fill();
+      }
+      g.fillStyle = dark(0.24);
+      g.fillRect(cx - 150, GY - 150, 300, 60);                       // the palace
+      g.fillRect(cx + 50, GY - 196, 40, 50);                         // the tower
+      g.fillStyle = light(0.2);
+      for (let x = cx - 140; x < cx + 140; x += 16) g.fillRect(x, GY - 138, 7, 12);   // the gallery
     } else if (key === 'towerdavid') {
       // The Tower of David citadel by Jaffa Gate: the Old City wall with its
       // battlements, the squat citadel, and the minaret rising off-centre.

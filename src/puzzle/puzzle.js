@@ -15,6 +15,7 @@ const CITY_OF = {
   bigben: 'london', towerbridge: 'london', eye: 'london',
   colosseum: 'rome', trevi: 'rome', pantheon: 'rome',
   ggbridge: 'sf', coit: 'sf', paintedladies: 'sf',
+  templomayor: 'mexico', catedral: 'mexico', castillo: 'mexico',
   kotel: 'jerusalem', domerock: 'jerusalem', towerdavid: 'jerusalem', holysepulchre: 'jerusalem',
 };
 // Plaza floors deliberately contrast their monuments. Every landmark in the
@@ -33,6 +34,7 @@ const PLAZA = {
   rome: { stone: '#63737a', dark: '#4a5960', trim: '#95a8ae', ground: '#323b39', sky: '#4c3e56' },
   sf: { stone: '#6a6e76', dark: '#4e525a', trim: '#98a0aa', ground: '#30343a', sky: '#3a4656' },
   jerusalem: { stone: '#667080', dark: '#4c5462', trim: '#96a0b0', ground: '#30343e', sky: '#3c4468' },
+  mexico: { stone: '#626a80', dark: '#4a5066', trim: '#9098b0', ground: '#2e3242', sky: '#3e3a6a' },
 };
 
 // Painted-panorama palette. Near layer is the darker, more saturated band the
@@ -44,6 +46,7 @@ const SKYPAL = {
   rome: { near: '#4a3a30', far: '#6d6055', trim: '#6b4e3a', roof: '#5c3324', win: '255,214,150', accent: '#cfc4b0' },
   sf: { near: '#3c4656', far: '#6a7686', trim: '#556070', roof: '#2e3440', win: '255,220,170', accent: '#c1440e' },
   jerusalem: { near: '#6a5a44', far: '#8c7c62', trim: '#7a6a50', roof: '#5a4a36', win: '255,216,160', accent: '#d8b460' },
+  mexico: { near: '#5a3e4a', far: '#806a7a', trim: '#7a4a52', roof: '#6a3a30', win: '255,210,150', accent: '#d81b7a' },
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 
@@ -1174,8 +1177,15 @@ export function makeBlockMesh(def, isGhost = false, isChild = false) {
     // the Eye's A-frame (two raked legs and a brace). s still sizes it.
     case 'group': out = new THREE.Group(); break;
     case 'tier':
-      // truncated cone tier: bottom diameter w, top diameter d
-      geo = new THREE.CylinderGeometry(Math.max(0.02, d / 2), w / 2, h, 20);
+      // truncated cone tier: bottom diameter w, top diameter d. def.sides: 4
+      // makes a square frustum with its faces square to the axes, w and d
+      // then being the side lengths (a stepped pyramid's platforms).
+      if (def.sides === 4) {
+        geo = new THREE.CylinderGeometry(Math.max(0.02, d / Math.SQRT2), w / Math.SQRT2, h, 4);
+        geo.rotateY(Math.PI / 4);
+      } else {
+        geo = new THREE.CylinderGeometry(Math.max(0.02, d / 2), w / 2, h, 20);
+      }
       break;
     case 'eifleg': {
       // curved lattice leg easing vertical into the platform corner
