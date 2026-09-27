@@ -1,7 +1,10 @@
 # Publishing to Google Play
 
 What it takes to ship CityRunner on Android, written 27 September 2026.
-Nothing here has been started. Google's rules change each year: check the
+
+**Status: on hold (Dan, 27 September 2026)** until there is an Android
+device to test on and a group of testers for Google's closed-testing
+requirement. Nothing here has been started. Google's rules change each year: check the
 current Play Console requirements (target API level, testing rules) before
 starting.
 
