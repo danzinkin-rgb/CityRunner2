@@ -15,7 +15,7 @@ const CITY_OF = {
   bigben: 'london', towerbridge: 'london', eye: 'london',
   colosseum: 'rome', trevi: 'rome', pantheon: 'rome',
   ggbridge: 'sf', coit: 'sf', paintedladies: 'sf',
-  kotel: 'jerusalem', domerock: 'jerusalem', towerdavid: 'jerusalem',
+  kotel: 'jerusalem', domerock: 'jerusalem', towerdavid: 'jerusalem', holysepulchre: 'jerusalem',
 };
 // Plaza floors deliberately contrast their monuments. Every landmark in the
 // game is a warm stone/limestone/bronze hero, and every city theme lights the
@@ -200,31 +200,42 @@ function makeBlockTexture(def) {
       return;
     }
     if (tex === 'herodian') {
-      // Herodian masonry: very large stones, each with a smooth, slightly
-      // raised face inside a recessed drafted margin (the chiselled border
-      // that marks the Western Wall's lowest courses). One per cell.
+      // Herodian masonry: large and very large stones of different lengths
+      // laid in courses, so their joints fall at different places from one
+      // course to the next and interweave rather than lining up in a grid.
+      // Each stone has a smooth, slightly raised face inside a recessed
+      // drafted margin, uneven edges, and two thousand years of weather.
+      // tx.cols is roughly how many stones span the piece; tx.seed gives
+      // every course its own layout.
       baseFill(g, S, c);
-      const cols = tx.cols || 1, rows = tx.rows || 1;
-      const w = S / cols, h = S / rows, m = Math.max(7, Math.min(w, h) * 0.09);
-      for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
-        const x = i * w, y = j * h;
-        g.fillStyle = shade(c, -0.22); g.fillRect(x + 2, y + 2, w - 4, h - 4);      // margin
-        g.fillStyle = shade(c, 0.06 + dRand(i + j * 7, 5) * 0.05);
-        g.fillRect(x + m, y + m, w - 2 * m, h - 2 * m);                             // boss
-        g.fillStyle = shade(c, 0.2); g.fillRect(x + m, y + m, w - 2 * m, 3);
-        g.fillStyle = shade(c, -0.32); g.fillRect(x + m, y + h - m - 3, w - 2 * m, 3);
-        g.strokeStyle = shade(c, -0.42); g.lineWidth = 3; g.strokeRect(x + 1, y + 1, w - 2, h - 2);
-        // two thousand years of weather: darker streaks running down from
-        // the joints, and pitting across the face
-        for (let k = 0; k < 3; k++) {
-          const sx = x + m + dRand(i * 5 + j * 11 + k, 8) * (w - 2 * m);
-          g.fillStyle = `rgba(60,48,30,${0.08 + dRand(i + k, 9) * 0.1})`;
-          g.fillRect(sx, y + m, 3 + dRand(k, i + 2) * 6, (h - 2 * m) * (0.4 + dRand(j + k, 3) * 0.6));
+      const rows = tx.rows || 1, seed = (tx.seed || 0) * 31 + 7;
+      const h = S / rows;
+      for (let j = 0; j < rows; j++) {
+        const y = j * h;
+        let x = -dRand(seed + j, 1) * (S / (tx.cols || 3)) * 0.8;
+        let k = 0;
+        while (x < S) {
+          const len = (S / (tx.cols || 3)) * (0.6 + dRand(seed * 13 + j * 7 + k, 2) * 0.9);
+          const t0 = dRand(seed + k, 3) * 5, t1 = dRand(seed + k, 4) * 5;    // uneven edges
+          const m = Math.max(7, Math.min(len, h) * 0.1);
+          g.fillStyle = shade(c, -0.24); g.fillRect(x + 2, y + 2 + t0, len - 4, h - 4 - t0 - t1);   // margin
+          g.fillStyle = shade(c, 0.03 + dRand(seed + k * 3 + j, 5) * 0.08);
+          g.fillRect(x + m, y + m + t0, len - 2 * m, h - 2 * m - t0 - t1);                          // boss
+          g.fillStyle = shade(c, 0.2); g.fillRect(x + m, y + m + t0, len - 2 * m, 3);
+          g.fillStyle = shade(c, -0.34); g.fillRect(x + m, y + h - m - t1 - 3, len - 2 * m, 3);
+          for (let q = 0; q < 3; q++) {                                    // streaks
+            const sx = x + m + dRand(seed + k * 5 + q, 8) * (len - 2 * m);
+            g.fillStyle = `rgba(60,48,30,${0.08 + dRand(k + q, seed) * 0.1})`;
+            g.fillRect(sx, y + m + t0, 3 + dRand(q, k + 2) * 6, (h - 2 * m) * (0.4 + dRand(j + q, k) * 0.6));
+          }
+          for (let q = 0; q < 22; q++) {                                   // pitting
+            g.fillStyle = `rgba(40,30,18,${0.1 + dRand(q, seed + k) * 0.15})`;
+            g.fillRect(x + m + dRand(q, k + 7) * (len - 2 * m), y + m + t0 + dRand(q + 3, k) * (h - 2 * m - t0 - t1), 3, 3);
+          }
+          g.fillStyle = shade(c, -0.45); g.fillRect(x, y, 3, h);          // the joint
+          x += len; k++;
         }
-        for (let k = 0; k < 26; k++) {
-          g.fillStyle = `rgba(40,30,18,${0.1 + dRand(k, i * 3 + j) * 0.15})`;
-          g.fillRect(x + m + dRand(k, i + 7 * j) * (w - 2 * m), y + m + dRand(k + 3, i + j) * (h - 2 * m), 3, 3);
-        }
+        g.fillStyle = shade(c, -0.45); g.fillRect(0, y + h - 3, S, 3);
       }
       return;
     }

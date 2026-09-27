@@ -116,3 +116,42 @@ card plus `facts.forEach` for the rest, so the array length is not fixed anywher
 because it scrolls. Worth an eye on the smallest screen once it is in, all the same.
 
 This clears the draft to move into `src/facts.js` per the note above.
+
+
+---
+
+## Church of the Holy Sepulchre — DRAFT for sign-off (27 September 2026)
+
+Added as the Cardo's monument in place of the Tower of David, so that each of
+the city's three faiths has its central site in the game (Dan, 27 September
+2026). The Cardo led to this church in Byzantine Jerusalem, and the Madaba Map
+in the approved Cardo facts shows the two together. The Tower of David keeps
+its model and facts for a possible fourth street, and stays on the skyline at
+the end of Jaffa Road.
+
+Same editorial rules as the rest of this document: architectural and
+historical, each community described in the terms it uses of itself, no claims
+about ownership or status.
+
+| # | Stat | Text |
+|---|---|---|
+| 1 | **335 CE** — first church consecrated | The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus. |
+| 2 | **6 communities** — share the church | Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s. |
+| 3 | — | The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning. |
+
+Notes for review:
+- **335**: the consecration date of Constantine's basilica. Most of the
+  standing church is the Crusader rebuilding, dedicated in 1149; the fact says
+  "the first church" deliberately.
+- **Six communities**: the Greek Orthodox, Roman Catholic (Franciscan) and
+  Armenian Apostolic churches are the three principal custodians; the Coptic,
+  Syriac and Ethiopian Orthodox churches have smaller roles. The Status Quo
+  was fixed by Ottoman decrees of 1757 and 1852.
+- **The ladder**: shown in an engraving of 1728 and mentioned in 1757, hence
+  "since at least the 1700s". **The key**: held by the Joudeh family and the
+  door opened by the Nusseibeh family, a custom reported for centuries. The
+  fact names neither family.
+- No height comparison: no sourced figure for the building's height was used.
+
+Status: **awaiting Dan's sign-off.** The facts are in `src/facts.js` marked
+DRAFT so the monument can be built and played meanwhile.

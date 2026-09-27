@@ -1343,6 +1343,14 @@ function frame() {
   } else if (state === 'pwin-wait') {
     syncFetchButton();
     puzzle.update(dt);
+    // The finished monument swings round to face the player during the
+    // celebration, the shorter way round, however the view was left while
+    // building (device feedback: a finished Western Wall seen from behind).
+    const front = Math.round(cam.angle / (Math.PI * 2)) * Math.PI * 2;
+    cam.angle += (front - cam.angle) * Math.min(1, dt * 1.8);
+    const dist = cam.dist || fitPuzzleCamera();
+    camera.position.set(Math.sin(cam.angle) * dist, dist * 0.45, Math.cos(cam.angle) * dist);
+    camera.lookAt(0, cam.lookY || 6, 0);
   }
 
   renderer.render(scene, camera);

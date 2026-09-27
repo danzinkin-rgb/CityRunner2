@@ -630,13 +630,14 @@ const defs = {
   // courses of small stones at the top. Caper plants hang from the joints.
   // Above, the trees of the platform, and the gold Dome of the Rock
   // glimpsed behind on the left, as in every photograph of the place.
-  // Wilson's Arch opens at the left end; the wooden Mughrabi bridge climbs
-  // on its scaffolding on the right. No figures, partition or prayer notes.
+  // Wilson's Arch opens at the left end. Nothing modern: no bridge, no
+  // scaffolding, no figures, partition or prayer notes.
   kotel: [
-    B([0, 0.12, 3.2], [21, 0.24, 5.2], '#e4dac2', 'box', { tex: 'stone', tx: { cols: 14, rows: 4 } }),   // plaza
+    B([-1.3, 0.12, 3.2], [21.8, 0.24, 5.2], '#e4dac2', 'box', { tex: 'stone', tx: { cols: 14, rows: 4 } }),   // plaza
     // Herodian courses: three rows, each in two identical halves
+    // (each with its own layout of stones, so no two courses line up)
     ...[0, 1, 2].flatMap((row) => [-1, 1].map((side) => B([side * 4.5, 0.89 + row * 1.3, -row * 0.05],
-      [9, 1.3, 1.2], row === 1 ? '#dccfaa' : '#d6c9a2', 'box', { tex: 'herodian', tx: { cols: 3, rows: 1 } }))),
+      [9, 1.3, 1.2], row === 1 ? '#dccfaa' : '#d6c9a2', 'box', { tex: 'herodian', tx: { cols: 3, rows: 1, seed: row * 2 + (side > 0 ? 1 : 0) } }))),
     // the band of mid-sized stones, with the first caper plants
     ...[-1, 1].map((side) => B([side * 4.5, 4.74, -0.15], [9, 1.2, 1.2], '#cfc29c', 'box', {
       tex: 'stone', tx: { cols: 6, rows: 1 },
@@ -657,26 +658,6 @@ const defs = {
     }),
     // Wilson's Arch, opening at the left end of the plaza
     B([-10.6, 3.3, 1.2], [3.2, 6.6, 3.6], '#d2c49e', 'archvault'),
-    // the Mughrabi bridge: a covered wooden ramp on scaffolding, climbing
-    // from the plaza up to the gate at the top of the wall
-    // Seen side-on from the plaza it climbs diagonally from the right up to
-    // the gate at the top corner of the wall: deck, enclosed wooden sides,
-    // a roof, and the scaffolding it stands on.
-    B([12.8, 4.1, 0.8], [7.4, 6.8, 2.6], '#8a6a44', 'group', {
-      adorn: (() => {
-        const run = 7.0, rise = 6.4, th = -Math.atan2(rise, run), len = Math.hypot(run, rise);
-        const deckY = (x) => -x * (rise / run);          // deck height at x, relative
-        return [
-          B([0, 0, 0], [len, 0.22, 2.0], '#7a5c3a', 'box', { rotZ: th }),                      // deck
-          B([0, 1.5, 0], [len, 0.16, 2.4], '#5a4632', 'box', { rotZ: th }),                    // roof
-          B([0, 0.75, 1.0], [len, 1.3, 0.1], '#9a7a50', 'box', { rotZ: th }),                  // side facing the plaza
-          ...[-2.6, -0.9, 0.8, 2.5].flatMap((x) => [-0.8, 0.8].map((z) => {
-            const top = deckY(x) - 0.1, h = top + 4.0;                                        // down to the plaza
-            return B([x, top - h / 2, z], [0.14, h, 0.14], '#6e6e6e', 'cyl');
-          })),
-        ];
-      })(),
-    }),
     // above and behind: the trees of the platform, and the gold dome
     B([0, 10.0, -2.6], [20, 2.8, 3.0], '#c8b98e', 'group', {
       adorn: [
@@ -748,6 +729,72 @@ const defs = {
         B([0, 2.0, 0], [1.3, 1.3, 0.2], '#e8dcb4', 'torus', { rotX: Math.PI / 2 }),
         B([0, 3.9, 0], [0.9, 1.3, 0.9], '#d6c8a0', 'lathe', { profile: [[1, 0], [0.95, 0.4], [0.55, 0.85], [0, 1]] }),
         B([0, 5.0, 0], [0.1, 0.9, 0.1], '#f0e4bc', 'cyl', { metal: 1, em: '#ffd9a0', emI: 0.4 }),
+      ],
+    }),
+  ],
+  // The Church of the Holy Sepulchre, from its courtyard: the Crusader front
+  // of two storeys, twin arched doors below (the right one walled up) and
+  // twin arched windows above; the wooden ladder that has stood on the ledge
+  // over the entrance since at least the 1700s; the bell tower on the left,
+  // which lost its top storey long ago; and behind, the two grey domes, the
+  // great Rotunda over the tomb and the smaller Katholikon, each with its
+  // cross. Its facts are a draft awaiting Dan's sign-off (src/facts.js).
+  holysepulchre: [
+    B([0, 0.12, 3.0], [15, 0.24, 5.6], '#d8ccae', 'box', { tex: 'stone', tx: { cols: 10, rows: 4 } }),   // courtyard
+    // the mass of the church behind its front
+    B([0.5, 4.6, -5.6], [12, 9.2, 10.4], '#d0c29c', 'box', { tex: 'stone', tx: { cols: 9, rows: 8 } }),
+    // front, lower storey: the twin doorways
+    B([0, 2.6, 0], [9, 5.0, 1.2], '#dccfaa', 'extrude', {
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: -0.2, y: -0.08, w: 0.22, h: 0.8, arch: true }, { x: 0.2, y: -0.08, w: 0.22, h: 0.8, arch: true }],
+      adorn: [
+        B([-1.8, -0.4, -0.3], [1.9, 3.8, 0.2], '#4a3424'),                       // the open door, dark wood
+        B([1.8, -0.4, -0.2], [1.9, 3.8, 0.4], '#cbbd96', 'box', { tex: 'stone', tx: { cols: 2, rows: 4 } }),   // walled up
+      ],
+    }),
+    B([0, 5.35, 0.1], [9.4, 0.5, 1.5], '#e6dab8'),                              // the ledge between storeys
+    // front, upper storey: twin arched windows, and the ladder
+    B([0, 7.6, 0], [9, 4.0, 1.2], '#dccfaa', 'extrude', {
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: -0.2, y: 0.02, w: 0.18, h: 0.72, arch: true }, { x: 0.2, y: 0.02, w: 0.18, h: 0.72, arch: true }],
+      adorn: [
+        ...[-1.8, 1.8].map((x) => B([x, -0.1, -0.35], [1.6, 2.8, 0.2], '#2e3a48')),   // glass behind
+        // the ladder, leaning under the right-hand window
+        B([2.6, -1.05, 1.0], [0.9, 1.9, 0.5], '#7a5a36', 'group', {
+          rotX: -0.25,
+          adorn: [
+            ...[-0.36, 0.36].map((x) => B([x, 0, 0], [0.08, 1.9, 0.08], '#7a5a36')),
+            ...[-0.7, -0.3, 0.1, 0.5].map((y) => B([0, y, 0], [0.72, 0.06, 0.06], '#7a5a36')),
+          ],
+        }),
+      ],
+    }),
+    // the bell tower on the left, and its upper storey with arched openings
+    B([-6.2, 5.0, -0.4], [3.0, 10.0, 3.0], '#d4c6a0', 'box', { tex: 'stone', tx: { cols: 3, rows: 9 } }),
+    B([-6.2, 11.6, -0.4], [2.8, 3.2, 2.8], '#dccfaa', 'box', {
+      tex: 'stone', tx: { cols: 3, rows: 3 },
+      adorn: [[0, 1.42], [0, -1.42], [1.42, 0], [-1.42, 0]].map(([x, z]) => B([x, 0, z], [x ? 0.1 : 1.0, 1.8, z ? 0.1 : 1.0], '#2a2620')),
+    }),
+    // a chapel on the right with its small dome
+    B([6.2, 2.8, -0.6], [3.2, 5.6, 3.2], '#d4c6a0', 'box', {
+      tex: 'stone', tx: { cols: 3, rows: 5 },
+      adorn: [B([0, 2.8, 0], [2.4, 1.3, 2.4], '#9aa0a6', 'dome')],
+    }),
+    // the Katholikon's drum and dome, with its cross
+    B([3.0, 10.4, -5.0], [4.2, 2.2, 4.2], '#d8caa4', 'cyl', { tex: 'win', tx: { cols: 10, rows: 1 } }),
+    B([3.0, 11.5, -5.0], [4.4, 2.4, 4.4], '#8e949a', 'dome', {
+      adorn: [
+        B([0, 2.5, 0], [0.12, 1.1, 0.12], '#d8c070', 'box', { metal: 1 }),
+        B([0, 2.75, 0], [0.6, 0.1, 0.1], '#d8c070', 'box', { metal: 1 }),
+      ],
+    }),
+    // the great Rotunda over the tomb: drum, grey dome, lantern and cross
+    B([-3.4, 10.6, -8.0], [8.2, 2.8, 8.2], '#d8caa4', 'cyl', { tex: 'win', tx: { cols: 18, rows: 1 } }),
+    B([-3.4, 12.0, -8.0], [8.6, 5.0, 8.6], '#9298a0', 'dome', {
+      adorn: [
+        B([0, 4.6, 0], [1.2, 1.0, 1.2], '#d8caa4', 'cyl'),
+        B([0, 5.7, 0], [0.14, 1.4, 0.14], '#d8c070', 'box', { metal: 1 }),
+        B([0, 6.0, 0], [0.8, 0.12, 0.12], '#d8c070', 'box', { metal: 1 }),
       ],
     }),
   ],

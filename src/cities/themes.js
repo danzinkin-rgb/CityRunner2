@@ -297,7 +297,10 @@ export const CITIES = [
     // A city bus in green and white. Deliberately no operator name or logo:
     // every brand in the game is fictional (docs/COMPLIANCE.md).
     vehicle: 'citybus',
-    landmarks: ['kotel', 'domerock', 'towerdavid'],
+    // One central site for each of the city's three faiths. The Tower of
+    // David (defined in landmarks.js, with its facts) waits for a fourth
+    // street; it is the skyline at the end of Jaffa Road meanwhile.
+    landmarks: ['kotel', 'domerock', 'holysepulchre'],
     levels: [
       { // Jaffa Road — the seam between old and new: the light-rail spine
         // (rails and overhead wires), stone frontage near the Old City end.
@@ -339,6 +342,7 @@ export const LANDMARK_NAMES = {
   colosseum: 'Colosseum', trevi: 'Trevi Fountain', pantheon: 'Pantheon',
   ggbridge: 'Golden Gate Bridge', coit: 'Coit Tower', paintedladies: 'Painted Ladies',
   kotel: 'The Western Wall', domerock: 'The Dome of the Rock', towerdavid: 'Tower of David',
+  holysepulchre: 'Church of the Holy Sepulchre',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags
