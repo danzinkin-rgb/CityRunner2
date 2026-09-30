@@ -70,7 +70,7 @@ function arcade(y, R, h, n, c, tex, texN, coverage = 1, startA = 0) {
 // cover y0..h, which is what the scatter and the build order read.
 function eifleg(x0, z0, x1, z1, h, r, c, y0 = 0) {
   return B([(x0 + x1) / 2, (y0 + h) / 2, (z0 + z1) / 2], [Math.abs(x0 - x1) + r * 2, h - y0, Math.abs(z0 - z1) + r * 2],
-    c, 'eifleg', { leg: { x0, z0, x1, z1, h, r, y0 }, em: '#ff9d5a', emI: 0.08 });
+    c, 'eifleg', { leg: { x0, z0, x1, z1, h, r, y0 }, tex: 'truss', tx: { rows: y0 ? 5 : 4 }, em: '#ffb060', emI: 0.3 });
 }
 
 // Painted Ladies row house: the body, and the gable roof above it. The body
@@ -245,60 +245,62 @@ const defs = {
   ],
 
   // ================= PARIS =================
-  // Eiffel: dark iron-bronze, +30% height, thin curved legs flowing
-  // continuously into a thin trussed first platform, high-contrast lattice.
+  // The Eiffel Tower. Proportions are the real ones, as fractions of its
+  // 330 m: base 0.38 wide, platforms at 0.17, 0.35 and 0.84. What makes it
+  // the Eiffel Tower rather than a mast is the IRONWORK, so the structure is
+  // open lattice you can see through (the 'truss' texture, alpha-tested): the
+  // four legs are square braced pylons that stay separate up to the second
+  // platform, the great arches are tied up into the first platform by their
+  // struts, and the long taper above is lattice too. It glows gold, as the
+  // tower does once it is lit at dusk.
   eiffel: [
-    // Real proportions, as fractions of the 330m height: base 0.38 wide, first
-    // platform at 0.17, second at 0.35, third at 0.84. The old tower had the
-    // first two at 0.26 and 0.52 on a base only 0.29 wide, which stretched the
-    // middle and read as a radio mast. The four legs also stay separate piers
-    // right up to the SECOND platform, as the real ones do, instead of merging
-    // at the first. Colour is the lighter "Eiffel Tower brown" it is painted,
-    // not near-black; the lattice texture darkens it further on its own.
-    eifleg(-5.1, -5.1, -2.85, -2.85, 4.6, 0.64, '#5d4c3d'),
-    eifleg(5.1, -5.1, 2.85, -2.85, 4.6, 0.64, '#5d4c3d'),
-    eifleg(-5.1, 5.1, -2.85, 2.85, 4.6, 0.64, '#5d4c3d'),
-    eifleg(5.1, 5.1, 2.85, 2.85, 4.6, 0.64, '#5d4c3d'),
-    // the four great arches, springing near the ground and meeting the
+    eifleg(-5.1, -5.1, -2.85, -2.85, 4.6, 0.8, '#a88048'),
+    eifleg(5.1, -5.1, 2.85, -2.85, 4.6, 0.8, '#a88048'),
+    eifleg(-5.1, 5.1, -2.85, 2.85, 4.6, 0.8, '#a88048'),
+    eifleg(5.1, 5.1, 2.85, 2.85, 4.6, 0.8, '#a88048'),
+    // the four great arches, springing from the legs and tied to the
     // underside of the first platform — sortY brings them after the legs
-    B([0, -0.2, 4.1], [9.2, 4.6, 0.62], '#6b5843', 'arch', { sortY: 3.0 }),
-    B([0, -0.2, -4.1], [9.2, 4.6, 0.62], '#6b5843', 'arch', { sortY: 3.0 }),
-    B([4.1, -0.2, 0], [9.2, 4.6, 0.62], '#6b5843', 'arch', { rotY: Math.PI / 2, sortY: 3.0 }),
-    B([-4.1, -0.2, 0], [9.2, 4.6, 0.62], '#6b5843', 'arch', { rotY: Math.PI / 2, sortY: 3.0 }),
-    // first platform, wider than the legs beneath it, arriving with its rails
-    B([0, 4.8, 0], [6.6, 0.45, 6.6], '#6a5742', 'box', {
-      tex: 'lattice', em: '#ffb96a', emI: 0.3,
+    B([0, 2.45, 3.6], [8.6, 3.5, 0.26], '#b08850', 'eifarch', { chord: 5.4, sortY: 3.0, em: '#ffb060', emI: 0.3 }),
+    B([0, 2.45, -3.6], [8.6, 3.5, 0.26], '#b08850', 'eifarch', { chord: 5.4, sortY: 3.0, em: '#ffb060', emI: 0.3 }),
+    B([3.6, 2.45, 0], [8.6, 3.5, 0.26], '#b08850', 'eifarch', { chord: 5.4, rotY: Math.PI / 2, sortY: 3.0, em: '#ffb060', emI: 0.3 }),
+    B([-3.6, 2.45, 0], [8.6, 3.5, 0.26], '#b08850', 'eifarch', { chord: 5.4, rotY: Math.PI / 2, sortY: 3.0, em: '#ffb060', emI: 0.3 }),
+    // first platform: the deck, its lit gallery band and its railing
+    B([0, 4.85, 0], [7.0, 0.5, 7.0], '#6a5234', 'box', {
       adorn: [
-        B([0, 0.4, 3.26], [6.6, 0.34, 0.07], '#7a664e'),
-        B([0, 0.4, -3.26], [6.6, 0.34, 0.07], '#7a664e'),
-        B([3.26, 0.4, 0], [0.07, 0.34, 6.6], '#7a664e'),
-        B([-3.26, 0.4, 0], [0.07, 0.34, 6.6], '#7a664e'),
+        ...[[0, 3.52, 7.0, 0.06], [0, -3.52, 7.0, 0.06]].map(([x, z, ww, dd]) => B([x, 0, z], [ww, 0.5, dd], '#d8a860', 'box', { em: '#ffc470', emI: 0.75 })),
+        ...[[3.52, 0, 0.06, 7.0], [-3.52, 0, 0.06, 7.0]].map(([x, z, ww, dd]) => B([x, 0, z], [ww, 0.5, dd], '#d8a860', 'box', { em: '#ffc470', emI: 0.75 })),
+        B([0, 0.45, 3.46], [7.0, 0.3, 0.07], '#a88048'), B([0, 0.45, -3.46], [7.0, 0.3, 0.07], '#a88048'),
+        B([3.46, 0.45, 0], [0.07, 0.3, 7.0], '#a88048'), B([-3.46, 0.45, 0], [0.07, 0.3, 7.0], '#a88048'),
       ],
     }),
-    // second storey: the same four piers, leaning in to meet the second platform
-    eifleg(-2.55, -2.55, -1.45, -1.45, 9.4, 0.42, '#5d4c3d', 5.0),
-    eifleg(2.55, -2.55, 1.45, -1.45, 9.4, 0.42, '#5d4c3d', 5.0),
-    eifleg(-2.55, 2.55, -1.45, 1.45, 9.4, 0.42, '#5d4c3d', 5.0),
-    eifleg(2.55, 2.55, 1.45, 1.45, 9.4, 0.42, '#5d4c3d', 5.0),
-    B([0, 9.55, 0], [3.7, 0.35, 3.7], '#6a5742', 'box', {
-      tex: 'lattice', em: '#ffb96a', emI: 0.3,
+    // second storey: the same four pylons, leaning in to the second platform
+    eifleg(-2.55, -2.55, -1.45, -1.45, 9.4, 0.56, '#a88048', 5.1),
+    eifleg(2.55, -2.55, 1.45, -1.45, 9.4, 0.56, '#a88048', 5.1),
+    eifleg(-2.55, 2.55, -1.45, 1.45, 9.4, 0.56, '#a88048', 5.1),
+    eifleg(2.55, 2.55, 1.45, 1.45, 9.4, 0.56, '#a88048', 5.1),
+    B([0, 9.6, 0], [4.0, 0.4, 4.0], '#6a5234', 'box', {
       adorn: [
-        B([0, 0.34, 1.83], [3.7, 0.3, 0.06], '#7a664e'),
-        B([0, 0.34, -1.83], [3.7, 0.3, 0.06], '#7a664e'),
-        B([1.83, 0.34, 0], [0.06, 0.3, 3.7], '#7a664e'),
-        B([-1.83, 0.34, 0], [0.06, 0.3, 3.7], '#7a664e'),
+        ...[[0, 2.02, 4.0, 0.06], [0, -2.02, 4.0, 0.06]].map(([x, z, ww, dd]) => B([x, 0, z], [ww, 0.4, dd], '#d8a860', 'box', { em: '#ffc470', emI: 0.75 })),
+        ...[[2.02, 0, 0.06, 4.0], [-2.02, 0, 0.06, 4.0]].map(([x, z, ww, dd]) => B([x, 0, z], [ww, 0.4, dd], '#d8a860', 'box', { em: '#ffc470', emI: 0.75 })),
+        B([0, 0.38, 1.96], [4.0, 0.26, 0.06], '#a88048'), B([0, 0.38, -1.96], [4.0, 0.26, 0.06], '#a88048'),
+        B([1.96, 0.38, 0], [0.06, 0.26, 4.0], '#a88048'), B([-1.96, 0.38, 0], [0.06, 0.26, 4.0], '#a88048'),
       ],
     }),
-    // the long taper to the top, in two lifts
-    B([0, 13.1, 0], [2.9, 6.8, 2.9], '#5a493b', 'cone4', { tex: 'lattice', em: '#ff9d5a', emI: 0.1 }),
-    B([0, 19.6, 0], [1.3, 6.2, 1.3], '#5a493b', 'cone4', { tex: 'lattice', em: '#ff9d5a', emI: 0.1 }),
-    // third platform, and the lantern-topped campanile above it
-    B([0, 22.8, 0], [1.5, 0.22, 1.5], '#6a5742', 'box', { em: '#ffb96a', emI: 0.36 }),
-    B([0, 23.6, 0], [1.1, 1.4, 1.1], '#62503f', 'lathe', {
-      profile: [[0.95, 0], [0.95, 0.42], [0.62, 0.5], [0.62, 0.78], [0.34, 0.84], [0.18, 1]],
-      seg: 8, em: '#ffd9a0', emI: 0.22,
+    // the long taper to the top, in two lifts of open lattice
+    B([0, 13.2, 0], [3.0, 6.8, 1.5], '#a88048', 'tier', { sides: 4, tex: 'truss', tx: { rows: 5 }, em: '#ffb060', emI: 0.3 }),
+    B([0, 19.7, 0], [1.5, 6.2, 0.78], '#a88048', 'tier', { sides: 4, tex: 'truss', tx: { rows: 7 }, em: '#ffb060', emI: 0.3 }),
+    // third platform with its cabin, and the beacon and mast above
+    B([0, 23.0, 0], [1.7, 0.3, 1.7], '#6a5234', 'box', {
+      adorn: [B([0, 0.35, 0], [1.75, 0.22, 1.75], '#d8a860', 'box', { em: '#ffc470', emI: 0.8 })],
     }),
-    B([0, 25.8, 0], [0.09, 3.0, 0.09], '#8a7458', 'cyl', { metal: 1, em: '#ffd9a0', emI: 0.7 }),
+    B([0, 23.9, 0], [1.2, 1.5, 1.2], '#8a6a40', 'lathe', {
+      profile: [[0.95, 0], [0.95, 0.4], [0.62, 0.5], [0.62, 0.78], [0.34, 0.86], [0.2, 1]],
+      seg: 8, em: '#ffd9a0', emI: 0.35,
+    }),
+    B([0, 26.2, 0], [0.16, 3.4, 0.16], '#b89866', 'cyl', {
+      metal: 1, em: '#ffd9a0', emI: 0.7,
+      adorn: [B([0, -1.5, 0], [0.5, 0.5, 0.5], '#fff4c8', 'sphere', { em: '#fff0b0', emI: 1.4 })],
+    }),
   ],
 
   // Arc de Triomphe: attic flush with the legs, inset vault for shadow

@@ -104,7 +104,7 @@ function makeBlockTexture(def) {
   const key = `${tex}|${c}|${JSON.stringify(tx)}`;
   // the pyramid's mullion grid needs the extra resolution — a cylinder UV
   // gives each of the four faces only a quarter of the texture width
-  const SZ = tex === 'glass' ? 512 : 256;
+  const SZ = tex === 'glass' || tex === 'truss' ? 512 : 256;
   return cachedTex(key, SZ, SZ, (g, S) => {
     if (tex === 'lattice') {
       // Painted iron lattice. The girder highlight is deliberately restrained:
@@ -199,6 +199,30 @@ function makeBlockTexture(def) {
         g.beginPath();
         g.moveTo(x - 5, S * 0.16); g.quadraticCurveTo(x, S * 0.05, x + 5, S * 0.16);
         g.lineTo(x + 5, S * 0.3); g.lineTo(x - 5, S * 0.3); g.closePath(); g.fill();
+      }
+      return;
+    }
+    if (tex === 'truss') {
+      // Open ironwork: nothing is painted between the members, so the block
+      // is see-through (the material alpha-tests it). Four columns, one per
+      // face of a square pylon, by tx.rows panels. Each panel is two chords
+      // down its edges, a strut top and bottom, and an X of bracing.
+      g.clearRect(0, 0, S, S);
+      const cols = 4, rows = tx.rows || 4;
+      const cw = S / cols, ch = S / rows;
+      const hi = shade(c, 0.22), lo = shade(c, -0.18);
+      for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
+        const x = i * cw, y = j * ch, e = cw * 0.11;
+        g.fillStyle = c;
+        g.fillRect(x, y, e, ch); g.fillRect(x + cw - e, y, e, ch);               // chords
+        g.fillRect(x, y, cw, ch * 0.07); g.fillRect(x, y + ch * 0.93, cw, ch * 0.07);   // struts
+        g.fillStyle = hi; g.fillRect(x, y, e * 0.35, ch);
+        g.fillStyle = lo; g.fillRect(x + cw - e * 0.35, y, e * 0.35, ch);
+        g.strokeStyle = c; g.lineWidth = Math.max(3, cw * 0.075); g.lineCap = 'butt';
+        g.beginPath(); g.moveTo(x + e, y); g.lineTo(x + cw - e, y + ch);
+        g.moveTo(x + cw - e, y); g.lineTo(x + e, y + ch); g.stroke();
+        g.strokeStyle = hi; g.lineWidth = 1.5;
+        g.beginPath(); g.moveTo(x + e, y + 1); g.lineTo(x + cw - e, y + ch + 1); g.stroke();
       }
       return;
     }
@@ -1132,7 +1156,7 @@ function blockMaterial(def, isGhost) {
     });
   }
   const color = new THREE.Color(def.c);
-  const seeThru = def.tex === 'archcut';
+  const seeThru = def.tex === 'archcut' || def.tex === 'truss';
   const wet = def.shape === 'water' || def.wet;
   const mat = new THREE.MeshStandardMaterial({
     // textured blocks paint their colour into the map, so the material tints
@@ -1201,11 +1225,34 @@ export function makeBlockMesh(def, isGhost = false, isChild = false) {
       const P2 = new THREE.Vector3(P3.x, y0 - py + span * 0.74, P3.z);
       const curve = new THREE.CubicBezierCurve3(P0, P1, P2, P3);
       out = new THREE.Group();
-      out.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 20, L.r, 8), mat));
+      // A square pylon swept along the curve, its section level and tapering
+      // toward the top. Each face takes a quarter of the texture's width, so
+      // the 'truss' texture gives every face its own column of braced panels
+      // and the leg is open ironwork, not a solid tube.
+      const N = 18, pos = [], uv = [];
+      const ring = (t) => {
+        const c0 = curve.getPoint(t), hw = L.r * (1 - 0.32 * t);
+        return [[-hw, -hw], [hw, -hw], [hw, hw], [-hw, hw]].map(([dx, dz]) => [c0.x + dx, c0.y, c0.z + dz]);
+      };
+      for (let i = 0; i < N; i++) {
+        const t0 = i / N, t1 = (i + 1) / N, r0 = ring(t0), r1 = ring(t1);
+        for (let f = 0; f < 4; f++) {
+          const a0 = r0[f], b0 = r0[(f + 1) % 4], a1 = r1[f], b1 = r1[(f + 1) % 4];
+          const u0 = f / 4, u1 = (f + 1) / 4;
+          pos.push(...a0, ...b0, ...b1, ...a0, ...b1, ...a1);
+          uv.push(u0, t0, u1, t0, u1, t1, u0, t0, u1, t1, u0, t1);
+        }
+      }
+      const lg = new THREE.BufferGeometry();
+      lg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      lg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      lg.computeVertexNormals();
+      out.add(new THREE.Mesh(lg, mat));
       // broad foot pad, on the ground legs only
       if (!y0) {
-        const foot = new THREE.Mesh(new THREE.BoxGeometry(L.r * 3.2, 0.3, L.r * 3.2), mat);
-        foot.position.set(P0.x, P0.y + 0.15, P0.z);
+        const footMat = isGhost ? mat : new THREE.MeshStandardMaterial({ color: '#8d8478', roughness: 0.85 });
+        const foot = new THREE.Mesh(new THREE.BoxGeometry(L.r * 3.4, 0.5, L.r * 3.4), footMat);
+        foot.position.set(P0.x, P0.y + 0.25, P0.z);
         out.add(foot);
       }
       break;
@@ -1288,6 +1335,31 @@ export function makeBlockMesh(def, isGhost = false, isChild = false) {
     case 'arch': {
       const tube = d / 2;
       geo = new THREE.TorusGeometry((w - d) / 2, tube, 10, 32, Math.PI);
+      break;
+    }
+    case 'eifarch': {
+      // One of the Eiffel Tower's four great arches: the arc itself, a chord
+      // along the underside of the first platform, and the struts between
+      // them, so it reads as ironwork tied into the tower, not a loose hoop.
+      // s: [span, rise, thickness]; def.chord is the chord's length.
+      out = new THREE.Group();
+      const pts = [];
+      for (let i = 0; i <= 24; i++) {
+        const a = (i / 24) * Math.PI;
+        pts.push(new THREE.Vector3(Math.cos(a) * w / 2, -h / 2 + Math.sin(a) * h, 0));
+      }
+      out.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, d / 2, 6), mat));
+      const chord = def.chord || w * 0.62, top = h / 2 + d * 0.6;
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(chord, d * 0.8, d * 0.8), mat);
+      bar.position.y = top; out.add(bar);
+      const n = 9;
+      for (let i = 0; i < n; i++) {
+        const x = -chord / 2 + (i + 0.5) * (chord / n);
+        const y0 = -h / 2 + h * Math.sqrt(Math.max(0, 1 - (2 * x / w) ** 2));
+        if (top - y0 < 0.12) continue;
+        const st = new THREE.Mesh(new THREE.BoxGeometry(d * 0.45, top - y0, d * 0.45), mat);
+        st.position.set(x, (top + y0) / 2, 0); out.add(st);
+      }
       break;
     }
     case 'arcseg': {
