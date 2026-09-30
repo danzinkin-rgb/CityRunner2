@@ -6,6 +6,11 @@ export const LANES = [-2.4, 0, 2.4];
 // trajectory rather than guessed numbers. Apex 2.48m, airtime 0.787s — enough
 // to clear a 1.6m car. If these change, the coin arcs follow automatically.
 export const JUMP_V = 12.6;
+// The tucked runner during a roll, as a box: half its height (the body is
+// squashed to about 1.2 m) and half its depth front to back, shoes, backpack
+// and tucked limbs included. test/roll.mjs measures that nothing dips below
+// the road.
+const ROLL_HALF_H = 0.6, ROLL_HALF_D = 0.62;
 export const GRAVITY = 32;
 
 // Default look — identical to the original hard-coded runner. Every
@@ -299,16 +304,27 @@ export class Player {
     if (this.rolling > 0) {
       this.body.scale.y = 0.52;
       this.body.rotation.x = -this.rolling * 8;
-      this.armL.rotation.x = this.armR.rotation.x = 1.5;
-      this.legL.rotation.x = this.legR.rotation.x = -1.5;
+      // Tumble about the body's own middle, not its feet. The body's origin
+      // is at the feet, so spinning it there swung the head and torso down
+      // through the road for half of every roll. Moving the origin as it
+      // turns keeps the middle still; and because a box on its corner stands
+      // taller than on its side, the middle is lifted by just enough at each
+      // angle to keep the lowest corner on the road. The lift is zero when
+      // upright, so nothing pops at the start or end of the roll.
+      const th = this.body.rotation.x, co = Math.cos(th), si = Math.sin(th);
+      const lift = Math.max(0, ROLL_HALF_H * Math.abs(co) + ROLL_HALF_D * Math.abs(si) - ROLL_HALF_H);
+      this.body.position.y = ROLL_HALF_H * (1 - co) + lift;
+      this.body.position.z = -ROLL_HALF_H * si;
     } else if (!this.grounded) {
       this.body.scale.y = 1;
       this.body.rotation.x = 0.18;
+      this.body.position.set(0, 0, 0);
       this.armL.rotation.x = -2.4; this.armR.rotation.x = -2.4; // arms up
       this.legL.rotation.x = 0.8; this.legR.rotation.x = -0.4;  // tuck
     } else {
       this.body.scale.y = 1;
       this.body.rotation.x = 0.12; // forward lean
+      this.body.position.z = 0;
       const s = Math.sin(run), c = Math.cos(run);
       this.armL.rotation.x = s * 1.1;
       this.armR.rotation.x = -s * 1.1;
