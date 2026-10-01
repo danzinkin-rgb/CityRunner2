@@ -138,6 +138,33 @@ try {
   lines.push(`Daily clip bot: could not be read (${err.message.slice(0, 160)}).`, '');
 }
 
+// Social accounts, read from each site's public API: no token needed.
+{
+  const UA = { headers: { 'User-Agent': 'CityRunnerReport/1.0 (+https://github.com/danzinkin-rgb/CityRunner2)' } };
+  const since = thisWeek[6];
+  const rows = [];
+  const tally = (posts) => posts.reduce((t, p) => ({ n: t.n + 1, likes: t.likes + p.likes, shares: t.shares + p.shares, replies: t.replies + p.replies }), { n: 0, likes: 0, shares: 0, replies: 0 });
+  try {
+    if (!config.bluesky) throw new Error('not configured');
+    const prof = await (await fetch(`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${config.bluesky}`, UA)).json();
+    const feed = await (await fetch(`https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${config.bluesky}&limit=30`, UA)).json();
+    const t = tally((feed.feed || []).filter((f) => f.post.indexedAt.slice(0, 10) >= since)
+      .map((f) => ({ likes: f.post.likeCount || 0, shares: f.post.repostCount || 0, replies: f.post.replyCount || 0 })));
+    rows.push(`| Bluesky | ${prof.followersCount ?? '?'} | ${t.n} | ${t.likes} | ${t.shares} | ${t.replies} |`);
+  } catch (err) { rows.push(`| Bluesky | could not be read (${err.message.slice(0, 80)}) | | | | |`); }
+  try {
+    if (!config.mastodon) throw new Error('not configured');
+    const u = new URL(config.mastodon);
+    const acct = u.pathname.replace(/^\/@/, '');
+    const a = await (await fetch(`${u.origin}/api/v1/accounts/lookup?acct=${acct}`, UA)).json();
+    const st = await (await fetch(`${u.origin}/api/v1/accounts/${a.id}/statuses?limit=30`, UA)).json();
+    const t = tally(st.filter((x) => x.created_at.slice(0, 10) >= since)
+      .map((x) => ({ likes: x.favourites_count, shares: x.reblogs_count, replies: x.replies_count })));
+    rows.push(`| Mastodon | ${a.followers_count} | ${t.n} | ${t.likes} | ${t.shares} | ${t.replies} |`);
+  } catch (err) { rows.push(`| Mastodon | could not be read (${err.message.slice(0, 80)}) | | | | |`); }
+  lines.push('## Social accounts', '', '| | Followers | Posts this week | Likes | Reposts | Replies |', '|---|---|---|---|---|---|', ...rows, '');
+}
+
 // A post for Dan to put on X by hand. X's API charges per post, and more for
 // a post with a link, so this is drafted rather than posted: the newest clip
 // from the public daily-clips release is downloaded beside the report, with
