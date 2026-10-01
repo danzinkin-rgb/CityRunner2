@@ -32,6 +32,11 @@ if (clip.collisions > 0 && !DRY) {
   console.error(`Not posting: the autopilot hit ${clip.collisions} obstacle(s) on this course, so the clip shows the runner passing through one.`);
   process.exit(1);
 }
+// mastodon.social answers 503 to any request without a User-Agent, and
+// Node's fetch sends none on some versions, so every request names itself.
+const UA = 'CityRunnerClipBot/1.0 (+https://github.com/danzinkin-rgb/CityRunner2)';
+const nativeFetch = globalThis.fetch;
+const fetch = (url, opts = {}) => nativeFetch(url, { ...opts, headers: { 'User-Agent': UA, ...(opts.headers || {}) } });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const json = async (res, what) => {
