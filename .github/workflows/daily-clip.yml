@@ -32,15 +32,19 @@ permissions:
 jobs:
   clip:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Rendering takes about 10 minutes on a runner (software WebGL).
+    timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps webkit
+      # The runner image has no ffmpeg, and Playwright's own can only write
+      # WebM; Bluesky and X need MP4.
+      - run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
       - name: Render today's course
         run: node marketing/daily-clip.mjs
       - name: Publish to the daily-clips release
