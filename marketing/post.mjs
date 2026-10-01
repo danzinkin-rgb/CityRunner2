@@ -134,14 +134,18 @@ async function postMastodon() {
   form.append('file', new Blob([readFileSync(clip.file)], { type }), basename(clip.file));
   form.append('description', clip.alt);
   let media = await json(await fetch(`${base}/api/v2/media`, { method: 'POST', headers: auth, body: form }), 'Mastodon upload');
-  // A video is processed after upload; the status cannot attach it until its url appears.
-  for (let i = 0; !media.url && i < 120; i++) {
-    await sleep(2000);
+  // A video is processed after upload; the status cannot attach it until its
+  // url appears. mastodon.social's queue has been seen to take over 4 minutes.
+  const started = Date.now();
+  for (let i = 0; !media.url && Date.now() - started < 15 * 60 * 1000; i++) {
+    await sleep(5000);
     const res = await fetch(`${base}/api/v1/media/${media.id}`, { headers: auth });
     if (res.status === 200) media = await json(res, 'Mastodon media status');
     else if (res.status !== 206) await json(res, 'Mastodon media status');
+    else await res.arrayBuffer();
+    if (i % 12 === 11) console.log(`Mastodon: video still processing after ${Math.round((Date.now() - started) / 60000)} min`);
   }
-  if (!media.url) throw new Error('Mastodon video was still processing after 4 minutes');
+  if (!media.url) throw new Error('Mastodon video was still processing after 15 minutes');
 
   const status = await json(await fetch(`${base}/api/v1/statuses`, {
     method: 'POST',
