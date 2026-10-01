@@ -2,7 +2,12 @@
 #
 # The course changes at 00:00 UTC, so this runs shortly after. It can also be
 # started by hand from the Actions tab, with posting switched off to check a
-# clip first: the rendered video is attached to every run either way.
+# clip first.
+#
+# Every clip, and the caption data beside it, is also published to the
+# "daily-clips" release, which anyone can download from without signing in.
+# The weekly report fetches the latest one from there for posting to X by
+# hand. Clips older than 21 days are removed from the release.
 #
 # Posting needs repository secrets (Settings > Secrets and variables > Actions).
 # A service whose secrets are missing is skipped; see marketing/post.mjs.
@@ -22,7 +27,7 @@ on:
         default: true
 
 permissions:
-  contents: read
+  contents: write   # to publish clips to the daily-clips release
 
 jobs:
   clip:
@@ -38,13 +43,18 @@ jobs:
       - run: npx playwright install --with-deps webkit
       - name: Render today's course
         run: node marketing/daily-clip.mjs
-      - uses: actions/upload-artifact@v4
-        with:
-          name: daily-clip
-          path: |
-            marketing/out/*.mp4
-            marketing/out/daily.json
-          retention-days: 14
+      - name: Publish to the daily-clips release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          day=$(jq -r .day marketing/out/daily.json)
+          cp marketing/out/daily.json "marketing/out/daily-$day.json"
+          notes="A short video of each day's daily challenge course, made automatically. Older clips are removed after 21 days."
+          gh release view daily-clips >/dev/null 2>&1 || gh release create daily-clips --title "Daily clips" --latest=false --notes "$notes"
+          gh release upload daily-clips "marketing/out/daily-$day.mp4" "marketing/out/daily-$day.json" --clobber
+          cutoff=$(date -u -d '21 days ago' +%Y-%m-%dT%H:%M:%SZ)
+          old=$(gh api "repos/${{ github.repository }}/releases/tags/daily-clips" --jq ".assets[] | select(.created_at < \"$cutoff\") | .id")
+          for id in $old; do gh api -X DELETE "repos/${{ github.repository }}/releases/assets/$id"; done
       - name: Post
         if: github.event_name == 'schedule' || inputs.post
         env:

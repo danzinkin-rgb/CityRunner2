@@ -138,6 +138,37 @@ try {
   lines.push(`Daily clip bot: could not be read (${err.message.slice(0, 160)}).`, '');
 }
 
+// A post for Dan to put on X by hand. X's API charges per post, and more for
+// a post with a link, so this is drafted rather than posted: the newest clip
+// from the public daily-clips release is downloaded beside the report, with
+// text to go with it and the App Store link for a reply under the post.
+const GH = { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'cityrunner-report' } };
+try {
+  const rel = await fetch('https://api.github.com/repos/danzinkin-rgb/CityRunner2/releases/tags/daily-clips', GH);
+  if (rel.status === 404) throw new Error('no clips published yet');
+  const assets = (await rel.json()).assets || [];
+  const meta = assets.filter((a) => /^daily-\d{4}-\d{2}-\d{2}\.json$/.test(a.name)).sort((a, b) => b.name.localeCompare(a.name))[0];
+  const video = meta && assets.find((a) => a.name === meta.name.replace('.json', '.mp4'));
+  if (!video) throw new Error('no clips published yet');
+  const clip = await (await fetch(meta.browser_download_url, GH)).json();
+  let where = video.browser_download_url;
+  if (OUT) {
+    mkdirSync(OUT, { recursive: true });
+    where = join(OUT, `x-${video.name}`);
+    writeFileSync(where, Buffer.from(await (await fetch(video.browser_download_url, GH)).arrayBuffer()));
+  }
+  const weekday = new Date(`${clip.day}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' });
+  const opener = `My game CityRunner gives every player the same course each day. ${weekday}'s was ${clip.street}, ${clip.city}.`;
+  const close = 'How far would you get?';
+  // X allows 280 characters on a standard account; the fact is dropped if it will not fit.
+  const withFact = `${opener}\n\n${clip.fact}\n\n${close}`;
+  const post = [...withFact].length <= 280 ? withFact : `${opener}\n\n${close}`;
+  lines.push('## Post for X', '', `Video: ${where}`, '', 'Post:', '', '```', post, '```', '',
+    'Reply under it with the link (X shows posts with links in them to fewer people):', '', '```', `Free on the App Store: ${config.appStoreUrl}`, '```', '');
+} catch (err) {
+  lines.push('## Post for X', '', `No clip this week (${err.message.slice(0, 160)}).`, '');
+}
+
 const report = lines.join('\n');
 console.log(report);
 if (OUT) {
