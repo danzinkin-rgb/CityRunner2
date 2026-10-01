@@ -29,6 +29,10 @@ on:
         description: Post only to these (e.g. "mastodon"); blank for all
         type: string
         default: ''
+      reuse:
+        description: Reuse today's published clip instead of rendering (for re-posting)
+        type: boolean
+        default: false
 
 permissions:
   contents: write   # to publish clips to the daily-clips release
@@ -44,14 +48,28 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps webkit
+      - name: Fetch today's published clip
+        if: inputs.reuse
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          day=$(date -u +%F)
+          mkdir -p marketing/out
+          gh release download daily-clips --dir marketing/out --pattern "daily-$day.*"
+          cp "marketing/out/daily-$day.json" marketing/out/daily.json
+      - if: ${{ !inputs.reuse }}
+        run: npm ci
+      - if: ${{ !inputs.reuse }}
+        run: npx playwright install --with-deps webkit
       # The runner image has no ffmpeg, and Playwright's own can only write
       # WebM; Bluesky and X need MP4.
-      - run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+      - if: ${{ !inputs.reuse }}
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
       - name: Render today's course
+        if: ${{ !inputs.reuse }}
         run: node marketing/daily-clip.mjs
       - name: Publish to the daily-clips release
+        if: ${{ !inputs.reuse }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

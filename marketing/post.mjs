@@ -28,6 +28,9 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DRY = process.argv.includes('--dry-run');
 const clip = JSON.parse(readFileSync(join(HERE, 'out', 'daily.json'), 'utf8'));
+// The recorded path is from the machine that rendered the clip; the video
+// itself always sits beside daily.json.
+clip.file = join(HERE, 'out', basename(clip.file.replace(/\\/g, '/')));
 if (clip.collisions > 0 && !DRY) {
   console.error(`Not posting: the autopilot hit ${clip.collisions} obstacle(s) on this course, so the clip shows the runner passing through one.`);
   process.exit(1);
@@ -121,7 +124,10 @@ async function postMastodon() {
   const text = captionFor(500);
   if (DRY) return `dry run:\n${text}`;
   const auth = { Authorization: `Bearer ${token}` };
-  const base = instance.replace(/\/$/, '');
+  // Only the server matters; a pasted profile or home URL would otherwise
+  // send the upload to a page that does not exist.
+  const trimmed = instance.trim();
+  const base = new URL(/^https?:\/\//.test(trimmed) ? trimmed : `https://${trimmed}`).origin;
 
   const form = new FormData();
   const type = clip.file.endsWith('.mp4') ? 'video/mp4' : 'video/webm';
