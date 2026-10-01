@@ -25,6 +25,10 @@ on:
         description: Post the clip (untick to render only)
         type: boolean
         default: true
+      only:
+        description: Post only to these (e.g. "mastodon"); blank for all
+        type: string
+        default: ''
 
 permissions:
   contents: write   # to publish clips to the daily-clips release
@@ -64,6 +68,9 @@ jobs:
         env:
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
-          MASTODON_INSTANCE: ${{ secrets.MASTODON_INSTANCE }}
-          MASTODON_TOKEN: ${{ secrets.MASTODON_TOKEN }}
+          # The MASTODON_SOCIAL_ pair is the mastodon.social account; a
+          # MASTODON_ pair (for another server) takes precedence when added.
+          MASTODON_INSTANCE: ${{ secrets.MASTODON_INSTANCE || secrets.MASTODON_SOCIAL_INSTANCE }}
+          MASTODON_TOKEN: ${{ secrets.MASTODON_TOKEN || secrets.MASTODON_SOCIAL_TOKEN }}
+          POST_ONLY: ${{ inputs.only }}
         run: node marketing/post.mjs

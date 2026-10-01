@@ -141,8 +141,12 @@ async function postMastodon() {
   return `posted ${status.url}`;
 }
 
+// POST_ONLY limits a manual re-run to some services, so a service that
+// already posted today is not posted to twice.
+const only = (process.env.POST_ONLY || '').toLowerCase().split(',').map((x) => x.trim()).filter(Boolean);
 let failed = false;
 for (const [name, run] of [['Bluesky', postBluesky], ['Mastodon', postMastodon]]) {
+  if (only.length && !only.includes(name.toLowerCase())) { console.log(`${name}: skipped (not in POST_ONLY)`); continue; }
   try {
     console.log(`${name}: ${await run()}`);
   } catch (err) {
