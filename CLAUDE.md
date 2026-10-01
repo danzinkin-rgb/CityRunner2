@@ -70,6 +70,10 @@ Most suites exist because a specific bug shipped, and each one's header comment 
 
 Two known fidelity limits, both stated in the suites themselves: headless WebKit resolves `env(safe-area-inset-*)` to **0**, so `test/menu-fit.mjs` emulates notch insets explicitly — without that, every measurement assumes ~93px more height than a real iPhone has, which is exactly how a menu-overflow bug shipped past a green suite. And Safari's collapsing toolbars, Apple emoji glyphs and iOS audio autoplay rules can only be checked on a real device.
 
+## Marketing tools
+
+`marketing/` is separate from the game and ships in no build. `build-pages.mjs` generates the landmark fact pages (`landmarks/`, `sitemap.xml`) from `src/facts.js`; the pages are committed because Pages serves the repo as-is, and `npm test` starts with `build-pages.mjs --check`, so a fact change fails the suite until the pages are regenerated (`npm run pages:landmarks`). `daily-clip.mjs` renders today's daily course as a vertical video with an autopilot driving the debug hooks, and `post.mjs` posts it to Bluesky and Mastodon; `.github/workflows/daily-clip.yml` runs both daily at 00:20 UTC with tokens from repository secrets. Marketing links point at the App Store only — the web build is deliberately not promoted, because it is free and fully unlocked.
+
 ## Docs
 
 `docs/` carries the reasoning behind most of the above. `COMPLIANCE.md` is authoritative on privacy, security and competitor-naming; `FREEMIUM-IAP.md` on the purchase model; `LAUNCH-CHECKLIST.md` and `APPSTORE-SUBMISSION.md` on release state; `PROPOSALS.md` §4 on the Children's Code constraints the paywall is built to.

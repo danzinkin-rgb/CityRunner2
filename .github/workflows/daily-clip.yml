@@ -1,0 +1,55 @@
+# Renders a clip of each day's daily challenge course and posts it.
+#
+# The course changes at 00:00 UTC, so this runs shortly after. It can also be
+# started by hand from the Actions tab, with posting switched off to check a
+# clip first: the rendered video is attached to every run either way.
+#
+# Posting needs repository secrets (Settings > Secrets and variables > Actions).
+# A service whose secrets are missing is skipped; see marketing/post.mjs.
+#
+# GitHub pauses scheduled workflows in a repository with no commits for 60
+# days and emails the owner; re-enable it from the Actions tab if that happens.
+name: Daily clip
+
+on:
+  schedule:
+    - cron: '20 0 * * *'
+  workflow_dispatch:
+    inputs:
+      post:
+        description: Post the clip (untick to render only)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  clip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      - name: Render today's course
+        run: node marketing/daily-clip.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: daily-clip
+          path: |
+            marketing/out/*.mp4
+            marketing/out/daily.json
+          retention-days: 14
+      - name: Post
+        if: github.event_name == 'schedule' || inputs.post
+        env:
+          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+          MASTODON_INSTANCE: ${{ secrets.MASTODON_INSTANCE }}
+          MASTODON_TOKEN: ${{ secrets.MASTODON_TOKEN }}
+        run: node marketing/post.mjs
