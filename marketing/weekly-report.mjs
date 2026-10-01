@@ -5,8 +5,9 @@
  *   node marketing/weekly-report.mjs            last 7 full days vs the 7 before
  *   node marketing/weekly-report.mjs --out DIR  also save DIR/YYYY-MM-DD.md
  *
- * Needs the API key described in marketing/asc.mjs, and ASC_VENDOR_NUMBER (or
- * "vendorNumber" in marketing/config.json) for the sales figures. Apple
+ * Needs the API key described in marketing/asc.mjs, and the vendor number for
+ * the sales figures: ASC_VENDOR_NUMBER, or "vendorNumber" in
+ * ~/.appstoreconnect/settings.json. Apple
  * publishes a day's sales report the following day, so "last 7 days" ends
  * yesterday, and a report missing for a day with no sales counts as zero.
  */
@@ -14,12 +15,17 @@ import { gunzipSync } from 'node:zlib';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { homedir } from 'node:os';
 import { asc } from './asc.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const config = JSON.parse(readFileSync(join(HERE, 'config.json'), 'utf8'));
 const APP = config.appStoreId;
-const VENDOR = process.env.ASC_VENDOR_NUMBER || config.vendorNumber || '';
+// The vendor number sits beside the API key, outside this public repo.
+const local = (() => {
+  try { return JSON.parse(readFileSync(join(homedir(), '.appstoreconnect', 'settings.json'), 'utf8')); } catch { return {}; }
+})();
+const VENDOR = process.env.ASC_VENDOR_NUMBER || local.vendorNumber || '';
 const outIdx = process.argv.indexOf('--out');
 const OUT = outIdx > 0 ? process.argv[outIdx + 1] : null;
 
