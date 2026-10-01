@@ -6,5 +6,7 @@
   "appStoreUrl": "https://apps.apple.com/app/id6806808248",
   "hashtags": "#indiegame #gamedev #threejs #endlessrunner",
   "bluesky": "cityrunnergame.bsky.social",
-  "mastodon": "https://mastodon.social/@cityrunnergame"
+  "mastodon": [
+    "https://mastodon.social/@cityrunnergame"
+  ]
 }

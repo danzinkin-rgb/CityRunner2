@@ -9,8 +9,10 @@
  *
  *   BLUESKY_HANDLE         e.g. cityrunner.bsky.social
  *   BLUESKY_APP_PASSWORD   Settings > Privacy and security > App passwords
- *   MASTODON_INSTANCE      e.g. https://mastodon.gamedev.place
- *   MASTODON_TOKEN         Preferences > Development > New application
+ *   MASTODON_<NAME>_INSTANCE  one pair per Mastodon account, e.g.
+ *   MASTODON_<NAME>_TOKEN     MASTODON_SOCIAL_ and MASTODON_GAMEDEV_; each
+ *                             configured pair is posted to. Token from
+ *                             Preferences > Development > New application
  *                          (scopes: write:media write:statuses)
  *
  *   node marketing/post.mjs             post to every configured service
@@ -118,9 +120,7 @@ async function postBluesky() {
   return `posted ${made.uri}`;
 }
 
-async function postMastodon() {
-  const { MASTODON_INSTANCE: instance, MASTODON_TOKEN: token } = process.env;
-  if (!instance || !token) return 'skipped (no MASTODON_INSTANCE / MASTODON_TOKEN)';
+async function postMastodon(instance, token) {
   const text = captionFor(500);
   if (DRY) return `dry run:\n${text}`;
   const auth = { Authorization: `Bearer ${token}` };
@@ -160,8 +160,16 @@ async function postMastodon() {
 // already posted today is not posted to twice.
 const only = (process.env.POST_ONLY || '').toLowerCase().split(',').map((x) => x.trim()).filter(Boolean);
 let failed = false;
-for (const [name, run] of [['Bluesky', postBluesky], ['Mastodon', postMastodon]]) {
-  if (only.length && !only.includes(name.toLowerCase())) { console.log(`${name}: skipped (not in POST_ONLY)`); continue; }
+// Every MASTODON_<NAME>_INSTANCE with a matching token is its own target.
+const mastodons = Object.keys(process.env)
+  .map((k) => k.match(/^MASTODON_(\w+)_INSTANCE$/)?.[1]).filter(Boolean).sort()
+  .filter((n) => process.env[`MASTODON_${n}_INSTANCE`] && process.env[`MASTODON_${n}_TOKEN`])
+  .map((n) => [`Mastodon-${n.toLowerCase()}`, () => postMastodon(process.env[`MASTODON_${n}_INSTANCE`], process.env[`MASTODON_${n}_TOKEN`])]);
+if (!mastodons.length) console.log('Mastodon: skipped (no MASTODON_<NAME>_INSTANCE / _TOKEN pairs)');
+for (const [name, run] of [['Bluesky', postBluesky], ...mastodons]) {
+  // "mastodon" in POST_ONLY selects every Mastodon account; "mastodon-social" just one.
+  const key = name.toLowerCase();
+  if (only.length && !only.includes(key) && !only.includes(key.split('-')[0])) { console.log(`${name}: skipped (not in POST_ONLY)`); continue; }
   try {
     console.log(`${name}: ${await run()}`);
   } catch (err) {

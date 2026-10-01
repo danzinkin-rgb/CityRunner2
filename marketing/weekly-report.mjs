@@ -152,16 +152,19 @@ try {
       .map((f) => ({ likes: f.post.likeCount || 0, shares: f.post.repostCount || 0, replies: f.post.replyCount || 0 })));
     rows.push(`| Bluesky | ${prof.followersCount ?? '?'} | ${t.n} | ${t.likes} | ${t.shares} | ${t.replies} |`);
   } catch (err) { rows.push(`| Bluesky | could not be read (${err.message.slice(0, 80)}) | | | | |`); }
-  try {
-    if (!config.mastodon) throw new Error('not configured');
-    const u = new URL(config.mastodon);
-    const acct = u.pathname.replace(/^\/@/, '');
-    const a = await (await fetch(`${u.origin}/api/v1/accounts/lookup?acct=${acct}`, UA)).json();
-    const st = await (await fetch(`${u.origin}/api/v1/accounts/${a.id}/statuses?limit=30`, UA)).json();
-    const t = tally(st.filter((x) => x.created_at.slice(0, 10) >= since)
-      .map((x) => ({ likes: x.favourites_count, shares: x.reblogs_count, replies: x.replies_count })));
-    rows.push(`| Mastodon | ${a.followers_count} | ${t.n} | ${t.likes} | ${t.shares} | ${t.replies} |`);
-  } catch (err) { rows.push(`| Mastodon | could not be read (${err.message.slice(0, 80)}) | | | | |`); }
+  // One row per Mastodon account listed in config.json.
+  for (const profile of [].concat(config.mastodon || [])) {
+    const u = new URL(profile);
+    const label = `Mastodon (${u.hostname})`;
+    try {
+      const acct = u.pathname.replace(/^\/@/, '');
+      const a = await (await fetch(`${u.origin}/api/v1/accounts/lookup?acct=${acct}`, UA)).json();
+      const st = await (await fetch(`${u.origin}/api/v1/accounts/${a.id}/statuses?limit=30`, UA)).json();
+      const t = tally(st.filter((x) => x.created_at.slice(0, 10) >= since)
+        .map((x) => ({ likes: x.favourites_count, shares: x.reblogs_count, replies: x.replies_count })));
+      rows.push(`| ${label} | ${a.followers_count} | ${t.n} | ${t.likes} | ${t.shares} | ${t.replies} |`);
+    } catch (err) { rows.push(`| ${label} | could not be read (${err.message.slice(0, 80)}) | | | | |`); }
+  }
   lines.push('## Social accounts', '', '| | Followers | Posts this week | Likes | Reposts | Replies |', '|---|---|---|---|---|---|', ...rows, '');
 }
 

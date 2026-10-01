@@ -86,9 +86,10 @@ jobs:
         env:
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
-          # The MASTODON_SOCIAL_ pair is the mastodon.social account; a
-          # MASTODON_ pair (for another server) takes precedence when added.
-          MASTODON_INSTANCE: ${{ secrets.MASTODON_INSTANCE || secrets.MASTODON_SOCIAL_INSTANCE }}
-          MASTODON_TOKEN: ${{ secrets.MASTODON_TOKEN || secrets.MASTODON_SOCIAL_TOKEN }}
+          # One pair per Mastodon account; every pair that is set is posted to.
+          MASTODON_SOCIAL_INSTANCE: ${{ secrets.MASTODON_SOCIAL_INSTANCE }}
+          MASTODON_SOCIAL_TOKEN: ${{ secrets.MASTODON_SOCIAL_TOKEN }}
+          MASTODON_GAMEDEV_INSTANCE: ${{ secrets.MASTODON_GAMEDEV_INSTANCE }}
+          MASTODON_GAMEDEV_TOKEN: ${{ secrets.MASTODON_GAMEDEV_TOKEN }}
           POST_ONLY: ${{ inputs.only }}
         run: node marketing/post.mjs
