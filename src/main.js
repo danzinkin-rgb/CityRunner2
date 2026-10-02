@@ -1386,6 +1386,11 @@ initNative();
 initIAP();
 onAppPause(() => pauseGame());   // iOS fires this more reliably than visibilitychange
 buildCitySelect();
+// The souvenir list in Help names a city's souvenir only once that city is
+// released (src/cities/releases.js).
+document.querySelectorAll('.souv[data-city]').forEach((el) => {
+  if (!CITIES.some((c) => c.id === el.dataset.city)) el.style.display = 'none';
+});
 // First-run onboarding: a brand-new player lands on Help instead of a bare
 // menu. Reuses the existing help screen rather than a separate flow — same
 // content either way, and there's exactly one "GOT IT" to dismiss it.

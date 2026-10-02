@@ -652,7 +652,13 @@
   .daily-card:hover{transform:translateY(-2px);border-color:rgba(255,209,102,.7)}
   .daily-card:active{transform:scale(.98)}
   .dc-title{font-size:10px;line-height:1.4;letter-spacing:2.5px;font-weight:800;color:var(--gold);opacity:.95}
-  .dc-where{font-size:15px;line-height:1.4;font-weight:800;margin-top:2px}
+  /* One line, always: the daily's city and street change every day, and a
+     long pair ("SAN FRANCISCO · Haight-Ashbury") wrapped to a second line,
+     grew the card and slid the whole menu (caught by test/boot.mjs on the
+     day that daily came round). Cut with an ellipsis instead. */
+  .dc-left{min-width:0;flex:1}
+  .dc-where{font-size:15px;line-height:1.4;font-weight:800;margin-top:2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .dc-best{font-size:11px;line-height:1.4;color:var(--fg-3);margin-top:2px}
   .dc-right{text-align:right;flex:0 0 auto}
   .dc-streak{font-size:11px;line-height:1.4;font-weight:700;color:#ffb35c}
@@ -948,7 +954,8 @@
 <div id="screen-menu" class="screen on">
   <div class="title">CITYRUNNER</div>
   <div class="subtitle">Run the world's greatest streets</div>
-  <!-- One placeholder per city in src/cities/themes.js, so the row is the
+  <!-- One placeholder per RELEASED city in src/cities/themes.js (not the
+       queued ones in src/cities/releases.js), so the row is the
        right height and wraps the same way before main.js has run. buildCitySelect()
        opens with wrap.innerHTML = '', so these are cleared by the code that
        replaces them and need no dismissal of their own.
@@ -957,8 +964,6 @@
        outside the viewport on purpose, and test/ios-ui.mjs skips its
        children in the overflow-x audit for that reason. -->
   <div id="city-select" data-xscroll aria-busy="true">
-    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
-    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
@@ -1023,8 +1028,8 @@
       <div class="souv"><img src="assets/souvenirs/london.png" alt="Red phone box"><span>London<br><b>Phone boxes</b></span></div>
       <div class="souv"><img src="assets/souvenirs/rome.png" alt="Caesar bust"><span>Rome<br><b>Caesar busts</b></span></div>
       <div class="souv"><img src="assets/souvenirs/sf.png" alt="Cable car"><span>San Francisco<br><b>Cable cars</b></span></div>
-      <div class="souv"><img src="assets/souvenirs/jerusalem.png" alt="Pomegranate"><span>Jerusalem<br><b>Pomegranates</b></span></div>
-      <div class="souv"><img src="assets/souvenirs/mexico.png" alt="Marigold"><span>Mexico City<br><b>Marigolds</b></span></div>
+      <div class="souv" data-city="jerusalem"><img src="assets/souvenirs/jerusalem.png" alt="Pomegranate"><span>Jerusalem<br><b>Pomegranates</b></span></div>
+      <div class="souv" data-city="mexico"><img src="assets/souvenirs/mexico.png" alt="Marigold"><span>Mexico City<br><b>Marigolds</b></span></div>
     </div>
 
     <h3>Building the monument</h3>

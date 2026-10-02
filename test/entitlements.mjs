@@ -42,6 +42,10 @@ if (!CITIES.length) {
   console.log('x could not read city ids from src/cities/themes.js — has the file moved?');
   process.exit(1);
 }
+// The menu with every city on it, queued ones included (src/cities/releases.js):
+// a queued city's locks must already be right on the day it is released.
+// That players see only released cities is test/releases.mjs's job.
+const MENU = `${BASE}/?allcities=1`;
 
 // FREE_CITIES read from source rather than imported: src/*.js is ESM inside a
 // "type": "commonjs" package, so node cannot import it directly here.
@@ -101,7 +105,7 @@ const browser = await webkit.launch();
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto(BASE, { waitUntil: 'load' });
+  await page.goto(MENU, { waitUntil: 'load' });
   await page.waitForTimeout(900);
 
   const web = await page.evaluate(() => ({
@@ -144,7 +148,7 @@ const browser = await webkit.launch();
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto(BASE, { waitUntil: 'load' });
+  await page.goto(MENU, { waitUntil: 'load' });
   await page.waitForTimeout(900);
 
   const state = await page.evaluate(() => {
@@ -242,7 +246,7 @@ const browser = await webkit.launch();
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto(BASE, { waitUntil: 'load' });
+  await page.goto(MENU, { waitUntil: 'load' });
   await page.waitForTimeout(900);
 
   const earned = await page.evaluate(() => {
@@ -336,7 +340,7 @@ const browser = await webkit.launch();
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto(BASE, { waitUntil: 'load' });
+  await page.goto(MENU, { waitUntil: 'load' });
   await page.waitForTimeout(900);
 
   const bought = await page.evaluate(() => {

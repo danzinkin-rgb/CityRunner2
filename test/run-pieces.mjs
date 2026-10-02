@@ -57,7 +57,11 @@ const VIEW = { viewport: { width: 390, height: 844 } };
     const t0 = performance.now();
     let rowClash = 0;
     const checked = new Set();
-    while (performance.now() - t0 < 14000) {
+    // until the runner is past the third piece, not for a fixed time: at a
+    // slow frame rate 14 s reached only the first, and the check failed on
+    // timing rather than on collection
+    const past = (tr.pieceDist[2] ?? tr.pieceDist[tr.pieceDist.length - 1]) + 6;
+    while (performance.now() - t0 < 45000 && tr.distance < past) {
       const ahead = tr.pieces.filter((p) => !p.taken)
         .map((p) => ({ p, wz: p.mesh.position.z + p.chunk.position.z + tr.group.position.z }))
         .filter((x) => x.wz < 1).sort((a, b) => b.wz - a.wz)[0];

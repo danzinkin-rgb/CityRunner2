@@ -60,6 +60,14 @@ const check = (ok, label, detail = '') => {
   if (!ok) failures++;
 };
 
+// Released vs queued cities (src/cities/releases.js): a store build offers
+// only the released ones; a tester build offers every city.
+const themesSrc = readFileSync(join(REPO, 'src', 'cities', 'themes.js'), 'utf8');
+const ALL_IDS = [...themesSrc.matchAll(/^\s{2}\{\s*$\n\s*id:\s*'([a-z]+)'/gm)].map((m) => m[1]);
+const QUEUED = JSON.parse(readFileSync(join(REPO, 'src', 'cities', 'releases.js'), 'utf8')
+  .match(/RELEASE_QUEUE = (\[[^\]]*\])/)[1].replace(/'/g, '"'));
+const RELEASED_N = ALL_IDS.filter((c) => !QUEUED.includes(c)).length;
+
 /** Every .js file under a built folder. */
 const bundleFiles = (dir) => readdirSync(dir, { recursive: true })
   .map((f) => join(dir, String(f))).filter((f) => f.endsWith('.js'));
@@ -153,6 +161,8 @@ const FORCE_RUN = '?view=run&god=1&built=1&seed=7';
     forced.errors[0] || run.errors[0] || '');
   check(forced.alive > 0, 'release: the built app is genuinely alive (menu rendered city cards)',
     `${forced.alive} cards`);
+  check(forced.alive === RELEASED_N, 'release: the menu offers only the released cities',
+    `${forced.alive} cards, ${RELEASED_N} released, queued: ${QUEUED.join(', ') || 'none'}`);
   // Every probe here is a fresh browser context, i.e. no save — which is also
   // exactly what a genuine first launch looks like. In the shipped bundle that
   // legitimately opens the onboarding help screen (src/main.js's isFirstRun),
@@ -185,6 +195,7 @@ const FORCE_RUN = '?view=run&god=1&built=1&seed=7';
     const t = await probe(base, '');
     const run = await probe(base, FORCE_RUN);
     check(t.tester && t.errors.length === 0, 'tester: the tester build shows its section and banner', t.errors[0] || '');
+    check(t.alive === ALL_IDS.length, 'tester: the tester build offers every city, queued ones included', `${t.alive} cards`);
     check(run.hooks === 'undefined' && run.screen !== null, 'tester: the debug harness stays off in a tester build',
       `typeof=${run.hooks} screen=${run.screen}`);
     await close();

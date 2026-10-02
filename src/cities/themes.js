@@ -8,7 +8,11 @@
 // overrides (facade style, palette, prop mix, road style, sky/fog mood,
 // skyline cameo, recurring set pieces). resolveStreet(city, level) merges an
 // entry over the city base so every street gets its own unmistakable look.
-export const CITIES = [
+import { DEBUG_HOOKS, TESTER } from '../core/debug.js';
+import { RELEASE_QUEUE } from './releases.js';
+
+// Every city, released or queued. Players see CITIES, below.
+export const ALL_CITIES = [
   {
     id: 'nyc', name: 'NEW YORK', flag: '🗽',
     streets: ['Broadway', '5th Avenue', 'Times Square'],
@@ -390,6 +394,15 @@ export const CITIES = [
     ],
   },
 ];
+
+// The cities this build offers. Queued cities (src/cities/releases.js) are
+// finished but not yet released, so players do not see them, on the store
+// build or on the web. Tester builds see them all, and so do the test routes
+// (?view=, ?ui= other than the menu, ?allcities=) that the suites drive; the
+// menu screenshot route (?ui=menu) stays player-shaped for the App Store.
+const showQueued = TESTER || (DEBUG_HOOKS && typeof location !== 'undefined'
+  && /[?&](view|allcities)=|[?&]ui=(?!menu\b)/.test(location.search));
+export const CITIES = showQueued ? ALL_CITIES : ALL_CITIES.filter((c) => !RELEASE_QUEUE.includes(c.id));
 
 export const LANDMARK_NAMES = {
   empire: 'Empire State Building', chrysler: 'Chrysler Building', brooklyn: 'Brooklyn Bridge',

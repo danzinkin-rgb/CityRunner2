@@ -10,7 +10,7 @@ export const JUMP_V = 12.6;
 // squashed to about 1.2 m) and half its depth front to back, shoes, backpack
 // and tucked limbs included. test/roll.mjs measures that nothing dips below
 // the road.
-const ROLL_HALF_H = 0.6, ROLL_HALF_D = 0.62;
+const ROLL_HALF_H = 0.6, ROLL_HALF_D = 0.7;
 export const GRAVITY = 32;
 
 // Default look — identical to the original hard-coded runner. Every
