@@ -128,10 +128,13 @@ try {
   const res = await fetch('https://api.github.com/repos/danzinkin-rgb/CityRunner2/actions/workflows/daily-clip.yml/runs?per_page=30',
     { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'cityrunner-report' } });
   const runs = (await res.json()).workflow_runs || [];
-  const recent = runs.filter((r) => r.created_at.slice(0, 10) >= thisWeek[6]);
+  // Only the nightly scheduled runs count; manual runs are tests and re-posts.
+  const week = runs.filter((r) => r.created_at.slice(0, 10) >= thisWeek[6]);
+  const recent = week.filter((r) => r.event === 'schedule');
+  const manual = week.length - recent.length;
   const ok = recent.filter((r) => r.conclusion === 'success').length;
   const bad = recent.filter((r) => r.conclusion && r.conclusion !== 'success');
-  lines.push('## Daily clip bot', '', `${recent.length} runs this week: ${ok} succeeded, ${bad.length} failed.`);
+  lines.push('## Daily clip bot', '', `${recent.length} nightly runs this week: ${ok} succeeded, ${bad.length} failed.${manual ? ` (${manual} manual test runs not counted.)` : ''}`);
   for (const r of bad) lines.push(`- Failed ${r.created_at.slice(0, 10)}: ${r.html_url}`);
   lines.push('');
 } catch (err) {
