@@ -9,7 +9,8 @@ An endless runner through New York, Paris, London and Rome, built on Three.js. E
 ## Commands
 
 ```bash
-npm test              # all 11 gates, serially — a failure stops the chain
+npm test              # every gate, 4 at a time (test/run-all.mjs), ~5 min
+npm run test:serial   # the same gates one after another, stopping at the first failure
 npm run build         # vite build -> dist/
 npm run ios:sync      # vite build && cap sync ios   (Mac)
 npm run ios:open      # cap open ios                 (Mac)
@@ -50,7 +51,7 @@ Two rules follow. Never replace the `?.` with a build-time define like `__DEBUG_
 
 **`src/cities/themes.js` drives everything visual.** A city entry plus a per-street `levels` override is merged by `resolveStreet(city, level)`; sky, fog, palette, facades, props, vehicles and puzzle landmarks all flow from that one table. `builders.js` turns it into geometry, caching shared geometries in `SHARED_GEO` because `track.js` recycles chunks and would otherwise dispose geometry it doesn't own.
 
-**New cities ship one at a time** (`docs/RELEASES.md`). `src/cities/releases.js` holds `RELEASE_QUEUE`: finished cities merged into `main` but hidden from players. `themes.js` exports `ALL_CITIES` and `CITIES`; `CITIES` drops queued cities unless the build is a tester build or the page is on a test route (`?view=`, `?ui=` other than the menu, `?allcities=`). Everything player-facing reads `CITIES`. Releasing a city is removing it from the queue, plus its Game Center items; `test/releases.mjs` gates it.
+**New cities ship one at a time** (`docs/RELEASES.md`). `src/cities/releases.js` holds `RELEASE_QUEUE`: finished cities merged into `main` but hidden from players. `themes.js` exports `ALL_CITIES` and imports nothing (`marketing/build-pages.mjs` loads it as text); `src/cities/offered.js` exports `CITIES`, which drops queued cities unless the build is a tester build or the page is on a test route (`?view=`, `?ui=` other than the menu, `?allcities=`). Everything player-facing reads `CITIES` from `offered.js`; the landmark pages publish released cities only. Releasing a city is removing it from the queue, plus its Game Center items; `test/releases.mjs` gates it.
 
 **`src/core/entitlements.js` is the single source of truth for what is locked.** Two independent locks: *progression* (earned by stars, predates any purchase) and *entitlement* (bought, iOS only, always open on the web build). They are reported separately so the UI can say the true thing — "keep playing to unlock" on a city no amount of playing will open is the kind of dark pattern the Children's Code targets. `GRANTS_EVERYTHING` is a product set, deliberately not a list of city ids, because the Founder promise covers cities nobody has designed yet. There is deliberately **no launch-date constant anywhere** — the sale window is closed by removing the product in App Store Connect, because a device clock is user-settable and a baked-in cutoff would eventually offer an unbuyable product with no fix short of an app update.
 
@@ -71,6 +72,10 @@ Two rules follow. Never replace the `?.` with a build-time define like `__DEBUG_
 Most suites exist because a specific bug shipped, and each one's header comment explains the failure it guards — read it before changing the suite. `test/serve.mjs` gives each run its own server on port 0 so suites can't race or connect to a stale one.
 
 Two known fidelity limits, both stated in the suites themselves: headless WebKit resolves `env(safe-area-inset-*)` to **0**, so `test/menu-fit.mjs` emulates notch insets explicitly — without that, every measurement assumes ~93px more height than a real iPhone has, which is exactly how a menu-overflow bug shipped past a green suite. And Safari's collapsing toolbars, Apple emoji glyphs and iOS audio autoplay rules can only be checked on a real device.
+
+## Marketing tools
+
+`marketing/` is separate from the game and ships in no build. `build-pages.mjs` generates the landmark fact pages (`landmarks/`, `sitemap.xml`) from `src/facts.js`; the pages are committed because Pages serves the repo as-is, and `npm test` starts with `build-pages.mjs --check`, so a fact change fails the suite until the pages are regenerated (`npm run pages:landmarks`). `daily-clip.mjs` renders today's daily course as a vertical video with an autopilot driving the debug hooks, and `post.mjs` posts it to Bluesky and Mastodon; `.github/workflows/daily-clip.yml` runs both daily at 00:20 UTC with tokens from repository secrets. Marketing links point at the App Store only — the web build is deliberately not promoted, because it is free and fully unlocked.
 
 ## Docs
 

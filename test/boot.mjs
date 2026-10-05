@@ -97,12 +97,13 @@ const countCtx = await browser.newContext();
 const countPage = await countCtx.newPage();
 await countPage.goto(`${BASE}/`, { waitUntil: 'load' });
 const CITY_COUNT = await countPage.evaluate(async () => {
-  const m = await import('/src/cities/themes.js');
+  // the cities the menu offers (released ones: src/cities/offered.js)
+  const m = await import('/src/cities/offered.js');
   return m.CITIES.length;
 });
 await countCtx.close();
-console.log(`\nsrc/cities/themes.js declares ${CITY_COUNT} cities\n`);
-check(CITY_COUNT > 0, 'themes.js CITIES is readable');
+console.log(`\nthe menu offers ${CITY_COUNT} cities (src/cities/offered.js)\n`);
+check(CITY_COUNT > 0, 'offered.js CITIES is readable');
 
 for (const s of SIZES) {
   console.log(`${s.name} ${s.width}x${s.height}`);

@@ -100,7 +100,7 @@ const KNOWN_DAILY = { 2: 'nyc,paris,london,rome,sf' };
 const dv = await page.evaluate(async () => {
   const { DAILY } = await import('/src/core/rng.js');
   const { LEADERBOARDS } = await import('/src/core/gamecenter.js');
-  const { CITIES } = await import('/src/cities/themes.js');
+  const { CITIES } = await import('/src/cities/offered.js');
   const ids = CITIES.map((c) => c.id);
   const t = window.__cr.todaysDaily;
   const dealt = new Set();

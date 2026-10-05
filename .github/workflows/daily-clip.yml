@@ -1,0 +1,95 @@
+# Renders a clip of each day's daily challenge course and posts it.
+#
+# The course changes at 00:00 UTC, so this runs shortly after. It can also be
+# started by hand from the Actions tab, with posting switched off to check a
+# clip first.
+#
+# Every clip, and the caption data beside it, is also published to the
+# "daily-clips" release, which anyone can download from without signing in.
+# The weekly report fetches the latest one from there for posting to X by
+# hand. Clips older than 21 days are removed from the release.
+#
+# Posting needs repository secrets (Settings > Secrets and variables > Actions).
+# A service whose secrets are missing is skipped; see marketing/post.mjs.
+#
+# GitHub pauses scheduled workflows in a repository with no commits for 60
+# days and emails the owner; re-enable it from the Actions tab if that happens.
+name: Daily clip
+
+on:
+  schedule:
+    - cron: '20 0 * * *'
+  workflow_dispatch:
+    inputs:
+      post:
+        description: Post the clip (untick to render only)
+        type: boolean
+        default: true
+      only:
+        description: Post only to these (e.g. "mastodon"); blank for all
+        type: string
+        default: ''
+      reuse:
+        description: Reuse today's published clip instead of rendering (for re-posting)
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # to publish clips to the daily-clips release
+
+jobs:
+  clip:
+    runs-on: ubuntu-latest
+    # Rendering takes about 10 minutes on a runner (software WebGL).
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Fetch today's published clip
+        if: inputs.reuse
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          day=$(date -u +%F)
+          mkdir -p marketing/out
+          gh release download daily-clips --dir marketing/out --pattern "daily-$day.*"
+          cp "marketing/out/daily-$day.json" marketing/out/daily.json
+      - if: ${{ !inputs.reuse }}
+        run: npm ci
+      - if: ${{ !inputs.reuse }}
+        run: npx playwright install --with-deps webkit
+      # The runner image has no ffmpeg, and Playwright's own can only write
+      # WebM; Bluesky and X need MP4.
+      - if: ${{ !inputs.reuse }}
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+      - name: Render today's course
+        if: ${{ !inputs.reuse }}
+        run: node marketing/daily-clip.mjs
+      - name: Publish to the daily-clips release
+        if: ${{ !inputs.reuse }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          day=$(jq -r .day marketing/out/daily.json)
+          cp marketing/out/daily.json "marketing/out/daily-$day.json"
+          notes="A short video of each day's daily challenge course, made automatically. Older clips are removed after 21 days."
+          gh release view daily-clips >/dev/null 2>&1 || gh release create daily-clips --title "Daily clips" --latest=false --notes "$notes"
+          gh release upload daily-clips "marketing/out/daily-$day.mp4" "marketing/out/daily-$day.json" --clobber
+          cutoff=$(date -u -d '21 days ago' +%Y-%m-%dT%H:%M:%SZ)
+          old=$(gh api "repos/${{ github.repository }}/releases/tags/daily-clips" --jq ".assets[] | select(.created_at < \"$cutoff\") | .id")
+          for id in $old; do gh api -X DELETE "repos/${{ github.repository }}/releases/assets/$id"; done
+      - name: Post
+        if: github.event_name == 'schedule' || inputs.post
+        env:
+          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+          # One pair per Mastodon account; every pair that is set is posted to.
+          MASTODON_SOCIAL_INSTANCE: ${{ secrets.MASTODON_SOCIAL_INSTANCE }}
+          MASTODON_SOCIAL_TOKEN: ${{ secrets.MASTODON_SOCIAL_TOKEN }}
+          MASTODON_GAMEDEV_INSTANCE: ${{ secrets.MASTODON_GAMEDEV_INSTANCE }}
+          MASTODON_GAMEDEV_TOKEN: ${{ secrets.MASTODON_GAMEDEV_TOKEN }}
+          POST_ONLY: ${{ inputs.only }}
+        run: node marketing/post.mjs

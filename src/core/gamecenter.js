@@ -20,7 +20,7 @@
  * deliberately simpler than mirroring GameKit's own dedupe locally.
  */
 
-import { CITIES } from '../cities/themes.js';
+import { CITIES } from '../cities/offered.js';
 import { gkSubmitScore, gkReportAchievement } from './native.js';
 import { lifetimeScore } from './scores.js';
 import { isFounder } from './entitlements.js';

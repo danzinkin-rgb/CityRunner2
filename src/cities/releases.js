@@ -3,7 +3,7 @@
 // Fixes and improvements ship in whatever release comes next, but new cities
 // go out ONE AT A TIME, so a city can be finished and merged long before it
 // is released. A city listed here is built and tested but hidden from
-// players: it is not in the menu, the progression chain, NEXT LEVEL, the
+// players (src/cities/offered.js): it is not in the menu, the progression chain, NEXT LEVEL, the
 // Game Center totals or the souvenir list, in the store build or on the web.
 // Tester builds and the test routes (?view=, ?ui=) see every city.
 //

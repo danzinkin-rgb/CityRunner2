@@ -1,0 +1,12 @@
+{
+  "appName": "CityRunner: Landmark Run",
+  "siteUrl": "https://danzinkin-rgb.github.io/CityRunner2/",
+  "androidNote": "Android: coming soon",
+  "appStoreId": "6806808248",
+  "appStoreUrl": "https://apps.apple.com/app/id6806808248",
+  "hashtags": "#indiegame #gamedev #threejs #endlessrunner",
+  "bluesky": "cityrunnergame.bsky.social",
+  "mastodon": [
+    "https://mastodon.social/@cityrunnergame"
+  ]
+}
