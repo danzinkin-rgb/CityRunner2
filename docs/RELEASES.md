@@ -71,4 +71,4 @@ Nothing yet since 1.1.1.
 |---|---|---|---|---|
 | 1.0 | 6 | Sept 2026 | NY, Paris, London, Rome | Launch |
 | 1.1.0 | 10 | 26 Sept 2026 | San Francisco | Pieces on the run, monuments rebuilt, Game Center, versioned daily |
-| 1.1.1 | 11 | Oct 2026 | none | Race your own ghost (on/off in Settings, pause and run); roll stays above the road; Eiffel Tower as open ironwork; souvenirs sway to face the player; finished monuments turn to face the player; GPU memory leak fixed (each street kept a ~16 MB shadow map); app download about 3 MB smaller (unused icons no longer bundled) |
+| 1.1.1 | 12 | 7 Oct 2026 | none | Race your own ghost (on/off in Settings, pause and run); roll stays above the road; Eiffel Tower as open ironwork; souvenirs sway to face the player; finished monuments turn to face the player; GPU memory leak fixed (each street kept a ~16 MB shadow map); app download about 3 MB smaller (unused icons no longer bundled) |
