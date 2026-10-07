@@ -17,7 +17,7 @@ import { STORAGE } from './core/storage-keys.js';
 import { DEBUG_HOOKS, TESTER } from './core/debug.js';
 import { loadGhost, saveGhostIfBest, GhostRecorder, GhostRunner } from './run/ghost.js';
 
-export const VERSION = '1.1.0';
+export const VERSION = '1.1.1';
 import { Player, DEFAULT_STYLE } from './run/player.js';
 import { releaseStreetCaches } from './cities/builders.js';
 import { Track } from './run/track.js';

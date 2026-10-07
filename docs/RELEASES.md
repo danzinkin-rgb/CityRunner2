@@ -63,17 +63,7 @@ Kyoto is parked (`docs/CITY-ROADMAP.md`).
 
 ## Next release: what is waiting
 
-In `main` once merged, since 1.1.0:
-
-- Race your own ghost, with on/off in Settings, on the pause screen and in
-  the run.
-- The roll no longer goes through the road.
-- The Eiffel Tower rebuilt as open ironwork.
-- Souvenirs sway to face the player instead of spinning.
-- Finished monuments turn to face the player.
-- Monument altitude panel (where a height is not sourced).
-- The city release queue itself.
-- Plus one city from the queue: Jerusalem.
+Nothing yet since 1.1.1.
 
 ## History
 
@@ -81,3 +71,4 @@ In `main` once merged, since 1.1.0:
 |---|---|---|---|---|
 | 1.0 | 6 | Sept 2026 | NY, Paris, London, Rome | Launch |
 | 1.1.0 | 10 | 26 Sept 2026 | San Francisco | Pieces on the run, monuments rebuilt, Game Center, versioned daily |
+| 1.1.1 | 11 | Oct 2026 | none | Race your own ghost (on/off in Settings, pause and run); roll stays above the road; Eiffel Tower as open ironwork; souvenirs sway to face the player; finished monuments turn to face the player |
