@@ -50,9 +50,17 @@ const SKYPAL = {
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 
-// ---------- shared canvas-texture cache (kept across puzzle instances) ----------
+// ---------- shared canvas-texture cache ----------
+// Shared by the pieces of one scene (a run's pieces, or a monument), and
+// emptied with that scene by releasePuzzleTextures(). Kept for the whole
+// session it grew with every monument and run piece seen.
 const texCache = new Map();
 const sharedTex = new Set();
+export function releasePuzzleTextures() {
+  for (const t of texCache.values()) t.dispose();
+  texCache.clear();
+  sharedTex.clear();
+}
 function cachedTex(key, w, h, draw) {
   if (texCache.has(key)) return texCache.get(key);
   const c = document.createElement('canvas');

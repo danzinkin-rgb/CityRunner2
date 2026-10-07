@@ -21,7 +21,7 @@ export const VERSION = '1.1.1';
 import { Player, DEFAULT_STYLE } from './run/player.js';
 import { releaseStreetCaches } from './cities/builders.js';
 import { Track } from './run/track.js';
-import { Puzzle, looseDefs } from './puzzle/puzzle.js';
+import { Puzzle, looseDefs, releasePuzzleTextures } from './puzzle/puzzle.js';
 import { CHARACTERS, characterById } from './run/characters.js';
 import { makeCollectible } from './cities/souvenirs.js';
 
@@ -1285,6 +1285,10 @@ function disposeAll() {
     // street piled up on the GPU. Disposing something that is also shared is
     // safe: three re-uploads it the next time it is drawn.
     scene.traverse((n) => {
+      // The sun's shadow map is a 2048x2048 render target, about 16 MB of
+      // GPU memory, which only light.dispose() frees. Left alone, every street
+      // and monument kept one.
+      if (n.isLight) n.dispose();
       if (n.geometry) n.geometry.dispose();
       for (const m of Array.isArray(n.material) ? n.material : n.material ? [n.material] : []) {
         for (const k of ['map', 'emissiveMap', 'alphaMap']) if (m[k] && m[k].isTexture) m[k].dispose();
@@ -1296,6 +1300,9 @@ function disposeAll() {
   }
   // and everything the street builders cached for the street just left
   releaseStreetCaches();
+  // and the puzzle's canvas textures (monument pieces, the plaza floor),
+  // which otherwise pile up across every monument and run piece seen
+  releasePuzzleTextures();
   player = null;
 }
 

@@ -51,10 +51,24 @@ for (const c of CITIES) { counts.push(await visit(c, 1)); counts.push(await visi
 for (const c of CITIES) counts.push(await visit(c, 2));
 const again = await visit(CITIES[0], 1);
 counts.push(again);
+// Two more laps (streets and monuments), back to the same street after each.
+// A slow leak shows as a count that climbs lap on lap; a healthy session
+// settles. Measured in October 2026 (1.1.0 as shipped): about 10 more per lap,
+// because each scene's 2048x2048 shadow map (~16 MB) was never freed and the
+// puzzle's texture cache was never emptied. Comparing against the very first
+// visit instead missed it: that count is taken before the textures every
+// street shares exist, so the check passed or failed by chance.
+const revisits = [again];
+for (const lv of [3, 1]) {
+  for (const c of CITIES) { counts.push(await visit(c, lv)); counts.push(await visit(c, lv, true)); }
+  revisits.push(await visit(CITIES[0], 1));
+}
+counts.push(...revisits);
 
 const peak = Math.max(...counts);
 check(peak < 300, 'GPU textures stay bounded across a session', `peak ${peak} over ${counts.length} streets/puzzles`);
-check(again <= first * 1.5 + 20, 'revisiting a street does not add up', `first ${first}, revisit ${again}`);
+check(revisits[2] <= revisits[0] + 8, 'revisiting a street does not add up, lap after lap',
+  `first ${first}, revisits ${revisits.join(' → ')}`);
 check(!errors.length, 'no page errors', errors[0] || '');
 
 await browser.close();
