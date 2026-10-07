@@ -222,9 +222,3 @@ export function reconcile(productIds) {
   }
   if (changed) persist();
 }
-
-/** Test/debug only: wipe the local entitlement cache. Never call from game code. */
-export function __resetForTests() {
-  owned = new Set();
-  persist();
-}

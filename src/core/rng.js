@@ -70,16 +70,11 @@ export function randomSeed() {
   return hashString(`${Date.now()}-${Math.random()}`);
 }
 
-export function getSeed() { return currentSeed; }
-
 /** Gameplay random in [0,1). Deterministic for a given run seed. */
 export function rand() { return current(); }
 
 /** Integer in [0, n). */
 export function randInt(n) { return Math.floor(current() * n) | 0; }
-
-/** Float in [min, max). */
-export function randRange(min, max) { return min + current() * (max - min); }
 
 /** Uniform pick from an array. */
 export function pick(arr) { return arr[Math.floor(current() * arr.length) | 0]; }

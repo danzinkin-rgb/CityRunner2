@@ -1,5 +1,37 @@
 import * as THREE from '../../vendor/three.module.js';
 
+// ---------- freeing GPU memory ----------
+// Every texture slot any material in the game uses. There is one list, and
+// one function that walks a scene, so a slot or a resource cannot be freed
+// on one teardown path and leaked on another — which is how every street's
+// shadow map (~16 MB) leaked until October 2026: four separate teardowns,
+// none of which disposed lights.
+export const TEXTURE_SLOTS = ['map', 'emissiveMap', 'alphaMap', 'bumpMap', 'normalMap', 'roughnessMap'];
+
+function disposeMaterial(m, keepTex) {
+  for (const k of TEXTURE_SLOTS) {
+    const t = m[k];
+    if (t && t.isTexture && !keepTex?.has(t)) t.dispose();
+  }
+  m.dispose();
+}
+
+/**
+ * Free what a subtree holds on the GPU: lights (a shadow-casting light owns
+ * a render target), geometry, and unless `materials` is false, materials and
+ * their textures. `keepGeo` and `keepTex` are sets of shared resources that
+ * outlive this subtree. Disposing something still in use elsewhere is safe —
+ * three re-uploads it the next time it is drawn — but costs that upload.
+ */
+export function disposeTree(root, { keepGeo, keepTex, materials = true } = {}) {
+  root.traverse((n) => {
+    if (n.isLight) n.dispose();
+    if (n.geometry && !keepGeo?.has(n.geometry)) n.geometry.dispose();
+    if (!materials) return;
+    for (const m of Array.isArray(n.material) ? n.material : n.material ? [n.material] : []) disposeMaterial(m, keepTex);
+  });
+}
+
 // Renderer + per-city scene dressing (sky dome, fog, lights, ground haze).
 export function createRenderer(container) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: true });

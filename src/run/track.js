@@ -1,6 +1,6 @@
 import * as THREE from '../../vendor/three.module.js';
 import { LANES, JUMP_V, GRAVITY } from './player.js';
-import { makeSky } from '../core/engine.js';
+import { makeSky, disposeTree } from '../core/engine.js';
 
 // Which version of course generation this is. A seed builds the same street
 // only while this stays the same, so saved ghosts (src/run/ghost.js) carry it
@@ -218,9 +218,7 @@ export class Track {
       const old = scene.children.find((c) => c.isMesh && c.renderOrder === -10);
       if (old) {
         scene.remove(old);
-        if (old.material.map) old.material.map.dispose();
-        old.material.dispose();
-        old.geometry.dispose();
+        disposeTree(old);
       }
       scene.add(makeSky(t));
     }
@@ -851,9 +849,8 @@ function pick3(used) {
 // Free only geometry this chunk actually owns. Shared/cached geometry (boxes,
 // spheres, the souvenir prototype) is registered in SHARED_GEO by the builders
 // and is reused by every future chunk — disposing it would force a GPU
-// re-upload on every recycle.
+// re-upload on every recycle. Materials are the builders' cached ones, freed
+// with the street by releaseStreetCaches().
 function disposeGroup(g) {
-  g.traverse((n) => {
-    if (n.geometry && !SHARED_GEO.has(n.geometry)) n.geometry.dispose();
-  });
+  disposeTree(g, { keepGeo: SHARED_GEO, materials: false });
 }

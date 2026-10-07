@@ -2,6 +2,7 @@ import * as THREE from '../../vendor/three.module.js';
 import { getLandmark } from './landmarks.js';
 import { sfx } from '../core/audio.js';
 import { DEBUG_HOOKS } from '../core/debug.js';
+import { disposeTree } from '../core/engine.js';
 
 // Monument assembly puzzle.
 // Blocks are scattered on a festival plaza; a ghost silhouette shows the
@@ -2996,15 +2997,9 @@ export class Puzzle {
 
   dispose() {
     this.scene.remove(this.group);
-    this.group.traverse((n) => {
-      if (n.geometry && !(this.sharedGeos || []).includes(n.geometry)) n.geometry.dispose();
-      const mats = Array.isArray(n.material) ? n.material : n.material ? [n.material] : [];
-      for (const m of mats) {
-        if (m.map && !sharedTex.has(m.map)) m.map.dispose();
-        m.dispose();
-      }
-    });
-    for (const geo of this.sharedGeos || []) geo.dispose();
+    const shared = new Set(this.sharedGeos || []);
+    disposeTree(this.group, { keepGeo: shared, keepTex: sharedTex });
+    for (const geo of shared) geo.dispose();
     this.effects.length = 0;
     this.shimmer.length = 0;
     this.flying.length = 0;

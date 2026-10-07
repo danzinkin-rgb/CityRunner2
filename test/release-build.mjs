@@ -112,6 +112,26 @@ check(built.status === 0, 'vite build succeeds',
   built.status === 0 ? '' : (built.stderr || built.stdout || '').split('\n').slice(-6).join(' | '));
 if (built.status !== 0) process.exit(1);
 
+// ---- what the build copies ----------------------------------------------------
+// vite.config.js copies a fixed list of assets (RUNTIME_ASSETS). It used to
+// copy all of assets/, which shipped 2.4 MB of App Store icons the app never
+// loads, plus whatever else sat in that folder. Both directions are checked:
+// everything the game references is in dist/, and nothing in dist/assets is
+// something the game never references.
+const walk = (dir) => readdirSync(dir).flatMap((f) => {
+  const p = join(dir, f);
+  return statSync(p).isDirectory() ? walk(p) : [relative(REPO, p).replace(/\\/g, '/')];
+});
+const sources = [...walk(join(REPO, 'src')).filter((f) => f.endsWith('.js')), 'index.html', 'manifest.webmanifest']
+  .map((f) => readFileSync(join(REPO, f), 'utf8')).join('\n');
+const refs = [...new Set([...sources.matchAll(/assets\/([a-z0-9-]+)(?:\/|\.png)/g)].map((m) => m[1]))];
+const missing = refs.filter((r) => !existsSync(join(DIST, 'assets', r)) && !existsSync(join(DIST, 'assets', `${r}.png`)));
+check(!missing.length, 'every asset the game references is in dist/', missing.join(', '));
+// (Vite's own output sits beside them, named with a content hash: skip it.)
+const shipped = readdirSync(join(DIST, 'assets')).filter((f) => !/-[\w-]{8}\.\w+$/.test(f));
+const extra = shipped.filter((f) => !refs.includes(f.replace(/\.png$/, '')));
+check(!extra.length, 'dist/assets holds nothing the game does not load', extra.join(', '));
+
 const browser = await webkit.launch();
 
 /**

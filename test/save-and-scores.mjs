@@ -378,6 +378,31 @@ const browser = await webkit.launch();
   await ctx.close();
 }
 
+// =============================================================================
+// The ?ui= debug route's sample numbers never reach the real save.
+//
+// ?ui= fills the in-memory save with a best of 12,480 so its screens are not
+// reviewed empty. Anything that saved afterwards on that page (a settings
+// toggle, a finished run) used to write that made-up best to the device.
+// =============================================================================
+{
+  const ctx = await browser.newContext();
+  await ctx.addInitScript(() => {
+    if (!sessionStorage.getItem('seeded')) {
+      localStorage.setItem('cityrunner2', JSON.stringify({ stars: {}, coins: 5, best: 300 }));
+      sessionStorage.setItem('seeded', '1');
+    }
+  });
+  const page = await ctx.newPage();
+  await page.goto(`${BASE}/?ui=settings`, { waitUntil: 'load' });
+  await page.waitForTimeout(400);
+  await page.click('#set-ghost');   // a control that saves
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('cityrunner2') || 'null'));
+  check(stored?.best === 300, '?ui= sample numbers are never written to the save',
+    `stored best ${stored?.best} (real 300, sample 12480)`);
+  await ctx.close();
+}
+
 await browser.close();
 
 console.log(`\n${failures ? `x ${failures} check(s) failed` : 'ok save-and-scores — all checks passed'}`);

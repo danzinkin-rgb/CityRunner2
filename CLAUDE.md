@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-An endless runner through New York, Paris, London and Rome, built on Three.js. Each city has three streets; each street ends in a 60-second monument-rebuilding puzzle. All geometry, textures and audio are generated procedurally at runtime — the repo ships no art or audio assets. It runs as a web page and, via Capacitor, as an iOS app.
+An endless runner through world cities (New York, Paris, London, Rome and San Francisco released; more in the release queue), built on Three.js. Each city has three streets; each street ends in a 60-second monument-rebuilding puzzle. All geometry, textures and audio are generated procedurally at runtime. The only image files are small PNGs for the menus and HUD (`assets/thumbs`, `monuments`, `souvenirs`, `characters`), rendered from the game itself by `test/capture-city-assets.mjs`. It runs as a web page and, via Capacitor, as an iOS app.
 
 ## Commands
 
@@ -36,7 +36,7 @@ Two files in `test/` are **probes, not gates**, and are deliberately excluded fr
 
 **The repo root is directly servable.** GitHub Pages, `npm run serve` and every test suite load `src/*.js` as raw ES modules with no build step. `vite build` exists only to produce `dist/` for the native app and hosted deploys. Two consequences that bite:
 
-- `vite.config.js` sets `base: './'` and `publicDir: false` — assets live at the repo root so the unbundled deployment keeps working, and are copied into `dist/` by a plugin after the build. Absolute asset paths break both Capacitor (`capacitor://localhost`) and Pages (`/CityRunner2/`).
+- `vite.config.js` sets `base: './'` and `publicDir: false` — assets live at the repo root so the unbundled deployment keeps working, and the ones the game loads (`RUNTIME_ASSETS`) are copied into `dist/` by a plugin after the build; `test/release-build.mjs` checks that list in both directions. Absolute asset paths break both Capacitor (`capacitor://localhost`) and Pages (`/CityRunner2/`).
 - `package.json` says `"type": "commonjs"`, but browser code is ES modules loaded via `<script type="module">` and tests are `.mjs`. Don't "fix" this.
 
 **`src/core/debug.js` is the seam that makes it safe.** `DEBUG_HOOKS = !import.meta.env?.PROD` resolves to `false` in a Vite bundle and `true` when the same file is served raw (where `import.meta.env` is undefined — hence the `?.`). Behind that gate are query-string entry points the suites depend on and a player build must never have: `?view=`/`?ui=`/`?built=` jump straight to a screen or a finished monument, `?god=1` disables collisions, `?ui=` writes a fabricated best score into the in-memory save, and `window.__cr` exposes live handles to the run, the score session and the continue flow.
@@ -45,11 +45,13 @@ Two rules follow. Never replace the `?.` with a build-time define like `__DEBUG_
 
 ## Architecture
 
-`src/main.js` (~1250 lines) is the orchestrator: DOM wiring, screen/overlay state, the save file, and the run/puzzle lifecycle. Most other modules are leaves it calls into.
+`src/main.js` (~1650 lines) is the orchestrator: DOM wiring, screen/overlay state, the save file, and the run/puzzle lifecycle. Most other modules are leaves it calls into.
 
 **Determinism is a hard requirement, not a nicety.** The daily challenge needs every player worldwide on an identical course, and server-side score verification needs the server to reproduce a run from its seed. So every *gameplay* draw — obstacle lane, kind, spacing, collectible placement — must come from the seeded stream in `src/core/rng.js` (mulberry32 + FNV-1a, UTC-keyed daily seed). Purely cosmetic randomness (which windows are lit, paint noise in `src/cities/builders.js`) may use `Math.random()`. `test/determinism.mjs` gates this, and also fingerprints the courses: any change to what a seed generates needs a bump of `COURSE_VERSION` in `src/run/track.js`, which retires saved ghosts (`src/run/ghost.js`) that replay a seed. A change to the daily's cities or scoring needs a new `DAILY.version` in `src/core/rng.js` and a matching Game Center leaderboard.
 
 **`src/cities/themes.js` drives everything visual.** A city entry plus a per-street `levels` override is merged by `resolveStreet(city, level)`; sky, fog, palette, facades, props, vehicles and puzzle landmarks all flow from that one table. `builders.js` turns it into geometry, caching shared geometries in `SHARED_GEO` because `track.js` recycles chunks and would otherwise dispose geometry it doesn't own.
+
+**GPU memory is freed in one place.** Every teardown (`disposeAll` in `main.js`, `Puzzle.dispose`, the track's chunk recycling) goes through `disposeTree` in `src/core/engine.js`, which frees lights (a shadow-casting light owns a ~16 MB render target), geometry, materials and every slot in `TEXTURE_SLOTS`, keeping only the shared sets it is passed. The per-street caches (`releaseStreetCaches`, `releasePuzzleTextures`) are emptied in `disposeAll`. `test/memory.mjs` fails if the texture count climbs lap after lap.
 
 **New cities ship one at a time** (`docs/RELEASES.md`). `src/cities/releases.js` holds `RELEASE_QUEUE`: finished cities merged into `main` but hidden from players. `themes.js` exports `ALL_CITIES` and imports nothing (`marketing/build-pages.mjs` loads it as text); `src/cities/offered.js` exports `CITIES`, which drops queued cities unless the build is a tester build or the page is on a test route (`?view=`, `?ui=` other than the menu, `?allcities=`). Everything player-facing reads `CITIES` from `offered.js`; the landmark pages publish released cities only. Releasing a city is removing it from the queue, plus its Game Center items; `test/releases.mjs` gates it.
 
@@ -79,4 +81,4 @@ Two known fidelity limits, both stated in the suites themselves: headless WebKit
 
 ## Docs
 
-`docs/` carries the reasoning behind most of the above. `COMPLIANCE.md` is authoritative on privacy, security and competitor-naming; `FREEMIUM-IAP.md` on the purchase model; `LAUNCH-CHECKLIST.md` and `APPSTORE-SUBMISSION.md` on release state; `PROPOSALS.md` §4 on the Children's Code constraints the paywall is built to.
+`docs/` carries the reasoning behind most of the above; `docs/archive/` holds finished one-off documents. `COMPLIANCE.md` is authoritative on privacy, security and competitor-naming; `FREEMIUM-IAP.md` on the purchase model; `LAUNCH-CHECKLIST.md` and `APPSTORE-SUBMISSION.md` on release state; `PROPOSALS.md` §4 on the Children's Code constraints the paywall is built to.

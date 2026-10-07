@@ -1,5 +1,5 @@
 import * as THREE from '../vendor/three.module.js';
-import { createRenderer, makeCamera, handleResize, dressScene } from './core/engine.js';
+import { createRenderer, makeCamera, handleResize, dressScene, disposeTree } from './core/engine.js';
 import { createInput } from './core/input.js';
 import { sfx, startMusic, stopMusic, fadeOutMusic, prefs as audioPrefs, saveAudioPrefs } from './core/audio.js';
 import { LANDMARK_NAMES } from './cities/themes.js';
@@ -51,7 +51,12 @@ function loadSave() {
   return s;
 }
 const save = loadSave();
-const persist = () => localStorage.setItem(STORAGE.SAVE, JSON.stringify(save));
+// Set by the ?ui= debug route once it has filled the save with sample numbers
+// (a best of 12,480, shop coins), so that nothing played afterwards on that
+// page writes them into the device's real save. Declared here, not inside the
+// debug block, because persist() reads it (see src/core/debug.js).
+let sampleSave = false;
+const persist = () => { if (!sampleSave) localStorage.setItem(STORAGE.SAVE, JSON.stringify(save)); };
 
 // Souvenir-economy sink #1: cosmetic characters. The default runner is
 // always owned so a fresh save never looks empty in the shop.
@@ -1200,6 +1205,7 @@ $('set-erase').onclick = () => {
   const keep = { reducedMotion: save.reducedMotion, touchButtons: save.touchButtons };
   for (const k of Object.keys(save)) delete save[k];
   Object.assign(save, { stars: {}, coins: 0, best: 0, characters: ['runner'], equipped: 'runner' }, keep);
+  sampleSave = false;   // nothing made-up is left in it to protect
   persist();
   buildCitySelect();
   renderSettings();
@@ -1280,21 +1286,10 @@ function disposeAll() {
   document.body.classList.remove('ghost-run', 'ghost-off');
   if (puzzle) { puzzle.dispose(); puzzle = null; }
   if (scene) {
-    // Geometry AND materials and their textures. Only geometry used to be
-    // freed, so the sky and sun textures dressScene() paints fresh for every
-    // street piled up on the GPU. Disposing something that is also shared is
-    // safe: three re-uploads it the next time it is drawn.
-    scene.traverse((n) => {
-      // The sun's shadow map is a 2048x2048 render target, about 16 MB of
-      // GPU memory, which only light.dispose() frees. Left alone, every street
-      // and monument kept one.
-      if (n.isLight) n.dispose();
-      if (n.geometry) n.geometry.dispose();
-      for (const m of Array.isArray(n.material) ? n.material : n.material ? [n.material] : []) {
-        for (const k of ['map', 'emissiveMap', 'alphaMap']) if (m[k] && m[k].isTexture) m[k].dispose();
-        m.dispose();
-      }
-    });
+    // Lights, geometry, materials and their textures: the sky and sun are
+    // painted fresh for every street, and the sun's shadow map is a 2048x2048
+    // render target.
+    disposeTree(scene);
     if (scene.background && scene.background.isTexture) scene.background.dispose();
     scene = null;
   }
@@ -1526,7 +1521,9 @@ if (DEBUG_HOOKS && q.get('ui')) {
   const ci = CITIES.findIndex((c) => c.id === (q.get('city') || 'london'));
   cityIdx = ci >= 0 ? ci : 0;
   level = Math.min(3, Math.max(1, +(q.get('level') || 2)));
-  // Populate representative content so screens aren't reviewed empty.
+  // Populate representative content so screens aren't reviewed empty, and
+  // never save it.
+  sampleSave = true;
   score = 12480; coins = 37; puzzleBonus = 1650;
   save.best = Math.max(save.best, 12480);
   // in-memory only (no persist) — lets the shop preview show a mix of owned/locked;

@@ -1,6 +1,12 @@
 import { defineConfig } from 'vite';
 import { cpSync, existsSync } from 'node:fs';
 
+export const RUNTIME_ASSETS = [
+  'assets/characters', 'assets/monuments', 'assets/souvenirs', 'assets/thumbs',
+  'assets/icon-192.png', 'assets/icon-512.png',   // manifest.webmanifest, apple-touch-icon
+  'privacy.html', 'manifest.webmanifest',
+];
+
 // Production bundle for the native (Capacitor) app and any hosted deployment.
 //
 // The repo root stays directly servable — GitHub Pages, the preview server and
@@ -36,7 +42,11 @@ export default defineConfig({
     {
       name: 'copy-static-assets',
       closeBundle() {
-        for (const entry of ['assets', 'privacy.html', 'manifest.webmanifest']) {
+        // Only what the game loads at runtime. Copying all of assets/ shipped
+        // the 1024px App Store icon twice (2.4 MB; the iOS icon is built
+        // separately into the asset catalog) and anything else left in there,
+        // such as marketing material. test/release-build.mjs checks the list.
+        for (const entry of RUNTIME_ASSETS) {
           if (existsSync(entry)) cpSync(entry, `dist/${entry}`, { recursive: true });
         }
       },

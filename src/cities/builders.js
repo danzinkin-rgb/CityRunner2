@@ -1,5 +1,5 @@
 import * as THREE from '../../vendor/three.module.js';
-import { canvasTexture } from '../core/engine.js';
+import { canvasTexture, TEXTURE_SLOTS } from '../core/engine.js';
 
 // ---------- shared texture cache (per street) ----------
 const cache = new Map();
@@ -26,7 +26,7 @@ export function releaseStreetCaches() {
     if (!v) continue;
     if (v.isTexture) freeTexture(v);
     else if (v.isMaterial) {
-      for (const k of ['map', 'emissiveMap', 'alphaMap', 'bumpMap', 'normalMap', 'roughnessMap']) {
+      for (const k of TEXTURE_SLOTS) {
         if (v[k] && v[k].isTexture) freeTexture(v[k]);
       }
       v.dispose();

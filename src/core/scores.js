@@ -195,7 +195,3 @@ export function personalBest(filter = {}) {
   return mine ? mine.score : 0;
 }
 
-export function hasPlayedDaily(day = dailyKey()) {
-  const me = getIdentity();
-  return readAll().some((e) => e.id === me.id && e.mode === 'daily' && e.day === day);
-}
