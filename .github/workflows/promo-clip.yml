@@ -1,0 +1,32 @@
+# Renders the short promo video (marketing/promo-clip.mjs) as an MP4 and
+# publishes it to the daily-clips release, where it can be downloaded without
+# signing in. Started by hand from the Actions tab.
+name: Promo clip
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write   # to publish the video to the daily-clips release
+
+jobs:
+  promo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      - run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+      - run: node marketing/promo-clip.mjs
+      - name: Publish to the daily-clips release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          name="promo-$(date -u +%F).mp4"
+          cp marketing/out/promo.mp4 "marketing/out/$name"
+          gh release upload daily-clips "marketing/out/$name" --clobber
