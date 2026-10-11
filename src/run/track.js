@@ -7,7 +7,7 @@ import { makeSky, disposeTree } from '../core/engine.js';
 // and are dropped when it changes. Bump it with ANY change to what a seed
 // generates; test/determinism.mjs fingerprints the courses to catch a change
 // made without a bump.
-export const COURSE_VERSION = 1;
+export const COURSE_VERSION = 2;   // 2: monument pieces placed in a lane clear of the rows either side
 import { resolveStreet } from '../cities/themes.js';
 import {
   roadTexture, sidewalkTexture, makeBuilding, makeProp, makeVehicle,
@@ -660,23 +660,49 @@ export class Track {
       }
     }
 
-    // monument pieces falling in this chunk, placed between obstacle rows
+    // monument pieces falling in this chunk, placed between obstacle rows.
+    // Only gaps whose rows on BOTH sides already exist: this chunk's own, and
+    // the one back to the previous chunk's last row. The gap forward into the
+    // next chunk is not used, because that chunk's rows are not built yet and
+    // nothing could check them.
     const step = 12 / density;
     const rows = [];
     for (let zr = 8; zr < CHUNK_LEN - 4; zr += step) rows.push(zr);
     const mids = [];
     for (let r = 0; r + 1 < rows.length; r++) mids.push((rows[r] + rows[r + 1]) / 2);
-    if (rows.length) {
-      const last = rows[rows.length - 1];
-      mids.push((last + CHUNK_LEN + 8) / 2, (8 + last - CHUNK_LEN) / 2);
-    }
+    if (rows.length) mids.push((8 + rows[rows.length - 1] - CHUNK_LEN) / 2);
     const slots = mids.filter((m) => m > 1 && m < CHUNK_LEN - 1);
+    // The lanes taken in the rows either side of a slot. A weaving Vespa
+    // counts in the lane it weaves into: it has left its own by the time the
+    // player reaches it. Read from the course already built, so choosing a
+    // lane draws nothing from the seeded stream.
+    const zOf = (o) => o.chunk.position.z + o.localZ;
+    const takenBetween = (zHi, zLo) => {
+      const s = new Set();
+      for (const o of this.obstacles) {
+        const z = zOf(o);
+        if (z < zHi && z > zLo) s.add(o.weave ? o.lane + o.weave : o.lane);
+      }
+      return s;
+    };
     for (let k = 0; k < this.pieceDefs.length; k++) {
       if (this.pieceSpawned[k]) continue;
       const zp = this.pieceDist[k] + chunkZ;          // distance into this chunk
       if (zp < 0 || zp >= CHUNK_LEN) continue;
       const zz = slots.length ? slots.reduce((a, b) => (Math.abs(b - zp) < Math.abs(a - zp) ? b : a)) : zp;
-      const lane = (k * 2 + 1) % 3;
+      // A lane the player can hold from the row before to the row after, so
+      // a piece is never boxed in. It used to be (k * 2 + 1) % 3 whatever the
+      // rows held, and about one piece in ten sat between two obstacles in
+      // its own lane: a vehicle each side, or a bar to roll under with a
+      // barrier to jump straight after (a roll lasts too long to jump out of
+      // in time). Failing a lane clear on both sides, one clear in the row
+      // after, so collecting it never runs you into something; every row
+      // leaves at least one lane open.
+      const pz = chunkZ - zz, reach = step / 2 + 1;
+      const before = takenBetween(pz + reach, pz), after = takenBetween(pz, pz - reach);
+      const pref = (k * 2 + 1) % 3;
+      const order = [pref, (pref + 1) % 3, (pref + 2) % 3];
+      const lane = order.find((l) => !before.has(l) && !after.has(l)) ?? order.find((l) => !after.has(l)) ?? pref;
       const d = this.pieceDefs[k];
       const piece = makeBlockMesh(d);
       piece.rotation.set(d.rotX || 0, d.rotY || 0, d.rotZ || 0);

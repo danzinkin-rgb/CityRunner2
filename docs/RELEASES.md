@@ -63,7 +63,12 @@ Kyoto is parked (`docs/CITY-ROADMAP.md`).
 
 ## Next release: what is waiting
 
-Nothing yet since 1.1.1.
+Since 1.1.1:
+
+- Monument pieces on the run are always placed in a lane that can be
+  collected without hitting anything (player feedback). This changes the
+  courses, so `COURSE_VERSION` is 2 and saved ghosts from earlier versions
+  are retired.
 
 ## History
 
