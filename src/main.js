@@ -9,10 +9,10 @@ import { renderHero, renderCompact, paintScale, countUp } from './factviz.js';
 import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
 import { startSession, submit, top as topScores, personalBest, currentSession } from './core/scores.js';
 import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset, DAILY } from './core/rng.js';
-import { initNative, onAppPause, hapticLight, hapticMedium, hapticHeavy, hapticSuccess } from './core/native.js';
+import { initNative, onAppPause, onBackButton, hapticLight, hapticMedium, hapticHeavy, hapticSuccess } from './core/native.js';
 import { reportRun } from './core/gamecenter.js';
 import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild } from './core/entitlements.js';
-import { initIAP, getOffer, purchase, restore, onEntitlementGranted } from './core/iap.js';
+import { initIAP, getOffer, purchase, restore, onEntitlementGranted, storeWords } from './core/iap.js';
 import { STORAGE } from './core/storage-keys.js';
 import { DEBUG_HOOKS, TESTER } from './core/debug.js';
 import { loadGhost, saveGhostIfBest, GhostRecorder, GhostRunner } from './run/ghost.js';
@@ -964,7 +964,7 @@ $('btn-paywall-buy').onclick = async () => {
   const offer = await getOffer();
   if (!offer) return;
   buy.disabled = true;
-  status.textContent = 'Opening the App Store…';
+  status.textContent = `Opening ${storeWords().store}…`;
   const ok = await purchase(offer.productId);
   buy.disabled = false;
   if (!ok) {
@@ -1001,7 +1001,7 @@ onEntitlementGranted(() => {
 
 /** Shared by the paywall and the Settings row — Apple requires both to work. */
 async function doRestore(statusEl) {
-  statusEl.textContent = 'Checking with the App Store…';
+  statusEl.textContent = `Checking with ${storeWords().store}…`;
   const found = await restore();
   if (hasFullAccess()) {
     buildCitySelect();
@@ -1013,7 +1013,7 @@ async function doRestore(statusEl) {
   } else {
     statusEl.textContent = found.length
       ? 'Restored.'
-      : 'No previous purchase found on this Apple Account.';
+      : `No previous purchase found on this ${storeWords().account}.`;
   }
 }
 
@@ -1264,6 +1264,25 @@ window.addEventListener('keydown', (e) => {
   if (e.code !== 'Escape' && e.code !== 'KeyP') return;
   if (state === 'paused') resumeGame(); else pauseGame();
 });
+// Android back button: does what the on-screen button for "go back" does on
+// whatever is showing. Returns false only at the menu, where native.js sends
+// the app to the background. The facts page and a run's own transitions have
+// no back step, so back does nothing there rather than throwing a run away.
+const BACK_BUTTONS = {
+  'ui-help': 'btn-help-close', 'ui-settings': 'btn-settings-close',
+  'ui-scores': 'btn-scores-close', 'ui-shop': 'btn-shop-close',
+  'ui-paywall': 'btn-paywall-close', paused: 'btn-resume',
+  'continue-offer': 'btn-continue-no', over: 'btn-menu', pwin: 'btn-menu2',
+  'puzzle-intro': 'mh-ok',
+};
+function handleBack() {
+  if (state === 'menu') return false;
+  if (state === 'run' || state === 'puzzle') { pauseGame(); return true; }
+  const id = BACK_BUTTONS[state];
+  if (id && $(id).getClientRects().length) $(id).click();   // only if it is on screen
+  return true;
+}
+onBackButton(handleBack);
 // Auto-pause when the tab/app is backgrounded — expected behaviour on phones.
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
 $('btn-continue-pay').onclick = acceptContinue;
@@ -1493,6 +1512,7 @@ if (DEBUG_HOOKS && q.get('view')) {
     get puzzle() { return puzzle; },
     get camera() { return camera; },
     get state() { return state; },
+    back: () => handleBack(),
     get cam() { return cam; },
     get track() { return track; },
     get ghost() { return ghost; },

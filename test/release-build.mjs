@@ -98,6 +98,19 @@ const bundleFiles = (dir) => readdirSync(dir, { recursive: true })
     offenders.join(', '));
 }
 
+// ---- static: both apps ship the build this suite checks ---------------------
+// iOS and Android load the same dist/. What reaches a store is decided by the
+// sync scripts, so they must run the plain build checked below, never the
+// tester build. (android/app/build.gradle also refuses to make a release from
+// a tester build; test/android.mjs checks that.)
+{
+  const scripts = JSON.parse(readFileSync(join(REPO, 'package.json'), 'utf8')).scripts;
+  for (const name of ['ios:sync', 'android:sync']) {
+    check(scripts[name] === `vite build && cap sync ${name.split(':')[0]}`,
+      `${name} copies the plain release build into the app`, scripts[name] || 'missing');
+  }
+}
+
 // ---- build ----------------------------------------------------------------
 // Invoked through node + vite's own bin rather than `npm run build`, so this
 // works identically on Windows and POSIX without a shell.

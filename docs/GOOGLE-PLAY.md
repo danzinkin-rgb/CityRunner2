@@ -1,84 +1,195 @@
 # Publishing to Google Play
 
-What it takes to ship CityRunner on Android, written 27 September 2026.
+**Status, 11 October 2026: under way.** Taken off hold now that there are
+testers for the closed test. The Android project builds and the code work is
+done (§2). The next step is Dan's: the Play developer account (§4, step 1).
 
-**Status: on hold (Dan, 27 September 2026)** until there is an Android
-device to test on and a group of testers for Google's closed-testing
-requirement. Nothing here has been started. Google's rules change each year: check the
-current Play Console requirements (target API level, testing rules) before
-starting.
+Forms and listing text: `GOOGLE-PLAY-LISTING.md`.
 
-## The short version
+## 1. Google's rules, as of 11 October 2026
 
-The game itself is ready: it is a web app in Capacitor, and Capacitor builds
-Android as well as iOS. What does not carry over is everything that talks to
-Apple: purchases, Game Center, and the App Store listing. Android can be built
-entirely on Windows (Android Studio); no Mac is needed.
+Checked against Google's own pages on that date. They change every year;
+re-check before submitting.
 
-The long pole is not code. **A new personal Play developer account has to run
-a closed test with at least 12 testers, opted in for 14 days in a row, before
-it can publish to production.** Recruit testers early.
+- **Target API level 36** (Android 16) for new apps and updates from
+  31 August 2026; an extension to 1 November 2026 could be requested. The
+  project targets 36. Capacitor 7's template says 35, so `test/android.mjs`
+  fails if it drops back.
+  [developer.android.com/google/play/requirements/target-sdk](https://developer.android.com/google/play/requirements/target-sdk)
+- **Play Billing Library 8 or later** from 31 August 2026.
+  `cordova-plugin-purchase` 13.18.0 bundles Billing Library 9.0.0.
+- **Closed test before production** for personal accounts created after
+  13 November 2023: at least 12 testers opted in for at least 14 days in a
+  row. A tester who opts out and back in restarts the count. Production
+  stays locked until then; then apply for production access from the
+  Dashboard. No change since 2023.
+  [support.google.com/googleplay/android-developer/answer/14151465](https://support.google.com/googleplay/android-developer/answer/14151465)
+- **Families policy** applies when the target audience includes under-13s.
+  The app meets it (no ads, no identifiers, no location, no extra SDKs); the
+  item-by-item check is in `GOOGLE-PLAY-LISTING.md` §2.
+- **Data safety:** "no data collected" holds. Data taken by Google Play's
+  billing system does not need declaring when the app never sees it.
+  Reasoning in `GOOGLE-PLAY-LISTING.md` §2 and COMPLIANCE §1.2.
+- **Edge to edge:** apps targeting API 35+ draw behind the system bars, and
+  from API 36 they cannot opt out. `capacitor.config.json` sets
+  `adjustMarginsForEdgeToEdge: "auto"`, so Capacitor keeps the game clear of
+  the status and navigation bars, which show the game's night colour.
 
-## 1. Accounts and paperwork (Dan)
+## 2. What is done (Claude, 11 October 2026)
 
-- Google Play developer account: one-off USD 25 fee, with identity
-  verification (government ID). Choose a personal account unless there is a
-  company.
-- Payments profile, if the unlock purchase is to be sold on Android.
-- Privacy policy URL: already live (`privacy.html`).
-- Content rating: the IARC questionnaire in Play Console. Expect "Everyone"
-  / PEGI 3 with the same answers as Apple's 4+.
-- Data safety form: declare that no data is collected, as on the App Store.
-  Only true while the rule in `docs/COMPLIANCE.md` §4 (no third-party SDKs)
-  holds.
-- Target audience: the game is suitable for children, so it falls under
-  Google's **Families policy**. That fits how the game is already built (no
-  ads, no tracking, no accounts, no external links) but the policy has to be
-  read and its declarations made.
+- `android/` project (Capacitor 7.6.8), app id `uk.co.zinkin.cityrunner`,
+  version name 1.1.1, version code 1. Target and compile SDK 36; Android
+  Gradle plugin 8.10.1 (the first that supports 36); Gradle 8.11.1, which
+  needs **JDK 21** (`android/gradle/gradle-daemon-jvm.properties`).
+- Scripts: `npm run android:sync`, `android:sync:tester`, `android:open`.
+- Launcher icons from `assets/icon-1024.png` (`npm run assets:android`),
+  adaptive icon on the night colour, dark splash and system bars. The
+  Capacitor template's logo and Firebase hook are removed.
+- **Purchases** (`src/core/iap.js`): the same two products, registered with
+  Google Play on Android and with the App Store on iOS. Messages name the
+  right store ("Checking with Google Play…", "this Google Account"). Play
+  restores purchases by itself at every launch; the Restore button asks it
+  again. iOS behaviour is unchanged; `test/android.mjs` checks both.
+- **Store calls have a 10-second limit** (`STORE_WAIT_MS` in `iap.js`).
+  On the emulator, with no Play Store, the plugin never finished starting,
+  and the paywall and Restore waited for ever. Now they say the store is not
+  reachable. This also applies on iOS, where it changes nothing unless the
+  App Store fails to answer.
+- **Game Center** is not registered on Android, so every leaderboard and
+  achievement call returns early (`src/core/native.js`).
+- **Back button / back gesture** (`handleBack()` in `src/main.js`): closes
+  How to play, Settings, Best runs, Shop and the paywall; pauses a run or
+  puzzle; resumes from pause; ends the continue offer; goes to the menu from
+  the results screens; dismisses the missing-pieces card. At the menu the app
+  goes to the background. The facts page ignores it, so back never throws a
+  street away.
+- **Release guard:** Gradle refuses to build a release APK or bundle from a
+  tester build, or with no web build copied in. Tested both ways.
+- **Tests:** `test/android.mjs` joins `npm test`; `test/release-build.mjs`
+  checks both `ios:sync` and `android:sync` use the plain release build.
+- **Store graphics:** `npm run shots:play` makes phone, 7-inch and 10-inch
+  tablet screenshots and the 1024×500 feature graphic.
+- `privacy.html` gains a Purchases section naming Apple and Google Play.
 
-## 2. Code changes (Claude)
+**Checked on an emulator** (Pixel 6 size, Android 16, API 36, no Play
+Store): the debug build installs and boots to How to play; back closes it;
+the menu, a run, pause by back and resume by back all work; the store plugin
+starts on Google Play and reports billing unavailable, as it must on an image
+without the Play Store; after the fix above, the paywall says the store is
+not reachable and Restore says no purchase was found.
 
-- **Add the Android project**: `npm i @capacitor/android`, `npx cap add
-  android`, and an `android:sync` script next to `ios:sync`. The existing
-  plugins (app, haptics, splash screen, status bar) support Android.
-- **Purchases**: `src/core/iap.js` registers the products for
-  `Platform.APPLE_APPSTORE` only. `cordova-plugin-purchase` also supports
-  Google Play Billing, so this is a platform switch plus creating the same
-  products (Founder, full unlock) in Play Console. Restore behaves
-  differently on Google Play and needs its own device test.
-- **Game Center** is Apple-only. The Swift plugin
-  (`ios/App/App/GameCenterPlugin.swift`) does not exist on Android, so every
-  call must no-op there. Google Play Games Services is the equivalent, but
-  it is optional and can come later; the local leaderboard still works.
-- **Android back button**: Android has a system back gesture that iOS does
-  not. It should close an open overlay, pause a run, or leave the app from
-  the menu (`@capacitor/app` `backButton` event).
-- **Target API level**: build against the level Google currently requires
-  (API 35 at minimum; it is raised every August).
-- **Tests**: add Android to the release-build checks (no debug hooks, no
-  tester section), as for iOS.
-- **Performance**: test on a mid-range Android phone, not just a flagship.
-  The GPU memory work (`releaseStreetCaches`) matters more on Android, where
-  many devices have less memory than recent iPhones.
+**Not checked, because it needs a real phone with Play:** buying, restoring
+after reinstall, performance on a mid-range phone, audio, haptics, notch
+phones, and how the game looks after many trips to the background (once,
+just after reinstalling over a running copy, the emulator showed a blank
+screen on return; it did not happen again). These are the testers' jobs:
+§5.
 
-## 3. Store listing (Dan, with Claude drafting)
+### Google Play Games Services
 
-- App name, short description (80 characters), full description (4,000).
-- Icon 512×512; feature graphic 1024×500 (new: iOS has no equivalent).
-- Screenshots: phone (at least 2) and 7" and 10" tablet sets.
-  `npm run shots:store` can be extended for the Android sizes.
-- An Android App Bundle (`.aab`), signed. Use Play App Signing: Google keeps
-  the release key, you keep an upload key. Back the upload key up; losing it
-  means a support request to reset.
+Not added. It is Android's Game Center, but it is a Google SDK that signs
+players in and sends play data to Google, so the Data safety answer would
+become "data collected" and COMPLIANCE §1.2 would need revising. Android
+keeps the local Best runs list. Dan deferred the decision on 11 October 2026;
+nothing in the code assumes either way.
 
-## 4. Order of work
+## 3. This Windows machine
 
-1. Dan: create the developer account and start identity verification (can
-   take days).
-2. Claude: Android project, purchases switch, Game Center no-op, back button,
-   tests. About a day of work, all on Windows.
-3. Dan: build in Android Studio, install on an Android phone, test.
-4. Dan: upload to a closed test track; recruit 12+ testers; wait 14 days.
-5. Dan: store listing, forms, then apply for production access and submit.
+Installed on 11 October 2026 with Dan's go-ahead:
 
-Realistically three to four weeks from starting, mostly the testing window.
+- Android Studio (winget, `Google.AndroidStudio`).
+- Android SDK at `C:\Users\dzink\Android\Sdk`: platform 36, build tools
+  36.0.0, platform tools, emulator, and an API 36 system image.
+- JDK 21 (Microsoft build) at `C:\Users\dzink\Android\jdk-21`.
+- An emulator called `cr36` (Pixel 6, Android 16), in `C:\Users\dzink\Android\avd`.
+
+The SDK is not in Android Studio's default place (`%LOCALAPPDATA%\Android\Sdk`)
+because the Claude app's sandbox redirects writes there. When Android Studio
+first opens, either point it at `C:\Users\dzink\Android\Sdk`
+(Settings › Languages & Frameworks › Android SDK) or let it install its own.
+
+**Gradle JDK:** current Android Studio ships JDK 25, which Gradle 8.11
+cannot run on ("Unsupported class file major version 69"). In Android Studio:
+Settings › Build, Execution, Deployment › Build Tools › Gradle › Gradle JDK
+→ choose `C:\Users\dzink\Android\jdk-21` (or "Download JDK…" version 21).
+
+Command-line build, if wanted (Git Bash):
+
+```bash
+export JAVA_HOME="C:\\Users\\dzink\\Android\\jdk-21" && cd android && ./gradlew.bat assembleDebug
+```
+
+## 4. Dan's steps, in order
+
+Steps 1 and 6 are the long ones: start step 1 today.
+
+1. **Create the Play developer account.**
+   [play.google.com/console/signup](https://play.google.com/console/signup).
+   Personal account (unless there is a company), USD 25 once, government ID
+   and a phone that can receive a code. Identity verification can take
+   several days. Use the Google account you want to own the app for good.
+2. **Set up a payments profile** in Play Console (Settings › Payments
+   profile), so the two products can be created and paid out. Add bank and
+   tax details.
+3. **Create the app** in Play Console: name `CityRunner: Landmark Run`,
+   default language English (UK), Game, Free (the download is free; the
+   unlock is an in-app product). Accept the declarations.
+4. **Build the first signed bundle** in Android Studio:
+   1. `npm run android:sync`, then `npm run android:open`.
+   2. Set the Gradle JDK to 21 (§3) and let Gradle sync.
+   3. Build › Generate Signed App Bundle or APK › Android App Bundle ›
+      Create new… keystore. This is the **upload key**: Play App Signing
+      (on by default for new apps) keeps the real release key, you keep
+      this one.
+   4. **Back up the upload key file and both passwords** in your password
+      manager and one copy off this PC. Never put it in the repo
+      (`android/.gitignore` blocks `*.jks` and `*.keystore`). Losing it
+      means asking Google support to reset it, which takes days.
+   5. Choose the `release` variant. The bundle lands in
+      `android/app/release/app-release.aab`.
+5. **Fill in App content** (Policy › App content) from
+   `GOOGLE-PLAY-LISTING.md` §2: privacy policy, ads, app access, content
+   rating, target audience, Data safety, and the rest.
+6. **Closed test, 14 days.**
+   1. Testing › Closed testing › create a track; upload the `.aab`.
+   2. Add testers by email list or a Google Group. Each tester needs a
+      Google account on an Android phone, accepts the opt-in link, then
+      installs from Play. **Count 12 opted in**; recruit 15 or so to allow
+      for drop-outs.
+   3. Add the testers' Gmail addresses under Settings › License testing too,
+      so they can test the purchase without being charged.
+   4. Once the build is live on the track, create the two products
+      (`GOOGLE-PLAY-LISTING.md` §3): Play only allows it after an upload
+      that contains the billing permission.
+   5. Keep the 12 opted in for 14 days in a row. Each new build: bump
+      `versionCode` in `android/app/build.gradle` by one, `npm run
+      android:sync`, generate the signed bundle, upload to the same track.
+      New builds do not restart the 14 days.
+   6. Read the **pre-launch report** Play produces for each upload: it runs
+      the app on a range of real phones and shows crashes and screenshots.
+      That is the device testing there is no phone here for.
+7. **Store listing** (Grow › Store presence › Main store listing): text
+   from `GOOGLE-PLAY-LISTING.md` §1, icon, feature graphic and screenshots
+   from `npm run shots:play`.
+8. **Apply for production access** from the Dashboard after day 14. Google
+   asks how testing went (who tested, what feedback, what changed).
+   Approval usually takes up to a week.
+9. **Release to production**: promote the tested build, choose countries,
+   send for review.
+
+## 5. What the testers should check
+
+Ask them to report anything wrong with:
+
+- Buying the unlock (license testers are not charged): Rome and San
+  Francisco open, the padlocks go.
+- Uninstall, reinstall: the unlock comes back by itself, or with Settings ›
+  Restore.
+- Cancelling the purchase sheet: no error, nothing changes.
+- Smoothness on an ordinary phone, not just a flagship. The GPU memory work
+  (`releaseStreetCaches`) matters more on Android.
+- Sound and vibration.
+- The back button or gesture in every screen; leaving the app and coming
+  back mid-run (the run should be paused, the screen not blank).
+- Anything hidden under a notch, camera hole or the navigation bar.
+- Turning the phone sideways.

@@ -1,8 +1,8 @@
 /**
  * Native bridge.
  *
- * The same code ships to two places: the web build on GitHub Pages, and the
- * Capacitor app on iOS. Everything here must therefore degrade silently when
+ * The same code ships to three places: the web build on GitHub Pages, and the
+ * Capacitor app on iOS and on Android. Everything here must therefore degrade silently when
  * no native runtime exists — the web build must never see an error, and a
  * missing plugin must never break gameplay.
  *
@@ -16,6 +16,11 @@ let ready = null;           // in-flight init promise
 export function isNative() {
   return !!(globalThis.Capacitor && globalThis.Capacitor.isNativePlatform
     && globalThis.Capacitor.isNativePlatform());
+}
+
+/** 'ios', 'android' or 'web'. */
+export function nativePlatform() {
+  return isNative() ? globalThis.Capacitor.getPlatform() : 'web';
 }
 
 /**
@@ -50,13 +55,15 @@ export function initNative() {
       // version coupling to track — see docs/COMPLIANCE.md §4 on why this
       // project writes its own thin native wrappers instead of taking on a
       // third-party plugin for something Apple's own SDK already does.
-      const GameCenter = registerPlugin('GameCenter');
+      // Android has no Game Center and no plugin by that name, so it gets
+      // null and every gk* helper below returns early.
+      const GameCenter = nativePlatform() === 'ios' ? registerPlugin('GameCenter') : null;
 
       native = { Haptics, ImpactStyle, NotificationType, App, GameCenter };
 
       // Fire-and-forget: a signed-out Game Center account or a player who
       // declines the sign-in sheet must never block or interrupt the game.
-      fire(() => GameCenter.authenticate());
+      if (GameCenter) fire(() => GameCenter.authenticate());
 
       return native;
     } catch {
@@ -107,7 +114,7 @@ export function hapticSuccess() {
 
 /** Submit a score to one Game Center leaderboard. Fire-and-forget. */
 export function gkSubmitScore(leaderboardId, score) {
-  if (!native) return;
+  if (!native?.GameCenter) return;
   fire(() => native.GameCenter.submitScore({ leaderboardId, score: Math.round(score) }));
 }
 
@@ -117,7 +124,7 @@ export function gkSubmitScore(leaderboardId, score) {
  * for a given achievement id, so callers never need to track "already sent".
  */
 export function gkReportAchievement(achievementId, percentComplete) {
-  if (!native) return;
+  if (!native?.GameCenter) return;
   fire(() => native.GameCenter.reportAchievement({
     achievementId,
     percentComplete: Math.max(0, Math.min(100, percentComplete)),
@@ -134,5 +141,25 @@ export function onAppPause(cb) {
     if (!n) return;
     try { n.App.addListener('appStateChange', ({ isActive }) => { if (!isActive) cb(); }); }
     catch { /* listener unavailable */ }
+  });
+}
+
+/**
+ * Android's system back button and back gesture. iOS has neither, so this
+ * registers nothing there or on the web.
+ *
+ * `handle` returns true when it did something (closed an overlay, paused a
+ * run). When it returns false the player is at the menu, and the app goes to
+ * the background, which is what back does at the root of an Android app since
+ * Android 12. Once a listener exists Capacitor no longer does that itself.
+ */
+export function onBackButton(handle) {
+  initNative().then((n) => {
+    if (!n || nativePlatform() !== 'android') return;
+    try {
+      n.App.addListener('backButton', () => {
+        if (!handle()) fire(() => n.App.minimizeApp());
+      });
+    } catch { /* listener unavailable */ }
   });
 }

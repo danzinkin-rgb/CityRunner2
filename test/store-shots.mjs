@@ -119,11 +119,26 @@
  * knocks the run into the "crashed" overlay while the script is waiting
  * with no player driving it.
  *
- * Usage:
- *   npm run serve            # in another terminal — this needs :4173 up
- *   npm run shots:store      # then open test/shots/store/index.html
+ * ---------------------------------------------------------------------
+ * GOOGLE PLAY (--play)
  *
- *   node test/store-shots.mjs [baseUrl]
+ * The same shots at Play's sizes, into test/shots/play/, plus the 1024x500
+ * feature graphic Play requires and the App Store has no equivalent of.
+ * Checked against support.google.com/googleplay/android-developer/answer/
+ * 9866151 on 11 October 2026: JPEG or 24-bit PNG with no alpha; screenshots
+ * 9:16 portrait, at least 1080px wide for games to be eligible for
+ * featuring; tablets between 1080 and 7680px a side. So:
+ *   phone:       360 x  640  @3    ->  1080 x 1920
+ *   7in tablet:  576 x 1024  @2.5  ->  1440 x 2560
+ *   10in tablet: 810 x 1440  @2    ->  1620 x 2880
+ * Play allows eight per device type; the set has ten, so pick eight when
+ * uploading.
+ *
+ * Usage:
+ *   npm run shots:store      # App Store; open test/shots/store/index.html
+ *   npm run shots:play       # Google Play; open test/shots/play/index.html
+ *
+ *   node test/store-shots.mjs [--play] [baseUrl]
  */
 import { webkit, devices } from 'playwright';
 import { resolveBase } from './serve.mjs';
@@ -135,7 +150,8 @@ import { flattenPng } from './png-flatten.mjs';
 // Serves the repo itself unless a URL is named — see test/serve.mjs
 const { base: BASE } = await resolveBase(process.argv.find((a) => a.startsWith('http')));
 const HERE = dirname(fileURLToPath(import.meta.url));
-const OUT = join(HERE, 'shots', 'store');
+const PLAY = process.argv.includes('--play');
+const OUT = join(HERE, 'shots', PLAY ? 'play' : 'store');
 mkdirSync(OUT, { recursive: true });
 
 // City ids come from themes.js, the same way test/contact-sheet.mjs and
@@ -151,7 +167,7 @@ if (!CITIES.length) {
 }
 
 // ---------------------------------------------------------------- sizes
-const SIZES = [
+const APPLE_SIZES = [
   {
     name: '6.7in', width: 1290, height: 2796,
     // 430x932 is the iPhone 15/16 Plus's full display in CSS px; @3x that's
@@ -181,6 +197,27 @@ const SIZES = [
     viewport: { width: 1032, height: 1376 }, deviceScaleFactor: 2,
   },
 ];
+
+// Google Play, 9:16 portrait throughout. See the header for the sources.
+const PLAY_SIZES = [
+  {
+    name: 'phone', width: 1080, height: 1920,
+    base: devices['Pixel 7'] || {},
+    viewport: { width: 360, height: 640 }, deviceScaleFactor: 3,
+  },
+  {
+    name: '7in-tablet', width: 1440, height: 2560,
+    base: devices['Galaxy Tab S4'] || {},
+    viewport: { width: 576, height: 1024 }, deviceScaleFactor: 2.5,
+  },
+  {
+    name: '10in-tablet', width: 1620, height: 2880,
+    base: devices['Galaxy Tab S4'] || {},
+    viewport: { width: 810, height: 1440 }, deviceScaleFactor: 2,
+  },
+];
+
+const SIZES = PLAY ? PLAY_SIZES : APPLE_SIZES;
 
 const SETTLE_UI = 1400;      // countUp() in src/factviz.js — see header
 const SETTLE_RUN = 3500;     // matches test/road-clearance.mjs's own wait
@@ -358,6 +395,46 @@ for (const size of SIZES) {
   }
   await ctx.close();
 }
+
+// ------------------------------------------------------- Play feature graphic
+// 1024x500, no alpha. A live run with the HUD hidden and the game's name over
+// it. Play crops the edges in some layouts, so the words sit in the middle.
+if (PLAY) {
+  const ctx = await browser.newContext({ viewport: { width: 1024, height: 500 }, deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+  const shot = { id: 'feature-graphic', kind: 'run', city: 'nyc', level: 3 };
+  const r = await capture(page, shot);
+  const file = 'feature-graphic-1024x500.png';
+  if (r.ok) {
+    await page.addStyleTag({ content: `
+      #hud, #btn-pause, #btn-ghost, #touchpad, .screen { display: none !important; }
+      #fg-title { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; text-align: center; pointer-events: none;
+        font: 900 92px/1 -apple-system, 'Segoe UI', sans-serif; color: #fff; letter-spacing: 1px;
+        text-shadow: 0 4px 24px rgba(0,0,0,.75), 0 0 2px #000; }
+      #fg-title small { font-size: 30px; font-weight: 700; margin-top: 14px; letter-spacing: 3px; }` });
+    await page.evaluate(() => {
+      const d = document.createElement('div');
+      d.id = 'fg-title';
+      d.innerHTML = 'CityRunner<small>RUN THE WORLD&rsquo;S LANDMARKS</small>';
+      document.body.appendChild(d);
+    });
+    await page.waitForTimeout(300);
+    const outPath = join(OUT, file);
+    await page.screenshot({ path: outPath });
+    flattenPng(outPath);
+    const dims = pngSize(readFileSync(outPath));
+    const ok = dims && dims.width === 1024 && dims.height === 500 && dims.colourType === 2;
+    rows.push({ size: 'feature', shot: { ...shot, label: 'Feature graphic', why: 'Required by Play; no App Store equivalent.' },
+      file, dims, dimsOk: ok, alphaOk: dims?.colourType === 2, kb: Math.round(readFileSync(outPath).length / 1024),
+      blank: r.blank, blankFlag: r.blank?.ok && r.blank.range < 10, err: r.errors.join(' | ') });
+    console.log(`${ok ? 'ok ' : 'x  '} feature graphic — ${dims ? `${dims.width}x${dims.height}` : 'unreadable'}`);
+  } else {
+    console.log(`x   feature graphic — ${r.error}`);
+  }
+  await ctx.close();
+  SIZES.push({ name: 'feature', width: 1024, height: 500 });
+}
 await browser.close();
 
 // ------------------------------------------------------------------- the sheet
@@ -386,7 +463,7 @@ const bySize = SIZES.map((size) => {
 const warnings = rows.filter((r) => r.err || r.blankFlag || (r.dims && !r.dimsOk) || (r.dims && !r.alphaOk)).length;
 
 writeFileSync(join(OUT, 'index.html'), `<!doctype html><meta charset="utf-8">
-<title>CityRunner — App Store screenshots</title>
+<title>CityRunner — ${PLAY ? 'Google Play' : 'App Store'} screenshots</title>
 <script>
   // Opened from disk this is a no-op. Served through \`npx serve\`, the URL is
   // rewritten to /test/shots/store with no trailing slash, so every relative
@@ -419,7 +496,7 @@ writeFileSync(join(OUT, 'index.html'), `<!doctype html><meta charset="utf-8">
   .why { color:#9db4cf; font-size:12.5px; font-style:italic; }
   .warn { color:#ffb454; font-size:12.5px; }
 </style>
-<h1>App Store screenshots</h1>
+<h1>${PLAY ? 'Google Play' : 'App Store'} screenshots</h1>
 <div class="sub">${rows.length} frame${rows.length === 1 ? '' : 's'} · ${DEFAULT_SET.length} shot(s) x ${SIZES.length} size(s) ·
   ${warnings} warning${warnings === 1 ? '' : 's'} ·
   generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')}</div>

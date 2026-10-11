@@ -1,0 +1,69 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace "uk.co.zinkin.cityrunner"
+    compileSdk rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "uk.co.zinkin.cityrunner"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        // versionCode must go up by one for every upload to Play, including
+        // uploads to the closed test track. versionName is what players see;
+        // keep it the same as the iOS MARKETING_VERSION.
+        versionCode 1
+        versionName "1.1.1"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+// Capacitor's template also applied the Google Services (Firebase) plugin
+// here when a google-services.json was present. It is removed: no Firebase,
+// no third-party SDKs (docs/COMPLIANCE.md section 4).
+
+// A tester build (npm run android:sync:tester) lets anyone play every street
+// and run invincible. Refuse to make a release APK or bundle from one, and
+// from a project with no web build copied in at all. npm run android:sync
+// puts the player build back. test/android.mjs checks this block is here.
+tasks.matching { it.name == 'preReleaseBuild' }.configureEach {
+    doFirst {
+        def web = file('src/main/assets/public')
+        if (!file("${web}/index.html").exists()) {
+            throw new GradleException('No web build in the app. Run: npm run android:sync')
+        }
+        def tester = fileTree(web).matching { include '**/*.js' }.any { it.text.contains('TESTER BUILD') }
+        if (tester) {
+            throw new GradleException('This is a tester build and must not be released. Run: npm run android:sync')
+        }
+    }
+}

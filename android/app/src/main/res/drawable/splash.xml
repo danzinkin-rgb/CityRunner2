@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launch background before Android 12: the game's night-sky colour, the
+     same as the iOS launch screen and capacitor.config.json. Android 12 and
+     later draw their own splash from the theme below and the launcher icon. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/night" />
+</shape>

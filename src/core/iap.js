@@ -46,10 +46,26 @@
  * Apple's own StoreKit, reached through a bridge, is not a third-party SDK in
  * the sense COMPLIANCE.md means — no data goes anywhere except to Apple, who
  * is already processing the payment. That carve-out is recorded explicitly in
- * docs/COMPLIANCE.md so this file does not quietly contradict it.
+ * docs/COMPLIANCE.md so this file does not quietly contradict it. Google Play
+ * Billing on Android is the same case: the plugin bundles Google's billing
+ * library and talks only to Google Play, which processes the payment.
+ *
+ * ---------------------------------------------------------------------------
+ * ANDROID
+ *
+ * The same two product ids are used on Google Play (they are valid Play ids:
+ * lowercase, dots allowed), so entitlements.js needs no platform branch.
+ * Differences that matter here:
+ *   - Play refunds any purchase not acknowledged within three days. finish()
+ *     on `approved` is what acknowledges it, so it must stay.
+ *   - A pending purchase (cash at a shop, slow card) is not `approved` until
+ *     paid. receiptUpdated grants it whenever that happens, as with Ask to Buy.
+ *   - Play reports owned purchases at every initialize(), so a reinstall
+ *     restores without the player doing anything. The Restore button still
+ *     works there; it re-queries Play.
  */
 
-import { isNative } from './native.js';
+import { isNative, nativePlatform } from './native.js';
 import { PRODUCTS, grant, reconcile } from './entitlements.js';
 
 /**
@@ -63,6 +79,29 @@ const OFFER_ORDER = [PRODUCTS.FOUNDER, PRODUCTS.UNLOCK];
 let store = null;       // resolved plugin handle, or null everywhere else
 let ready = null;       // in-flight init promise
 let offer = null;       // cached {productId, price, title} once known
+
+/**
+ * Wait for a store call, but not for ever. When Google Play Billing cannot
+ * start (no Play Store on the device, or no Google account signed in) the
+ * plugin reports the error and never settles initialize(), so the paywall
+ * and Restore waited for good (seen on an Android 16 emulator, 11 October
+ * 2026). After STORE_WAIT_MS the caller carries on as if the store had
+ * answered with nothing; if it does come up later, its products appear on
+ * the next getOffer().
+ */
+const STORE_WAIT_MS = 10000;
+const settleWithin = (p) => Promise.race([p, new Promise((r) => setTimeout(r, STORE_WAIT_MS))]);
+
+/** Which store this build sells through, in the plugin's own terms. */
+const storePlatform = (Platform) => (nativePlatform() === 'android'
+  ? Platform.GOOGLE_PLAY : Platform.APPLE_APPSTORE);
+
+/** The store's name and account, for the paywall's and Settings' messages. */
+export function storeWords() {
+  return nativePlatform() === 'android'
+    ? { store: 'Google Play', account: 'Google Account' }
+    : { store: 'the App Store', account: 'Apple Account' };
+}
 
 /**
  * Subscribers notified whenever an entitlement is granted after the fact —
@@ -98,7 +137,7 @@ async function loadStore() {
     const { store: cdvStore, ProductType, Platform } = window.CdvPurchase ?? {};
     if (!cdvStore) return null;
     cdvStore.register(OFFER_ORDER.map((id) => ({
-      id, type: ProductType.NON_CONSUMABLE, platform: Platform.APPLE_APPSTORE,
+      id, type: ProductType.NON_CONSUMABLE, platform: storePlatform(Platform),
     })));
     // Deliberately NOT approved->verify->verified: the plugin's own docs say
     // `verified` "requires a receipt validator" (e.g. store.validator set to
@@ -126,7 +165,7 @@ async function loadStore() {
       }
       if (granted) for (const fn of entitlementListeners) fn();
     });
-    await cdvStore.initialize([Platform.APPLE_APPSTORE]);
+    await settleWithin(cdvStore.initialize([storePlatform(Platform)]));
     return cdvStore;
   } catch {
     // A store failure must never take the game down. The player simply sees
@@ -162,7 +201,7 @@ export async function getOffer() {
     for (const id of OFFER_ORDER) {
       const p = store.get?.(id);
       if (p && p.canPurchase) {
-        // Price comes from the store, localised by Apple to the user's own
+        // Price comes from the store, localised by the store to the user's own
         // storefront. Never hardcode "£1.99" in the UI — the same product is
         // $1.99 in the US and something else again in Japan, and a wrong
         // price on screen is a refund request at best.
@@ -210,13 +249,14 @@ export async function purchase(productId) {
  * MANDATORY, not optional. Apple rejects apps selling non-consumables with no
  * restore control (docs/PROPOSALS.md §4 records this). It lives in Settings so
  * it is always reachable, not only from a paywall the player may never see
- * again after buying.
+ * again after buying. Google Play restores by itself at launch; on Android
+ * the same button asks Play again, which helps if that first query failed.
  */
 export async function restore() {
   await initIAP();
   if (!store) return [];
   try {
-    await store.restorePurchases?.();
+    await settleWithin(store.restorePurchases?.());
     const found = OFFER_ORDER.filter((id) => store.get?.(id)?.owned);
     reconcile(found);
     return found;

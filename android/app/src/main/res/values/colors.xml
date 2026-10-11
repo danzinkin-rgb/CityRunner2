@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The game's night sky. Shows behind the status and navigation bars,
+         which Capacitor keeps clear of the game on Android 15 and later. -->
+    <color name="night">#070B1A</color>
+</resources>
