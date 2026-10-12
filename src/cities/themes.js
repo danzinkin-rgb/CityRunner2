@@ -776,6 +776,56 @@ export const ALL_CITIES = [
       },
     ],
   },
+  {
+    id: 'zanzibar', name: 'ZANZIBAR', flag: '🇹🇿', region: 'mideast-africa',
+    streets: ['Kenyatta Road', 'Darajani Market', 'Forodhani Gardens'],
+    // Tropical afternoon by the Indian Ocean: bright turquoise sky, white
+    // light on weathered coral-stone walls, dark carved teak doors.
+    sky: { top: '#2a80d0', mid: '#80c4ec', horizon: '#f2ead4', glow: '#ffe0a8' },
+    fog: 0xe8e4d4, fogDensity: 0.0088,
+    sun: { color: 0xfff4dc, intensity: 2.6, pos: [55, 75, -40] },
+    hemi: { sky: 0xd4ecf8, ground: 0x9a8a70, intensity: 1.1 },
+    fill: { color: 0xfff2e0, intensity: 1.0 },
+    road: '#7a7468', lane: '#f0ece0', sidewalk: '#bcb4a4',
+    palette: ['#ece4d4', '#e4dac6', '#f0eadc', '#d8ccb6', '#e8e0cc', '#dcd2bc'],
+    trim: '#5a3a24', roof: '#8a6a4a',
+    windowLit: '#ffd8a0', windowDay: '#8ab4c8', accent: '#2a8aa8',
+    storefront: ['#2a8aa8', '#c8502a', '#3a8a5a', '#e8b020', '#8a3a6a'],
+    facade: 'coral', hBase: 9, hVar: 3,
+    props: ['lamp', 'palm', 'souvenirstall'],
+    // The dala dala, an open-backed truck turned into a minibus. A wall,
+    // as rare as London's bus; the rest are ordinary cars. No markings.
+    vehicle: 'daladala',
+    // Houses jut out and the street narrows (src/run/mechanics.js).
+    mechanic: 'narrows',
+    landmarks: ['oldfort', 'christchurch', 'wonders'],
+    levels: [
+      { // Kenyatta Road: Stone Town's old shopping street, coral-stone
+        // houses with carved doors and closed wooden balconies
+        key: 'kenyatta',
+        setback: 3.0, secondRow: 0.2,
+        props: ['lamp', 'souvenirstall', 'rugs'],
+        ads: ['SPICES', 'KANGA', 'CARVINGS', 'COFFEE', 'TOURS'],
+        lit: 0.18,
+      },
+      { // Darajani Market: the main market, spices and fruit and fish, the
+        // crowds and the dala dala stops outside
+        key: 'darajani', facade: 'market',
+        setback: 3.4, hBase: 7, hVar: 2, secondRow: 0,
+        props: ['awning', 'fruitcart', 'souvenirstall'],
+        ads: ['SPICES', 'CLOVES', 'MANGOES', 'FISH', 'COCONUTS'],
+        span: 'string', spanFreq: 0.4, lit: 0.2,
+      },
+      { // Forodhani Gardens: the seafront, the ocean on one side, the
+        // gardens and the old palaces along the other
+        key: 'forodhani', lake: true,
+        setback: 5.6, hBase: 11, hVar: 3, secondRow: 0.3,
+        props: ['lamp', 'palm'],
+        ads: ['SEAFOOD', 'SUGARCANE', 'DHOW TRIPS'],
+        cameo: 'wonders', lit: 0.16,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -794,6 +844,7 @@ export const LANDMARK_NAMES = {
   turtletower: 'Turtle Tower', longbien: 'Long Bien Bridge', vanmieu: 'Temple of Literature',
   heunginjimun: 'Heunginjimun Gate', gyeonghoeru: 'Gyeonghoeru Pavilion', geunjeongjeon: 'Geunjeongjeon Hall',
   observatory: 'Ulugh Beg Observatory', gurlamir: 'Gur-e-Amir', registan: 'The Registan',
+  oldfort: 'The Old Fort', christchurch: 'Christ Church Cathedral', wonders: 'House of Wonders',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

@@ -482,6 +482,50 @@ async function watch(page, ms, shotName) {
   await again.ctx.close();
 }
 
+// ------------------------------------------------------------ Zanzibar
+// Houses that jut out and narrow the street (NARROW_* in mechanics.js):
+//   - four stretches nose to tail in an outer lane, all inside one chunk
+//   - rows alongside, and up to 14 m past it, keep out of that lane, have no
+//     souvenirs there, and keep one other lane completely empty
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337, 2024, 5]) {
+    ({ page, ctx, errors } = await open('zanzibar', 3, SEED));
+    snap = await page.evaluate(() => {
+      const tr = window.__cr.track;
+      const parts = tr.obstacles.filter((o) => o.mech).map((o) => ({
+        chunk: tr.chunks.indexOf(o.chunk), z: o.localZ, lane: tr.laneAtArrival(o), front: !!o.front,
+      }));
+      const rows = tr.obstacles.filter((o) => !o.mech).map((o) => ({
+        chunk: tr.chunks.indexOf(o.chunk), z: o.localZ, lane: tr.laneAtArrival(o),
+      }));
+      const coins = tr.coins.map((c) => ({ chunk: tr.chunks.indexOf(c.chunk), x: c.mesh.position.x, z: c.mesh.position.z }));
+      return { parts, rows, coins };
+    });
+    if (snap.parts.length) break;
+    await ctx.close();
+  }
+  const fronts = snap.parts.filter((p) => p.front);
+  check(fronts.length > 0, 'Zanzibar deals narrowings', `${fronts.length} in the opening chunks, seed ${SEED}`);
+  let partBad = 0, alongBad = 0, coinsBad = 0;
+  for (const f of fronts) {
+    const parts = snap.parts.filter((p) => p.chunk === f.chunk && p.z <= f.z && p.z > f.z - 20.5);
+    if (parts.length !== 4 || parts.some((p) => p.lane !== f.lane) || f.lane === 1 || parts.some((p) => p.z < -34)) partBad++;
+    const along = snap.rows.filter((r) => r.chunk === f.chunk && r.z < f.z && r.z >= f.z - 34);
+    if (along.some((r) => r.lane === f.lane)) alongBad++;
+    for (const z of new Set(along.map((r) => r.z))) {
+      const lanes = along.filter((r) => r.z === z).map((r) => r.lane);
+      if ([0, 1, 2].filter((l) => l !== f.lane).every((l) => lanes.includes(l))) alongBad++;
+    }
+    if (snap.coins.some((c) => c.chunk === f.chunk && c.z < f.z && c.z >= f.z - 34 && Math.abs(c.x - LANES[f.lane]) < 0.2)) coinsBad++;
+  }
+  check(partBad === 0, 'a narrowing is four stretches in an outer lane, inside one chunk', `${partBad} bad`);
+  check(alongBad === 0, 'rows beside a narrowing keep out of its lane and leave another lane empty', `${alongBad} bad`);
+  check(coinsBad === 0, 'no souvenirs lie in a narrowed lane', `${coinsBad} bad`);
+  check(!errors.length, 'Zanzibar: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
 // ------------------------------------------------------- no stray moves
 for (const city of ['nyc', 'rome', 'sf', 'jerusalem', 'mexico']) {
   const { page, ctx } = await open(city, 3, 4242);

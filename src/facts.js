@@ -281,6 +281,28 @@ export const STREET_FACTS = {
         { text: 'All three face the square, each behind a great tiled gate.' },
       ] },
   ],
+  // Zanzibar: DRAFT, awaiting Dan's sign-off (docs/ZANZIBAR-FACTS-DRAFT.md,
+  // sources listed there).
+  zanzibar: [
+    { street: 'Kenyatta Road', tag: 'The carved doors',
+      facts: [
+        { big: '2000', label: 'World Heritage', text: 'UNESCO listed Stone Town in 2000 for its mix of African, Arab, Persian, Indian and European building.' },
+        { text: 'Its houses are famous for their carved wooden doors, many studded with brass.' },
+        { text: 'Doors in the Indian style have rounded tops; those in the Omani Arab style are square.' },
+      ] },
+    { street: 'Darajani Market', tag: 'The main market',
+      facts: [
+        { big: '1904', label: 'market hall built', text: "The covered market hall was built in 1904. People here call it Marikiti Kuu, 'the main market'." },
+        { text: 'Its stalls sell spices, fresh fish, fruit, and almost everything else.' },
+        { text: 'The dala dalas, small trucks turned into buses, leave for the rest of the island from beside it.' },
+      ] },
+    { street: 'Forodhani Gardens', tag: 'The seafront',
+      facts: [
+        { text: "Forodhani means 'customs': the gardens lie by the island's old customs house." },
+        { text: 'Every evening the gardens become an open-air food market, with grilled seafood and sugar-cane juice.' },
+        { text: 'The old palaces of the sultans line the seafront here, looking out over the harbour.' },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -423,6 +445,27 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Zanzibar: DRAFT, awaiting Dan's sign-off (docs/ZANZIBAR-FACTS-DRAFT.md).
+  // No sourced heights: altitude, Stone Town being on the shore, at sea
+  // level (1 m shown).
+  oldfort: { altitude: 1,
+    facts: [
+      { big: '1699', label: 'built by', text: 'The fort was built by about 1699, after Oman took the island from Portugal, on the site of a Portuguese church.' },
+      { text: 'It has served as a garrison, a prison and a railway terminus.' },
+      { text: "Today it is a cultural centre, and home to the Zanzibar International Film Festival." },
+    ] },
+  christchurch: { altitude: 1,
+    facts: [
+      { big: '1873', label: 'slave market closed', text: 'The cathedral stands where the island\'s slave market was, closed in 1873. Its first stone was laid that Christmas.' },
+      { text: 'Bishop Edward Steere, who campaigned against slavery, led the building, and designed its unusual barrel-vaulted roof.' },
+      { text: 'Its altar is said to stand where the whipping post was, so that the place of suffering became a place of worship.' },
+    ] },
+  wonders: { altitude: 1,
+    facts: [
+      { big: '1883', label: 'built', text: 'Sultan Barghash built it in 1883 as a palace for ceremonies.' },
+      { text: 'It was the first building in Zanzibar with electricity, and the first in East Africa with a lift: that is how it got its name.' },
+      { text: 'Part of it collapsed in 2020, and it is being restored.' },
     ] },
   // Samarkand: DRAFT, awaiting Dan's sign-off (docs/SAMARKAND-FACTS-DRAFT.md).
   // altitude: Samarkand stands 702 m above sea level

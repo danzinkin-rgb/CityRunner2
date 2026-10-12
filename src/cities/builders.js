@@ -155,6 +155,23 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
 
         for (let cIdx = 0; cIdx < cols; cIdx++) {
           if (style === 'hanok') continue;     // a hanok's wall is painted below
+          if (style === 'coral') {
+            // Stone Town: small shuttered windows in thick coral-stone walls,
+            // and on the upper floors the odd closed wooden balcony
+            if ((cIdx + f) % 2 === 1) continue;
+            const x = cIdx * ww + ww * 0.25, y = rowY + wh * 0.2, w = ww * 0.5, h = wh * 0.6;
+            g.fillStyle = '#5a3a24'; g.fillRect(x - 3, y - 3, w + 6, h + 6);
+            g.fillStyle = Math.random() < (theme.lit ?? 0.16) ? theme.windowLit : '#3a4a5a';
+            g.fillRect(x, y, w, h);
+            g.fillStyle = '#4a7a8a';
+            g.fillRect(x, y, w * 0.48, h); g.fillRect(x + w * 0.52, y, w * 0.48, h);
+            if (f > 0 && f % 3 === 1 && cIdx === 0) {
+              g.fillStyle = '#5a3a24'; g.fillRect(x - 10, y - 6, W * 0.6, h + 14);
+              g.fillStyle = 'rgba(255,230,190,.3)';
+              for (let lx = x - 6; lx < x - 10 + W * 0.6; lx += 6) g.fillRect(lx, y, 2, h);
+            }
+            continue;
+          }
           if (style === 'tilework') {
             // Samarkand: deep pointed-arch niches set in the brick, each
             // framed in turquoise tile, a small latticed window at the back
@@ -382,6 +399,14 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         }
       }
 
+      // Stone Town: lime-washed coral stone, weathered in grey-brown streaks
+      if (style === 'coral') {
+        for (let i = 0; i < 40; i++) {
+          g.fillStyle = `rgba(90,80,60,${Math.random() * 0.1})`;
+          const x = Math.random() * W;
+          g.fillRect(x, Math.random() * H * 0.3, 3 + Math.random() * 8, H * (0.2 + Math.random() * 0.5));
+        }
+      }
       // Samarkand: brick coursing, and a band of cobalt and turquoise tile
       // with white stars under the parapet
       if (style === 'tilework') {
@@ -451,6 +476,7 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
       else if (style === 'flatpaint') paintFlatpaintGround(G);
       else if (style === 'tubehouse') paintTubehouseGround(G);
       else if (style === 'hanok') paintHanokGround(G);
+      else if (style === 'coral') paintCoralGround(G);
       else paintDefaultShops(G);
 
       g.fillStyle = 'rgba(0,0,0,.3)';
@@ -743,6 +769,30 @@ function paintMarketGround({ g, W, H, shopY, SHOP_H, theme }) {
     }
   }
   g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(0, shopY, W, 3);
+}
+
+// Stone Town: a carved teak door, square-headed or round-topped, studded
+// with brass, in a stone frame, and now and then a little shop beside it.
+function paintCoralGround({ g, W, H, shopY, SHOP_H, theme }) {
+  const dx = W * 0.3, dw = W * 0.4, top = shopY + SHOP_H * 0.08;
+  const round = Math.random() < 0.5;
+  g.fillStyle = '#d8ccb4'; g.fillRect(dx - 10, top - 8, dw + 20, H - top + 4);       // the frame
+  g.fillStyle = '#4a2e1a';
+  g.beginPath(); g.moveTo(dx, H - 4);
+  if (round) { g.lineTo(dx, top + dw / 2); g.arc(dx + dw / 2, top + dw / 2, dw / 2, Math.PI, 0); }
+  else { g.lineTo(dx, top + 14); g.lineTo(dx + dw, top + 14); }
+  g.lineTo(dx + dw, H - 4); g.closePath(); g.fill();
+  g.fillStyle = '#7a5232';                                                           // carved lintel
+  if (!round) g.fillRect(dx - 6, top - 2, dw + 12, 16);
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(dx + dw / 2 - 1, top + 20, 2, H - top - 24);
+  g.fillStyle = '#e8c060';                                                           // brass studs
+  for (let y = top + 30; y < H - 10; y += 14) for (const x of [dx + dw * 0.2, dx + dw * 0.4, dx + dw * 0.6, dx + dw * 0.8]) {
+    g.beginPath(); g.arc(x, y, 2.4, 0, 7); g.fill();
+  }
+  if (Math.random() < 0.4) {
+    g.fillStyle = pickR(theme.storefront); g.fillRect(4, shopY + SHOP_H * 0.3, W * 0.2, SHOP_H * 0.5);
+    g.fillRect(W * 0.76, shopY + SHOP_H * 0.3, W * 0.2, SHOP_H * 0.5);
+  }
 }
 
 // Seoul: a hanok's ground floor, sliding lattice doors, and in Insadong a
@@ -2062,6 +2112,7 @@ const ADS = {
   hanoi: ['PHO', 'SILK', 'COFFEE', 'LANTERNS'],
   seoul: ['TEA', 'GALLERY', 'CAFÉ', 'BOOKS'],
   samarkand: ['SILK', 'CERAMICS', 'BREAD', 'TEA'],
+  zanzibar: ['SPICES', 'KANGA', 'COFFEE', 'TOURS'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -3003,6 +3054,31 @@ export function makeVehicle(theme) {
     }
     const sign = new THREE.Mesh(boxGeo, mats.glow);
     sign.scale.set(0.5, 0.16, 0.2); sign.position.set(0, 1.6, -0.1); g.add(sign);
+  } else if (kind === 'daladala') {
+    // Zanzibar's dala dala: a small truck with a cab in front and an open
+    // passenger box behind under a roof on posts, painted bright. A wall:
+    // with its roof rack and load it stands 3 m tall.
+    const paint = cached('mat:dala', () => new THREE.MeshStandardMaterial({ color: 0x2a8aa8, roughness: 0.4, metalness: 0.15 }));
+    const cream = cached('mat:dalaCream', () => new THREE.MeshStandardMaterial({ color: 0xf2e8c8, roughness: 0.6 }));
+    const cab = new THREE.Mesh(boxGeo, cream);
+    cab.scale.set(2.0, 1.6, 1.6); cab.position.set(0, 1.3, 1.8); cab.castShadow = true; g.add(cab);
+    const glassM = cached('mat:carGlass', () => new THREE.MeshStandardMaterial({ color: 0xa8d0ec, roughness: 0.12, metalness: 0.5 }));
+    const screen = new THREE.Mesh(boxGeo, glassM);
+    screen.scale.set(1.8, 0.6, 0.06); screen.position.set(0, 1.75, 2.62); g.add(screen);
+    const box = new THREE.Mesh(boxGeo, paint);
+    box.scale.set(2.1, 1.0, 3.4); box.position.set(0, 0.95, -0.7); g.add(box);
+    const roof = new THREE.Mesh(boxGeo, paint);
+    roof.scale.set(2.2, 0.12, 3.6); roof.position.set(0, 2.7, -0.7); g.add(roof);
+    for (const [x, z] of [[-1, 0.9], [1, 0.9], [-1, -2.3], [1, -2.3]]) {
+      const post = new THREE.Mesh(boxGeo, mats.black);
+      post.scale.set(0.08, 1.3, 0.08); post.position.set(x, 2.05, z); g.add(post);
+    }
+    const load = new THREE.Mesh(boxGeo, cached('mat:dalaLoad', () => new THREE.MeshStandardMaterial({ color: 0xc8a070, roughness: 0.9 })));
+    load.scale.set(1.6, 0.4, 2.4); load.position.set(0, 3.0, -0.7); g.add(load);
+    for (const sx of [-0.7, 0.7]) {
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), mats.glow);
+      lamp.position.set(sx, 0.85, 2.62); g.add(lamp);
+    }
   } else if (kind === 'minivan') {
     // Samarkand: a small, tall white minivan with a sliding door. A car,
     // low enough to jump.
@@ -3250,6 +3326,30 @@ export function makeMotorbike(signal = false) {
     const light = new THREE.Mesh(boxGeo, off);
     light.scale.set(0.8, 0.26, 0.26); light.position.set(0, 2.4, 0.15); g.add(light);
     g.userData.signal = { light, off, on };
+  }
+  return g;
+}
+
+// Zanzibar's narrowing: one five-metre stretch of a house that juts out
+// into the road over an outer lane, from the lane's inner edge out to the
+// pavement: lime-washed coral stone, a closed wooden balcony on top, and on
+// the front stretch a carved door facing the runner. A wall.
+export function makeJutHouse(lane, k) {
+  const g = new THREE.Group();
+  const out = lane === 0 ? -1 : 1;
+  const wallMat = cached('mat:jutWall', () => new THREE.MeshStandardMaterial({ color: 0xe8dfcc, roughness: 0.9 }));
+  const wood = cached('mat:jutWood', () => new THREE.MeshStandardMaterial({ color: 0x5a3a24, roughness: 0.8 }));
+  const wall = new THREE.Mesh(boxGeo, wallMat);
+  wall.scale.set(4.4, 5.6, 5.0); wall.position.set(out * 1.0, 2.8, 0); wall.castShadow = true; g.add(wall);
+  const balcony = new THREE.Mesh(boxGeo, wood);
+  balcony.scale.set(0.8, 1.6, 4.2); balcony.position.set(-out * 1.35, 4.4, 0); g.add(balcony);
+  if (k === 0) {
+    const door = new THREE.Mesh(boxGeo, wood);
+    door.scale.set(1.4, 2.6, 0.12); door.position.set(0, 1.3, 2.52); g.add(door);
+    const studs = new THREE.Mesh(boxGeo, cached('mat:jutStuds', () => new THREE.MeshStandardMaterial({ color: 0xe8c060, roughness: 0.3, metalness: 0.7 })));
+    studs.scale.set(1.0, 1.8, 0.04); studs.position.set(0, 1.3, 2.6); g.add(studs);
+    const lintel = new THREE.Mesh(boxGeo, wood);
+    lintel.scale.set(1.8, 0.4, 0.2); lintel.position.set(0, 2.8, 2.55); g.add(lintel);
   }
   return g;
 }
@@ -4191,6 +4291,7 @@ const SIL_TINT = {
   hanoi: '#5a4e42',      // tiled roofs and tube houses in the haze
   seoul: '#3e4a5a',      // the granite mountains around the city
   samarkand: '#5a4a3a',  // sand brick, and the blue domes catching the light
+  zanzibar: '#4a5a64',   // white stone town, palms and minarets against the sea haze
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
@@ -4351,6 +4452,22 @@ function skylineTexture(theme) {
           g.fill();
         }
         x += bw + 1;
+      }
+    } else if (theme.id === 'zanzibar') {
+      // Stone Town from the water: tall white houses packed together, a
+      // church spire, slim minarets, and palms along the shore.
+      for (let x = 0, i = 0; x < 1600; i++) {
+        const bw = 20 + (i * 11) % 26, bh = 30 + (i * 19) % 40;
+        box(x, bw, bh, 0.16 + ((i * 3) % 3) * 0.02);
+        x += bw + 2;
+      }
+      box(700, 16, 140, 0.3);
+      g.fillStyle = dark(0.3); g.beginPath(); g.moveTo(696, GY - 140); g.lineTo(708, GY - 176); g.lineTo(720, GY - 140); g.fill();
+      for (const x of [380, 1000, 1240]) box(x, 8, 110, 0.28);
+      for (const x of [120, 260, 520, 860, 1120, 1420]) {
+        g.fillStyle = dark(0.3);
+        g.fillRect(x, GY - 70, 4, 70);
+        for (let k = 0; k < 6; k++) { g.beginPath(); g.ellipse(x + 2 + Math.cos(k) * 12, GY - 72 + Math.abs(Math.sin(k)) * 4, 16, 4, Math.cos(k) * 0.6, 0, 7); g.fill(); }
       }
     } else if (theme.id === 'samarkand') {
       // Low brick roofs, and over them the city's turquoise domes, ribbed and
@@ -4621,6 +4738,19 @@ export function makeCameo(theme) {
       g.fillRect(cx + 50, GY - 196, 40, 50);                         // the tower
       g.fillStyle = light(0.2);
       for (let x = cx - 140; x < cx + 140; x += 16) g.fillRect(x, GY - 138, 7, 12);   // the gallery
+    } else if (key === 'wonders') {
+      // The House of Wonders on the seafront: a tall square block wrapped in
+      // balconies on slim columns, with its clock tower rising in front.
+      g.fillStyle = dark(0.22);
+      for (let x = cx - 480; x < cx + 480; x += 30) { if (Math.abs(x - cx) > 170) { g.fillRect(x, GY - 60, 3, 60); g.beginPath(); g.ellipse(x, GY - 62, 14, 4, 0, 0, 7); g.fill(); } }
+      g.fillStyle = dark(0.34);
+      g.fillRect(cx - 150, GY - 200, 300, 200);
+      g.fillStyle = light(0.25);
+      for (let y = GY - 190; y < GY; y += 64) for (let x = cx - 144; x < cx + 144; x += 18) g.fillRect(x, y, 3, 56);
+      g.fillStyle = dark(0.4);
+      g.fillRect(cx - 24, GY - 260, 48, 260);
+      g.beginPath(); g.moveTo(cx - 28, GY - 260); g.lineTo(cx, GY - 284); g.lineTo(cx + 28, GY - 260); g.fill();
+      g.fillStyle = light(0.6); g.beginPath(); g.arc(cx, GY - 236, 12, 0, 7); g.fill();
     } else if (key === 'registan') {
       // The Registan ahead: three great tiled gates facing the square, the
       // middle one with its turquoise dome, and minarets at the corners.

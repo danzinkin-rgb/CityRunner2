@@ -553,7 +553,7 @@ export class Track {
           const isCable = t.vehicle === 'cablecar' && rand() < (this.level === 1 ? 0.18 : 0.4);
           // Jerusalem's city bus works the same way, for the same reason, and
           // so do Cape Town's minibus taxi and Seoul's green bus.
-          const busLike = t.vehicle === 'citybus' || t.vehicle === 'minibus' || t.vehicle === 'seoulbus';
+          const busLike = t.vehicle === 'citybus' || t.vehicle === 'minibus' || t.vehicle === 'seoulbus' || t.vehicle === 'daladala';
           const isCityBus = busLike && rand() < (this.level === 1 ? 0.18 : 0.4);
           const carInstead = (t.vehicle === 'cablecar' && !isCable) || (busLike && !isCityBus);
           mesh = carInstead ? makeParkedCar(t) : makeVehicle(t);

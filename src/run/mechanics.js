@@ -24,8 +24,37 @@
 import { LANES } from './player.js';
 import {
   makeHandcart, makeAutoRickshaw, makeTukTuk, makeGustDust, makeMotorbike, makeTrainCar,
-  makeCrowd, makeCrossing, makeArchBay,
+  makeCrowd, makeCrossing, makeArchBay, makeJutHouse,
 } from '../cities/builders.js';
+
+// A move that takes a lane for a stretch (Hanoi's train, Zanzibar's narrow
+// alleys) sets track.laneHold = { chunk, from, to, lane }. Every row laid
+// alongside it, and up to HOLD_TAIL metres past its end, is cleared out of
+// that lane (obstacles and souvenirs), and keeps one of the other two lanes
+// completely empty, so it never asks for a jump or a roll with the held lane
+// alongside and nowhere else to go. Removing draws nothing from the seeded
+// stream.
+const HOLD_TAIL = 14;
+function clearHeldLane({ track, chunk, zRow }) {
+  const h = track.laneHold;
+  if (!h || h.chunk !== chunk || zRow <= h.from || zRow > h.to + HOLD_TAIL) return;
+  const inRow = (o) => o.chunk === chunk && Math.abs(o.localZ + zRow) < 0.01 && !o.mech;
+  const drop = (o) => { chunk.remove(o.mesh); track.obstacles = track.obstacles.filter((x) => x !== o); };
+  for (const o of track.obstacles.filter((x) => inRow(x) && track.laneAtArrival(x) === h.lane)) drop(o);
+  const others = [0, 1, 2].filter((l) => l !== h.lane);
+  const rest = track.obstacles.filter((x) => inRow(x));
+  if (others.every((l) => rest.some((o) => track.laneAtArrival(o) === l))) {
+    // empty the lane without a vehicle if there is one, else the outer one
+    const lane = others.find((l) => !rest.some((o) => track.laneAtArrival(o) === l && o.kind === 'full')) ?? others[1];
+    for (const o of rest.filter((x) => track.laneAtArrival(x) === lane)) drop(o);
+  }
+  track.coins = track.coins.filter((c) => {
+    const hit = c.chunk === chunk && Math.abs(c.mesh.position.x - LANES[h.lane]) < 0.1
+      && c.mesh.position.z <= -zRow + 0.1 && c.mesh.position.z > -zRow - 7.5;
+    if (hit) chunk.remove(c.mesh);
+    return !hit;
+  });
+}
 
 // ---- Marrakech: porters' handcarts crossing the road --------------------
 // A porter pushes a laden cart straight across the road, kerb to kerb, at
@@ -280,12 +309,12 @@ const SWARM = {
 // rickshaws.
 // Fairness:
 //   - the train fits inside its chunk, so it is never cut off early
-//   - every row alongside it, and up to TRAIN_TAIL metres past its last
+//   - every row alongside it, and up to HOLD_TAIL metres past its last
 //     car, has nothing in the rail lane and no souvenirs there, and always
-//     keeps one of the other two lanes completely empty
+//     keeps one of the other two lanes completely empty (clearHeldLane)
 //   - only the rail lane: the train never leaves its rails
 const TRAIN_CHANCE = [0.12, 0.16, 0.2];      // share of rows, by street
-const TRAIN_CARS = 4, CAR_LEN = 6, RUSH = 0.35, RUSH_MAX = 30, TRAIN_WARN = 90, TRAIN_TAIL = 14;
+const TRAIN_CARS = 4, CAR_LEN = 6, RUSH = 0.35, RUSH_MAX = 30, TRAIN_WARN = 90;
 const TRAIN = {
   hint: 'Train coming! Keep out of the rail lane.',
   row({ level, rand, addObstacle, zRow, chunkLen, track, chunk }) {
@@ -298,32 +327,11 @@ const TRAIN = {
       r.loco = k === 0;
       if (!head) head = r;
     }
-    track.trainHold = { chunk, from: zRow, to: zRow + TRAIN_CARS * CAR_LEN };
+    track.laneHold = { chunk, from: zRow, to: zRow + TRAIN_CARS * CAR_LEN, lane: 0 };
     return head;
   },
   settle() {},
-  // A row laid alongside the train: clear the rail lane, and keep one of
-  // the other lanes free of vehicles.
-  after({ track, chunk, zRow }) {
-    const h = track.trainHold;
-    if (!h || h.chunk !== chunk || zRow <= h.from || zRow > h.to + TRAIN_TAIL) return;
-    const inRow = (o) => o.chunk === chunk && Math.abs(o.localZ + zRow) < 0.01 && !o.mech;
-    const drop = (o) => { chunk.remove(o.mesh); track.obstacles = track.obstacles.filter((x) => x !== o); };
-    for (const o of track.obstacles.filter((x) => inRow(x) && track.laneAtArrival(x) === 0)) drop(o);
-    // keep a lane beside the train completely empty, so the row never asks
-    // for a jump or a roll with the train alongside and nowhere else to go
-    const rest = track.obstacles.filter((x) => inRow(x));
-    if ([1, 2].every((l) => rest.some((o) => track.laneAtArrival(o) === l))) {
-      const lane = rest.some((o) => track.laneAtArrival(o) === 2 && o.kind === 'full') ? 1 : 2;
-      for (const o of rest.filter((x) => track.laneAtArrival(x) === lane)) drop(o);
-    }
-    track.coins = track.coins.filter((c) => {
-      const hit = c.chunk === chunk && Math.abs(c.mesh.position.x - LANES[0]) < 0.1
-        && c.mesh.position.z <= -zRow + 0.1 && c.mesh.position.z > -zRow - 7.5;
-      if (hit) chunk.remove(c.mesh);
-      return !hit;
-    });
-  },
+  after: clearHeldLane,
   move(o, ahead) {
     const off = Math.min(RUSH_MAX, Math.max(0, ahead) * RUSH);
     o.mesh.position.z = o.localZ - off;
@@ -461,7 +469,41 @@ const ARCHES = {
   },
 };
 
+// ---- Zanzibar: alleys that narrow -------------------------------------------
+// Stone Town's lanes are narrow. Here and there a house juts out into the
+// road for a stretch, its carved door and balcony on the street, and the
+// way through narrows to two lanes. It does not move: the skill is seeing
+// it far enough ahead and being out of that lane, with the rest of the
+// street's traffic squeezed into the two lanes left.
+// Fairness:
+//   - it fits inside its chunk, and stands in an outer lane only
+//   - the rows alongside it, and up to HOLD_TAIL metres past it, keep out of
+//     its lane and keep one other lane completely empty (clearHeldLane)
+const NARROW_CHANCE = [0.1, 0.14, 0.18];     // share of rows, by street
+const JUT_PARTS = 4, JUT_LEN = 5;
+const NARROWS = {
+  hint: 'The street narrows ahead: find the open lanes!',
+  row({ level, rand, addObstacle, zRow, chunkLen, track, chunk }) {
+    if (zRow + JUT_PARTS * JUT_LEN > chunkLen - 2) return null;
+    if (rand() >= NARROW_CHANCE[level - 1]) return null;
+    const lane = rand() < 0.5 ? 0 : 2;
+    let head = null;
+    for (let k = 0; k < JUT_PARTS; k++) {
+      const r = addObstacle(lane, 'full', { mesh: makeJutHouse(lane, k), y0: 0, y1: 3.2, halfLen: JUT_LEN / 2, dz: k * JUT_LEN });
+      r.mech = NARROWS;
+      r.front = k === 0;
+      if (!head) head = r;
+    }
+    track.laneHold = { chunk, from: zRow, to: zRow + JUT_PARTS * JUT_LEN, lane };
+    return head;
+  },
+  settle() {},
+  after: clearHeldLane,
+  move(o, ahead) { return o.front && ahead < 70 && ahead > 0; },
+};
+
 export const MECHANICS = {
+  narrows: NARROWS,
   arches: ARCHES,
   crossing: CROSSING,
   handcart: CART,

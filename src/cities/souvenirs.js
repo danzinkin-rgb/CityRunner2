@@ -136,6 +136,28 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'zanzibar') {
+    // A little carved Zanzibar door: dark teak, round-topped, two leaves,
+    // studded with brass, under a carved frame.
+    const teak = new THREE.MeshStandardMaterial({ color: 0x6a4228, roughness: 0.6, emissive: 0x2a1408, emissiveIntensity: 0.4 });
+    const brass = new THREE.MeshStandardMaterial({ color: 0xe8c060, roughness: 0.25, metalness: 0.8, emissive: 0x5a4010, emissiveIntensity: 0.4 });
+    const door = new THREE.Shape();
+    door.moveTo(-0.24, -0.4); door.lineTo(0.24, -0.4); door.lineTo(0.24, 0.16);
+    door.absarc(0, 0.16, 0.24, 0, Math.PI, false); door.lineTo(-0.24, -0.4);
+    const leaf = new THREE.Mesh(new THREE.ExtrudeGeometry(door, { depth: 0.06, bevelEnabled: false }), teak);
+    leaf.position.z = -0.03; g.add(leaf);
+    const frame = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.04, 6, 20, Math.PI), teak);
+    frame.position.set(0, 0.16, 0.02); g.add(frame);
+    for (const x of [-0.28, 0.28]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.58, 0.08), teak);
+      post.position.set(x, -0.13, 0.02); g.add(post);
+    }
+    const seam = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.7, 0.07), new THREE.MeshStandardMaterial({ color: 0x2a180a }));
+    seam.position.y = -0.04; g.add(seam);
+    const stud = new THREE.SphereGeometry(0.025, 6, 5);
+    for (let y = -0.3; y < 0.2; y += 0.12) for (const x of [-0.14, 0.14]) {
+      const s = new THREE.Mesh(stud, brass); s.position.set(x, y, 0.045); g.add(s);
+    }
   } else if (theme.id === 'samarkand') {
     // A painted ceramic plate in cobalt and turquoise, a white star in a
     // ring of petals at its centre, a raised rim.

@@ -1549,6 +1549,77 @@ const defs = {
     );
     return out;
   })(),
+  // ================= ZANZIBAR =================
+  // The Old Fort (1699), Christ Church (1873-80) and the House of Wonders
+  // (1883) are all long out of copyright. The slave memorial beside the
+  // cathedral (1998) is a living artist's work and is not shown.
+
+  // The Old Fort: a square of high, weathered stone walls with stepped
+  // battlements, a round tower at each corner and the gate in front.
+  // Street 1: about a dozen pieces.
+  oldfort: [
+    B([0, 0.2, 0], [22, 0.4, 22], '#9a8a6a', 'box'),
+    ...[[0, 7.2, 0], [0, -7.2, 0], [7.2, 0, Math.PI / 2], [-7.2, 0, Math.PI / 2]].map(([x, z, rot]) =>
+      B([x, 2.6, z], [12, 4.4, 1.4], '#b8a888', 'box', { tex: 'stone', tx: { rough: 1 }, rotY: rot,
+        adorn: [-5, -3, -1, 1, 3, 5].map((dx) => B([dx, 2.6, 0], [0.8, 0.8, 1.4], '#b0a080', 'pyramid')) })),
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) =>
+      B([sx * 7.2, 3.0, sz * 7.2], [3.0, 6.0, 3.0], '#c0b090', 'cyl', { tex: 'stone', tx: { rough: 1 },
+        adorn: [B([0, 3.3, 0], [3.2, 0.6, 3.2], '#b0a080', 'cyl')] })),
+    B([0, 2.4, 8.0], [3.6, 4.4, 1.0], '#c8b896', 'extrude', {
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.15, w: 0.5, h: 0.6, arch: true }],
+    }),
+    B([0, 0.55, 10.5], [4, 0.3, 3], '#a89a7a', 'box', { tex: 'stone' }),
+  ],
+
+  // Christ Church Cathedral: a long nave of coral stone with pointed
+  // windows under a barrel roof, aisles either side, a rounded apse at the
+  // east end, and the clock tower with its spire at the west front.
+  // Street 2: about eighteen pieces.
+  christchurch: [
+    B([0, 0.2, 0], [16, 0.4, 24], '#9a9480', 'box'),
+    B([0, 3.0, -2], [6, 5.2, 7], '#e8e0cc', 'box', { tex: 'gothic' }),
+    B([0, 3.0, -9], [6, 5.2, 7], '#e8e0cc', 'box', { tex: 'gothic' }),
+    B([0, 6.4, -5.5], [6.4, 1.8, 14.2], '#8a7a6a', 'prism'),                                // the barrel roof
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 4.4, 2.0, -5.5], [2.8, 3.2, 14], '#e4dcc6', 'box', { tex: 'gothic' }),       // aisles
+      B([sx * 4.4, 4.0, -5.5], [3.0, 0.9, 14.2], '#8a7a6a', 'prism'),
+      B([sx * 5.9, 1.6, -5.5], [0.6, 2.8, 12], '#d8d0bc', 'group', {                       // buttresses
+        adorn: [-5, -2.5, 0, 2.5, 5].map((z) => B([0, 0, z], [0.6, 2.8, 0.6], '#d8d0bc')),
+      }),
+    ]),
+    B([0, 3.0, -13.6], [6, 5.2, 6], '#e4dcc6', 'cyl', { tex: 'gothic' }),                   // the apse
+    B([0, 5.6, -13.6], [6.2, 2.4, 6.2], '#8a7a6a', 'dome'),
+    B([0, 3.0, 3.8], [3.6, 5.6, 3.6], '#ece4d0', 'box', { tex: 'gothic' }),                 // the tower
+    B([0, 7.2, 3.8], [3.4, 2.8, 3.4], '#ece4d0', 'box'),
+    B([0, 7.2, 5.55], [1.6, 1.6, 0.12], '#f8f2e0', 'clock'),
+    B([0, 9.8, 3.8], [3.6, 2.4, 3.6], '#6a6a70', 'pyramid'),
+    B([0, 11.6, 3.8], [0.2, 1.2, 0.2], '#e0b040', 'cyl', { metal: 1 }),
+    B([0, 1.8, 5.65], [1.8, 3.2, 0.2], '#4a3424', 'box', { sortY: 3.1 }),                   // the west door
+    B([0, 0.55, 7.0], [4, 0.3, 2.4], '#b8b0a0', 'box', { tex: 'stone' }),
+  ],
+
+  // The House of Wonders: a tall square palace wrapped on every floor in
+  // balconies carried on slim cast-iron columns, with the clock tower in
+  // front. Street 3: about two dozen pieces.
+  wonders: [
+    B([0, 0.2, 0], [22, 0.4, 20], '#a89c84', 'box', { tex: 'stone' }),
+    ...[0, 1, 2].flatMap((fl) => [
+      B([-3.0, 2.2 + fl * 4, 0], [6, 4, 12], '#ece6d6', 'box', { tex: 'win', tx: { cols: 3, rows: 1 } }),
+      B([3.0, 2.2 + fl * 4, 0], [6, 4, 12], '#e8e2d2', 'box', { tex: 'win', tx: { cols: 3, rows: 1 } }),
+      B([0, 4.05 + fl * 4, 0], [16, 0.3, 16], '#d8d0bc', 'box', { sortY: 4.25 + fl * 4 }),       // the balcony floor
+      B([0, 2.2 + fl * 4, 7.6], [15.6, 3.7, 0.4], '#e8e4d8', 'colonnade', { cols: 12, sortY: 4.3 + fl * 4 }),
+      B([0, 2.2 + fl * 4, -7.6], [15.6, 3.7, 0.4], '#e8e4d8', 'colonnade', { cols: 12, sortY: 4.3 + fl * 4 }),
+    ]),
+    B([0, 12.6, 0], [16.4, 0.6, 16.4], '#7a6a5a'),                                          // the roof
+    B([0, 8.6, 9.2], [3.2, 17, 3.2], '#ece6d6', 'box', { tex: 'arch', tx: { n: 2 } }),     // the clock tower
+    B([0, 16.1, 10.82], [2.0, 2.0, 0.12], '#f8f2e0', 'clock', { sortY: 16.2 }),
+    B([0, 16.1, 7.58], [2.0, 2.0, 0.12], '#f8f2e0', 'clock', { sortY: 16.2 }),
+    B([1.62, 16.1, 9.2], [2.0, 2.0, 0.12], '#f8f2e0', 'clock', { rotY: Math.PI / 2, sortY: 16.2 }),
+    B([-1.62, 16.1, 9.2], [2.0, 2.0, 0.12], '#f8f2e0', 'clock', { rotY: Math.PI / 2, sortY: 16.2 }),
+    B([0, 17.9, 9.2], [3.6, 1.6, 3.6], '#6a7a6a', 'pyramid'),
+    B([0, 0.6, 11.6], [5, 0.4, 2.4], '#c8bea8', 'box', { tex: 'stone' }),                   // the steps
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }
