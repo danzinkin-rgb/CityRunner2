@@ -51,7 +51,7 @@ async function playToEnd(makeMoves) {
     };
   }, makeMoves);
 }
-const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('cityrunner2.ghosts') || '{}')['paris:1'] || null);
+const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('cityrunner2.ghosts') || '{}')['paris:1:newbie'] || null);
 
 // 1. first run: no ghost yet; finishing saves one
 await page.goto(RUN, { waitUntil: 'load' });

@@ -132,6 +132,35 @@ let shake = 0;
 
 const city = () => CITIES[cityIdx];
 
+// ---------- game modes ----------
+// Newbie is the original pace; Gamer is for players who know runners (a
+// 14-year-old found Newbie too slow, October 2026). Gamer runs faster and
+// builds every monument by dragging. Newbie scores 70%, rather than Gamer
+// scoring more, so a Gamer score is the full one. Obstacles are placed by
+// distance, not time, so both modes run the same course for a seed.
+const MODES = {
+  newbie: { start: [14, 17, 20], ramp: 0.25, scoreMul: 0.7 },
+  gamer: { start: [20, 23, 26], ramp: 0.35, scoreMul: 1 },
+};
+// Tapping a piece home is kept only for newcomers: Newbie mode, street 1, in
+// these three cities. Every other monument is built by dragging.
+const TAP_CITIES = ['nyc', 'paris', 'london'];
+const gameMode = () => (save.mode === 'gamer' ? 'gamer' : 'newbie');
+const tapsHere = () => rules.name === 'newbie' && level === 1 && TAP_CITIES.includes(city().id);
+// The monument clock: 15% less in Gamer, and 3% less per city after the
+// first three (at most 15%), so later cities ask for quicker building.
+const puzzleTimeScale = () => (rules.name === 'gamer' ? 0.85 : 1) * (1 - Math.min(0.15, 0.03 * Math.max(0, cityIdx - 2)));
+// The rules for the run or puzzle being played. The daily challenge is one
+// course for everyone, so it ignores the chosen mode: Newbie pace and puzzle
+// rules, at full score, as every daily before modes existed was.
+function playRules() {
+  const name = dailyMode ? 'newbie' : gameMode();
+  return { name, ...MODES[name], scoreMul: dailyMode ? 1 : MODES[name].scoreMul };
+}
+// set again by startRun() and startPuzzle(); dailyMode is not declared yet here
+let rules = { name: 'newbie', ...MODES.newbie };
+const addScore = (n) => { score += n * rules.scoreMul; };
+
 // ---------- daily challenge ----------
 // One course a day, identical for every player worldwide, rotating city.
 // Unlimited attempts; the best score of the day is the one that counts.
@@ -304,15 +333,16 @@ function startRun() {
   // Racing your best: a street you have finished before replays the course
   // of your best run on it, with that run beside you as a ghost. Never on the
   // daily (one course for everyone, and not yours to replay).
-  const best = !dailyMode && save.raceBest !== false ? loadGhost(city().id, level) : null;
+  rules = playRules();
+  const best = !dailyMode && save.raceBest !== false ? loadGhost(city().id, level, rules.name) : null;
   if (best && runSeed == null) runSeed = best.seed;
   doFade(() => {
     disposeAll();
     scene = new THREE.Scene();
     dressScene(scene, city());
     player = new Player(scene, characterById(save.equipped).style);
-    const pieceDefs = looseDefs(city().landmarks[level - 1], level);
-    track = new Track(scene, city(), level, runSeed, pieceDefs);
+    const pieceDefs = looseDefs(city().landmarks[level - 1], level, tapsHere());
+    track = new Track(scene, city(), level, runSeed, pieceDefs, rules.start[level - 1]);
     ghostRec = new GhostRecorder(track.seed);
     player.onAction = (a) => ghostRec.move(track.distance, a);
     ghost = best && best.seed === track.seed
@@ -322,7 +352,7 @@ function startRun() {
     piecesGot = 0;
     track.onPiece = () => {
       piecesGot++;
-      score += 50;
+      addScore(50);
       sfx.powerup();
       hapticMedium();
       $('hud-pieces').textContent = `${piecesGot}/${pieceDefs.length}`;
@@ -333,7 +363,7 @@ function startRun() {
     document.body.classList.add('run-pieces');
     track.onWeave = () => hint('That Vespa is signalling — it\'s about to change lanes!');
     track.onMechanic = (text) => hint(text);
-    speed = 14 + (level - 1) * 3;
+    speed = rules.start[level - 1];
     coins = 0; score = 0; shake = 0;
     continuesUsed = 0;
     camera.position.set(0, 5.2, 8.5);
@@ -380,7 +410,7 @@ let testerInvincible = false;   // tester builds only; see the Tester section be
 function showGoal(lm) {
   $('hud-goal-img').src = `assets/monuments/${lm}.png`;
   $('hud-goal-name').textContent = LANDMARK_NAMES[lm];
-  const n = looseDefs(lm, level).length;
+  const n = looseDefs(lm, level, tapsHere()).length;
   $('hud-goal-sub').textContent = n ? `Collect its ${n} pieces on the way` : '';
   const el = $('hud-goal');
   el.classList.add('on');
@@ -591,7 +621,7 @@ function applyCityPalette() {
 function showStreetFacts() {
   lastRunPieces = track ? track.piecesCollected.slice() : null;
   // a finished street that beats the saved one becomes the ghost to race
-  if (!dailyMode && ghostRec) saveGhostIfBest(city().id, level, ghostRec.result(score));
+  if (!dailyMode && ghostRec) saveGhostIfBest(city().id, level, ghostRec.result(score), rules.name);
   fadeOutMusic();
   state = 'facts';
   applyCityPalette();
@@ -617,7 +647,10 @@ function startPuzzle() {
     scene = new THREE.Scene();
     dressScene(scene, city());
     const lm = city().landmarks[level - 1];
-    puzzle = new Puzzle(scene, camera, lm, level, { collected: lastRunPieces });
+    // Straight from a run, keep that run's rules: its pieces were dealt for
+    // them, even if the mode was switched in Settings on the way.
+    if (!lastRunPieces) rules = playRules();
+    puzzle = new Puzzle(scene, camera, lm, level, { collected: lastRunPieces, tap: tapsHere(), timeScale: puzzleTimeScale() });
     lastRunPieces = null;
     puzzle.hintFn = hint;
     document.body.classList.remove('run-pieces');
@@ -631,7 +664,11 @@ function startPuzzle() {
     state = 'puzzle';
     showScreen(null);
     const missing = puzzle.missingLeft();
-    if (missing && !save.seenMissingHelp) showMissingHelp();
+    // A first street that is dragged gets a clear warning, once per city:
+    // players who learnt tapping in the first three cities would otherwise
+    // tap away at a monument that no longer responds to it.
+    if (level === 1 && puzzle.mode === 'drag' && !(save.dragTold || {})[city().id]) showDragHelp();
+    else if (missing && !save.seenMissingHelp) showMissingHelp();
     hint(missing
       ? `${missing} piece${missing > 1 ? 's' : ''} missed on the street — they'll arrive as you build`
       : puzzle.mode === 'tap' ? 'Tap the glowing blocks — drag to look around'
@@ -648,7 +685,7 @@ function finishPuzzle(won) {
     // A share of the clock rather than raw seconds: the total now scales with
     // the monument, and this keeps the bonus's ceiling at 3000 either way —
     // which is also what the score plausibility bound in scores.js assumes.
-    puzzleBonus = Math.round((puzzle.time / puzzle.timeTotal) * 60) * 50;
+    puzzleBonus = Math.round((puzzle.time / puzzle.timeTotal) * 60 * 50 * rules.scoreMul);
     score += puzzleBonus;
     // A daily awards no stars. Its city and street come from the date, not
     // from the player's progress, so a star here would open cities out of
@@ -724,6 +761,20 @@ function showMissingHelp() {
   $('missing-help').classList.add('on');
   state = 'puzzle-intro';
 }
+function showDragHelp() {
+  $('dh-text').textContent = `The ${LANDMARK_NAMES[city().landmarks[level - 1]]} is built by dragging. `
+    + 'Press a glowing block, drag it onto its outline and let go. Tapping a block will not place it.';
+  $('drag-help').classList.add('on');
+  state = 'puzzle-intro';
+}
+$('dh-ok').onclick = () => {
+  $('drag-help').classList.remove('on');
+  save.dragTold = { ...(save.dragTold || {}), [city().id]: true };
+  persist();
+  state = 'puzzle';
+  clock.getDelta();                 // the card's time is not the player's
+  if (puzzle.missingLeft() && !save.seenMissingHelp) showMissingHelp();
+};
 function closeMissingHelp(bring) {
   $('missing-help').classList.remove('on');
   save.seenMissingHelp = true;
@@ -1109,6 +1160,7 @@ function renderSettings() {
   setToggle('set-motion', !!save.reducedMotion);
   setToggle('set-ghost', save.raceBest !== false);
   setToggle('set-touchbtns', !!save.touchButtons);
+  renderModeButtons();
   $('set-vol').value = Math.round(audioPrefs.volume * 100);
   $('set-name').textContent = getIdentity().name;
   $('set-version').textContent = `v${VERSION}`;
@@ -1181,6 +1233,25 @@ $('set-motion').onclick = () => {
 };
 // Off: every street is a fresh random course, with no ghost.
 $('set-ghost').onclick = () => { setRaceBest(save.raceBest === false); renderSettings(); };
+function setGameMode(mode) {
+  save.mode = mode;
+  persist();
+  renderModeButtons();
+}
+function renderModeButtons() {
+  const gamer = gameMode() === 'gamer';
+  const el = $('set-mode');
+  el.textContent = gamer ? 'GAMER' : 'NEWBIE';
+  el.setAttribute('aria-label', `Game mode: ${gamer ? 'Gamer' : 'Newbie'}`);
+  for (const [id, on] of [['help-mode-newbie', !gamer], ['help-mode-gamer', gamer]]) {
+    $(id).classList.toggle('on', on);
+    $(id).setAttribute('aria-pressed', String(on));
+  }
+}
+$('set-mode').onclick = () => setGameMode(gameMode() === 'gamer' ? 'newbie' : 'gamer');
+$('help-mode-newbie').onclick = () => setGameMode('newbie');
+$('help-mode-gamer').onclick = () => setGameMode('gamer');
+renderModeButtons();
 $('btn-ghost').onclick = (e) => {
   e.stopPropagation();
   const on = save.raceBest === false;
@@ -1313,10 +1384,10 @@ function frame() {
 
   if (state === 'run' || state === 'dead') {
     if (state === 'run') {
-      speed += dt * 0.25;                       // gentle ramp
-      score += speed * dt * 2;
+      speed += dt * rules.ramp;                 // a gentle ramp (steeper in Gamer)
+      addScore(speed * dt * 2);
       track.update(dt, speed, player,
-        () => { coins++; sfx.coin(); hapticLight(); score += 25; },
+        () => { coins++; sfx.coin(); hapticLight(); addScore(25); },
         () => crash());
       player.update(dt, speed);
       ghostRec?.sample(track.distance, score);
@@ -1499,6 +1570,7 @@ if (DEBUG_HOOKS && q.get('view')) {
     get ghost() { return ghost; },
     get player() { return player; },
     get speed() { return speed; },
+    get rules() { return rules; },
     get seed() { return runSeed; },
     get score() { return score; },
     get continuesUsed() { return continuesUsed; },

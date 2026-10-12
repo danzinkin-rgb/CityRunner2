@@ -48,9 +48,13 @@ async function layoutFor(seed, city = 'nyc', level = 2) {
     if (!track) return null;
     // Chunks are generated up front, so read them without letting the track
     // scroll — position within the chunk is what determinism must preserve.
-    return track.obstacles
-      .map((o) => `${o.chunk.position.z}|${o.localZ.toFixed(3)}|${o.lane}|${o.kind}|${o.y1}|${o.halfLen}`)
-      .join('\n');
+    // Obstacles, then the monument pieces: a piece's lane and position are
+    // part of the course too (they score), and were left out until a
+    // placement change in October 2026 would have slipped past.
+    return [
+      ...track.obstacles.map((o) => `${o.chunk.position.z}|${o.localZ.toFixed(3)}|${o.lane}|${o.kind}|${o.y1}|${o.halfLen}`),
+      ...track.pieces.map((p) => `piece|${p.idx}|${p.chunk.position.z}|${p.mesh.position.x}|${p.mesh.position.z.toFixed(3)}`),
+    ].join('\n');
   });
 }
 
@@ -119,7 +123,7 @@ check('every daily city exists, and only pool cities are dealt',
 // seed, so a change to what a seed builds must come with a new COURSE_VERSION
 // (src/run/track.js), which retires the old ghosts. Three streets that cover
 // the city-specific branches (Rome's weaving Vespas, SF's cable cars).
-const KNOWN_COURSE = { 1: '6d6e0b32' };
+const KNOWN_COURSE = { 2: 'd3c8fea0' };   // v2 also fingerprints the monument pieces
 const fnv = (str) => { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, '0'); };
 const courseSrc = readFileSync(join(HERE, '..', 'src', 'run', 'track.js'), 'utf8');
 const courseVersion = +(courseSrc.match(/export const COURSE_VERSION = (\d+);/) || [])[1];

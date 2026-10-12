@@ -62,7 +62,7 @@ create unique index if not exists scores_one_daily_per_player
 create or replace function is_plausible_score(score integer, duration_ms integer)
 returns boolean language sql immutable as $$
   select score <= ceil(
-    2 * (22 * (duration_ms / 1000.0) + 0.125 * power(duration_ms / 1000.0, 2))
+    2 * (28 * (duration_ms / 1000.0) + 0.2 * power(duration_ms / 1000.0, 2))
     + 200 * (duration_ms / 1000.0)
     + 3000 + 500
   );
