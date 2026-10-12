@@ -136,6 +136,41 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'marrakech') {
+    // A brass lantern: a six-sided body of coloured glass behind brass
+    // ribs, a pointed cap with a ball finial, and a ring to hang it by.
+    const brass = new THREE.MeshStandardMaterial({ color: 0xd8a838, roughness: 0.3, metalness: 0.7, emissive: 0x5a3a08, emissiveIntensity: 0.4 });
+    // one pane of coloured glass per side, lit from inside (plain materials,
+    // no canvas: a texture here would outlive the street)
+    const cols = [0xe83a3a, 0x2aa860, 0x2a6ae8, 0xf2b020, 0xe83a3a, 0x2aa860];
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+      const pane = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.44, 0.02),
+        new THREE.MeshStandardMaterial({ color: cols[i], emissive: cols[i], emissiveIntensity: 0.8, roughness: 0.3 }));
+      pane.position.set(Math.cos(a) * 0.18, 0, Math.sin(a) * 0.18);
+      pane.rotation.y = Math.PI / 2 - a;
+      g.add(pane);
+    }
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8),
+      new THREE.MeshStandardMaterial({ color: 0xfff0c0, emissive: 0xffd070, emissiveIntensity: 2 }));
+    g.add(core);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.48, 0.03), brass);
+      rib.position.set(Math.cos(a) * 0.2, 0, Math.sin(a) * 0.2);
+      rib.rotation.z = Math.cos(a) * 0.1; rib.rotation.x = -Math.sin(a) * 0.1;
+      g.add(rib);
+    }
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.12, 0.1, 6), brass);
+    base.position.y = -0.28; g.add(base);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.23, 0.06, 6), brass);
+    rim.position.y = 0.25; g.add(rim);
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.3, 6), brass);
+    cap.position.y = 0.43; g.add(cap);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), brass);
+    ball.position.y = 0.6; g.add(ball);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.015, 6, 14), brass);
+    ring.position.y = 0.7; g.add(ring);
   } else if (theme.id === 'mexico') {
     // A marigold (cempasuchil), the flower of the Day of the Dead: a dense
     // pompom of ruffled orange petals on a short stem with two leaves.

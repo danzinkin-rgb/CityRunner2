@@ -127,6 +127,28 @@ export const STREET_FACTS = {
         { text: 'The gardens are built on chinampas — islands woven from lake mud and reeds — and farmers still grow flowers on them today.' },
       ] },
   ],
+  // Marrakech: DRAFT, awaiting Dan's sign-off (docs/MARRAKECH-FACTS-DRAFT.md,
+  // sources listed there).
+  marrakech: [
+    { street: 'Jemaa el-Fnaa', tag: 'The square that never sleeps',
+      facts: [
+        { big: '2001', label: 'honoured by UNESCO', text: "In 2001 UNESCO named the square's storytellers, musicians and performers a Masterpiece of the Oral and Intangible Heritage of Humanity, one of the very first." },
+        { big: '1985', label: 'World Heritage Site', text: 'The old walled city around the square, the medina, has been a UNESCO World Heritage Site since 1985.' },
+        { text: 'Storytellers still gather their listeners in a circle called a halqa and tell tales that have been passed on by word of mouth for centuries.' },
+      ] },
+    { street: 'The Souks', tag: 'A maze of markets',
+      facts: [
+        { text: "Souk Semmarine, the main lane of the souks, is roofed with a long iron trellis that keeps the shops in shade." },
+        { text: "In the dyers' souk, freshly dyed wool is hung across the alleys to dry in bright streamers of colour." },
+        { text: 'Each part of the souks has its own trade: one for wool in the morning, one for spices and remedies, one for slippers, one for lanterns.' },
+      ] },
+    { street: 'The Mellah', tag: 'The old Jewish quarter',
+      facts: [
+        { big: '1558', label: 'founded', text: 'The Mellah was founded around 1558, beside the royal palace, as the Jewish quarter of the city.' },
+        { big: '400', unit: 'years', label: 'a community', text: 'For four centuries it was home to one of the largest Jewish communities in Morocco.' },
+        { text: 'The Lazama Synagogue, built around a tiled courtyard in the heart of the quarter, still stands and is open to visitors.' },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -269,6 +291,28 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Marrakech: DRAFT, awaiting Dan's sign-off (docs/MARRAKECH-FACTS-DRAFT.md).
+  // 77 m including the spire (en.wikipedia.org/wiki/Kutubiyya_Mosque).
+  koutoubia: { scale: 77, compare: 'bus',
+    facts: [
+      { big: '77', unit: 'm', label: 'tall, with its spire', text: 'The minaret rises 77 metres, spire and all, and can be seen from almost anywhere in the old city.' },
+      { big: '1195', label: 'finished around', text: 'It was completed around 1195 under Caliph Yaqub al-Mansur, and it has stood almost unchanged ever since.' },
+      { text: "Its name means the booksellers' mosque: booksellers once kept their stalls all around it." },
+    ] },
+  // altitude: Marrakech stands about 466 m above sea level
+  // (en.wikipedia.org/wiki/Marrakesh). No sourced height for the gate.
+  babagnaou: { altitude: 466,
+    facts: [
+      { big: '1188', label: 'built around', text: "Caliph Yaqub al-Mansur built the gate around 1188 as the grand entrance to his royal kasbah." },
+      { text: "Most of the city's gates are rammed red earth, but Bab Agnaou is cut stone, carved with an inscription and flowers around its horseshoe arch." },
+      { text: 'It once had two towers and a covered passage behind it. Those are gone, and the carved front is what still stands.' },
+    ] },
+  benyoussef: { altitude: 466,
+    facts: [
+      { big: '1565', label: 'rebuilt', text: 'Sultan Abdallah al-Ghalib rebuilt the school in 1564 and 1565, on the site of a 14th-century one.' },
+      { big: '130', unit: 'rooms', label: 'for students', text: 'Its 130 small rooms housed up to 800 students, making it the largest madrasa in Morocco.' },
+      { text: 'It closed as a school in 1960 and opened to visitors in 1982. Its courtyard is covered in carved cedar, carved plaster and coloured tile.' },
     ] },
   // Mexico City: approved by Dan, 27 September 2026 (docs/cities/mexico-city.md §3).
   templomayor: { scale: 45, compare: 'bus',

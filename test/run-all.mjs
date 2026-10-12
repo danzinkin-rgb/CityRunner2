@@ -31,6 +31,7 @@ const SUITES = [
   { file: 'test/menu-fit.mjs' },
   { file: 'test/determinism.mjs' },
   { file: 'test/rome-weave.mjs' },
+  { file: 'test/city-mechanics.mjs' },
   { file: 'test/entitlements.mjs' },
   { file: 'test/save-and-scores.mjs' },
   { file: 'test/storage-keys.mjs' },

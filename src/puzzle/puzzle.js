@@ -18,6 +18,7 @@ const CITY_OF = {
   ggbridge: 'sf', coit: 'sf', paintedladies: 'sf',
   templomayor: 'mexico', catedral: 'mexico', castillo: 'mexico',
   kotel: 'jerusalem', domerock: 'jerusalem', towerdavid: 'jerusalem', holysepulchre: 'jerusalem',
+  koutoubia: 'marrakech', babagnaou: 'marrakech', benyoussef: 'marrakech',
 };
 // Plaza floors deliberately contrast their monuments. Every landmark in the
 // game is a warm stone/limestone/bronze hero, and every city theme lights the
@@ -36,6 +37,7 @@ const PLAZA = {
   sf: { stone: '#6a6e76', dark: '#4e525a', trim: '#98a0aa', ground: '#30343a', sky: '#3a4656' },
   jerusalem: { stone: '#667080', dark: '#4c5462', trim: '#96a0b0', ground: '#30343e', sky: '#3c4468' },
   mexico: { stone: '#626a80', dark: '#4a5066', trim: '#9098b0', ground: '#2e3242', sky: '#3e3a6a' },
+  marrakech: { stone: '#5e6a7c', dark: '#465062', trim: '#8c9aac', ground: '#2c323e', sky: '#34466a' },
 };
 
 // Painted-panorama palette. Near layer is the darker, more saturated band the
@@ -48,6 +50,7 @@ const SKYPAL = {
   sf: { near: '#3c4656', far: '#6a7686', trim: '#556070', roof: '#2e3440', win: '255,220,170', accent: '#c1440e' },
   jerusalem: { near: '#6a5a44', far: '#8c7c62', trim: '#7a6a50', roof: '#5a4a36', win: '255,216,160', accent: '#d8b460' },
   mexico: { near: '#5a3e4a', far: '#806a7a', trim: '#7a4a52', roof: '#6a3a30', win: '255,210,150', accent: '#d81b7a' },
+  marrakech: { near: '#6a3a30', far: '#8e6a5a', trim: '#7a4a3a', roof: '#5a3428', win: '255,206,140', accent: '#2e8a6a' },
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 
@@ -292,6 +295,25 @@ function makeBlockTexture(def) {
         }
         g.fillStyle = shade(c, -0.28); g.fillRect(0, j * h + h - 2, S, 2);
       }
+      return;
+    }
+    if (tex === 'sebka') {
+      // Raised lozenge net carved over a plain field, as on the faces of
+      // Almohad minarets: interlaced arcs drawn as a diamond lattice, each
+      // diamond's top rounded. tx.n sets diamonds across.
+      baseFill(g, S, c);
+      const n = tx.n || 4, cw = S / n, ch = cw * 1.3;
+      g.strokeStyle = shade(c, 0.2); g.lineWidth = 5;
+      for (let j = -1; j < S / ch + 1; j++) for (let i = -1; i <= n; i++) {
+        const cx = (i + (j % 2 ? 0.5 : 0)) * cw + cw / 2, cy = j * ch + ch / 2;
+        g.beginPath();
+        g.moveTo(cx, cy + ch / 2); g.lineTo(cx - cw / 2, cy);
+        g.quadraticCurveTo(cx - cw / 4, cy - ch / 2, cx, cy - ch / 2);
+        g.quadraticCurveTo(cx + cw / 4, cy - ch / 2, cx + cw / 2, cy);
+        g.closePath(); g.stroke();
+      }
+      g.strokeStyle = shade(c, -0.3); g.lineWidth = 2;
+      g.strokeRect(6, 6, S - 12, S - 12);
       return;
     }
     if (tex === 'tile') {
@@ -1545,6 +1567,15 @@ export function makeBlockMesh(def, isGhost = false, isChild = false) {
           path.lineTo(cx + hw, spring);
           path.absarc(cx - hw, spring, 2 * hw, 0, Math.PI / 3, false);
           path.absarc(cx + hw, spring, 2 * hw, 2 * Math.PI / 3, Math.PI, false);
+          path.lineTo(cx - hw, y0);
+        } else if (o.arch === 'horseshoe') {
+          // the Moorish horseshoe arch: the circle carries on past its
+          // widest point, so the opening narrows again at the springing
+          const r = hw * 1.18, k = Math.sqrt(r * r - hw * hw);
+          const yc = y1 - r, spring = yc - k, a0 = Math.atan2(-k, hw);
+          path.moveTo(cx - hw, y0); path.lineTo(cx + hw, y0);
+          path.lineTo(cx + hw, spring);
+          path.absarc(cx, yc, r, a0, Math.PI - a0, false);
           path.lineTo(cx - hw, y0);
         } else if (o.arch) {
           const spring = y1 - hw;                  // where the semicircle begins

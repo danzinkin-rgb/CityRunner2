@@ -13,9 +13,20 @@
 // as text. It lists EVERY city, released or queued. The cities a build offers
 // players are CITIES in src/cities/offered.js; read that for anything a
 // player sees.
+// Regions, for selling cities in regional packs. Every city names one in
+// `region`. Packs are not built yet: this is the grouping Dan chose on
+// 12 October 2026, so the data is ready when the purchase model is decided.
+export const REGIONS = {
+  'north-america': 'North America',
+  'latin-america': 'Latin America',
+  europe: 'Europe',
+  'mideast-africa': 'Middle East and Africa',
+  asia: 'Asia',
+};
+
 export const ALL_CITIES = [
   {
-    id: 'nyc', name: 'NEW YORK', flag: '🗽',
+    id: 'nyc', name: 'NEW YORK', flag: '🗽', region: 'north-america',
     streets: ['Broadway', '5th Avenue', 'Times Square'],
     // Crisp blue day melting into a warm golden horizon.
     sky: { top: '#2e6ad4', mid: '#7db2f2', horizon: '#ffe9b8', glow: '#ffd98e' },
@@ -64,7 +75,7 @@ export const ALL_CITIES = [
     ],
   },
   {
-    id: 'paris', name: 'PARIS', flag: '🗼',
+    id: 'paris', name: 'PARIS', flag: '🗼', region: 'europe',
     streets: ['Champs-Élysées', 'Rue de Rivoli', 'Montmartre'],
     // Soft lavender-blue with a rosy pastel glow.
     sky: { top: '#4a6ad8', mid: '#96b4ee', horizon: '#ffd9e4', glow: '#ffc4d4' },
@@ -113,7 +124,7 @@ export const ALL_CITIES = [
     ],
   },
   {
-    id: 'london', name: 'LONDON', flag: '🇬🇧',
+    id: 'london', name: 'LONDON', flag: '🇬🇧', region: 'europe',
     streets: ['Oxford Street', 'Abbey Road', 'Piccadilly'],
     // Fresh morning blue with a honey glow at the rooftops.
     sky: { top: '#3a70cc', mid: '#8ab4e8', horizon: '#ffe4bc', glow: '#ffd0a0' },
@@ -163,7 +174,7 @@ export const ALL_CITIES = [
     ],
   },
   {
-    id: 'rome', name: 'ROME', flag: '🏛️',
+    id: 'rome', name: 'ROME', flag: '🏛️', region: 'europe',
     streets: ['Via del Corso', 'Via Veneto', 'Piazza Navona'],
     // Rich Mediterranean golden hour.
     sky: { top: '#4a55b8', mid: '#c890b8', horizon: '#ffcf8c', glow: '#ffb768' },
@@ -218,7 +229,7 @@ export const ALL_CITIES = [
     ],
   },
   {
-    id: 'sf', name: 'SAN FRANCISCO', flag: '🌉',
+    id: 'sf', name: 'SAN FRANCISCO', flag: '🌉', region: 'north-america',
     streets: ['Lombard Street', 'Market Street', 'Haight-Ashbury'],
     // Cool marine-layer blue-grey thinning to a pale fog horizon. The least
     // saturated sky in the game on purpose: the orange of the bridge and the
@@ -281,7 +292,7 @@ export const ALL_CITIES = [
     ],
   },
   {
-    id: 'jerusalem', name: 'JERUSALEM', flag: '🫒',
+    id: 'jerusalem', name: 'JERUSALEM', flag: '🫒', region: 'mideast-africa',
     streets: ['Jaffa Road', 'Mahane Yehuda', 'The Cardo'],
     // Jerusalem limestone by day, gold at dusk. The pale gold-cream stone is
     // the constant; the sky pushes toward dusk gold rather than Rome's
@@ -339,7 +350,7 @@ export const ALL_CITIES = [
     ],
   },
   {
-    id: 'mexico', name: 'MEXICO CITY', flag: '🇲🇽',
+    id: 'mexico', name: 'MEXICO CITY', flag: '🇲🇽', region: 'latin-america',
     streets: ['Paseo de la Reforma', 'Coyoacán', 'Xochimilco'],
     // High-altitude dusk: violet sky bleeding into deep marigold at the
     // horizon. The highest-chroma city in the roster on purpose: Talavera
@@ -394,6 +405,61 @@ export const ALL_CITIES = [
       },
     ],
   },
+  {
+    id: 'marrakech', name: 'MARRAKECH', flag: '🇲🇦', region: 'mideast-africa',
+    streets: ['Jemaa el-Fnaa', 'The Souks', 'The Mellah'],
+    // Hot late afternoon: deep blue overhead, dust-gold at the horizon. The
+    // whole medina is plastered in the same red-pink earth, so the colour
+    // comes from tile, doors, rugs and lanterns, not the walls.
+    sky: { top: '#2f6cc4', mid: '#8ab4e0', horizon: '#ffcf96', glow: '#ffb070' },
+    fog: 0xf0b07a, fogDensity: 0.0094,
+    sun: { color: 0xffe0b0, intensity: 2.6, pos: [60, 70, -40] },
+    hemi: { sky: 0xd8e4f4, ground: 0xa06a50, intensity: 1.1 },
+    fill: { color: 0xffe2c4, intensity: 1.0 },
+    road: '#a0705a', lane: '#e8cfa8', sidewalk: '#c48c6c',
+    palette: ['#c8644a', '#d27458', '#bc5c44', '#d6806a', '#c66c52', '#cc7056'],
+    trim: '#e8cbb0', roof: '#a4553e',
+    windowLit: '#ffcc80', windowDay: '#5a8aa0', accent: '#1f7a6a',
+    storefront: ['#1f7a6a', '#2c5ca8', '#d8a020', '#b0302c', '#6a3a8a'],
+    facade: 'medina', hBase: 9, hVar: 4,
+    props: ['lamp', 'palm', 'rugs', 'souvenirstall'],
+    // Marrakech's petit taxis are small beige cars with a roof sign. No
+    // operator name or logo.
+    vehicle: 'petittaxi',
+    // Porters push laden handcarts straight across the road
+    // (src/run/mechanics.js).
+    mechanic: 'handcart',
+    landmarks: ['koutoubia', 'babagnaou', 'benyoussef'],
+    levels: [
+      { // Jemaa el-Fnaa: the great square, food stalls and orange-juice
+        // carts, the Koutoubia minaret over the rooftops
+        key: 'jemaa',
+        setback: 6.0, hBase: 8, hVar: 3, secondRow: 0.4,
+        props: ['lamp', 'palm', 'souvenirstall', 'rugs'],
+        ads: ['JUS D\'ORANGE', 'HARIRA', 'THÉ À LA MENTHE', 'GRILLADES'],
+        span: 'string', spanFreq: 0.4, lit: 0.22,
+        cameo: 'koutoubia',
+      },
+      { // The souks: narrow lanes of stalls under slatted reed canopies,
+        // rugs, lanterns, leather, spice
+        key: 'souks', facade: 'market',
+        setback: 3.0, hBase: 7, hVar: 2, secondRow: 0,
+        palette: ['#c46448', '#ba5c44', '#cc7058', '#b4583e', '#c8684e', '#be6046'],
+        props: ['rugs', 'awning', 'souvenirstall'],
+        ads: ['TAPIS', 'ÉPICES', 'BABOUCHES', 'LANTERNES', 'ARGAN'],
+        span: 'slats', spanFreq: 1, spanY: 6.4, lit: 0.3,
+      },
+      { // The Mellah: the old Jewish quarter by the Badia palace, its houses
+        // with wooden balconies over the street, the spice market at its gate
+        key: 'mellah', balconies: true,
+        setback: 4.0, hBase: 10, hVar: 3, secondRow: 0.3,
+        palette: ['#d07a5c', '#c86c52', '#d8866a', '#c4664c', '#cc7458', '#d48064'],
+        props: ['lamp', 'palm', 'awning'],
+        ads: ['ÉPICES', 'BIJOUTERIE', 'SYNAGOGUE 200M', 'PALAIS BADIA'],
+        lit: 0.2,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -405,6 +471,7 @@ export const LANDMARK_NAMES = {
   kotel: 'The Western Wall', domerock: 'The Dome of the Rock', towerdavid: 'Tower of David',
   holysepulchre: 'Church of the Holy Sepulchre',
   templomayor: 'Templo Mayor', catedral: 'Metropolitan Cathedral', castillo: 'Chapultepec Castle',
+  koutoubia: 'Koutoubia Minaret', babagnaou: 'Bab Agnaou', benyoussef: 'Ben Youssef Madrasa',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

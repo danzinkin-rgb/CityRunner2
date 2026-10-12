@@ -117,6 +117,17 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
           g.fillStyle = 'rgba(80,64,40,.2)'; g.fillRect(0, y, W, 1);
         }
       }
+      // Marrakech: lime plaster over red earth, smoothed by hand, so the
+      // colour drifts in soft patches rather than courses
+      if (theme.id === 'marrakech') {
+        for (let i = 0; i < 70; i++) {
+          const t = Math.random();
+          g.fillStyle = t < 0.5 ? `rgba(90,30,20,${t * 0.12})` : `rgba(255,220,190,${(t - 0.5) * 0.12})`;
+          g.beginPath();
+          g.ellipse(Math.random() * W, Math.random() * H, 10 + Math.random() * 30, 6 + Math.random() * 16, 0, 0, 7);
+          g.fill();
+        }
+      }
       // rusticated stone joints for stone styles
       if (style === 'flagship' || style === 'arcade' || style === 'hotel' || style === 'baroque' || style === 'deptstore' || style === 'beauxarts') {
         g.fillStyle = 'rgba(0,0,0,.07)';
@@ -143,6 +154,29 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         }
 
         for (let cIdx = 0; cIdx < cols; cIdx++) {
+          if (style === 'medina') {
+            // Houses in the medina look inwards: few, small windows behind
+            // carved wooden grilles, many bays left as blank wall. In the
+            // Mellah (theme.balconies) the houses open onto the street with
+            // wooden balconies instead.
+            if (Math.random() < (theme.balconies ? 0.3 : 0.5)) continue;
+            const x = cIdx * ww + ww * 0.3, y = rowY + wh * 0.22, w = ww * 0.4, h = wh * 0.5;
+            g.fillStyle = theme.trim; g.fillRect(x - 3, y - 3, w + 6, h + 6);
+            const lit = Math.random() < (theme.lit ?? 0.16);
+            g.fillStyle = lit ? theme.windowLit : '#3a2a22';
+            g.beginPath(); g.moveTo(x, y + h); g.lineTo(x, y + w / 2);
+            g.arc(x + w / 2, y + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w, y + h); g.closePath(); g.fill();
+            g.strokeStyle = '#6a3e22'; g.lineWidth = 1.5;                  // the grille
+            for (let gx = x + 4; gx < x + w; gx += 5) { g.beginPath(); g.moveTo(gx, y + w / 2); g.lineTo(gx, y + h); g.stroke(); }
+            for (let gy = y + w / 2 + 3; gy < y + h; gy += 5) { g.beginPath(); g.moveTo(x, gy); g.lineTo(x + w, gy); g.stroke(); }
+            if (theme.balconies && f > 0) {
+              g.fillStyle = '#5a3a24'; g.fillRect(x - 8, y + h, w + 16, 6);
+              g.fillStyle = '#7a5434';
+              for (let bx = x - 6; bx < x + w + 8; bx += 5) g.fillRect(bx, y + h - 12, 2, 12);
+              g.fillRect(x - 8, y + h - 14, w + 16, 3);
+            }
+            continue;
+          }
           if (theme.id === 'jerusalem') {
             // tall arched windows with a stone sill, some behind green
             // iron shutters, as on the stone houses of the city
@@ -250,6 +284,13 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         }
       }
 
+      // Marrakech: a band of green and white tile under the parapet
+      if (theme.id === 'marrakech') {
+        for (let x = 0, k = 0; x < W; x += 8, k++) {
+          g.fillStyle = k % 2 ? '#f2e8d6' : '#1f7a6a';
+          g.fillRect(x, CORNICE + 3, 8, 6);
+        }
+      }
       // --- cornice ---
       g.fillStyle = theme.trim || '#e8e0cc';
       g.fillRect(0, 0, W, CORNICE);
@@ -276,6 +317,7 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
       else if (style === 'rowhouse') paintRowhouseGround(G);
       else if (style === 'beauxarts') paintBeauxGround(G);
       else if (style === 'market') paintMarketGround(G);
+      else if (style === 'medina') paintMedinaGround(G);
       else paintDefaultShops(G);
 
       g.fillStyle = 'rgba(0,0,0,.3)';
@@ -568,6 +610,46 @@ function paintMarketGround({ g, W, H, shopY, SHOP_H, theme }) {
     }
   }
   g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(0, shopY, W, 3);
+}
+
+// Marrakech: a horseshoe-arched doorway with a studded door in a strong
+// colour, a band of zellige tile beneath, and now and then a shop front
+// hung with lanterns and rugs.
+function paintMedinaGround({ g, W, H, shopY, SHOP_H, theme }) {
+  g.fillStyle = 'rgba(60,20,10,.12)'; g.fillRect(0, shopY, W, SHOP_H);
+  const doors = theme.storefront;
+  for (let i = 0; i < 2; i++) {
+    const dx = W * (0.1 + i * 0.5), dw = W * 0.3;
+    if (Math.random() < 0.45) {
+      // a shop: an open square front with rugs and lanterns hung up
+      g.fillStyle = '#2e1e16'; g.fillRect(dx, shopY + SHOP_H * 0.1, dw, SHOP_H * 0.9 - 4);
+      for (let k = 0; k < 3; k++) {
+        g.fillStyle = pickR(['#b0302c', '#2c5ca8', '#d8a020', '#1f7a6a', '#8a3a6a']);
+        g.fillRect(dx + 4 + k * dw / 3, shopY + SHOP_H * 0.16, dw / 3 - 8, SHOP_H * 0.55);
+        g.fillStyle = 'rgba(255,240,210,.35)';
+        g.fillRect(dx + 4 + k * dw / 3, shopY + SHOP_H * 0.3, dw / 3 - 8, 2);
+      }
+      g.fillStyle = '#ffcf6a';
+      for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(dx + dw * (0.2 + k * 0.3), shopY + SHOP_H * 0.12, 3.5, 0, 7); g.fill(); }
+      continue;
+    }
+    const r = dw / 2 * 1.18, k = Math.sqrt(r * r - (dw / 2) ** 2);
+    const yc = shopY + SHOP_H * 0.1 + r, spring = yc + k;
+    g.fillStyle = theme.trim;                                         // carved plaster surround
+    g.fillRect(dx - 6, shopY + SHOP_H * 0.04, dw + 12, SHOP_H);
+    g.fillStyle = pickR(doors);
+    g.beginPath();
+    g.moveTo(dx, H - 4); g.lineTo(dx, spring);
+    g.arc(dx + dw / 2, yc, r, Math.atan2(k, -dw / 2), Math.atan2(k, dw / 2));
+    g.lineTo(dx + dw, H - 4); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(255,230,170,.75)';                            // studs
+    for (let sy = spring + 4; sy < H - 8; sy += 9) for (let sx = dx + 5; sx < dx + dw - 3; sx += 9) g.fillRect(sx, sy, 2, 2);
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(dx + dw / 2 - 1, spring, 2, H - 4 - spring);
+  }
+  for (let x = 0, k = 0; x < W; x += 6, k++) {                       // zellige dado
+    g.fillStyle = ['#1f7a6a', '#f2e8d6', '#2c5ca8', '#f2e8d6'][k % 4];
+    g.fillRect(x, H - 12, 6, 8);
+  }
 }
 
 // Montmartre: bistro fronts, hand-painted signs, checked awnings.
@@ -1522,6 +1604,13 @@ export function makeLamp(theme) {
   if (theme.id === 'london') {
     const crown = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.35, 8), mats.black);
     crown.position.y = 5.0; g.add(crown);
+  } else if (theme.id === 'marrakech') {
+    // a pierced brass lantern instead of a globe
+    head.scale.set(0.8, 1.2, 0.8);
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.34, 6), mats.gold);
+    cap.position.y = 5.08; g.add(cap);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.12, 0.14, 6), mats.gold);
+    base.position.y = 4.32; g.add(base);
   } else if (theme.id === 'paris' || theme.id === 'rome') {
     const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.1, 0.2, 8), mats.gold);
     collar.position.y = 4.42; g.add(collar);
@@ -1531,7 +1620,28 @@ export function makeLamp(theme) {
 
 export function makeTree(kind = 'round') {
   const g = new THREE.Group();
-  if (kind === 'cypress') {
+  if (kind === 'palm') {
+    // date palm: a tall, slightly leaning ringed trunk and a crown of
+    // drooping fronds, well above head height
+    const lean = (Math.random() - 0.5) * 0.12;
+    for (let i = 0; i < 6; i++) {
+      const seg = new THREE.Mesh(cached('geo:palmSeg', () => new THREE.CylinderGeometry(0.2, 0.25, 1.05, 8)), mats.trunk);
+      seg.position.set(lean * i, 0.5 + i * 1.0, 0); seg.castShadow = true; g.add(seg);
+    }
+    const top = new THREE.Vector3(lean * 6, 6.1, 0);
+    const frondGeo = cached('geo:palmFrond', () => {
+      const geo = new THREE.ConeGeometry(0.34, 2.6, 4);
+      geo.translate(0, 1.3, 0);
+      return geo;
+    });
+    for (let i = 0; i < 9; i++) {
+      const fr = new THREE.Mesh(frondGeo, mats.leaf);
+      fr.position.copy(top);
+      fr.rotation.set(0, (i / 9) * Math.PI * 2, 1.15 + (i % 2) * 0.35, 'YXZ');
+      fr.scale.set(1, 1, 0.25);
+      g.add(fr);
+    }
+  } else if (kind === 'cypress') {
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.8, 7), mats.trunk);
     trunk.position.y = 0.4; trunk.castShadow = true; g.add(trunk);
     const fol = new THREE.Mesh(new THREE.ConeGeometry(0.75, 4.4, 9), mats.leafDark);
@@ -1645,6 +1755,7 @@ const ADS = {
   sf: ['CABLE CAR', 'SOURDOUGH', 'BAY TOURS', 'CHOWDER'],
   jerusalem: ['FALAFEL', 'BOOKS & MAPS', 'SPICE HOUSE', 'OLD CITY TOURS'],
   mexico: ['TACOS', 'PAN DULCE', 'MERCADO', 'CAFÉ'],
+  marrakech: ['TAPIS', 'ÉPICES', 'HAMMAM', 'ARGAN'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -2098,6 +2209,40 @@ function makeSouvenirStall() {
   return g;
 }
 
+// Marrakech: rugs hung to show on a wooden rail outside a shop. Built along
+// the street (the rugs face the road), so it needs no turning.
+const RUG_COLS = [['#b0302c', '#e8c070'], ['#2c5ca8', '#f2e8d6'], ['#d8a020', '#7a2a24'], ['#1f7a6a', '#f2d8a0'], ['#6a3a8a', '#e8a050']];
+function makeRugRack() {
+  const g = new THREE.Group();
+  const wood = cached('mat:rugWood', () => new THREE.MeshStandardMaterial({ color: 0x6a4428, roughness: 0.9 }));
+  for (const z of [-1.6, 1.6]) {
+    const post = new THREE.Mesh(boxGeo, wood);
+    post.scale.set(0.1, 2.6, 0.1); post.position.set(0, 1.3, z); g.add(post);
+  }
+  const rail = new THREE.Mesh(boxGeo, wood);
+  rail.scale.set(0.1, 0.1, 3.4); rail.position.y = 2.55; g.add(rail);
+  for (let i = 0; i < 2; i++) {
+    const ci = (Math.random() * RUG_COLS.length) | 0;
+    const mat = cached(`mat:rug:${ci}`, () => {
+      const [a, b] = RUG_COLS[ci];
+      const tex = canvasTexture(64, 96, (c) => {
+        c.fillStyle = a; c.fillRect(0, 0, 64, 96);
+        c.strokeStyle = b; c.lineWidth = 3; c.strokeRect(5, 5, 54, 86);
+        c.fillStyle = b;
+        for (let y = 20; y < 80; y += 20) {
+          c.beginPath(); c.moveTo(32, y - 8); c.lineTo(44, y); c.lineTo(32, y + 8); c.lineTo(20, y); c.closePath(); c.fill();
+        }
+      });
+      return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95, side: THREE.DoubleSide });
+    });
+    const rug = new THREE.Mesh(boxGeo, mat);
+    rug.scale.set(0.04, 2.1, 1.45);
+    rug.position.set(0, 1.45, -0.78 + i * 1.56);
+    g.add(rug);
+  }
+  return g;
+}
+
 // "ABBEY ROAD NW8" street nameplate on a pole.
 function makeStreetSign() {
   const g = new THREE.Group();
@@ -2246,6 +2391,8 @@ export function makeProp(kind, theme) {
     case 'streetcar_pole': return makeTrolleyPole();
     case 'tree': return makeTree('round');
     case 'cypress': return makeTree('cypress');
+    case 'palm': return makeTree('palm');
+    case 'rugs': return makeRugRack();
     case 'chestnut': return makeTree('chestnut');
     case 'planetree': return makeTree('plane');
     case 'phonebox': return makePhonebox();
@@ -2341,6 +2488,22 @@ export function makeStreetSpan(theme, width = 13) {
     }
     return g;
   }
+  if (style === 'slats') {
+    // Marrakech's souks: a panel of reed slats laid across the lane on a
+    // couple of beams, throwing stripes of light down onto the street.
+    const reed = cached('mat:reed', () => new THREE.MeshStandardMaterial({ color: 0xb08a58, roughness: 1 }));
+    for (const bz of [-1.4, 1.4]) {
+      const beam = new THREE.Mesh(boxGeo, cache.get('mat:wire'));
+      beam.scale.set(width, 0.12, 0.12); beam.position.z = bz; g.add(beam);
+    }
+    for (let i = 0; i < 9; i++) {
+      const slat = new THREE.Mesh(boxGeo, reed);
+      slat.scale.set(width, 0.06, 0.16);
+      slat.position.set(0, 0.09, -1.6 + i * 0.4);
+      g.add(slat);
+    }
+    return g;
+  }
   const n = 11;
   if (style === 'string' || style === 'festoon') {
     // shallow sag: a deep catenary dips straight through the vanishing point
@@ -2431,6 +2594,23 @@ export function makeVehicle(theme) {
     }
     const sign = new THREE.Mesh(boxGeo, mats.glow);
     sign.scale.set(0.5, 0.16, 0.2); sign.position.set(0, 1.6, -0.1); g.add(sign);
+  } else if (kind === 'petittaxi') {
+    // Marrakech's petit taxi: a small beige hatchback with a lit roof sign.
+    // A car, low enough to jump.
+    const beige = cached('mat:ptaxi', () => new THREE.MeshStandardMaterial({ color: 0xd8c098, roughness: 0.35, metalness: 0.15 }));
+    const body = new THREE.Mesh(boxGeo, beige);
+    body.scale.set(1.7, 0.7, 3.4); body.position.y = 0.7; body.castShadow = true; g.add(body);
+    const cab = new THREE.Mesh(boxGeo, beige);
+    cab.scale.set(1.55, 0.55, 2.0); cab.position.set(0, 1.3, -0.35); g.add(cab);
+    const glass = new THREE.Mesh(boxGeo,
+      cached('mat:carGlass', () => new THREE.MeshStandardMaterial({ color: 0xa8d0ec, roughness: 0.12, metalness: 0.5 })));
+    glass.scale.set(1.58, 0.4, 1.7); glass.position.set(0, 1.32, -0.3); g.add(glass);
+    const sign = new THREE.Mesh(boxGeo, mats.glow);
+    sign.scale.set(0.6, 0.18, 0.24); sign.position.set(0, 1.68, -0.2); g.add(sign);
+    for (const sx of [-0.55, 0.55]) {
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), mats.glow);
+      lamp.position.set(sx, 0.85, 1.7); g.add(lamp);
+    }
   } else if (kind === 'citybus') {
     // Jerusalem: a single-deck city bus, white with a green band, the livery
     // Israeli buses are known for. No operator name or logo on it: every
@@ -2566,6 +2746,44 @@ export function makeVehicle(theme) {
     w.position.set(...p);
     g.add(w);
   }
+  return g;
+}
+
+// Marrakech: a porter's handcart, two big wheels and a flat bed piled with
+// sacks and a rolled rug, pushed by a porter in a djellaba. The whole thing
+// is a wall to dodge (src/run/mechanics.js), so it stands tall: the load
+// and the porter both reach well above jump height. Built facing +x, the
+// porter behind on the -x side.
+export function makeHandcart() {
+  const g = new THREE.Group();
+  const wood = cached('mat:cartWood', () => new THREE.MeshStandardMaterial({ color: 0x7a5232, roughness: 0.9 }));
+  const bed = new THREE.Mesh(boxGeo, wood);
+  bed.scale.set(2.0, 0.2, 1.3); bed.position.y = 0.9; bed.castShadow = true; g.add(bed);
+  const wheels = [];
+  for (const z of [-0.72, 0.72]) {
+    const w = new THREE.Mesh(cached('geo:cartWheel', () => new THREE.CylinderGeometry(0.62, 0.62, 0.12, 14)), wood);
+    w.rotation.x = Math.PI / 2; w.position.set(0, 0.62, z); g.add(w); wheels.push(w);
+  }
+  const sackCols = [0xd8c4a0, 0xc8a070, 0xe0d0b0];
+  for (let i = 0; i < 5; i++) {
+    const sack = new THREE.Mesh(ballGeo, cached(`mat:sack:${i % 3}`, () =>
+      new THREE.MeshStandardMaterial({ color: sackCols[i % 3], roughness: 1 })));
+    sack.scale.set(0.42, 0.34, 0.42);
+    sack.position.set(-0.7 + (i % 3) * 0.6, 1.3 + ((i / 3) | 0) * 0.5, (i % 2 ? 0.25 : -0.25));
+    g.add(sack);
+  }
+  const rug = new THREE.Mesh(cylGeo, cached('mat:rugRoll', () => new THREE.MeshStandardMaterial({ color: 0xb0302c, roughness: 0.95 })));
+  rug.scale.set(0.3, 1.9, 0.3); rug.rotation.z = Math.PI / 2; rug.position.set(0, 2.1, 0); g.add(rug);
+  const robe = cached('mat:djellaba', () => new THREE.MeshStandardMaterial({ color: 0x8a6a4a, roughness: 0.9 }));
+  const body = new THREE.Mesh(coneGeo, robe);
+  body.scale.set(0.45, 1.9, 0.45); body.position.set(-1.45, 0.95, 0); body.castShadow = true; g.add(body);
+  const head = new THREE.Mesh(ballGeo, robe);
+  head.scale.setScalar(0.24); head.position.set(-1.45, 2.05, 0); g.add(head);
+  for (const z of [-0.5, 0.5]) {
+    const handle = new THREE.Mesh(boxGeo, wood);
+    handle.scale.set(0.7, 0.06, 0.06); handle.position.set(-1.2, 1.15, z); g.add(handle);
+  }
+  g.userData.wheels = wheels;
   return g;
 }
 
@@ -3123,6 +3341,7 @@ const SIL_TINT = {
   sf: '#4a5a6a',         // fog-softened slate: hills and towers through the marine layer
   jerusalem: '#6a5a44',  // warm stone-gold: limestone hills at dusk
   mexico: '#5a3a52',     // plum dusk over the volcano-ringed valley
+  marrakech: '#6a3c3a',  // red earth city under the blue-grey Atlas
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
@@ -3284,6 +3503,30 @@ function skylineTexture(theme) {
         }
         x += bw + 1;
       }
+    } else if (theme.id === 'marrakech') {
+      // The High Atlas far off, then the flat-roofed medina with a minaret
+      // here and there, and palms over the walls.
+      g.fillStyle = dark(0.2);
+      g.beginPath(); g.moveTo(0, GY - 40);
+      const peaks = [[120, 150], [260, 110], [420, 190], [560, 140], [720, 210], [880, 160], [1040, 200], [1200, 130], [1360, 175], [1520, 120], [1600, 90]];
+      for (const [x, h] of peaks) g.lineTo(x, GY - h);
+      g.lineTo(1600, GY); g.lineTo(0, GY); g.fill();
+      for (let x = 0, i = 0; x < 1600; i++) {                       // flat roofs
+        const bw = 26 + (i * 17) % 30, bh = 20 + (i * 11) % 22;
+        box(x, bw, bh, 0.24 + ((i * 7) % 3) * 0.02);
+        x += bw;
+      }
+      for (const [x, h] of [[260, 96], [880, 120], [1330, 84]]) {   // minarets
+        box(x, 14, h, 0.32);
+        box(x + 3, 8, h + 14, 0.34);
+      }
+      for (const x of [120, 470, 640, 1080, 1480]) {                 // palms
+        g.fillStyle = dark(0.34);
+        g.fillRect(x, GY - 76, 4, 76);
+        for (let k = 0; k < 6; k++) {
+          g.beginPath(); g.ellipse(x + 2 + Math.cos(k) * 12, GY - 78 + Math.abs(Math.sin(k)) * 4, 16, 4, Math.cos(k) * 0.6, 0, 7); g.fill();
+        }
+      }
     } else {
       // Rome: dome after dome over a soft ridge, framed by umbrella pines
       g.fillStyle = dark(0.12);
@@ -3418,6 +3661,21 @@ export function makeCameo(theme) {
       g.fillRect(cx + 50, GY - 196, 40, 50);                         // the tower
       g.fillStyle = light(0.2);
       for (let x = cx - 140; x < cx + 140; x += 16) g.fillRect(x, GY - 138, 7, 12);   // the gallery
+    } else if (key === 'koutoubia') {
+      // The Koutoubia minaret over the far side of Jemaa el-Fnaa: the square
+      // shaft, its lantern tower, and the spire of three balls.
+      g.fillStyle = dark(0.26);
+      g.fillRect(cx - 460, GY - 50, 920, 50);
+      for (const [ox, w, h] of [[-380, 120, 70], [-230, 90, 58], [190, 110, 66], [330, 130, 54]]) g.fillRect(cx + ox, GY - h, w, h);
+      g.fillStyle = dark(0.34);
+      g.fillRect(cx - 26, GY - 250, 52, 250);
+      for (let x = cx - 26; x < cx + 26; x += 13) g.fillRect(x, GY - 259, 7, 9);
+      g.fillRect(cx - 11, GY - 288, 22, 38);
+      g.beginPath(); g.arc(cx, GY - 288, 10, Math.PI, 0); g.fill();
+      g.fillStyle = mixc(fogC, '#e0b84e', 0.6);
+      for (const [dy, r] of [[-306, 5], [-315, 4], [-323, 3]]) { g.beginPath(); g.arc(cx, GY + dy, r, 0, 7); g.fill(); }
+      g.fillStyle = mixc(fogC, '#2e8a86', 0.5);
+      g.fillRect(cx - 26, GY - 243, 52, 6);
     } else if (key === 'towerdavid') {
       // The Tower of David citadel by Jaffa Gate: the Old City wall with its
       // battlements, the squat citadel, and the minaret rising off-centre.

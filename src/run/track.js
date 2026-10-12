@@ -20,6 +20,7 @@ import {
 import { makeCollectible } from '../cities/souvenirs.js';
 import { makeBlockMesh } from '../puzzle/puzzle.js';
 import { startRun, randomSeed, rand, randInt } from '../core/rng.js';
+import { MECHANICS } from './mechanics.js';
 
 const CHUNK_LEN = 36;
 const CHUNKS = 7;          // visible chunks ahead
@@ -513,16 +514,21 @@ export class Track {
     // 0.8 that made streets feel relentless.
     const density = [0.55, 0.8, 1.05][this.level - 1] ?? 0.8;
     const t = this.theme;
+    const mech = MECHANICS[t.mechanic];   // the city's own move, if it has one
     for (let zRow = 8; zRow < CHUNK_LEN - 4; zRow += 12 / density) {
       const worldZ = chunkZ - zRow;
       const pattern = rand();
       const usedLanes = new Set();
       let weaver = null, coinLane = -1;
 
-      const addObstacle = (lane, kind) => {
+      // `custom` ({ mesh, y0, y1, halfLen }) is a city move's own obstacle
+      // (src/run/mechanics.js): nothing is built or drawn for it here.
+      const addObstacle = (lane, kind, custom) => {
         usedLanes.add(lane);
         let mesh, y0 = 0, y1 = 0, halfLen = 0.35;
-        if (kind === 'full') {
+        if (custom) {
+          ({ mesh, y0, y1, halfLen } = custom);
+        } else if (kind === 'full') {
           // San Francisco decides cable car or car BEFORE building anything,
           // so the car lanes do not build a whole cable car and throw it away.
           const isCable = t.vehicle === 'cablecar' && rand() < (this.level === 1 ? 0.18 : 0.4);
@@ -580,12 +586,19 @@ export class Track {
         }
         mesh.position.set(LANES[lane], 0, -zRow);
         chunkGroup.add(mesh);
-        this.obstacles.push({ mesh, lane, kind, y0, y1, halfLen, chunk: chunkGroup, localZ: -zRow });
+        const rec = { mesh, lane, kind, y0, y1, halfLen, chunk: chunkGroup, localZ: -zRow };
+        this.obstacles.push(rec);
+        return rec;
       };
 
       // Level 1 sees fewer vehicles and more single jump/roll obstacles.
       const fullCut = this.level === 1 ? 0.18 : 0.3;
-      if (pattern < fullCut) {
+      const special = mech
+        ? mech.row({ level: this.level, rand, randInt, addObstacle, usedLanes })
+        : null;
+      if (special) {
+        // the city's move took this row
+      } else if (pattern < fullCut) {
         addObstacle(randInt(3), 'full');
         if (t.vehicle === 'vespa' && rand() < WEAVE_CHANCE[this.level - 1]) {
           weaver = this.obstacles[this.obstacles.length - 1];
@@ -632,6 +645,10 @@ export class Track {
           chunkGroup.add(coin);
           this.coins.push({ mesh: coin, chunk: chunkGroup, taken: false });
         }
+      }
+      if (special) {
+        special.mech = mech;
+        mech.settle(special, { coinLane, usedLanes, rand, randInt });
       }
       // Rome: now the row is complete, decide where (if anywhere) the Vespa
       // can go — see the fairness rules above WEAVE_CHANCE.
@@ -743,6 +760,17 @@ export class Track {
           o.mesh.rotation.z = 0;
           for (const b of o.blinkers) b.visible = false;
         }
+      }
+    }
+
+    // the city's own move (src/run/mechanics.js), by distance ahead
+    for (const o of this.obstacles) {
+      if (!o.mech) continue;
+      const ahead = -(o.localZ + o.chunk.position.z + this.group.position.z);
+      const active = o.mech.move(o, ahead, dt);
+      if (active && ahead > 0 && !this.mechSeen) {
+        this.mechSeen = true;
+        if (this.onMechanic) this.onMechanic(o.mech.hint);
       }
     }
 

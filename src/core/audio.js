@@ -160,6 +160,7 @@ const SCALES = {
   sf: [0, 2, 4, 7, 11],   // major with a raised seventh: bright, a little wistful
   jerusalem: [0, 1, 4, 5, 7],   // a semitone then a third up: the scale heard across the region
   mexico: [0, 4, 7, 9, 12],     // bright major, mariachi-like
+  marrakech: [0, 1, 4, 7, 8],    // a lowered second and sixth, as in much North African music
 };
 
 export function startMusic(cityId) {

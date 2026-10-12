@@ -332,6 +332,7 @@ function startRun() {
     $('hud-piece-icon').src = `assets/monuments/${city().landmarks[level - 1]}.png`;
     document.body.classList.add('run-pieces');
     track.onWeave = () => hint('That Vespa is signalling — it\'s about to change lanes!');
+    track.onMechanic = (text) => hint(text);
     speed = 14 + (level - 1) * 3;
     coins = 0; score = 0; shake = 0;
     continuesUsed = 0;
