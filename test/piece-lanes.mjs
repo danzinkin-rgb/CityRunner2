@@ -15,8 +15,9 @@
  * street's course forward, records each piece as it appears, and checks:
  *   - no piece has an obstacle in its lane in the row after it;
  *   - no piece is boxed in, with an obstacle in its lane on both sides.
- * A weaving Vespa counts in the lane it weaves into, and not in the one it
- * leaves before the player gets there.
+ * Each obstacle counts in the lane it is in when the player gets there
+ * (Track.laneAtArrival): a weaving Vespa in the lane it weaves into, a
+ * U-turning tuk-tuk in the lane it turns into.
  *
  * Usage: node test/piece-lanes.mjs [baseUrl]
  */
@@ -63,7 +64,7 @@ for (const city of CITIES) for (const level of [1, 2, 3]) for (const seed of SEE
         // the rows either side are half a row-spacing away; 13 m covers the
         // widest spacing (level 1) without reaching the row beyond
         const inLane = t.obstacles
-          .filter((o) => (o.weave ? o.lane + o.weave : o.lane) === lane)
+          .filter((o) => t.laneAtArrival(o) === lane)
           .map((o) => ({ kind: o.kind, dz: z(o.localZ, o.chunk) - pz }))
           .filter((o) => Math.abs(o.dz) < 13);
         seen.set(p.idx, {

@@ -704,16 +704,16 @@ export class Track {
     for (let r = 0; r + 1 < rows.length; r++) mids.push((rows[r] + rows[r + 1]) / 2);
     if (rows.length) mids.push((8 + rows[rows.length - 1] - CHUNK_LEN) / 2);
     const slots = mids.filter((m) => m > 1 && m < CHUNK_LEN - 1);
-    // The lanes taken in the rows either side of a slot. A weaving Vespa
-    // counts in the lane it weaves into: it has left its own by the time the
-    // player reaches it. Read from the course already built, so choosing a
-    // lane draws nothing from the seeded stream.
+    // The lanes taken in the rows either side of a slot, each obstacle in the
+    // lane it will be in when the player reaches it (laneAtArrival). Read
+    // from the course already built, so choosing a lane draws nothing from
+    // the seeded stream.
     const zOf = (o) => o.chunk.position.z + o.localZ;
     const takenBetween = (zHi, zLo) => {
       const s = new Set();
       for (const o of this.obstacles) {
         const z = zOf(o);
-        if (z < zHi && z > zLo) s.add(o.weave ? o.lane + o.weave : o.lane);
+        if (z < zHi && z > zLo) s.add(this.laneAtArrival(o));
       }
       return s;
     };
@@ -871,6 +871,16 @@ export class Track {
         if (overlap) { onHit(); return; }
       }
     }
+  }
+
+  // The lane an obstacle is in when the player reaches it: a weaving Vespa
+  // in the lane it weaves into, a Bangkok tuk-tuk in the lane its U-turn
+  // ends in (src/run/mechanics.js), anything else where it stands. A Cape
+  // Town gust has no hitbox and is in no lane (-1).
+  laneAtArrival(o) {
+    if (o.y1 < 0) return -1;
+    if (o.weave) return o.lane + o.weave;
+    return o.uTo ?? o.lane;
   }
 
   progress() { return Math.min(1, this.distance / this.goal); }
