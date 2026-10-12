@@ -1720,18 +1720,20 @@ function resaturate(mesh) {
 // street for the player to collect, so both must agree on the order and on
 // how many start pre-placed. One definition, used by both, is what keeps them
 // agreeing.
-export function preplacedFor(len, level) {
-  return level === 1 ? Math.floor(len * 0.35) : level === 2 ? Math.floor(len * 0.15) : 0;
+// How many of the lowest pieces start in place. Only street 1 starts with any,
+// and a tapped street 1 (Newbie, first three cities) gets the most help.
+export function preplacedFor(len, level, tap = false) {
+  return level === 1 ? Math.floor(len * (tap ? 0.35 : 0.2)) : 0;
 }
 export function buildOrder(def) {
   return def.map((d, i) => ({ def: d, idx: i }))
     .sort((a, b) => (a.def.sortY ?? a.def.p[1]) - (b.def.sortY ?? b.def.p[1]));
 }
 /** The block defs a street leaves loose, in build order. */
-export function looseDefs(landmarkId, level) {
+export function looseDefs(landmarkId, level, tap = false) {
   const def = getLandmark(landmarkId);
   if (!def) return [];
-  return buildOrder(def).slice(preplacedFor(def.length, level)).map((e) => e.def);
+  return buildOrder(def).slice(preplacedFor(def.length, level, tap)).map((e) => e.def);
 }
 
 // ============================================================
@@ -1755,17 +1757,20 @@ export class Puzzle {
     // Street 1: drag, the next course glows. Tapping instead (a glowing
     //           piece flies home) is kept only for newcomers: Newbie mode, in
     //           the first three cities. main.js decides, via opts.tap.
-    // Street 2: drag each piece to its spot yourself; the next course glows.
-    // Street 3: drag, NO glow, and some pieces arrive a quarter-turn out and
-    //           must be turned (tap) before they fit. The ghost silhouette
+    // Street 2: drag, NO glow, and one piece arrives a quarter-turn out and
+    //           must be turned (tap) before it fits. The ghost silhouette
     //           still shows the whole monument, but not which piece is next —
     //           working out what goes on next is the puzzle.
+    // Street 3: as street 2, with up to three pieces turned and less time.
+    // (Made harder in October 2026 on player feedback: street 2 used to glow
+    // and street 3 turned at most two.)
     // The order rule (bottom-up by course, with authored sortY for things like
     // a bridge deck hung after its cables) is the same on every street.
     this.level = level;
     this.mode = level === 1 && opts.tap ? 'tap' : 'drag';
-    this.glow = level < 3;
-    this.turning = level >= 3;
+    this.glow = level === 1;
+    this.turning = level >= 2;
+    const maxTurned = level >= 3 ? 3 : 1;
     this.dragging = null;
     this.hintFn = null;            // set by main.js: shows a short line of text
     // Bob is driven by its own accumulator rather than by elapsed time, so the
@@ -1779,7 +1784,7 @@ export class Puzzle {
     this.buildPlaza(P, CITY_OF[landmarkId]);
 
     // Difficulty: level 1 pre-places some base blocks, level 3 scatters everything.
-    let preplaced = preplacedFor(def.length, level);
+    let preplaced = preplacedFor(def.length, level, this.mode === 'tap');
     // Visual-review harness: ?built=1 shows the finished monument, ?auto=1
     // self-plays a block every half second. Compiled out of release builds
     // (src/core/debug.js): ?built=1 completes the monument outright, which
@@ -1864,7 +1869,7 @@ export class Puzzle {
     {
       let turned = 0;
       this.blocks.forEach(({ def: d }, order) => {
-        if (this.turning && order >= preplaced && turned < 2 && needsTurning(d) && dRand(order, 29) < 0.45) {
+        if (this.turning && order >= preplaced && turned < maxTurned && needsTurning(d) && dRand(order, 29) < 0.45) {
           turnsOf.set(order, 1);
           turned++;
         }
@@ -2007,8 +2012,11 @@ export class Puzzle {
     // this clock, so it still tops out at 3000 whatever the total.
     const looseCount = this.items.length - this.placedCount;
     // Tapping is quicker than dragging, so a tapped build gets less per piece.
-    const PER = this.mode === 'tap' ? 2.6 : level >= 3 ? 4.2 : 3.4;
-    this.timeTotal = Math.round(Math.min(120, Math.max(40, 20 + PER * looseCount)));
+    // opts.timeScale (from main.js) tightens it further: Gamer mode, and the
+    // cities later in the order.
+    const PER = this.mode === 'tap' ? 2.6 : level >= 3 ? 3.6 : 3.0;
+    const scale = opts.timeScale || 1;
+    this.timeTotal = Math.round(Math.min(120, Math.max(30, (20 + PER * looseCount) * scale)));
     this.time = t0 > 0 ? Math.min(this.timeTotal, t0) : this.timeTotal;
 
     // Street 3's quarter-turned pieces were chosen before the layout (turnsOf).

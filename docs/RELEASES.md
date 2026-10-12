@@ -76,6 +76,11 @@ Since 1.1.1:
 - Monuments are built by dragging, except street 1 of New York, Paris and
   London in Newbie mode, which stay tap-to-place. The first dragged street 1
   in each city shows a "Drag to build" card before the clock starts.
+- Harder monument building (feedback: too easy). Only street 1 starts with
+  pieces in place (20%; 35% on a tapped street). From street 2 nothing
+  glows and pieces arrive turned (one on street 2, up to three on street 3).
+  Less time per piece (3.0 s, 3.6 s on street 3); Gamer gets 15% less time,
+  and each city after the first three 3% less (at most 15%).
 
 ## History
 

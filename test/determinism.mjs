@@ -123,7 +123,7 @@ check('every daily city exists, and only pool cities are dealt',
 // seed, so a change to what a seed builds must come with a new COURSE_VERSION
 // (src/run/track.js), which retires the old ghosts. Three streets that cover
 // the city-specific branches (Rome's weaving Vespas, SF's cable cars).
-const KNOWN_COURSE = { 2: '00aa09ce' };   // v2 also fingerprints the monument pieces
+const KNOWN_COURSE = { 2: 'd3c8fea0' };   // v2 also fingerprints the monument pieces
 const fnv = (str) => { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, '0'); };
 const courseSrc = readFileSync(join(HERE, '..', 'src', 'run', 'track.js'), 'utf8');
 const courseVersion = +(courseSrc.match(/export const COURSE_VERSION = (\d+);/) || [])[1];

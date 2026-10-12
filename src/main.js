@@ -146,6 +146,10 @@ const MODES = {
 // these three cities. Every other monument is built by dragging.
 const TAP_CITIES = ['nyc', 'paris', 'london'];
 const gameMode = () => (save.mode === 'gamer' ? 'gamer' : 'newbie');
+const tapsHere = () => rules.name === 'newbie' && level === 1 && TAP_CITIES.includes(city().id);
+// The monument clock: 15% less in Gamer, and 3% less per city after the
+// first three (at most 15%), so later cities ask for quicker building.
+const puzzleTimeScale = () => (rules.name === 'gamer' ? 0.85 : 1) * (1 - Math.min(0.15, 0.03 * Math.max(0, cityIdx - 2)));
 // The rules for the run or puzzle being played. The daily challenge is one
 // course for everyone, so it ignores the chosen mode: Newbie pace and puzzle
 // rules, at full score, as every daily before modes existed was.
@@ -337,7 +341,7 @@ function startRun() {
     scene = new THREE.Scene();
     dressScene(scene, city());
     player = new Player(scene, characterById(save.equipped).style);
-    const pieceDefs = looseDefs(city().landmarks[level - 1], level);
+    const pieceDefs = looseDefs(city().landmarks[level - 1], level, tapsHere());
     track = new Track(scene, city(), level, runSeed, pieceDefs, rules.start[level - 1]);
     ghostRec = new GhostRecorder(track.seed);
     player.onAction = (a) => ghostRec.move(track.distance, a);
@@ -405,7 +409,7 @@ let testerInvincible = false;   // tester builds only; see the Tester section be
 function showGoal(lm) {
   $('hud-goal-img').src = `assets/monuments/${lm}.png`;
   $('hud-goal-name').textContent = LANDMARK_NAMES[lm];
-  const n = looseDefs(lm, level).length;
+  const n = looseDefs(lm, level, tapsHere()).length;
   $('hud-goal-sub').textContent = n ? `Collect its ${n} pieces on the way` : '';
   const el = $('hud-goal');
   el.classList.add('on');
@@ -642,9 +646,10 @@ function startPuzzle() {
     scene = new THREE.Scene();
     dressScene(scene, city());
     const lm = city().landmarks[level - 1];
-    rules = playRules();
-    const tap = rules.name === 'newbie' && TAP_CITIES.includes(city().id);
-    puzzle = new Puzzle(scene, camera, lm, level, { collected: lastRunPieces, tap });
+    // Straight from a run, keep that run's rules: its pieces were dealt for
+    // them, even if the mode was switched in Settings on the way.
+    if (!lastRunPieces) rules = playRules();
+    puzzle = new Puzzle(scene, camera, lm, level, { collected: lastRunPieces, tap: tapsHere(), timeScale: puzzleTimeScale() });
     lastRunPieces = null;
     puzzle.hintFn = hint;
     document.body.classList.remove('run-pieces');
