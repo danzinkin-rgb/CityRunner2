@@ -725,6 +725,57 @@ export const ALL_CITIES = [
       },
     ],
   },
+  {
+    id: 'samarkand', name: 'SAMARKAND', flag: '🇺🇿', region: 'asia',
+    streets: ['Tashkent Street', 'Siab Bazaar', 'Registan Square'],
+    // Dry, bright desert light: a hard blue sky fading to pale dust at the
+    // horizon. Sand-coloured brick everywhere, and on it the turquoise and
+    // cobalt tile the city is famous for.
+    sky: { top: '#2a64c8', mid: '#7aaee4', horizon: '#f4e0b8', glow: '#ffd090' },
+    fog: 0xecd8b0, fogDensity: 0.0084,
+    sun: { color: 0xfff0d0, intensity: 2.7, pos: [50, 75, -45] },
+    hemi: { sky: 0xd8e4f4, ground: 0xa08a68, intensity: 1.1 },
+    fill: { color: 0xfff0dc, intensity: 1.0 },
+    road: '#8a7a64', lane: '#f2e8d0', sidewalk: '#c8b494',
+    palette: ['#d8b888', '#d0ae7e', '#dcc094', '#c8a676', '#d4b484', '#e0c49a'],
+    trim: '#2aa8b8', roof: '#8a7050',
+    windowLit: '#ffd08a', windowDay: '#88b0c8', accent: '#2a4aa8',
+    storefront: ['#2aa8b8', '#2a4aa8', '#c8902a', '#a83a2a', '#3a8a5a'],
+    facade: 'tilework', hBase: 8, hVar: 4,
+    props: ['lamp', 'cypress', 'souvenirstall'],
+    // The little white minivan that is everywhere in Uzbekistan. A car, low
+    // enough to jump. No make or logo.
+    vehicle: 'minivan',
+    // Walls of tiled arches across the road (src/run/mechanics.js).
+    mechanic: 'arches',
+    landmarks: ['observatory', 'gurlamir', 'registan'],
+    levels: [
+      { // Tashkent Street: the pedestrian street from the Registan to the
+        // great mosque, tiled fronts and craft shops
+        key: 'tashkent',
+        setback: 4.2, secondRow: 0.4,
+        props: ['lamp', 'cypress', 'souvenirstall', 'rugs'],
+        ads: ['SUZANI', 'CERAMICS', 'SILK', 'BREAD', 'SPICES'],
+        lit: 0.18,
+      },
+      { // Siab Bazaar: the city's great market, fruit, nuts and round
+        // patterned loaves of bread under long awnings
+        key: 'siab', facade: 'market',
+        setback: 3.2, hBase: 6, hVar: 2, secondRow: 0,
+        palette: ['#d0ae7e', '#c8a676', '#d8b888', '#c09e70', '#ccaa7a', '#d4b484'],
+        props: ['awning', 'fruitcart', 'souvenirstall'],
+        ads: ['MELONS', 'NON BREAD', 'DRIED FRUIT', 'NUTS', 'TEA'],
+        span: 'slats', spanFreq: 0.5, spanY: 6.6, lit: 0.2,
+      },
+      { // Registan Square: the wide approach to the three madrasas, their
+        // tiled gates and turquoise domes ahead
+        key: 'registanst', setback: 7.4, hBase: 10, hVar: 3, secondRow: 0.3,
+        props: ['lamp', 'cypress'],
+        ads: ['REGISTAN', 'MUSEUM'],
+        cameo: 'registan', lit: 0.14,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -742,6 +793,7 @@ export const LANDMARK_NAMES = {
   clocktower: 'Waterfront Clock Tower', goodhope: 'Castle of Good Hope', cityhall: 'Cape Town City Hall',
   turtletower: 'Turtle Tower', longbien: 'Long Bien Bridge', vanmieu: 'Temple of Literature',
   heunginjimun: 'Heunginjimun Gate', gyeonghoeru: 'Gyeonghoeru Pavilion', geunjeongjeon: 'Geunjeongjeon Hall',
+  observatory: 'Ulugh Beg Observatory', gurlamir: 'Gur-e-Amir', registan: 'The Registan',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

@@ -164,6 +164,7 @@ const SCALES = {
   sf: [0, 2, 4, 7, 11],   // major with a raised seventh: bright, a little wistful
   jerusalem: [0, 1, 4, 5, 7],   // a semitone then a third up: the scale heard across the region
   mexico: [0, 4, 7, 9, 12],     // bright major, mariachi-like
+  samarkand: [0, 1, 4, 5, 7],    // a lowered second, as in the maqom music of Central Asia
   seoul: [0, 2, 5, 7, 10],       // the five-note scale of Korean folk song
   hanoi: [0, 2, 5, 7, 9],        // the five-note scale of Vietnamese folk song
   capetown: [0, 2, 4, 5, 7],     // bright major, the first five steps

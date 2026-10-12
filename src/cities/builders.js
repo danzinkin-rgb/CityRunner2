@@ -155,6 +155,23 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
 
         for (let cIdx = 0; cIdx < cols; cIdx++) {
           if (style === 'hanok') continue;     // a hanok's wall is painted below
+          if (style === 'tilework') {
+            // Samarkand: deep pointed-arch niches set in the brick, each
+            // framed in turquoise tile, a small latticed window at the back
+            if (f % 2 === 1) continue;
+            const x = cIdx * ww + ww * 0.2, w = ww * 0.6, y = rowY + wh * 0.1, h = wh * 1.6;
+            g.fillStyle = theme.trim;
+            g.beginPath(); g.moveTo(x - 4, y + h); g.lineTo(x - 4, y + w * 0.6);
+            g.quadraticCurveTo(x - 4, y - 6, x + w / 2, y - 8); g.quadraticCurveTo(x + w + 4, y - 6, x + w + 4, y + w * 0.6);
+            g.lineTo(x + w + 4, y + h); g.closePath(); g.fill();
+            g.fillStyle = 'rgba(70,50,30,.75)';
+            g.beginPath(); g.moveTo(x, y + h); g.lineTo(x, y + w * 0.6);
+            g.quadraticCurveTo(x, y, x + w / 2, y - 2); g.quadraticCurveTo(x + w, y, x + w, y + w * 0.6);
+            g.lineTo(x + w, y + h); g.closePath(); g.fill();
+            g.fillStyle = Math.random() < (theme.lit ?? 0.16) ? theme.windowLit : '#2a3a4a';
+            g.fillRect(x + w * 0.3, y + h * 0.45, w * 0.4, h * 0.3);
+            continue;
+          }
           if (style === 'tubehouse') {
             // Hanoi's tube houses: narrow fronts, tall French windows behind
             // green shutters, a little balcony with plants on most floors
@@ -365,6 +382,16 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         }
       }
 
+      // Samarkand: brick coursing, and a band of cobalt and turquoise tile
+      // with white stars under the parapet
+      if (style === 'tilework') {
+        g.fillStyle = 'rgba(90,60,30,.12)';
+        for (let y = 0; y < H; y += 6) g.fillRect(0, y, W, 1);
+        for (let x = 0, k = 0; x < W; x += 16, k++) {
+          g.fillStyle = k % 2 ? '#2a4aa8' : '#2aa8b8'; g.fillRect(x, 20, 16, 14);
+          g.fillStyle = '#f4f0e0'; g.beginPath(); g.arc(x + 8, 27, 3, 0, 7); g.fill();
+        }
+      }
       // Seoul's hanok: white plaster between dark timber posts and beams,
       // and windows of paper on a wooden lattice
       if (style === 'hanok') {
@@ -2034,6 +2061,7 @@ const ADS = {
   capetown: ['SURF', 'BOOKS', 'COFFEE', 'MARKET'],
   hanoi: ['PHO', 'SILK', 'COFFEE', 'LANTERNS'],
   seoul: ['TEA', 'GALLERY', 'CAFÉ', 'BOOKS'],
+  samarkand: ['SILK', 'CERAMICS', 'BREAD', 'TEA'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -2975,6 +3003,23 @@ export function makeVehicle(theme) {
     }
     const sign = new THREE.Mesh(boxGeo, mats.glow);
     sign.scale.set(0.5, 0.16, 0.2); sign.position.set(0, 1.6, -0.1); g.add(sign);
+  } else if (kind === 'minivan') {
+    // Samarkand: a small, tall white minivan with a sliding door. A car,
+    // low enough to jump.
+    const white = cached('mat:minivan', () => new THREE.MeshStandardMaterial({ color: 0xf0f0ec, roughness: 0.3, metalness: 0.2 }));
+    const body = new THREE.Mesh(boxGeo, white);
+    body.scale.set(1.5, 1.2, 3.2); body.position.y = 0.9; body.castShadow = true; g.add(body);
+    const glassM = cached('mat:carGlass', () => new THREE.MeshStandardMaterial({ color: 0xa8d0ec, roughness: 0.12, metalness: 0.5 }));
+    const screen = new THREE.Mesh(boxGeo, glassM);
+    screen.scale.set(1.36, 0.45, 0.06); screen.position.set(0, 1.25, 1.62); g.add(screen);
+    for (const sx of [-1, 1]) {
+      const side = new THREE.Mesh(boxGeo, glassM);
+      side.scale.set(0.04, 0.4, 2.2); side.position.set(sx * 0.76, 1.25, -0.2); g.add(side);
+    }
+    for (const sx of [-0.5, 0.5]) {
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), mats.glow);
+      lamp.position.set(sx, 0.6, 1.62); g.add(lamp);
+    }
   } else if (kind === 'seoulbus') {
     // Seoul's green city bus: a single-deck bus with a long glass side.
     // A wall, as tall as its hitbox (3.2 m).
@@ -3205,6 +3250,54 @@ export function makeMotorbike(signal = false) {
     const light = new THREE.Mesh(boxGeo, off);
     light.scale.set(0.8, 0.26, 0.26); light.position.set(0, 2.4, 0.15); g.add(light);
     g.userData.signal = { light, off, on };
+  }
+  return g;
+}
+
+// Samarkand's arch wall: one bay of a wall of tiled arches built across
+// the road, centred on its lane. `closed` fills the arch with a tiled
+// panel; otherwise it is open, with a lattice grille that
+// src/run/mechanics.js can drop or lift. The arch is 4.6 m high, clear of
+// a jump. The outer bays carry the wall on to the kerb.
+function archTileMat() {
+  return cached('mat:archTile', () => {
+    const tex = canvasTexture(128, 128, (c) => {
+      c.fillStyle = '#2a4aa8'; c.fillRect(0, 0, 128, 128);
+      for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) {
+        const cx = i * 32 + 16, cy = j * 32 + 16;
+        c.fillStyle = (i + j) % 2 ? '#2aa8b8' : '#f2ecd8';
+        c.beginPath();
+        for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, r = k % 2 ? 6 : 13; c.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); }
+        c.closePath(); c.fill();
+      }
+    });
+    return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.4 });
+  });
+}
+export function makeArchBay(lane, closed) {
+  const g = new THREE.Group();
+  const brick = cached('mat:archBrick', () => new THREE.MeshStandardMaterial({ color: 0xd8b888, roughness: 0.85 }));
+  const tile = archTileMat();
+  for (const sx of [-1, 1]) {
+    const pier = new THREE.Mesh(boxGeo, brick);
+    pier.scale.set(0.3, 6.4, 0.8); pier.position.set(sx * 1.05, 3.2, 0); g.add(pier);
+  }
+  const lintel = new THREE.Mesh(boxGeo, tile);
+  lintel.scale.set(2.4, 1.8, 0.8); lintel.position.y = 5.5; g.add(lintel);
+  const crown = new THREE.Mesh(boxGeo, brick);
+  crown.scale.set(2.4, 0.3, 1.0); crown.position.y = 6.55; g.add(crown);
+  if (lane !== 1) {
+    const out = lane === 0 ? -1 : 1;
+    const wing = new THREE.Mesh(boxGeo, brick);
+    wing.scale.set(2.6, 6.4, 0.8); wing.position.set(out * 2.5, 3.2, 0); g.add(wing);
+  }
+  if (closed) {
+    const panel = new THREE.Mesh(boxGeo, tile);
+    panel.scale.set(1.8, 4.6, 0.5); panel.position.y = 2.3; g.add(panel);
+  } else {
+    const grille = new THREE.Mesh(boxGeo, cached('mat:archGrille', () => new THREE.MeshStandardMaterial({ color: 0x5a4a30, roughness: 0.6, metalness: 0.4 })));
+    grille.scale.set(1.8, 4.6, 0.12); grille.position.y = 4.6 + 2.3; grille.visible = false; g.add(grille);
+    g.userData.grille = grille;
   }
   return g;
 }
@@ -4097,6 +4190,7 @@ const SIL_TINT = {
   capetown: '#3a4a5e',   // Table Mountain's blue-grey sandstone
   hanoi: '#5a4e42',      // tiled roofs and tube houses in the haze
   seoul: '#3e4a5a',      // the granite mountains around the city
+  samarkand: '#5a4a3a',  // sand brick, and the blue domes catching the light
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
@@ -4258,6 +4352,21 @@ function skylineTexture(theme) {
         }
         x += bw + 1;
       }
+    } else if (theme.id === 'samarkand') {
+      // Low brick roofs, and over them the city's turquoise domes, ribbed and
+      // round, with slim minarets and the tall gates of the old madrasas.
+      for (let x = 0, i = 0; x < 1600; i++) {
+        const bw = 36 + (i * 13) % 30, bh = 18 + (i * 7) % 16;
+        box(x, bw, bh, 0.2);
+        x += bw;
+      }
+      for (const [cx, r, h] of [[300, 30, 60], [760, 44, 90], [1180, 34, 70]]) {
+        box(cx - r * 1.2, r * 2.4, h, 0.28);
+        g.fillStyle = mixc(fogC, '#2aa8b8', 0.6);
+        g.beginPath(); g.ellipse(cx, GY - h, r, r * 1.3, 0, Math.PI, 0); g.fill();
+      }
+      for (const x of [560, 620, 960, 1020, 1400]) box(x, 9, 130, 0.3);
+      for (const [x, w, h] of [[640, 100, 110], [1260, 80, 90]]) box(x, w, h, 0.26);
     } else if (theme.id === 'seoul') {
       // The granite peaks that ring the city, and the city's towers in
       // front. (No tower on the summit: N Seoul Tower is too recent.)
@@ -4512,6 +4621,21 @@ export function makeCameo(theme) {
       g.fillRect(cx + 50, GY - 196, 40, 50);                         // the tower
       g.fillStyle = light(0.2);
       for (let x = cx - 140; x < cx + 140; x += 16) g.fillRect(x, GY - 138, 7, 12);   // the gallery
+    } else if (key === 'registan') {
+      // The Registan ahead: three great tiled gates facing the square, the
+      // middle one with its turquoise dome, and minarets at the corners.
+      const gate = (x, w, h, f) => {
+        g.fillStyle = dark(f); g.fillRect(x - w / 2, GY - h, w, h);
+        g.fillStyle = dark(f + 0.25);
+        g.beginPath(); g.moveTo(x - w * 0.28, GY); g.lineTo(x - w * 0.28, GY - h * 0.5);
+        g.quadraticCurveTo(x, GY - h * 0.85, x + w * 0.28, GY - h * 0.5); g.lineTo(x + w * 0.28, GY); g.fill();
+      };
+      g.fillStyle = dark(0.24); g.fillRect(cx - 470, GY - 90, 940, 90);
+      gate(cx - 300, 150, 230, 0.3); gate(cx + 300, 150, 230, 0.3); gate(cx, 170, 210, 0.32);
+      g.fillStyle = mixc(fogC, '#2aa8b8', 0.65);
+      g.beginPath(); g.ellipse(cx - 130, GY - 150, 50, 60, 0, Math.PI, 0); g.fill();
+      g.fillStyle = dark(0.36);
+      for (const x of [cx - 390, cx - 210, cx + 210, cx + 390]) { g.fillRect(x - 8, GY - 300, 16, 300); g.fillRect(x - 12, GY - 304, 24, 8); }
     } else if (key === 'turtletower') {
       // The Turtle Tower on its island in the lake: a small three-storey
       // tower of arched openings, the far shore's trees behind

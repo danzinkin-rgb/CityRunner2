@@ -259,6 +259,28 @@ export const STREET_FACTS = {
         { text: 'Every evening, street-food stalls set up down the middle of its lanes.' },
       ] },
   ],
+  // Samarkand: DRAFT, awaiting Dan's sign-off (docs/SAMARKAND-FACTS-DRAFT.md,
+  // sources listed there).
+  samarkand: [
+    { street: 'Tashkent Street', tag: 'On the Silk Road',
+      facts: [
+        { text: 'Samarkand stood on the Silk Road, the old trade routes that ran between China and the Mediterranean.' },
+        { big: '2001', label: 'World Heritage', text: "UNESCO listed the old city in 2001 as 'Samarkand, Crossroads of Cultures'." },
+        { text: 'This street links the Registan with the great Bibi-Khanym Mosque and the bazaar beside it.' },
+      ] },
+    { street: 'Siab Bazaar', tag: 'The great market',
+      facts: [
+        { text: 'Siab Bazaar is the largest market in Samarkand.' },
+        { text: 'It takes its name from the Siab, the small river that flows beside it.' },
+        { text: 'Its stalls sell melons, dried fruit, nuts, spices, and the round patterned bread the city is known for.' },
+      ] },
+    { street: 'Registan Square', tag: 'The sandy place',
+      facts: [
+        { text: "Registan means 'sandy place'. It was the heart of the old city, where people gathered to hear announcements." },
+        { big: '1660', label: 'last madrasa finished', text: 'Its three madrasas, or schools, were built over more than two centuries, from 1417 to 1660.' },
+        { text: 'All three face the square, each behind a great tiled gate.' },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -401,6 +423,27 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Samarkand: DRAFT, awaiting Dan's sign-off (docs/SAMARKAND-FACTS-DRAFT.md).
+  // altitude: Samarkand stands 702 m above sea level
+  // (en.wikipedia.org/wiki/Samarkand). No sourced heights for the three.
+  observatory: { altitude: 702,
+    facts: [
+      { big: '1420', label: 'founded', text: "Ulugh Beg, Timur's grandson and an astronomer, built his observatory here around 1420." },
+      { big: '40', unit: 'm', label: 'sextant radius', text: 'Its great sextant, a curved track of marble set into the hill, had a radius of about 40 metres.' },
+      { big: '1908', label: 'found again', text: 'The observatory was lost for centuries, until an archaeologist found its remains in 1908.' },
+    ] },
+  gurlamir: { altitude: 702,
+    facts: [
+      { big: '1404', label: 'completed', text: 'The mausoleum was begun in 1403 and finished in 1404. Timur himself was later buried here.' },
+      { text: "Its name means 'tomb of the king' in Persian." },
+      { big: '64', unit: 'ribs', label: 'on its dome', text: 'Its turquoise melon dome is shaped with 64 ribs.' },
+    ] },
+  registan: { altitude: 702,
+    facts: [
+      { big: '1420', label: 'first madrasa', text: "Ulugh Beg's madrasa, on the left, was built from 1417 to 1420, with fifty rooms for its students." },
+      { text: "Sher-Dor's gate shows two tigers with rising suns on their backs, rare in buildings of its kind for showing living creatures." },
+      { big: '1660', label: 'Tilya-Kori finished', text: "Tilya-Kori, at the back, was built from 1646 to 1660. Its name means 'gilded'." },
     ] },
   // Seoul: DRAFT, awaiting Dan's sign-off (docs/SEOUL-FACTS-DRAFT.md).
   // altitude: Seoul stands 38 m above sea level (en.wikipedia.org/wiki/Seoul).

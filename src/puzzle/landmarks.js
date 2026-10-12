@@ -1456,6 +1456,99 @@ const defs = {
       adorn: [-1.8, -0.6, 0.6, 1.8].map((z) => B([0, 0, z], [0.4, 0.4, 0.3], '#a8a090')),
     })),
   ],
+  // ================= SAMARKAND =================
+  // Timurid and later work, 1400s-1600s: no copyright question. The
+  // Bibi-Khanym Mosque was left out: its dome was largely rebuilt from 1974.
+
+  // The Ulugh Beg Observatory, as it stood in the 1420s: a round,
+  // three-storey building on its hill, faced in tile, with the great marble
+  // arc of its sextant running down through it into the ground.
+  // Street 1: about a dozen pieces.
+  observatory: [
+    B([0, 0.7, 0], [18, 1.4, 14], '#a89470', 'lathe', { profile: [[1, 0], [0.9, 0.6], [0.75, 1]] }),
+    B([0, 1.7, 0], [11, 0.6, 11], '#c8b490', 'cyl'),
+    B([0, 3.4, 0], [9.6, 2.8, 9.6], '#d8b888', 'cyl', { tex: 'arch', tx: { n: 12 } }),
+    B([0, 6.2, 0], [9.2, 2.8, 9.2], '#2aa8b8', 'cyl', { tex: 'tile' }),
+    B([0, 8.9, 0], [8.8, 2.6, 8.8], '#d4b484', 'cyl', { tex: 'arch', tx: { n: 12 } }),
+    B([0, 10.45, 0], [9.0, 0.5, 9.0], '#2a4aa8', 'cyl', { tex: 'tile' }),
+    B([-0.4, 6.0, 0], [12, 6, 0.4], '#ece6d8', 'arch', { rotY: Math.PI / 2, sortY: 10.6 }),   // the sextant's two marble rails
+    B([0.4, 6.0, 0], [12, 6, 0.4], '#ece6d8', 'arch', { rotY: Math.PI / 2, sortY: 10.7 }),
+    B([0, 2.6, 6.2], [3.0, 1.2, 2.4], '#c8b490', 'prism', { rotY: Math.PI / 2 }),          // steps up the hill
+    B([-7, 3.0, 4], [1.0, 4.0, 1.0], '#3a6a3a', 'cone4'),                                   // poplars
+    B([7, 3.0, -4], [1.0, 4.0, 1.0], '#3a6a3a', 'cone4'),
+    B([6.5, 1.8, 4.5], [1.2, 1.0, 1.2], '#4a7a3a', 'sphere'),
+  ],
+
+  // Gur-e-Amir, Timur's tomb: an octagonal base, a tall drum ringed with a
+  // band of script in tile, the ribbed turquoise melon dome, and the great
+  // tiled entrance gate with its two minarets. Street 2: about eighteen
+  // pieces.
+  gurlamir: [
+    B([0, 0.2, 0], [20, 0.4, 18], '#c8b490', 'box', { tex: 'stone' }),
+    B([0, 2.4, -2], [10, 4.0, 10], '#d8b888', 'tier', { sides: 8, tex: 'arch', tx: { n: 8 } }),
+    B([0, 5.0, -2], [9.4, 1.2, 9.4], '#2a4aa8', 'tier', { sides: 8, tex: 'tile' }),
+    B([0, 7.4, -2], [6.6, 3.6, 6.6], '#2aa8b8', 'cyl', { tex: 'tile' }),                   // the drum
+    B([0, 9.5, -2], [6.8, 0.6, 6.8], '#f2ecd8', 'cyl'),                                    // its band of script
+    B([0, 12.8, -2], [8.0, 6.0, 8.0], '#2ab0c8', 'lathe', {                                 // the ribbed melon dome
+      tex: 'flute', tx: { n: 32 },
+      profile: [[0.82, 0], [0.98, 0.25], [1, 0.45], [0.9, 0.7], [0.6, 0.9], [0.2, 0.98], [0, 1]],
+    }),
+    B([0, 16.3, -2], [0.3, 1.2, 0.3], '#e0b040', 'cyl', { metal: 1 }),
+    B([0, 4.6, 5.0], [7.0, 9.2, 1.4], '#d8b888', 'extrude', {                             // the entrance gate
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.06, w: 0.5, h: 0.74, arch: 'pointed' }],
+    }),
+    B([0, 4.6, 5.75], [7.2, 9.4, 0.12], '#2a4aa8', 'extrude', {                           // its tile frame
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.03, w: 0.78, h: 0.9, arch: 'pointed' }],
+    }),
+    B([0, 3.0, 4.4], [3.2, 5.0, 0.2], '#3a2a20'),                                          // the shadowed door
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 4.2, 4.0, 5.0], [1.3, 8.0, 1.3], '#d8b888', 'cyl', { tex: 'tile', tx: {} }),
+      B([sx * 4.2, 8.8, 5.0], [1.6, 1.6, 1.6], '#2aa8b8', 'cyl', {
+        adorn: [B([0, 1.2, 0], [1.2, 0.8, 1.2], '#d8b888', 'dome')],
+      }),
+      B([sx * 7.5, 1.8, 2.0], [4.0, 3.2, 1.0], '#d4b484', 'box', { tex: 'arch', tx: { n: 2 } }),   // courtyard walls
+    ]),
+    B([0, 0.55, 7.2], [5, 0.3, 2.4], '#c8b490', 'box', { tex: 'stone' }),
+  ],
+
+  // The Registan: three madrasas around the square, each behind a huge
+  // tiled gate (pishtaq) with a pointed arch, flanked by towers. Ulugh Beg's
+  // on the left, Sher-Dor facing it on the right, Tilya-Kori at the back
+  // with its turquoise dome. Street 3: about two dozen pieces.
+  registan: (() => {
+    const out = [B([0, 0.2, 0], [30, 0.4, 28], '#c8b490', 'box', { tex: 'stone', tx: { cols: 20, rows: 18 } })];
+    const madrasa = (x, z, rotY, tint) => {
+      const at = (dx, dy, dz) => {
+        const c = Math.cos(rotY), s = Math.sin(rotY);
+        return [x + dx * c + dz * s, dy, z - dx * s + dz * c];
+      };
+      out.push(
+        B(at(0, 5.4, 0), [7.4, 10.4, 1.4], '#d8b888', 'extrude', { rotY,
+          outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+          holes: [{ x: 0, y: -0.05, w: 0.52, h: 0.76, arch: 'pointed' }] }),
+        B(at(0, 5.4, 0.76), [7.6, 10.6, 0.12], tint, 'extrude', { rotY, tex: 'tile',
+          outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+          holes: [{ x: 0, y: -0.03, w: 0.8, h: 0.9, arch: 'pointed' }] }),
+        B(at(-6.2, 3.2, -1.8), [5.0, 6.0, 4.0], '#d4b484', 'box', { rotY, tex: 'arch', tx: { n: 3 } }),
+        B(at(6.2, 3.2, -1.8), [5.0, 6.0, 4.0], '#d4b484', 'box', { rotY, tex: 'arch', tx: { n: 3 } }),
+        B(at(-8.9, 5.6, -0.2), [1.3, 11, 1.3], '#d8b888', 'cyl', { tex: 'tile' }),
+        B(at(8.9, 5.6, -0.2), [1.3, 11, 1.3], '#d8b888', 'cyl', { tex: 'tile' }),
+      );
+    };
+    madrasa(-10.5, 0, Math.PI / 2, '#2a4aa8');      // Ulugh Beg, facing the square from the left
+    madrasa(10.5, 0, -Math.PI / 2, '#2aa8b8');      // Sher-Dor, facing it
+    madrasa(0, -10.5, 0, '#2a6ac8');                // Tilya-Kori, at the back
+    out.push(
+      B([-6.0, 7.2, -12.5], [4.6, 1.6, 4.6], '#d8b888', 'cyl'),                           // Tilya-Kori's dome
+      B([-6.0, 8.0, -12.5], [5.0, 3.6, 5.0], '#2ab0c8', 'dome'),
+      B([12.3, 6.6, -3.5], [3.6, 2.4, 3.6], '#2aa8b8', 'dome', { tex: 'flute', tx: { n: 20 } }),   // Sher-Dor's ribbed domes
+      B([12.3, 6.6, 3.5], [3.6, 2.4, 3.6], '#2aa8b8', 'dome', { tex: 'flute', tx: { n: 20 } }),
+      B([0, 0.45, 2], [8, 0.1, 8], '#b8a480', 'box', { tex: 'stone' }),                     // the square's centre
+    );
+    return out;
+  })(),
 };
 
 export function getLandmark(id) { return defs[id]; }

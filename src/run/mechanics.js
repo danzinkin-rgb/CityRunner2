@@ -24,7 +24,7 @@
 import { LANES } from './player.js';
 import {
   makeHandcart, makeAutoRickshaw, makeTukTuk, makeGustDust, makeMotorbike, makeTrainCar,
-  makeCrowd, makeCrossing,
+  makeCrowd, makeCrossing, makeArchBay,
 } from '../cities/builders.js';
 
 // ---- Marrakech: porters' handcarts crossing the road --------------------
@@ -391,7 +391,78 @@ const CROSSING = {
   },
 };
 
+// ---- Samarkand: walls of tiled arches --------------------------------------
+// Now and then the road runs through a wall of three tiled arches, one per
+// lane, some open and some filled with tile. On later streets the gates
+// change as you come: the grilles of two arches flash, then one open arch
+// drops its grille and a closed one lifts its own, so the way through moves.
+// Distances ahead: the grilles flash from AR_WARN to AR_SWITCH and move
+// between AR_SWITCH and AR_DONE.
+// Fairness:
+//   - an arch wall has its row to itself
+//   - at least one arch is open when you reach it, and souvenirs lie only
+//     in an open one
+//   - a switch is shown for 16 m before it happens and is over 18 m out
+//   - the hitboxes are where the arches end up: an arch that will close is
+//     solid from the start (it cannot be reached while it still looks open)
+const ARCH_CHANCE = [0.1, 0.14, 0.18];       // share of rows, by street
+const ARCH_SWITCH_P = [0, 0.4, 0.7];         // of walls with one open arch, how many switch
+const AR_WARN = 46, AR_SWITCH = 30, AR_DONE = 18;
+const ARCHES = {
+  hint: 'The gates are changing! Run for the arch that stays open.',
+  row({ level, rand, randInt, addObstacle, usedLanes }) {
+    if (rand() >= ARCH_CHANCE[level - 1]) return null;
+    const oneOpen = level === 3 || (level === 2 && rand() < 0.5);
+    let open = randInt(3), closesFirst = -1;
+    const openSet = new Set([open]);
+    if (!oneOpen) openSet.add((open + 1 + randInt(2)) % 3);
+    if (oneOpen && rand() < ARCH_SWITCH_P[level - 1]) {
+      closesFirst = open;                                     // open now, closed when you arrive
+      open = (open + 1 + randInt(2)) % 3;
+      openSet.clear(); openSet.add(open);
+    }
+    let head = null;
+    for (let l = 0; l <= 2; l++) {
+      const shut = !openSet.has(l);
+      const opens = closesFirst >= 0 && l === open;
+      // how it looks before any switch: a closing arch starts open, an
+      // opening one starts shut
+      const looksOpen = (!shut && !opens) || l === closesFirst;
+      const mesh = makeArchBay(l, !looksOpen);
+      // a solid arch has a wall's hitbox; an open one none at all
+      const rec = addObstacle(l, 'full', shut
+        ? { mesh, y0: 0, y1: 3.2, halfLen: 0.4 }
+        : { mesh, y0: -9, y1: -8, halfLen: 0.1 });
+      if (shut) usedLanes.add(l); else usedLanes.delete(l);
+      rec.mech = ARCHES;
+      rec.gate = l === closesFirst ? 'closes' : opens ? 'opens' : '';
+      if (rec.gate === 'opens') {                             // built shut: give it a grille to lift
+        mesh.userData.grille = mesh.children.find((c) => c.scale.y > 4 && c.position.y < 3);
+      }
+      if (!head) head = rec;
+    }
+    return head;
+  },
+  settle() {},
+  move(o, ahead) {
+    if (!o.gate) return false;
+    const g = o.mesh.userData.grille;
+    const warn = ahead <= AR_WARN && ahead > AR_SWITCH;
+    const t = Math.max(0, Math.min(1, (AR_SWITCH - ahead) / (AR_SWITCH - AR_DONE)));
+    if (o.gate === 'closes') {
+      g.visible = true;
+      g.position.y = 2.3 + (1 - t) * 4.6;                     // drops into the arch
+    } else {
+      g.position.y = 2.3 + t * 4.6;                           // lifts out of it
+    }
+    o.mesh.userData.flash = warn && Math.floor(ahead / 2.5) % 2 === 0;
+    g.scale.z = o.mesh.userData.flash ? 0.3 : (o.gate === 'closes' ? 0.12 : 0.5);
+    return warn;
+  },
+};
+
 export const MECHANICS = {
+  arches: ARCHES,
   crossing: CROSSING,
   handcart: CART,
   braker: BRAKER,

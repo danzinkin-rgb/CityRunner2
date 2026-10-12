@@ -136,6 +136,26 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'samarkand') {
+    // A painted ceramic plate in cobalt and turquoise, a white star in a
+    // ring of petals at its centre, a raised rim.
+    const glaze = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.25, metalness: 0.05, emissive: c, emissiveIntensity: 0.18 });
+    const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.3, 0.06, 32), glaze(0x2a4aa8));
+    plate.rotation.x = Math.PI / 2; g.add(plate);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.03, 8, 40), glaze(0x2aa8b8));
+    g.add(rim);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.3, 32), glaze(0x2aa8b8));
+    ring.position.z = 0.035; g.add(ring);
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const petal = new THREE.Mesh(new THREE.CircleGeometry(0.05, 8), glaze(0xf2ecd8));
+      petal.scale.set(1, 1.8, 1); petal.position.set(Math.cos(a) * 0.25, Math.sin(a) * 0.25, 0.04); petal.rotation.z = a - Math.PI / 2;
+      g.add(petal);
+    }
+    const star = new THREE.Shape();
+    for (let k = 0; k < 16; k++) { const a = (k / 16) * Math.PI * 2, rr = k % 2 ? 0.07 : 0.15; star[k ? 'lineTo' : 'moveTo'](Math.cos(a) * rr, Math.sin(a) * rr); }
+    const st = new THREE.Mesh(new THREE.ShapeGeometry(star), glaze(0xf4f0e0));
+    st.position.z = 0.04; g.add(st);
   } else if (theme.id === 'seoul') {
     // A folding fan, open, its paper painted with plum blossom on bamboo
     // ribs, and a red tassel hanging from the pivot.

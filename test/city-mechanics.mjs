@@ -51,6 +51,7 @@ const SNAP = () => {
   const obs = tr.obstacles.map((o) => ({
     row: rowKey(o), lane: o.lane, kind: o.kind, mech: !!o.mech, cross: o.cross ?? 0,
     from: o.uFrom ?? null, to: o.uTo ?? null,
+    y1: o.y1, gate: o.gate || '',
     z: o.chunk.position.z + o.localZ,
   }));
   const coins = tr.coins.map((c) => ({ chunk: tr.chunks.indexOf(c.chunk), x: c.mesh.position.x, z: c.mesh.position.z,
@@ -436,6 +437,48 @@ async function watch(page, ms, shotName) {
   const snap2 = await again.page.evaluate(SNAP);
   const sig = (s) => JSON.stringify(s.obs.filter((o) => o.mech).map((o) => [o.row, o.lane]));
   check(sig(snap) === sig(snap2), 'the same seed deals the same crossings');
+  await again.ctx.close();
+}
+
+// ------------------------------------------------------------ Samarkand
+// Walls of tiled arches (AR_* in mechanics.js):
+//   - a wall is three arches, one per lane, alone in its row
+//   - at least one arch is open when you reach it (no hitbox), and the row's
+//     souvenirs lie only in an open one
+//   - an arch that closes is solid from the start; one that opens has no
+//     hitbox from the start; a switch always has one of each
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337, 2024]) {
+    ({ page, ctx, errors } = await open('samarkand', 3, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.some((o) => o.gate)) break;
+    await ctx.close();
+  }
+  const bays = snap.obs.filter((o) => o.mech);
+  check(bays.length > 0, 'Samarkand deals arch walls', `${bays.length / 3} walls, seed ${SEED}`);
+  let wallBad = 0, openBad = 0, coinBad = 0, gateBad = 0;
+  for (const row of new Set(bays.map((b) => b.row))) {
+    const inRow = snap.obs.filter((o) => o.row === row);
+    if (inRow.length !== 3 || inRow.some((o) => !o.mech) || new Set(inRow.map((o) => o.lane)).size !== 3) wallBad++;
+    const open = inRow.filter((o) => o.y1 < 0).map((o) => o.lane);
+    if (!open.length) openBad++;
+    const [ch, lz] = row.split(':').map(Number);
+    if (snap.coins.some((c) => c.chunk === ch && Math.abs(c.z - lz) < 0.1 && !open.some((l) => Math.abs(c.x - LANES[l]) < 0.2))) coinBad++;
+    const closes = inRow.filter((o) => o.gate === 'closes'), opens = inRow.filter((o) => o.gate === 'opens');
+    if (closes.length !== opens.length || closes.some((o) => o.y1 < 0) || opens.some((o) => o.y1 >= 0)) gateBad++;
+  }
+  check(wallBad === 0, 'an arch wall is three arches, alone in its row');
+  check(openBad === 0, 'at least one arch is open when you reach it');
+  check(coinBad === 0, 'souvenirs lie only in an open arch', `${coinBad} bad`);
+  check(gateBad === 0, 'a closing arch is solid from the start, an opening one never is');
+  check(bays.some((b) => b.gate), 'some walls switch their open arch on the last street');
+  check(!errors.length, 'Samarkand: no page errors', errors[0] || '');
+  await ctx.close();
+  const again = await open('samarkand', 3, SEED);
+  const snap2 = await again.page.evaluate(SNAP);
+  const sig = (s) => JSON.stringify(s.obs.filter((o) => o.mech).map((o) => [o.row, o.lane, o.y1, o.gate]));
+  check(sig(snap) === sig(snap2), 'the same seed deals the same arch walls');
   await again.ctx.close();
 }
 
