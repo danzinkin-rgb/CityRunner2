@@ -25,6 +25,7 @@ import { LANES } from './player.js';
 import {
   makeHandcart, makeAutoRickshaw, makeTukTuk, makeGustDust, makeMotorbike, makeTrainCar,
   makeCrowd, makeCrossing, makeArchBay, makeJutHouse, makeTricycle, makeWave, makeVehicle, makePullBlinker,
+  makeTramCar,
 } from '../cities/builders.js';
 
 // A move that takes a lane for a stretch (Hanoi's train, Zanzibar's narrow
@@ -297,11 +298,10 @@ const SWARM = {
   },
 };
 
-// ---- Hanoi, Train Street: the train ----------------------------------------
-// The railway runs down the left lane (lane 0), between the houses. Now and
-// then a train comes through: a locomotive and three carriages, a wall the
-// length of a city block, rushing at you faster than the rest of the
-// street. Its red lamps flash from TRAIN_WARN out.
+// ---- Trains and trams on rails: Hanoi's Train Street, Istanbul's trams -----
+// A rail lane runs down the street. Now and then a train comes through on
+// it, a wall several cars long, rushing at you faster than the rest of the
+// street, its red lamps flashing from RAIL_WARN out.
 //
 // It is drawn further away than where it will meet you and closes the gap
 // as it comes (at most RUSH_MAX metres), so it seems to come at you faster
@@ -312,38 +312,51 @@ const SWARM = {
 //   - every row alongside it, and up to HOLD_TAIL metres past its last
 //     car, has nothing in the rail lane and no souvenirs there, and always
 //     keeps one of the other two lanes completely empty (clearHeldLane)
-//   - only the rail lane: the train never leaves its rails
-const TRAIN_CHANCE = [0.12, 0.16, 0.2];      // share of rows, by street
-const TRAIN_CARS = 4, CAR_LEN = 6, RUSH = 0.35, RUSH_MAX = 30, TRAIN_WARN = 90;
-const TRAIN = {
+//   - only the rail lane: it never leaves its rails
+const RUSH = 0.35, RUSH_MAX = 30, RAIL_WARN = 90;
+function railMove({ lane, cars, carLen, chance, maker, hint }) {
+  const M = {
+    hint,
+    row({ level, rand, addObstacle, zRow, chunkLen, track, chunk }) {
+      if (zRow + cars * carLen > chunkLen - 2) return null;
+      if (rand() >= chance[level - 1]) return null;
+      let head = null;
+      for (let k = 0; k < cars; k++) {
+        const r = addObstacle(lane, 'full', { mesh: maker(k === 0), y0: 0, y1: 3.2, halfLen: 2.6, dz: k * carLen });
+        r.mech = M;
+        r.loco = k === 0;
+        if (!head) head = r;
+      }
+      track.laneHold = { chunk, from: zRow, to: zRow + cars * carLen, lane };
+      return head;
+    },
+    settle() {},
+    after: clearHeldLane,
+    move(o, ahead) {
+      const off = Math.min(RUSH_MAX, Math.max(0, ahead) * RUSH);
+      o.mesh.position.z = o.localZ - off;
+      const warn = ahead <= RAIL_WARN && ahead > -4;
+      if (o.loco) {
+        const L = o.mesh.userData.lamps;
+        const on = warn && Math.floor(ahead / 3) % 2 === 0;
+        for (const l of L.lamps) l.material = on ? L.on : L.off;
+      }
+      return o.loco && warn && ahead > 0;
+    },
+  };
+  return M;
+}
+// Hanoi's Train Street: a locomotive and three carriages in the left lane.
+const TRAIN = railMove({
+  lane: 0, cars: 4, carLen: 6, chance: [0.12, 0.16, 0.2], maker: makeTrainCar,
   hint: 'Train coming! Keep out of the rail lane.',
-  row({ level, rand, addObstacle, zRow, chunkLen, track, chunk }) {
-    if (zRow + TRAIN_CARS * CAR_LEN > chunkLen - 2) return null;
-    if (rand() >= TRAIN_CHANCE[level - 1]) return null;
-    let head = null;
-    for (let k = 0; k < TRAIN_CARS; k++) {
-      const r = addObstacle(0, 'full', { mesh: makeTrainCar(k === 0), y0: 0, y1: 3.2, halfLen: 2.6, dz: k * CAR_LEN });
-      r.mech = TRAIN;
-      r.loco = k === 0;
-      if (!head) head = r;
-    }
-    track.laneHold = { chunk, from: zRow, to: zRow + TRAIN_CARS * CAR_LEN, lane: 0 };
-    return head;
-  },
-  settle() {},
-  after: clearHeldLane,
-  move(o, ahead) {
-    const off = Math.min(RUSH_MAX, Math.max(0, ahead) * RUSH);
-    o.mesh.position.z = o.localZ - off;
-    const warn = ahead <= TRAIN_WARN && ahead > -4;
-    if (o.loco) {
-      const L = o.mesh.userData.lamps;
-      const on = warn && Math.floor(ahead / 3) % 2 === 0;
-      for (const l of L.lamps) l.material = on ? L.on : L.off;
-    }
-    return o.loco && warn && ahead > 0;
-  },
-};
+});
+// Istanbul: the tram down the middle of İstiklal and of Divanyolu, two
+// cars long, in the middle lane.
+const TRAM = railMove({
+  lane: 1, cars: 2, carLen: 6.5, chance: [0.12, 0.16, 0.2], maker: (front) => makeTramCar(front),
+  hint: 'Tram coming down the middle! Keep off the rails.',
+});
 
 // ---- Seoul: crowds at the crossing -------------------------------------------
 // A zebra crossing with a walk signal at the kerb. As you come up to it the
@@ -619,6 +632,7 @@ const PULLOUT = {
 };
 
 export const MECHANICS = {
+  tram: TRAM,
   waves: WAVES,
   pullout: PULLOUT,
   tricycle: TRIKE,

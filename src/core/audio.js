@@ -164,6 +164,7 @@ const SCALES = {
   sf: [0, 2, 4, 7, 11],   // major with a raised seventh: bright, a little wistful
   jerusalem: [0, 1, 4, 5, 7],   // a semitone then a third up: the scale heard across the region
   mexico: [0, 4, 7, 9, 12],     // bright major, mariachi-like
+  istanbul: [0, 1, 4, 5, 7],     // a hijaz colour: a lowered second, a raised third
   havana: [0, 2, 4, 7, 9],       // major pentatonic, the bright side of son
   beijing: [0, 2, 4, 7, 9],      // the five-note gong scale of Chinese music
   zanzibar: [0, 2, 3, 7, 9],     // the minor-leaning modes heard in taarab music

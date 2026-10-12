@@ -347,6 +347,28 @@ export const STREET_FACTS = {
         { text: 'The lions were cast in 1928 from the metal of old cannons.' },
       ] },
   ],
+  // Istanbul: DRAFT, awaiting Dan's sign-off (docs/ISTANBUL-FACTS-DRAFT.md,
+  // sources listed there).
+  istanbul: [
+    { street: 'İstiklal Avenue', tag: 'The tram street',
+      facts: [
+        { big: '1.4', unit: 'km', label: 'long', text: 'İstiklal Avenue runs about 1.4 kilometres, from Taksim Square down to Tünel.' },
+        { big: '1871', label: 'first trams', text: 'Trams have run along here since 1871, pulled by horses until electric trams came in 1914.' },
+        { text: 'Today a little red heritage tram still rattles down the middle of the street.' },
+      ] },
+    { street: 'Grand Bazaar', tag: 'A city under one roof',
+      facts: [
+        { big: '1455', label: 'begun', text: 'Sultan Mehmed II began the Grand Bazaar around 1455.' },
+        { big: '61', unit: 'streets', label: 'under its roofs', text: 'About 61 covered streets run through it, lined with thousands of shops.' },
+        { text: 'In 1890 a count found 4,399 shops at work here.' },
+      ] },
+    { street: 'Divanyolu', tag: 'The road to the council',
+      facts: [
+        { text: 'Divanyolu follows the Mese, the main street laid out by Emperor Constantine in the 300s.' },
+        { text: 'Under the Ottomans it led to the Divan, the imperial council at Topkapı Palace, and that gave it its name.' },
+        { text: 'At its start stood the Milion, the marker from which distances across the empire were measured.' },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -489,6 +511,29 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Istanbul: DRAFT, awaiting Dan's sign-off (docs/ISTANBUL-FACTS-DRAFT.md).
+  // 66.9 m to the tip of its cap (en.wikipedia.org/wiki/Galata_Tower)
+  galata: { scale: 66.9, compare: 'bus',
+    facts: [
+      { big: '67', unit: 'm', label: 'to the tip', text: 'The tower stands about 67 metres to the tip of its cap.' },
+      { big: '1348', label: 'built', text: 'Genoese merchants built it in 1348, and called it the Tower of Christ.' },
+      { text: 'A storm blew its cap off in 1875. The pointed cap was put back when the tower was restored in the 1960s.' },
+    ] },
+  // altitude: Istanbul stands about 39 m above sea level
+  // (worldatlas.com/eu/tr/34/where-is-istanbul.html). No sourced height.
+  bluemosque: { altitude: 39,
+    facts: [
+      { big: '1616', label: 'completed', text: 'Built from 1609 to 1616 for Sultan Ahmed I, it is still a working mosque.' },
+      { big: '6', unit: 'minarets', label: 'around it', text: 'It has six minarets, which was very unusual when it was built.' },
+      { big: '20,000', unit: 'tiles', label: 'inside', text: 'More than 20,000 hand-painted tiles from İznik line its walls inside, many of them blue: that is how it got its nickname.' },
+    ] },
+  // 55 m to the top of the dome (en.wikipedia.org/wiki/Hagia_Sophia)
+  hagiasophia: { scale: 55, compare: 'bus',
+    facts: [
+      { big: '537', label: 'completed', text: 'It was completed in 537, after less than six years of building.' },
+      { big: '55', unit: 'm', label: 'to the dome', text: 'Its great dome rises about 55 metres above the floor.' },
+      { text: 'Built as a cathedral, it became a mosque in 1453, a museum in 1934, and a mosque again in 2020.' },
     ] },
   // Havana: DRAFT, awaiting Dan's sign-off (docs/HAVANA-FACTS-DRAFT.md).
   // altitude: Havana stands 59 m above sea level (en.wikipedia.org/wiki/

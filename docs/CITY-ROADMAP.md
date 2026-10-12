@@ -105,17 +105,64 @@ A Sydney built on the **Harbour Bridge (1932)**, Queen Victoria Building and Bon
 
 ---
 
+## Thirteen more cities (12 October 2026)
+
+Dan asked for more cities, light on Europe and heavier on Asia and Africa,
+grouped by region so they could later be sold as region packs, and each
+with a move of its own, in the way Rome has its signalling Vespas. All
+thirteen are built and in the release queue behind Mexico City
+(`docs/RELEASES.md`). Each city has a `region` in `themes.js` (`REGIONS`
+lists them); packs themselves are not built, and how they would sit beside
+the Founder and Unlock purchases is still Dan's decision.
+
+| # | City | Region | Monuments (street 1, 2, 3) | Its move |
+|---|---|---|---|---|
+| 1 | Marrakech | Middle East and Africa | Koutoubia Minaret, Bab Agnaou, Ben Youssef Madrasa | Porters' handcarts cross the road |
+| 2 | Delhi | Asia | Red Fort (Lahori Gate), Qutub Minar, India Gate | Rickshaws drive on ahead, then brake hard |
+| 3 | Bangkok | Asia | Giant Swing, Wat Arun, Chakri Maha Prasat | Tuk-tuks U-turn across one or two lanes |
+| 4 | Cape Town | Middle East and Africa | Waterfront Clock Tower, Castle of Good Hope, City Hall | Wind gusts push you a lane, never into anything |
+| 5 | Hanoi | Asia | Turtle Tower, Long Bien Bridge, Temple of Literature | Motorbikes swerve in pairs; a train on Train Street |
+| 6 | Seoul | Asia | Heunginjimun, Gyeonghoeru Pavilion, Geunjeongjeon | A crowd crosses when the countdown ends |
+| 7 | Zanzibar | Middle East and Africa | Old Fort, Christ Church Cathedral, House of Wonders | Houses jut out: the street narrows to two lanes |
+| 8 | Samarkand | Asia | Ulugh Beg Observatory, Gur-e-Amir, the Registan | Walls of tiled arches; the open arch switches |
+| 9 | Beijing | Asia | Drum Tower, Hall of Prayer for Good Harvests, Hall of Supreme Harmony | Tricycles: jump the low loads, go round the tall |
+| 10 | Havana | Latin America | Castillo de la Real Fuerza, Havana Cathedral, Morro Castle | Waves over the sea wall; old cars pull out |
+| 11 | Istanbul | Europe | Galata Tower, Blue Mosque, Hagia Sophia | The tram down the middle; porters in the bazaar |
+| 12 | Chicago | North America | Water Tower, Buckingham Fountain, Willis Tower | Bascule bridges lift: jump the edge; cabs pull out |
+| 13 | Buenos Aires | Latin America | Casa Rosada, Teatro Colón, Palace of the Congress | Buses pull out from their stops |
+
+Every move lives in `src/run/mechanics.js` and is gated by
+`test/city-mechanics.mjs`: each one is driven by the seed, warns before it
+happens, keeps a lane open, and runs only in its own city, so the existing
+courses (and the determinism fingerprint) do not change. Monuments get more
+pieces street by street (about 12, 18 and 24), on top of main's general
+puzzle tuning.
+
+**Monuments swapped from the first plan**, all on copyright grounds:
+
+- **One Pillar Pagoda → Long Bien Bridge** (Hanoi): the pagoda standing is a 1955 rebuild by an architect who died this century; Vietnam is life + 50.
+- **Sungnyemun → Gyeonghoeru Pavilion** (Seoul): Sungnyemun was rebuilt in 2013, and three gates would look alike.
+- **Bibi-Khanym Mosque → Ulugh Beg Observatory** (Samarkand): largely reconstructed from 1974.
+- **El Capitolio → Castillo de la Real Fuerza** (Havana): a joint work protected until 50 years after its last author's death, and not every co-author's death date could be confirmed.
+
+**Still to check:** Cape Town City Hall's architects (Reid and Green, 1890s competition): their death dates were not found; South Africa is life + 50, so it would take one living past 1975.
+
+**Left out of every skyline and street:** Buenos Aires' Obelisco (to 2041), N Seoul Tower, Tiananmen Square, the Bean and other recent sculptures, and the bronze sea horses of Buckingham Fountain.
+
+---
+
 ## Balance check
 
 | Region | Cities |
 |---|---|
-| Europe | Paris, London, Rome *(already 3 of 4)* |
-| North America | New York, **San Francisco** |
-| Asia | **Kyoto** |
-| Latin America | **Mexico City** |
-| Middle East | **Jerusalem** |
+| North America | New York, San Francisco, Chicago |
+| Latin America | Mexico City, Havana, Buenos Aires |
+| Europe | Paris, London, Rome, Istanbul |
+| Middle East and Africa | Jerusalem, Marrakech, Cape Town, Zanzibar |
+| Asia | Delhi, Bangkok, Hanoi, Seoul, Samarkand, Beijing *(Kyoto parked)* |
 
-That lands at **8 cities, 24 streets, 24 monuments**, with Europe down from 75% to 38% of the roster.
+That makes **20 cities, 60 streets, 60 monuments**, with Europe at 20% of
+the roster and Asia, Africa and the Middle East together at 50%.
 
 ---
 

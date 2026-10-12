@@ -1765,6 +1765,81 @@ const defs = {
     B([7.5, 14.9, 4.5], [1.4, 1.4, 1.4], '#fff2c0', 'cyl', { glass: 1, em: '#ffe090', emI: 1.2 }),
     B([7.5, 16.0, 4.5], [1.7, 0.9, 1.7], '#3a3a40', 'dome', { metal: 1 }),
   ],
+  // ================= ISTANBUL =================
+  // Hagia Sophia (537), the Blue Mosque (1609-16) and the Galata Tower
+  // (1348; its cap rebuilt in the 1960s to the old shape) are long out of
+  // copyright. Both mosques are places of worship today: shown as
+  // buildings, from outside.
+
+  // The Galata Tower: a round stone tower on the hill above the Golden
+  // Horn, a gallery ringed with arched windows near the top, and a tall
+  // conical cap. Street 1: about a dozen pieces.
+  galata: [
+    B([0, 0.4, 0], [14, 0.8, 12], '#8a8070', 'box', { tex: 'stone' }),
+    B([-5, 2.4, -3], [3.6, 3.6, 4], '#d8c4a4', 'box', { tex: 'win', tx: { cols: 2, rows: 1 } }),   // houses below it
+    B([5, 2.0, 3], [3.4, 2.8, 4], '#c8b8a0', 'box', { tex: 'win', tx: { cols: 2, rows: 1 } }),
+    B([0, 2.6, 0], [5.6, 3.6, 5.6], '#a89880', 'cyl', { tex: 'stone', tx: { rough: 1 } }),
+    B([0, 6.2, 0], [5.4, 3.6, 5.4], '#ac9c84', 'cyl', { tex: 'stone' }),
+    B([0, 9.8, 0], [5.2, 3.6, 5.2], '#b0a088', 'cyl', { tex: 'stone' }),
+    B([0, 13.4, 0], [5.0, 3.6, 5.0], '#b4a48c', 'cyl', { tex: 'stone' }),
+    B([0, 15.5, 0], [6.0, 0.4, 6.0], '#8a7a66', 'cyl'),                                     // the gallery floor
+    B([0, 16.9, 0], [4.8, 2.4, 4.8], '#c8b898', 'cyl', { tex: 'arch', tx: { n: 8 } }),
+    B([0, 18.3, 0], [6.0, 0.24, 0.24], '#3a3a40', 'torus', { rotX: Math.PI / 2, metal: 1 }),   // the gallery rail
+    B([0, 20.6, 0], [5.4, 4.4, 0.1], '#5a5e66', 'tier'),                                   // the conical cap
+    B([0, 23.2, 0], [0.3, 1.0, 0.3], '#d8b04a', 'cyl', { metal: 1 }),
+  ],
+
+  // The Blue Mosque (Sultan Ahmed Mosque): a square hall under a central
+  // dome and a cascade of half-domes and smaller domes, six slender
+  // minarets with balconies, and the arcaded courtyard in front.
+  // Street 2: about eighteen pieces.
+  bluemosque: [
+    B([0, 0.2, 0], [26, 0.4, 26], '#a8a49c', 'box', { tex: 'stone' }),
+    B([0, 3.0, -2], [14, 5.2, 14], '#cac6be', 'box', { tex: 'arch', tx: { n: 6 } }),
+    ...[[0, 4], [0, -8], [6, -2], [-6, -2]].map(([x, z]) => B([x, 6.0, z], [6.4, 2.4, 6.4], '#8a909a', 'dome')),   // half-domes
+    B([0, 7.4, -2], [8.6, 2.0, 8.6], '#cac6be', 'cyl', { tex: 'win', tx: { cols: 16, rows: 1, lit: '#f2d8a0' } }),
+    B([0, 8.4, -2], [9.6, 5.4, 9.6], '#8a909a', 'dome'),
+    B([0, 14.4, -2], [0.3, 1.4, 0.3], '#d8b04a', 'cyl', { metal: 1 }),
+    ...[[-8, 6], [8, 6], [-8, -10], [8, -10], [-11.5, 8.5], [11.5, 8.5]].map(([x, z]) => B([x, 7.6, z], [1.0, 15.2, 1.0], '#d6d2ca', 'cyl', {   // minarets
+      adorn: [
+        B([0, 1.2, 0], [1.6, 0.3, 1.6], '#c4c0b8', 'cyl'), B([0, 4.0, 0], [1.6, 0.3, 1.6], '#c4c0b8', 'cyl'),
+        B([0, 7.2, 0], [1.1, 1.6, 1.1], '#7a808a', 'cone4'),
+      ],
+    })),
+    B([-6.5, 2.0, 9.5], [6, 3.2, 1.6], '#cac6be', 'colonnade', { cols: 5 }),                // the courtyard arcades
+    B([6.5, 2.0, 9.5], [6, 3.2, 1.6], '#cac6be', 'colonnade', { cols: 5 }),
+    B([0, 3.0, 10.0], [4.4, 5.6, 1.4], '#d0ccc4', 'extrude', {                             // the courtyard gate
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.12, w: 0.5, h: 0.62, arch: 'pointed' }],
+    }),
+  ],
+
+  // Hagia Sophia: a huge block of pinkish stone and brick held up by heavy
+  // buttresses, the vast shallow dome on its ring of windows, half-domes
+  // east and west, and the four minarets at its corners.
+  // Street 3: about two dozen pieces.
+  hagiasophia: [
+    B([0, 0.2, 0], [30, 0.4, 28], '#a8a094', 'box', { tex: 'stone' }),
+    B([-4, 3.6, 0], [8, 6.4, 16], '#d8a07a', 'box', { tex: 'arch', tx: { n: 4 } }),
+    B([4, 3.6, 0], [8, 6.4, 16], '#d4a078', 'box', { tex: 'arch', tx: { n: 4 } }),
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) => B([sx * 8.6, 4.4, sz * 5.6], [2.4, 8.0, 3.0], '#cc9670', 'box', { tex: 'stone' })),   // buttresses
+    B([0, 8.6, 0], [10, 2.0, 10], '#d8a47e', 'box'),
+    B([0, 7.6, 6.0], [8.4, 3.4, 8.4], '#7a8088', 'dome'),                                  // half-domes, west and east
+    B([0, 7.6, -6.0], [8.4, 3.4, 8.4], '#7a8088', 'dome'),
+    B([0, 10.3, 0], [9.0, 1.4, 9.0], '#d8a47e', 'cyl', { tex: 'win', tx: { cols: 20, rows: 1, lit: '#f2d8a0' } }),   // the ring of windows
+    B([0, 11.0, 0], [10.4, 4.0, 10.4], '#7a8088', 'dome'),                                 // the great dome
+    B([0, 15.3, 0], [0.3, 1.2, 0.3], '#d8b04a', 'cyl', { metal: 1 }),
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].flatMap(([sx, sz]) => [
+      B([sx * 12, 5.0, sz * 10], [1.2, 10, 1.2], sx * sz > 0 ? '#d6d2ca' : '#d0a080', 'cyl'),   // minarets, two of stone and two of brick
+      B([sx * 12, 12.0, sz * 10], [1.0, 4.0, 1.0], '#d6d2ca', 'cyl', {
+        adorn: [B([0, -1.2, 0], [1.6, 0.3, 1.6], '#c4c0b8', 'cyl'), B([0, 2.6, 0], [1.0, 1.4, 1.0], '#7a8088', 'cone4')],
+      }),
+    ]),
+    B([0, 2.6, 9.5], [14, 4.4, 3], '#d4a078', 'box', { tex: 'arch', tx: { n: 7 } }),        // the porch
+    ...[[-10, -9], [10, -9]].map(([x, z]) => B([x, 2.2, z], [4, 3.6, 4], '#cac6be', 'box', {   // tombs in the grounds
+      adorn: [B([0, 1.8, 0], [3.6, 2.0, 3.6], '#7a8088', 'dome')],
+    })),
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }

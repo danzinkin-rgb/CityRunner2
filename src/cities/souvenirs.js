@@ -136,6 +136,23 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'istanbul') {
+    // A tulip-shaped glass of tea on its little red saucer.
+    const glass = new THREE.Mesh(new THREE.LatheGeometry([
+      [0.11, -0.2], [0.09, -0.12], [0.08, -0.02], [0.1, 0.1], [0.14, 0.2], [0.15, 0.22],
+    ].map(([x, y]) => new THREE.Vector2(x, y)), 20),
+      new THREE.MeshStandardMaterial({ color: 0xf0f6fa, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.45, side: THREE.DoubleSide }));
+    g.add(glass);
+    const tea = new THREE.Mesh(new THREE.LatheGeometry([
+      [0.001, -0.19], [0.1, -0.19], [0.085, -0.1], [0.075, -0.02], [0.095, 0.1], [0.128, 0.17], [0.001, 0.17],
+    ].map(([x, y]) => new THREE.Vector2(x, y)), 20),
+      new THREE.MeshStandardMaterial({ color: 0xa8301a, roughness: 0.2, emissive: 0x5a1a08, emissiveIntensity: 0.4 }));
+    g.add(tea);
+    const saucer = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.04, 24),
+      new THREE.MeshStandardMaterial({ color: 0xc8202a, roughness: 0.3, emissive: 0x5a0a0a, emissiveIntensity: 0.3 }));
+    saucer.position.y = -0.23; g.add(saucer);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.012, 6, 28), new THREE.MeshStandardMaterial({ color: 0xe8c060, metalness: 0.7, roughness: 0.3 }));
+    rim.rotation.x = Math.PI / 2; rim.position.y = -0.21; g.add(rim);
   } else if (theme.id === 'havana') {
     // A pair of maracas, crossed: round gourd heads painted in bright
     // stripes, on wooden handles.

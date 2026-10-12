@@ -28,6 +28,7 @@ const CITY_OF = {
   oldfort: 'zanzibar', christchurch: 'zanzibar', wonders: 'zanzibar',
   drumtower: 'beijing', qiniandian: 'beijing', taihedian: 'beijing',
   realfuerza: 'havana', habanacathedral: 'havana', morro: 'havana',
+  galata: 'istanbul', bluemosque: 'istanbul', hagiasophia: 'istanbul',
 };
 // Plaza floors deliberately contrast their monuments. Every landmark in the
 // game is a warm stone/limestone/bronze hero, and every city theme lights the
@@ -56,6 +57,7 @@ const PLAZA = {
   zanzibar: { stone: '#5c6a78', dark: '#445260', trim: '#8a9aac', ground: '#2a323c', sky: '#2a4a70' },
   beijing: { stone: '#626876', dark: '#4a505e', trim: '#9098a8', ground: '#2e323e', sky: '#34466a' },
   havana: { stone: '#5e6878', dark: '#465060', trim: '#8c98aa', ground: '#2c323e', sky: '#2e486e' },
+  istanbul: { stone: '#606878', dark: '#485060', trim: '#8e98aa', ground: '#2e323e', sky: '#32466c' },
 };
 
 // Painted-panorama palette. Near layer is the darker, more saturated band the
@@ -78,6 +80,7 @@ const SKYPAL = {
   zanzibar: { near: '#4a5058', far: '#7a8488', trim: '#5a6066', roof: '#3a3a3a', win: '255,220,170', accent: '#2a8aa8' },
   beijing: { near: '#44444a', far: '#727278', trim: '#55555c', roof: '#2e2e34', win: '255,214,150', accent: '#c8202a' },
   havana: { near: '#5a4a50', far: '#86727a', trim: '#6a5660', roof: '#4a3a3a', win: '255,214,150', accent: '#3ab0c8' },
+  istanbul: { near: '#4a4256', far: '#76708a', trim: '#5a5266', roof: '#3a3644', win: '255,214,150', accent: '#c8202a' },
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 

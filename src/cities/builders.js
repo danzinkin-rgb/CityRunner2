@@ -2200,6 +2200,7 @@ const ADS = {
   zanzibar: ['SPICES', 'KANGA', 'COFFEE', 'TOURS'],
   beijing: ['TEA', 'DUMPLINGS', 'NOODLES', 'BOOKS'],
   havana: ['CAFÉ', 'MUSIC', 'BOOKS', 'ICE CREAM'],
+  istanbul: ['SIMIT', 'TEA', 'BOOKS', 'LOKUM'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -3432,6 +3433,46 @@ export function makeMotorbike(signal = false) {
   return g;
 }
 
+// Istanbul's tram: a car of the old red-and-cream tram, with its trolley
+// pole up to the wire. A wall (3.2 m). The front car carries two big
+// lamps that flash as it comes.
+export function makeTramCar(front = false) {
+  const g = new THREE.Group();
+  const red = cached('mat:tramRed', () => new THREE.MeshStandardMaterial({ color: 0xc8202a, roughness: 0.4, metalness: 0.15 }));
+  const cream = cached('mat:tramCream', () => new THREE.MeshStandardMaterial({ color: 0xf2e8d0, roughness: 0.5 }));
+  const body = new THREE.Mesh(boxGeo, red);
+  body.scale.set(2.2, 1.6, 5.8); body.position.y = 1.2; body.castShadow = true; g.add(body);
+  const upper = new THREE.Mesh(boxGeo, cream);
+  upper.scale.set(2.2, 1.1, 5.8); upper.position.y = 2.55; g.add(upper);
+  const glassM = cached('mat:carGlass', () => new THREE.MeshStandardMaterial({ color: 0xa8d0ec, roughness: 0.12, metalness: 0.5 }));
+  for (const sx of [-1, 1]) {
+    const win = new THREE.Mesh(boxGeo, glassM);
+    win.scale.set(0.04, 0.7, 4.8); win.position.set(sx * 1.11, 2.55, 0); g.add(win);
+  }
+  const roof = new THREE.Mesh(boxGeo, red);
+  roof.scale.set(2.0, 0.2, 5.6); roof.position.y = 3.2; g.add(roof);
+  const pole = new THREE.Mesh(boxGeo, mats.black);
+  pole.scale.set(0.05, 0.05, 3.0); pole.position.set(0, 4.0, -0.6); pole.rotation.x = 0.5; g.add(pole);
+  const tyre = cached('mat:tyre', () => new THREE.MeshStandardMaterial({ color: 0x14141a, roughness: 0.8 }));
+  for (const z of [-1.9, 1.9]) for (const x of [-0.5, 0.5]) {
+    const w = new THREE.Mesh(wheelGeo, tyre);
+    w.rotation.z = Math.PI / 2; w.position.set(x, 0.35, z); g.add(w);
+  }
+  if (front) {
+    const screen = new THREE.Mesh(boxGeo, glassM);
+    screen.scale.set(1.8, 0.8, 0.06); screen.position.set(0, 2.55, 2.92); g.add(screen);
+    const off = cached('mat:trainLampOff', () => new THREE.MeshStandardMaterial({ color: 0x5a1010, roughness: 0.4 }));
+    const on = cached('mat:trainLampOn', () => new THREE.MeshStandardMaterial({ color: 0xff3030, emissive: 0xff1a1a, emissiveIntensity: 3.2 }));
+    const lamps = [];
+    for (const x of [-0.7, 0.7]) {
+      const l = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), off);
+      l.position.set(x, 1.1, 2.94); g.add(l); lamps.push(l);
+    }
+    g.userData.lamps = { lamps, off, on };
+  }
+  return g;
+}
+
 // Havana's old cars: long, rounded 1950s shapes with tail fins and plenty
 // of chrome, in bright two-tone paint. Generic: no make's grille, badge or
 // name. A car, low enough to jump. Faces the player.
@@ -4508,6 +4549,7 @@ const SIL_TINT = {
   zanzibar: '#4a5a64',   // white stone town, palms and minarets against the sea haze
   beijing: '#4a4a52',    // grey roofs and the curved eaves of the old towers
   havana: '#5a4a52',     // faded pastel blocks and the fortress over the harbour
+  istanbul: '#4a4256',   // domes and minarets against the evening haze
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
@@ -4668,6 +4710,27 @@ function skylineTexture(theme) {
           g.fill();
         }
         x += bw + 1;
+      }
+    } else if (theme.id === 'istanbul') {
+      // The old city's skyline from the water: hills of houses, and on them
+      // great domes, each ringed by its pencil-thin minarets.
+      g.fillStyle = dark(0.16);
+      g.beginPath(); g.moveTo(0, GY - 30); g.quadraticCurveTo(500, GY - 80, 900, GY - 50); g.quadraticCurveTo(1300, GY - 24, 1600, GY - 40); g.lineTo(1600, GY); g.lineTo(0, GY); g.fill();
+      for (let x = 0, i = 0; x < 1600; i++) {
+        const bw = 22 + (i * 13) % 20, bh = 30 + (i * 7) % 26;
+        box(x, bw, bh, 0.2);
+        x += bw + 2;
+      }
+      for (const [cx, r, n] of [[340, 40, 4], [820, 52, 6], [1260, 36, 2]]) {
+        g.fillStyle = dark(0.32);
+        g.fillRect(cx - r * 1.4, GY - 70, r * 2.8, 40);
+        g.beginPath(); g.ellipse(cx, GY - 70, r, r * 0.9, 0, Math.PI, 0); g.fill();
+        for (const s of [-1, 1]) { g.beginPath(); g.ellipse(cx + s * r * 0.95, GY - 70, r * 0.45, r * 0.4, 0, Math.PI, 0); g.fill(); }
+        for (let k = 0; k < n; k++) {
+          const x = cx - r * 1.9 + (k / Math.max(1, n - 1)) * r * 3.8;
+          g.fillRect(x - 3, GY - 70 - r * 2.2, 6, r * 2.2);
+          g.beginPath(); g.moveTo(x - 4, GY - 70 - r * 2.2); g.lineTo(x, GY - 70 - r * 2.6); g.lineTo(x + 4, GY - 70 - r * 2.2); g.fill();
+        }
       }
     } else if (theme.id === 'havana') {
       // Old Havana's skyline: low pastel blocks, church towers and domes,
@@ -4988,6 +5051,34 @@ export function makeCameo(theme) {
       g.fillRect(cx + 50, GY - 196, 40, 50);                         // the tower
       g.fillStyle = light(0.2);
       for (let x = cx - 140; x < cx + 140; x += 16) g.fillRect(x, GY - 138, 7, 12);   // the gallery
+    } else if (key === 'galatacameo') {
+      // The Galata Tower at the far end of İstiklal, over the rooftops:
+      // the round stone shaft, its gallery and the tall conical cap.
+      g.fillStyle = dark(0.24);
+      for (const [ox, w, h] of [[-420, 140, 80], [-260, 120, 96], [150, 130, 90], [300, 160, 76]]) g.fillRect(cx + ox, GY - h, w, h);
+      g.fillStyle = dark(0.36);
+      g.fillRect(cx - 40, GY - 250, 80, 250);
+      g.fillRect(cx - 48, GY - 270, 96, 20);
+      g.fillStyle = light(0.3);
+      for (let x = cx - 44; x < cx + 44; x += 12) g.fillRect(x, GY - 266, 6, 12);
+      g.fillStyle = dark(0.4);
+      g.beginPath(); g.moveTo(cx - 46, GY - 270); g.lineTo(cx, GY - 360); g.lineTo(cx + 46, GY - 270); g.fill();
+    } else if (key === 'domes') {
+      // Sultanahmet ahead: the Blue Mosque's cascade of domes and its six
+      // minarets, and beyond it Hagia Sophia's great flattened dome.
+      g.fillStyle = dark(0.26);
+      g.fillRect(cx - 470, GY - 60, 940, 60);
+      g.fillStyle = dark(0.34);
+      g.fillRect(cx - 160, GY - 140, 320, 80);
+      g.beginPath(); g.ellipse(cx, GY - 140, 110, 90, 0, Math.PI, 0); g.fill();
+      for (const s of [-1, 1]) { g.beginPath(); g.ellipse(cx + s * 120, GY - 140, 54, 46, 0, Math.PI, 0); g.fill(); }
+      for (const x of [-250, -190, -150, 150, 190, 250]) {
+        g.fillRect(cx + x - 4, GY - 330, 8, 270);
+        g.beginPath(); g.moveTo(cx + x - 6, GY - 330); g.lineTo(cx + x, GY - 360); g.lineTo(cx + x + 6, GY - 330); g.fill();
+      }
+      g.fillStyle = dark(0.22);
+      g.fillRect(cx + 300, GY - 120, 160, 60);
+      g.beginPath(); g.ellipse(cx + 380, GY - 120, 70, 44, 0, Math.PI, 0); g.fill();
     } else if (key === 'morro') {
       // Morro Castle across the harbour mouth: the long fortress walls on
       // their rock, and the lighthouse rising from the point.

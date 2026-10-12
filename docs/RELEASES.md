@@ -54,10 +54,28 @@ as they merge, and a city when it is released.
 
 ## Queue
 
-| Order | City | Status |
-|---|---|---|
-| 1 | Jerusalem | Built; facts approved; needs its Game Center items |
-| 2 | Mexico City | Built; facts approved; needs its Game Center items |
+| Order | City | Region | Status | Game Center items to create |
+|---|---|---|---|---|
+| 1 | Jerusalem | Middle East and Africa | Built; facts approved | `…leaderboard.jerusalem`, `…achievement.city.jerusalem` |
+| 2 | Mexico City | Latin America | Built; facts approved | `…leaderboard.mexico`, `…achievement.city.mexico` |
+| 3 | Marrakech | Middle East and Africa | Built; facts DRAFT (`docs/MARRAKECH-FACTS-DRAFT.md`) | `…leaderboard.marrakech`, `…achievement.city.marrakech` |
+| 4 | Delhi | Asia | Built; facts DRAFT (`docs/DELHI-FACTS-DRAFT.md`) | `…leaderboard.delhi`, `…achievement.city.delhi` |
+| 5 | Bangkok | Asia | Built; facts DRAFT (`docs/BANGKOK-FACTS-DRAFT.md`) | `…leaderboard.bangkok`, `…achievement.city.bangkok` |
+| 6 | Cape Town | Middle East and Africa | Built; facts DRAFT (`docs/CAPE-TOWN-FACTS-DRAFT.md`) | `…leaderboard.capetown`, `…achievement.city.capetown` |
+| 7 | Hanoi | Asia | Built; facts DRAFT (`docs/HANOI-FACTS-DRAFT.md`) | `…leaderboard.hanoi`, `…achievement.city.hanoi` |
+| 8 | Seoul | Asia | Built; facts DRAFT (`docs/SEOUL-FACTS-DRAFT.md`) | `…leaderboard.seoul`, `…achievement.city.seoul` |
+| 9 | Zanzibar | Middle East and Africa | Built; facts DRAFT (`docs/ZANZIBAR-FACTS-DRAFT.md`) | `…leaderboard.zanzibar`, `…achievement.city.zanzibar` |
+| 10 | Samarkand | Asia | Built; facts DRAFT (`docs/SAMARKAND-FACTS-DRAFT.md`) | `…leaderboard.samarkand`, `…achievement.city.samarkand` |
+| 11 | Beijing | Asia | Built; facts DRAFT (`docs/BEIJING-FACTS-DRAFT.md`) | `…leaderboard.beijing`, `…achievement.city.beijing` |
+| 12 | Havana | Latin America | Built; facts DRAFT (`docs/HAVANA-FACTS-DRAFT.md`) | `…leaderboard.havana`, `…achievement.city.havana` |
+| 13 | Istanbul | Europe | Built; facts DRAFT (`docs/ISTANBUL-FACTS-DRAFT.md`) | `…leaderboard.istanbul`, `…achievement.city.istanbul` |
+| 14 | Chicago | North America | Built; facts DRAFT (`docs/CHICAGO-FACTS-DRAFT.md`) | `…leaderboard.chicago`, `…achievement.city.chicago` |
+| 15 | Buenos Aires | Latin America | Built; facts DRAFT (`docs/BUENOS-AIRES-FACTS-DRAFT.md`) | `…leaderboard.buenosaires`, `…achievement.city.buenosaires` |
+
+`…` is `uk.co.zinkin.cityrunner`. Each city's own move (the "Rome Vespa" of
+that city) is listed in `docs/CITY-ROADMAP.md`. Every city after Mexico
+City needs Dan's sign-off on its facts draft before it ships; each draft
+lists what is left to check.
 
 Kyoto is parked (`docs/CITY-ROADMAP.md`).
 

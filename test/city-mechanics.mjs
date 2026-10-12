@@ -613,6 +613,46 @@ async function watch(page, ms, shotName) {
   await ctx.close();
 }
 
+// ------------------------------------------------------------ Istanbul
+// The tram down the middle of İstiklal (railMove in mechanics.js, as Hanoi's
+// train):
+//   - two cars nose to tail in the middle lane, inside one chunk
+//   - rows beside it keep out of the middle lane, no souvenirs there, and
+//     keep another lane completely empty
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337, 2024, 5]) {
+    ({ page, ctx, errors } = await open('istanbul', 1, SEED));
+    snap = await page.evaluate(() => {
+      const tr = window.__cr.track;
+      const cars = tr.obstacles.filter((o) => o.mech).map((o) => ({ chunk: tr.chunks.indexOf(o.chunk), z: o.localZ, lane: tr.laneAtArrival(o), loco: !!o.loco }));
+      const rows = tr.obstacles.filter((o) => !o.mech).map((o) => ({ chunk: tr.chunks.indexOf(o.chunk), z: o.localZ, lane: tr.laneAtArrival(o) }));
+      const coins = tr.coins.map((c) => ({ chunk: tr.chunks.indexOf(c.chunk), x: c.mesh.position.x, z: c.mesh.position.z }));
+      return { cars, rows, coins };
+    });
+    if (snap.cars.length) break;
+    await ctx.close();
+  }
+  const fronts = snap.cars.filter((c) => c.loco);
+  check(fronts.length > 0, 'İstiklal deals trams', `${fronts.length}, seed ${SEED}`);
+  let carBad = 0, alongBad = 0;
+  for (const f of fronts) {
+    const cars = snap.cars.filter((c) => c.chunk === f.chunk && c.z <= f.z && c.z > f.z - 13.1);
+    if (cars.length !== 2 || cars.some((c) => c.lane !== 1)) carBad++;
+    const along = snap.rows.filter((r) => r.chunk === f.chunk && r.z < f.z && r.z >= f.z - 27);
+    if (along.some((r) => r.lane === 1)) alongBad++;
+    for (const z of new Set(along.map((r) => r.z))) {
+      const lanes = along.filter((r) => r.z === z).map((r) => r.lane);
+      if (lanes.includes(0) && lanes.includes(2)) alongBad++;
+    }
+    if (snap.coins.some((c) => c.chunk === f.chunk && c.z < f.z && c.z >= f.z - 27 && Math.abs(c.x) < 0.2)) alongBad++;
+  }
+  check(carBad === 0, 'a tram is two cars in the middle lane', `${carBad} bad`);
+  check(alongBad === 0, 'rows beside a tram keep off its rails and leave another lane empty', `${alongBad} bad`);
+  check(!errors.length, 'İstiklal: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
 // ------------------------------------------------------- no stray moves
 for (const city of ['nyc', 'rome', 'sf', 'jerusalem', 'mexico']) {
   const { page, ctx } = await open(city, 3, 4242);

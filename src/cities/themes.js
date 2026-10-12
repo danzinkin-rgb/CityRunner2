@@ -909,7 +909,7 @@ export const ALL_CITIES = [
         key: 'malecon', lake: true, seawall: true, mechanic: 'waves',
         setback: 4.6, hBase: 11, hVar: 4, secondRow: 0.2,
         props: ['lamp'],
-        ads: ['CAFÉ', 'MOJITO', 'MUSIC'],
+        ads: ['CAFÉ', 'RUMBA', 'MUSIC'],
         cameo: 'morro', lit: 0.16,
       },
       { // Calle Obispo: the narrow old shopping street of Old Havana,
@@ -927,6 +927,60 @@ export const ALL_CITIES = [
         props: ['lamp', 'flowerbed'],
         ads: ['HOTEL', 'THEATRE', 'CAFÉ'],
         lit: 0.18,
+      },
+    ],
+  },
+  {
+    id: 'istanbul', name: 'ISTANBUL', flag: '🇹🇷', region: 'europe',
+    streets: ['İstiklal Avenue', 'Grand Bazaar', 'Divanyolu'],
+    // A soft gold evening over the Bosphorus: deep blue sky, warm haze, the
+    // domes and minarets of the old city in silhouette.
+    sky: { top: '#2a5ab8', mid: '#7a9ed8', horizon: '#ffd4a0', glow: '#ffb070' },
+    fog: 0xf0c898, fogDensity: 0.009,
+    sun: { color: 0xffdcb0, intensity: 2.5, pos: [60, 50, -45] },
+    hemi: { sky: 0xd4e0f0, ground: 0x8a7a64, intensity: 1.1 },
+    fill: { color: 0xffe4cc, intensity: 1.0 },
+    road: '#5a5652', lane: '#ece6d8', sidewalk: '#b4aa9a',
+    palette: ['#e0c8a8', '#d4b8a0', '#c8c0b0', '#e8d4b8', '#c8b098', '#d8c4b0'],
+    trim: '#f2ece0', roof: '#8a5a44',
+    windowLit: '#ffd498', windowDay: '#9ab8d0', accent: '#c8202a',
+    storefront: ['#c8202a', '#2a5aa8', '#2a8a7a', '#c88a20', '#6a2a4a'],
+    props: ['lamp', 'tree'],
+    // The yellow city taxi. No operator name or logo.
+    vehicle: 'taxi',
+    // The tram down the middle of the street (src/run/mechanics.js); in the
+    // Grand Bazaar, porters' carts instead.
+    mechanic: 'tram',
+    landmarks: ['galata', 'bluemosque', 'hagiasophia'],
+    levels: [
+      { // İstiklal Avenue: the long pedestrian street of Beyoğlu, grand
+        // 19th-century apartment fronts, the red tram on its single track
+        key: 'istiklal', facade: 'beauxarts',
+        roadStyle: 'streetcar', road: '#6a6460', lane: '#6a6460', sidewalk: '#b8ae9e',
+        setback: 3.8, hBase: 14, hVar: 6, secondRow: 0.4,
+        props: ['lamp', 'streetcar_pole', 'souvenirstall'],
+        ads: ['SIMIT', 'BOOKS', 'CINEMA', 'LOKUM', 'MUSIC'],
+        span: 'wires', spanFreq: 0.7, spanY: 7.2,
+        cameo: 'galatacameo', lit: 0.22,
+      },
+      { // The Grand Bazaar: covered lanes of shops under painted vaults,
+        // lamps, carpets and gold, porters pushing carts through the crowd
+        key: 'bazaar', facade: 'market', mechanic: 'handcart',
+        setback: 3.0, hBase: 6, hVar: 1, secondRow: 0,
+        palette: ['#d8c4a0', '#e0ccaa', '#c8b490', '#d0bc98', '#e4d0ae', '#ccb894'],
+        props: ['rugs', 'souvenirstall', 'awning'],
+        ads: ['CARPETS', 'LAMPS', 'GOLD', 'SPICES', 'CERAMICS', 'TEA'],
+        span: 'slats', spanFreq: 1, spanY: 6.0, lit: 0.3,
+      },
+      { // Divanyolu: the old imperial road through Sultanahmet, the tram
+        // along it, the great mosques ahead
+        key: 'divanyolu',
+        roadStyle: 'streetcar', road: '#5e5a56', lane: '#5e5a56',
+        setback: 4.6, hBase: 9, hVar: 3, secondRow: 0.3,
+        props: ['lamp', 'streetcar_pole', 'tree'],
+        ads: ['KEBAB', 'BAKLAVA', 'TEA GARDEN', 'CARPETS'],
+        span: 'wires', spanFreq: 0.6, spanY: 7.2,
+        cameo: 'domes', lit: 0.18,
       },
     ],
   },
@@ -951,6 +1005,7 @@ export const LANDMARK_NAMES = {
   oldfort: 'The Old Fort', christchurch: 'Christ Church Cathedral', wonders: 'House of Wonders',
   drumtower: 'Drum Tower', qiniandian: 'Hall of Prayer for Good Harvests', taihedian: 'Hall of Supreme Harmony',
   realfuerza: 'Castillo de la Real Fuerza', habanacathedral: 'Havana Cathedral', morro: 'Morro Castle',
+  galata: 'Galata Tower', bluemosque: 'Blue Mosque', hagiasophia: 'Hagia Sophia',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags
