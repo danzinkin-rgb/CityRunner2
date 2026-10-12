@@ -303,6 +303,28 @@ export const STREET_FACTS = {
         { text: 'The old palaces of the sultans line the seafront here, looking out over the harbour.' },
       ] },
   ],
+  // Beijing: DRAFT, awaiting Dan's sign-off (docs/BEIJING-FACTS-DRAFT.md,
+  // sources listed there).
+  beijing: [
+    { street: 'Nanluoguxiang', tag: 'A hutong lane',
+      facts: [
+        { big: '700', unit: 'years', label: 'old', text: 'This lane was laid out more than 700 years ago, when Kublai Khan made Beijing his capital.' },
+        { text: "It was named for its shape: it is higher in the middle than at either end, like a hunched back ('luoguo')." },
+        { text: 'Lanes like this, called hutongs, run between the walls of old courtyard houses.' },
+      ] },
+    { street: 'Wangfujing', tag: 'The shopping street',
+      facts: [
+        { text: "Its name means 'well of the princes' mansions': a well here served the homes of princes." },
+        { text: 'There have been shops on this street for more than four hundred years.' },
+        { big: '1999', label: 'car-free', text: 'In 1999 and 2000 most of the street was made pedestrian-only.' },
+      ] },
+    { street: 'Qianmen Street', tag: 'South of the front gate',
+      facts: [
+        { text: "It runs south from Qianmen, the 'front gate' of the old inner city." },
+        { big: '600', unit: 'years', label: 'of shops', text: 'Shops have lined this street for almost 600 years.' },
+        { text: 'Some of the oldest shops in Beijing stand here, known for roast duck, tea, silk, shoes and hats.' },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -445,6 +467,28 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Beijing: DRAFT, awaiting Dan's sign-off (docs/BEIJING-FACTS-DRAFT.md).
+  // 46.7 m (en.wikipedia.org/wiki/Drum_Tower_and_Bell_Tower_of_Beijing)
+  drumtower: { scale: 46.7, compare: 'bus',
+    facts: [
+      { big: '47', unit: 'm', label: 'tall', text: 'The Drum Tower stands about 47 metres tall.' },
+      { big: '1272', label: 'first built', text: 'It was first built in 1272, and rebuilt on this spot in 1420.' },
+      { text: 'Drums were beaten here to tell the city the time. It once held 25 drums; one great drum is left.' },
+    ] },
+  // 38 m (en.wikipedia.org/wiki/Temple_of_Heaven)
+  qiniandian: { scale: 38, compare: 'bus',
+    facts: [
+      { big: '38', unit: 'm', label: 'tall', text: 'The hall is round, built of wood, and 38 metres tall.' },
+      { big: '1889', label: 'struck by lightning', text: 'First built in 1420, it burned after a lightning strike in 1889 and was rebuilt to the same design.' },
+      { text: 'Emperors came here every year to pray for a good harvest.' },
+    ] },
+  // about 35 m with its marble terrace (en.wikipedia.org/wiki/Hall_of_Supreme_Harmony)
+  taihedian: { scale: 35, compare: 'bus',
+    facts: [
+      { big: '35', unit: 'm', label: 'tall', text: 'With its marble terrace, the hall rises about 35 metres.' },
+      { big: '1695', label: 'rebuilt', text: 'First built in the 1420s, the hall standing today was rebuilt in 1695.' },
+      { text: 'It is one of the largest wooden buildings in China. Emperors held their grandest ceremonies here.' },
     ] },
   // Zanzibar: DRAFT, awaiting Dan's sign-off (docs/ZANZIBAR-FACTS-DRAFT.md).
   // No sourced heights: altitude, Stone Town being on the shore, at sea

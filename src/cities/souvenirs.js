@@ -136,6 +136,29 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'beijing') {
+    // A little panda sitting up, white with black ears, eye patches, arms
+    // and legs, holding a sprig of bamboo.
+    const white = new THREE.MeshStandardMaterial({ color: 0xf4f2ec, roughness: 0.7, emissive: 0x3a3a3a, emissiveIntensity: 0.25 });
+    const black = new THREE.MeshStandardMaterial({ color: 0x1e1e22, roughness: 0.7 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 12), white);
+    body.scale.set(1, 1.1, 0.9); body.position.y = -0.12; g.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 12), white);
+    head.position.y = 0.24; g.add(head);
+    for (const s of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), black);
+      ear.position.set(s * 0.14, 0.4, 0); g.add(ear);
+      const patch = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), black);
+      patch.scale.set(1, 1.3, 0.5); patch.position.set(s * 0.075, 0.26, 0.16); patch.rotation.z = s * 0.4; g.add(patch);
+      const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.14, 4, 8), black);
+      arm.position.set(s * 0.2, -0.04, 0.1); arm.rotation.z = s * 0.6; g.add(arm);
+      const leg = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), black);
+      leg.scale.set(1, 0.8, 1.2); leg.position.set(s * 0.15, -0.34, 0.1); g.add(leg);
+    }
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), black);
+    nose.position.set(0, 0.2, 0.19); g.add(nose);
+    const bamboo = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 6), new THREE.MeshStandardMaterial({ color: 0x6aa040 }));
+    bamboo.position.set(0.05, 0.02, 0.2); bamboo.rotation.z = -0.5; g.add(bamboo);
   } else if (theme.id === 'zanzibar') {
     // A little carved Zanzibar door: dark teak, round-topped, two leaves,
     // studded with brass, under a carved frame.

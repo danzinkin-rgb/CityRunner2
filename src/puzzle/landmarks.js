@@ -1620,6 +1620,79 @@ const defs = {
     B([0, 17.9, 9.2], [3.6, 1.6, 3.6], '#6a7a6a', 'pyramid'),
     B([0, 0.6, 11.6], [5, 0.4, 2.4], '#c8bea8', 'box', { tex: 'stone' }),                   // the steps
   ],
+  // ================= BEIJING =================
+  // Ming buildings, rebuilt to their old designs (the Hall of Prayer after a
+  // fire in 1889, the Hall of Supreme Harmony in 1695): no copyright
+  // question. Tiananmen Square and its monuments are not in the game.
+
+  // The Drum Tower: a massive base of red-plastered brick pierced by arched
+  // tunnels, and on it a timber hall of red columns under a double roof of
+  // grey tile with green-painted eaves. Street 1: about a dozen pieces.
+  drumtower: [
+    B([0, 0.2, 0], [20, 0.4, 14], '#8a8478', 'box', { tex: 'stone' }),
+    B([0, 3.0, 0], [14, 5.2, 9], '#a8402a', 'extrude', {
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: -0.25, y: -0.18, w: 0.14, h: 0.55, arch: true }, { x: 0, y: -0.18, w: 0.14, h: 0.55, arch: true }, { x: 0.25, y: -0.18, w: 0.14, h: 0.55, arch: true }],
+    }),
+    B([0, 5.85, 0], [14.6, 0.5, 9.6], '#8a8478'),                                            // the parapet
+    B([0, 7.8, 0], [11, 3.4, 6.4], '#b8302a', 'colonnade', { cols: 8 }),
+    B([0, 7.8, 0], [10, 3.2, 5.4], '#7a2a1a', 'box', { tex: 'win', tx: { cols: 6, rows: 1, lit: '#f2c470' } }),
+    B([0, 9.8, 0], [13.6, 0.5, 9.0], '#3a3c42', 'box', { adorn: [B([0, -0.35, 0], [12.8, 0.2, 8.2], '#2a6a5a')] }),
+    B([0, 11.4, 0], [9.6, 2.6, 5.2], '#b8302a', 'box', { tex: 'win', tx: { cols: 6, rows: 1, lit: '#f2c470' } }),
+    B([0, 13.0, 0], [12.4, 0.5, 8.0], '#3a3c42', 'box', { adorn: [B([0, -0.35, 0], [11.6, 0.2, 7.2], '#2a6a5a')] }),
+    B([0, 14.4, 0], [7.0, 2.2, 11.4], '#3a3c42', 'prism', { rotY: Math.PI / 2 }),
+    B([0, 15.6, 0], [0.4, 0.5, 7.6], '#2a2c32'),
+    B([4.0, 6.6, 3.6], [1.0, 1.0, 0.6], '#b8302a', 'cyl', { rotX: Math.PI / 2, sortY: 6.0 }),     // the great drum, seen through
+  ],
+
+  // The Hall of Prayer for Good Harvests at the Temple of Heaven: a round
+  // hall of red and gold under three tiers of blue glazed roof, on three
+  // round white marble terraces with balustrades. Street 2: about eighteen
+  // pieces.
+  qiniandian: [
+    B([0, 0.2, 0], [24, 0.4, 24], '#8a8a84', 'box', { tex: 'stone' }),
+    ...[[18, 0.9], [15, 2.1], [12, 3.3]].flatMap(([w, y]) => [
+      B([0, y, 0], [w, 1.2, w], '#ece8de', 'cyl'),                                            // a marble terrace
+      B([0, y + 0.85, 0], [w, 0.3, 0.3], '#f2eee4', 'torus', { rotX: Math.PI / 2, sortY: y + 0.7 }),   // its balustrade
+    ]),
+    B([0, 4.5, 6.6], [3.2, 4.2, 2.6], '#e4e0d6', 'prism', { sortY: 4.0 }),                  // the stair up the terraces
+    B([0, 6.0, 0], [9.0, 3.6, 9.0], '#b8302a', 'cyl', { tex: 'win', tx: { cols: 12, rows: 1, lit: '#e8b850' } }),
+    B([0, 8.0, 0], [11.4, 0.4, 11.4], '#2a4a9a', 'cyl'),                                    // the lowest eaves
+    B([0, 8.8, 0], [11.0, 1.2, 7.6], '#2a5aa8', 'tier'),                                     // the lowest roof
+    B([0, 9.9, 0], [7.4, 1.4, 7.4], '#b8302a', 'cyl', { tex: 'win', tx: { cols: 10, rows: 1, lit: '#e8b850' } }),
+    B([0, 11.2, 0], [9.0, 1.2, 5.8], '#2a5aa8', 'tier'),                                     // the middle roof
+    B([0, 12.2, 0], [5.6, 1.2, 5.6], '#b8302a', 'cyl', { tex: 'win', tx: { cols: 8, rows: 1, lit: '#e8b850' } }),
+    B([0, 13.3, 0], [7.0, 2.4, 1.0], '#2a5aa8', 'tier'),                                     // the top roof
+    B([0, 15.0, 0], [0.9, 1.4, 0.9], '#e0b040', 'sphere', { metal: 1, em: '#ffd070', emI: 0.3 }),
+    B([0, 8.35, 0], [9.4, 0.3, 0.3], '#e0b040', 'torus', { rotX: Math.PI / 2, metal: 1, sortY: 8.7 }),   // gilded ring
+    B([0, 0.6, 10.5], [6, 0.4, 3], '#c8c4ba', 'box', { tex: 'stone' }),                       // the raised way
+  ],
+
+  // The Hall of Supreme Harmony in the Forbidden City: a vast hall of red
+  // columns and walls under a double hipped roof of yellow glazed tile, on
+  // a three-tier white marble terrace with balustrades and staircases.
+  // Street 3: about two dozen pieces.
+  taihedian: [
+    B([0, 0.2, 0], [30, 0.4, 24], '#9a948a', 'box', { tex: 'stone', tx: { cols: 20, rows: 16 } }),
+    ...[[26, 18, 1.0], [22, 15, 2.2], [19, 12.5, 3.4]].flatMap(([w, d, y]) => [
+      B([0, y, -1], [w, 1.2, d], '#ece8de', 'box', { tex: 'stone' }),
+      B([0, y + 0.85, -1 + d / 2], [w, 0.5, 0.25], '#f2eee4', 'colonnade', { cols: Math.round(w / 1.2), sortY: y + 0.7 }),
+    ]),
+    B([0, 2.2, 9.0], [3.6, 3.6, 3.0], '#e4e0d6', 'prism', { sortY: 3.0 }),                    // the central stair
+    B([-5, 2.2, 9.0], [2.4, 3.6, 3.0], '#e4e0d6', 'prism', { sortY: 3.05 }),
+    B([5, 2.2, 9.0], [2.4, 3.6, 3.0], '#e4e0d6', 'prism', { sortY: 3.1 }),
+    B([-4.5, 6.4, -1], [9, 5.2, 9], '#b8302a', 'box', { tex: 'win', tx: { cols: 5, rows: 1, lit: '#e8b850' } }),
+    B([4.5, 6.4, -1], [9, 5.2, 9], '#b8302a', 'box', { tex: 'win', tx: { cols: 5, rows: 1, lit: '#e8b850' } }),
+    B([0, 6.4, 3.8], [17.6, 5.0, 0.8], '#c8382c', 'colonnade', { cols: 12 }),               // the front columns
+    B([0, 9.3, -1], [21, 0.6, 12.6], '#e8b830', 'box', { adorn: [B([0, -0.4, 0], [20.2, 0.2, 11.8], '#2a6a5a')] }),   // lower eaves
+    B([0, 10.6, -1], [16, 2.0, 9.6], '#b8302a', 'box', { tex: 'win', tx: { cols: 9, rows: 1, lit: '#e8b850' } }),
+    B([0, 12.0, -1], [19, 0.6, 11.4], '#e8b830', 'box', { adorn: [B([0, -0.4, 0], [18.2, 0.2, 10.6], '#2a6a5a')] }),  // upper eaves
+    B([-4.6, 13.8, -1], [8.6, 3.0, 9.6], '#e8b830', 'prism', { rotY: Math.PI / 2 }),
+    B([4.6, 13.8, -1], [8.6, 3.0, 9.6], '#e8b830', 'prism', { rotY: Math.PI / 2 }),
+    B([0, 15.4, -1], [12, 0.5, 0.5], '#d8a020'),                                             // the ridge
+    ...[-1, 1].map((sx) => B([sx * 6.2, 16.0, -1], [0.6, 1.2, 0.6], '#d8a020', 'cone4')),    // ridge beasts
+    ...[-1, 1].map((sx) => B([sx * 10.5, 4.5, 6.0], [1.2, 1.4, 1.2], '#4a4038', 'cyl', { metal: 1 })),   // bronze cauldrons
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }

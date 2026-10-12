@@ -826,6 +826,59 @@ export const ALL_CITIES = [
       },
     ],
   },
+  {
+    id: 'beijing', name: 'BEIJING', flag: '🇨🇳', region: 'asia',
+    streets: ['Nanluoguxiang', 'Wangfujing', 'Qianmen Street'],
+    // A clear autumn afternoon in the north: a pale cold blue sky, low gold
+    // sun. Grey hutong brick, red doors and lanterns, yellow glazed roofs.
+    sky: { top: '#3a70c0', mid: '#9ab8dc', horizon: '#f2e2c4', glow: '#ffcc90' },
+    fog: 0xe4d8c0, fogDensity: 0.0094,
+    sun: { color: 0xffe8c4, intensity: 2.5, pos: [-50, 60, -45] },
+    hemi: { sky: 0xd8e2f0, ground: 0x7a7060, intensity: 1.1 },
+    fill: { color: 0xffecd4, intensity: 1.0 },
+    road: '#5a5a5e', lane: '#ece8dc', sidewalk: '#a4a09a',
+    palette: ['#7a7a78', '#828280', '#727272', '#8a8884', '#767674', '#7e7c78'],
+    trim: '#3a3c42', roof: '#3a3c42',
+    windowLit: '#ffd498', windowDay: '#9ab4c8', accent: '#c8202a',
+    storefront: ['#c8202a', '#2a6a4a', '#e8b020', '#2a4a8a', '#8a2a2a'],
+    facade: 'hutong', hBase: 4.5, hVar: 1,
+    props: ['lamp', 'tree'],
+    // A two-tone city taxi. No operator name or logo.
+    vehicle: 'bjtaxi',
+    // Delivery tricycles: a low load you jump, a tall one you go round
+    // (src/run/mechanics.js).
+    mechanic: 'tricycle',
+    landmarks: ['drumtower', 'qiniandian', 'taihedian'],
+    levels: [
+      { // Nanluoguxiang: a hutong lane of grey courtyard walls, red doors and
+        // tiled roofs, lanterns overhead
+        key: 'nanluogu',
+        setback: 2.8, secondRow: 0.5,
+        props: ['lamp', 'tree', 'souvenirstall'],
+        ads: ['DUMPLINGS', 'TEA', 'YOGHURT', 'CRAFTS'],
+        span: 'lanterns', spanFreq: 0.6, spanY: 6.0, lit: 0.2,
+      },
+      { // Wangfujing: the big shopping street, department stores and
+        // brand shops, a wide pedestrian way
+        key: 'wangfujing', facade: 'deptstore', hBase: 18, hVar: 12,
+        palette: ['#d8d0c0', '#c8c4bc', '#e0d8c8', '#bcc0c4', '#d0c8b8', '#c4bcb0'],
+        trim: '#ece6d8', storefront: ['#1a2a44', '#c8202a', '#3a2a1c', '#14342c'],
+        setback: 5.4, secondRow: 0.6,
+        props: ['lamp', 'tree', 'flowerbed'],
+        ads: ['BOOKSTORE', 'SNACK STREET', 'DEPARTMENT STORE', 'TEA HOUSE'],
+        lit: 0.2,
+      },
+      { // Qianmen Street: the old shopping street south of the city gate,
+        // red and green painted shopfronts with gilded signboards
+        key: 'qianmen', hBase: 7, hVar: 2,
+        palette: ['#8a3a2a', '#7a2a24', '#2a5a4a', '#8a4a2a', '#6a2a24', '#2a4a3a'],
+        trim: '#d8a838', setback: 4.4, secondRow: 0.3,
+        props: ['lamp', 'souvenirstall'],
+        ads: ['ROAST DUCK', 'TEA', 'SILK', 'SHOES', 'HATS'],
+        span: 'lanterns', spanFreq: 0.7, spanY: 7.0, lit: 0.24,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -845,6 +898,7 @@ export const LANDMARK_NAMES = {
   heunginjimun: 'Heunginjimun Gate', gyeonghoeru: 'Gyeonghoeru Pavilion', geunjeongjeon: 'Geunjeongjeon Hall',
   observatory: 'Ulugh Beg Observatory', gurlamir: 'Gur-e-Amir', registan: 'The Registan',
   oldfort: 'The Old Fort', christchurch: 'Christ Church Cathedral', wonders: 'House of Wonders',
+  drumtower: 'Drum Tower', qiniandian: 'Hall of Prayer for Good Harvests', taihedian: 'Hall of Supreme Harmony',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

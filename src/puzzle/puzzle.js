@@ -26,6 +26,7 @@ const CITY_OF = {
   heunginjimun: 'seoul', gyeonghoeru: 'seoul', geunjeongjeon: 'seoul',
   observatory: 'samarkand', gurlamir: 'samarkand', registan: 'samarkand',
   oldfort: 'zanzibar', christchurch: 'zanzibar', wonders: 'zanzibar',
+  drumtower: 'beijing', qiniandian: 'beijing', taihedian: 'beijing',
 };
 // Plaza floors deliberately contrast their monuments. Every landmark in the
 // game is a warm stone/limestone/bronze hero, and every city theme lights the
@@ -52,6 +53,7 @@ const PLAZA = {
   seoul: { stone: '#626a7c', dark: '#4a5264', trim: '#909aae', ground: '#2e3240', sky: '#30466e' },
   samarkand: { stone: '#646a78', dark: '#4c5260', trim: '#929aaa', ground: '#30323c', sky: '#2e4470' },
   zanzibar: { stone: '#5c6a78', dark: '#445260', trim: '#8a9aac', ground: '#2a323c', sky: '#2a4a70' },
+  beijing: { stone: '#626876', dark: '#4a505e', trim: '#9098a8', ground: '#2e323e', sky: '#34466a' },
 };
 
 // Painted-panorama palette. Near layer is the darker, more saturated band the
@@ -72,6 +74,7 @@ const SKYPAL = {
   seoul: { near: '#3a4454', far: '#6a7486', trim: '#4a5466', roof: '#2a2e36', win: '255,222,170', accent: '#2a7a6a' },
   samarkand: { near: '#5a4a38', far: '#86745c', trim: '#6a5642', roof: '#4a3a2a', win: '255,214,150', accent: '#2aa8b8' },
   zanzibar: { near: '#4a5058', far: '#7a8488', trim: '#5a6066', roof: '#3a3a3a', win: '255,220,170', accent: '#2a8aa8' },
+  beijing: { near: '#44444a', far: '#727278', trim: '#55555c', roof: '#2e2e34', win: '255,214,150', accent: '#c8202a' },
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 

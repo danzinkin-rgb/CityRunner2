@@ -526,6 +526,37 @@ async function watch(page, ms, shotName) {
   await ctx.close();
 }
 
+// ------------------------------------------------------------ Beijing
+// Delivery tricycles (TRIKE_* in mechanics.js):
+//   - a low load has a barrier's hitbox (jump it), a tall load a bus's
+//   - a row of tricycles has nothing else in it and always leaves a lane
+//     with no tall one in it
+//   - on the last street some come in pairs, one of each
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337, 2024, 5, 11, 12, 13]) {
+    ({ page, ctx, errors } = await open('beijing', 3, SEED));
+    snap = await page.evaluate(SNAP);
+    const rows = snap.obs.filter((o) => o.mech).map((o) => o.row);
+    if (rows.some((r, i) => rows.indexOf(r) !== i)) break;          // a seed that deals a pair
+    await ctx.close();
+  }
+  const trikes = snap.obs.filter((o) => o.mech);
+  check(trikes.length > 0, 'Beijing deals delivery tricycles', `${trikes.length}, seed ${SEED}`);
+  check(trikes.every((t) => (t.kind === 'low' && t.y1 === 1.2) || (t.kind === 'full' && t.y1 === 3.2)), 'a tricycle is either a low load to jump or a tall one to go round');
+  let rowBad = 0, pairs = 0;
+  for (const row of new Set(trikes.map((t) => t.row))) {
+    const inRow = snap.obs.filter((o) => o.row === row);
+    if (inRow.some((o) => !o.mech)) rowBad++;
+    if (inRow.filter((o) => o.kind === 'full').length > 2) rowBad++;
+    if (inRow.length === 2) { pairs++; if (inRow[0].kind === inRow[1].kind) rowBad++; }
+  }
+  check(rowBad === 0, 'a tricycle row has nothing else in it, leaves a lane open, and a pair is one of each');
+  check(pairs > 0, 'some tricycles come in pairs on the last street', `${pairs} pairs`);
+  check(!errors.length, 'Beijing: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
 // ------------------------------------------------------- no stray moves
 for (const city of ['nyc', 'rome', 'sf', 'jerusalem', 'mexico']) {
   const { page, ctx } = await open(city, 3, 4242);

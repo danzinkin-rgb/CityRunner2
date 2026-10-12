@@ -24,7 +24,7 @@
 import { LANES } from './player.js';
 import {
   makeHandcart, makeAutoRickshaw, makeTukTuk, makeGustDust, makeMotorbike, makeTrainCar,
-  makeCrowd, makeCrossing, makeArchBay, makeJutHouse,
+  makeCrowd, makeCrossing, makeArchBay, makeJutHouse, makeTricycle,
 } from '../cities/builders.js';
 
 // A move that takes a lane for a stretch (Hanoi's train, Zanzibar's narrow
@@ -502,7 +502,42 @@ const NARROWS = {
   move(o, ahead) { return o.front && ahead < 70 && ahead > 0; },
 };
 
+// ---- Beijing: delivery tricycles ---------------------------------------------
+// Cargo tricycles parked in the lane, loaded for delivery. The load says
+// what to do: a low load of crates you can jump; a tall stack of boxes and
+// sacks is a wall, and you go round it. On the last street two often stand
+// side by side, one of each, so you have to read both at speed.
+// Fairness:
+//   - each tricycle's hitbox matches its load: low (under 1.2 m, like a
+//     barrier) or tall (3.2 m, like a bus)
+//   - a row of tricycles always leaves a lane with no tall one in it
+//   - a tricycle row has nothing else in it
+const TRIKE_CHANCE = [0.14, 0.2, 0.26];      // share of rows, by street
+const TRIKE_PAIR = [0, 0.4, 0.6];            // of those, how many put two side by side
+const TRIKE = {
+  hint: 'Read the load: jump the low ones, go round the tall ones!',
+  row({ level, rand, randInt, addObstacle }) {
+    if (rand() >= TRIKE_CHANCE[level - 1]) return null;
+    const first = randInt(3);
+    const tallFirst = rand() < 0.5;
+    const lanes = [[first, tallFirst]];
+    if (rand() < TRIKE_PAIR[level - 1]) lanes.push([(first + 1 + randInt(2)) % 3, !tallFirst]);
+    let head = null;
+    for (const [lane, tall] of lanes) {
+      const r = addObstacle(lane, tall ? 'full' : 'low', tall
+        ? { mesh: makeTricycle(true), y0: 0, y1: 3.2, halfLen: 1.0 }
+        : { mesh: makeTricycle(false), y0: 0, y1: 1.2, halfLen: 1.0 });
+      r.mech = TRIKE;
+      if (!head) head = r;
+    }
+    return head;
+  },
+  settle() {},
+  move(o, ahead) { return ahead < 50 && ahead > 0; },
+};
+
 export const MECHANICS = {
+  tricycle: TRIKE,
   narrows: NARROWS,
   arches: ARCHES,
   crossing: CROSSING,
