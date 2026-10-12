@@ -241,6 +241,66 @@ async function watch(page, ms, shotName) {
   await again.ctx.close();
 }
 
+// ------------------------------------------------------------ Cape Town
+// Gusts push the runner a lane (GUST_* in mechanics.js):
+//   - a gust has its row to itself, and no hitbox
+//   - it never pushes into an obstacle: nothing stands in the lane it would
+//     push you into, from just behind you to 16 m ahead
+//   - when it does push, you really move one lane, the way it blows
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337]) {
+    ({ page, ctx, errors } = await open('capetown', 3, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.some((o) => o.mech)) break;
+    await ctx.close();
+  }
+  const gusts = snap.obs.filter((o) => o.mech);
+  check(gusts.length > 0, 'Cape Town deals gusts', `${gusts.length} in the opening chunks, seed ${SEED}`);
+  check(gusts.every((g) => snap.obs.filter((o) => o.row === g.row).length === 1), 'a gust has its row to itself');
+  const hitless = await page.evaluate(() => window.__cr.track.obstacles.filter((o) => o.mech).every((o) => o.y1 < 0 && o.y0 < 0));
+  check(hitless, 'a gust has no hitbox');
+  // Watch the run, steering between lanes so some gusts have room to push
+  const pushes = await page.evaluate(async () => {
+    const tr = window.__cr.track, pl = window.__cr.player;
+    const seen = new Map();
+    const quiet = { lane() {}, jump() {}, roll() {} };
+    const t0 = performance.now();
+    let k = 0;
+    while (performance.now() - t0 < 22000) {
+      if (++k % 45 === 0) pl.moveLane(k % 90 === 0 ? 1 : -1, quiet);
+      for (const o of tr.obstacles) {
+        if (!o.mech) continue;
+        const ahead = -(o.localZ + o.chunk.position.z + tr.group.position.z);
+        if (ahead > 0 && ahead < 1.5) o.__laneBefore = pl.lane;
+        if (o.push && !seen.has(o)) {
+          const blockers = tr.obstacles.filter((b) => {
+            if (b === o || b.y1 < 0) return false;
+            const a = -(b.localZ + b.chunk.position.z + tr.group.position.z);
+            return tr.laneAtArrival(b) === o.push.to && a > -2 && a < 16;
+          }).length;
+          seen.set(o, { ...o.push, blockers, before: o.__laneBefore, after: pl.lane, dir: o.gust });
+        }
+      }
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+    return [...seen.values()];
+  });
+  const pushed = pushes.filter((p) => p.pushed);
+  check(pushes.length > 0, 'the player meets gusts', `${pushes.length} met, ${pushed.length} pushed`);
+  check(pushed.every((p) => p.blockers === 0), 'a gust never pushes you into an obstacle');
+  check(pushes.filter((p) => !p.pushed && p.to >= 0 && p.to <= 2).every((p) => p.blockers > 0), 'a gust only holds back when the lane is blocked');
+  check(pushed.every((p) => p.before === undefined || p.to === p.before + p.dir), 'a push moves you one lane, the way the wind blows');
+  check(!errors.length, 'Cape Town: no page errors', errors[0] || '');
+  await ctx.close();
+
+  const again = await open('capetown', 3, SEED);
+  const snap2 = await again.page.evaluate(SNAP);
+  const sig = (s) => JSON.stringify(s.obs.filter((o) => o.mech).map((o) => o.row));
+  check(sig(snap) === sig(snap2), 'the same seed deals the same gusts');
+  await again.ctx.close();
+}
+
 // ------------------------------------------------------- no stray moves
 for (const city of ['nyc', 'rome', 'sf', 'jerusalem', 'mexico']) {
   const { page, ctx } = await open(city, 3, 4242);

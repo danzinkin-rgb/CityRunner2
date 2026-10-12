@@ -568,6 +568,56 @@ export const ALL_CITIES = [
       },
     ],
   },
+  {
+    id: 'capetown', name: 'CAPE TOWN', flag: '🇿🇦', region: 'mideast-africa',
+    streets: ['Bo-Kaap', 'Long Street', 'V&A Waterfront'],
+    // A clear, windy day: hard blue sky, white cloud spilling over the flat
+    // top of Table Mountain, Atlantic light. Bright paint everywhere.
+    sky: { top: '#2a6ad0', mid: '#6aa8e8', horizon: '#cfe2f2', glow: '#e8f0f4' },
+    fog: 0xc0d6ea, fogDensity: 0.0074,
+    sun: { color: 0xfff4e0, intensity: 2.6, pos: [-60, 75, -30] },
+    hemi: { sky: 0xd8e8fc, ground: 0x7a7468, intensity: 1.1 },
+    fill: { color: 0xf0f4ff, intensity: 1.0 },
+    road: '#4a4c52', lane: '#f2f2ea', sidewalk: '#b4b0a6',
+    palette: ['#e8508a', '#8ad04a', '#4a9ae8', '#f2d040', '#a060d0', '#40c0b0'],
+    trim: '#ffffff', roof: '#5a5a62',
+    windowLit: '#ffe0a0', windowDay: '#8ac0e0', accent: '#1a7ad0',
+    storefront: ['#1a7ad0', '#e8302a', '#f2b418', '#2a9a5a', '#8a3ab0'],
+    props: ['lamp', 'tree', 'flagpole'],
+    // The white minibus taxi. No operator name or logo. A tall wall, like
+    // London's bus, and as rare; the other vehicles are ordinary cars.
+    vehicle: 'minibus',
+    // The Cape Doctor: wind gusts that push you a lane (src/run/mechanics.js).
+    mechanic: 'gust',
+    landmarks: ['clocktower', 'goodhope', 'cityhall'],
+    levels: [
+      { // Bo-Kaap: steep cobbled lanes of flat-roofed houses in bright
+        // colours, Signal Hill behind
+        key: 'bokaap', facade: 'flatpaint',
+        roadStyle: 'cobble', road: '#6a6660', lane: '#6a6660', sidewalk: '#b8b0a4',
+        setback: 3.2, hBase: 6, hVar: 2, secondRow: 0.2,
+        props: ['lamp', 'flagpole', 'souvenirstall'],
+        ads: ['SPICES', 'KOESISTERS', 'MUSEUM', 'CAFÉ'],
+        lit: 0.12,
+      },
+      { // Long Street: Victorian shopfronts under iron-lace balconies
+        key: 'longst', facade: 'veranda',
+        palette: ['#e8d8c0', '#c8e0d8', '#f0d0c0', '#d8d0e8', '#e8e0b0', '#c8d8e8'],
+        setback: 3.8, hBase: 10, hVar: 3, secondRow: 0.4,
+        props: ['lamp', 'tree', 'flagpole', 'souvenirstall'],
+        ads: ['BOOKS', 'VINYL', 'BAKERY', 'CAFÉ', 'BACKPACKERS'],
+        span: 'string', spanFreq: 0.4, lit: 0.22,
+      },
+      { // V&A Waterfront: the working harbour, warehouses, the quay
+        key: 'waterfront', facade: 'warehouse',
+        palette: ['#b04a3a', '#c86a4a', '#a83e30', '#d8d0c0', '#3a5a7a', '#c05a40'],
+        setback: 5.0, hBase: 9, hVar: 4, secondRow: 0.5,
+        props: ['lamp', 'bollard', 'flagpole'],
+        ads: ['FISH & CHIPS', 'BOAT TRIPS', 'AQUARIUM', 'MARKET'],
+        cameo: 'tablemountain', lit: 0.16,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -582,6 +632,7 @@ export const LANDMARK_NAMES = {
   koutoubia: 'Koutoubia Minaret', babagnaou: 'Bab Agnaou', benyoussef: 'Ben Youssef Madrasa',
   lahori: 'Red Fort', qutub: 'Qutub Minar', indiagate: 'India Gate',
   giantswing: 'Giant Swing', watarun: 'Wat Arun', chakri: 'Chakri Maha Prasat',
+  clocktower: 'Waterfront Clock Tower', goodhope: 'Castle of Good Hope', cityhall: 'Cape Town City Hall',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

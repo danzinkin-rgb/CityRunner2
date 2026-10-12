@@ -136,6 +136,34 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'capetown') {
+    // A king protea, South Africa's national flower: a cup of pointed pink
+    // bracts around a domed, silvery centre, on a short stem with leaves.
+    const pink = new THREE.MeshStandardMaterial({ color: 0xe8708a, roughness: 0.5, emissive: 0x6a1a2a, emissiveIntensity: 0.35 });
+    const bract = new THREE.ConeGeometry(0.07, 0.34, 5);
+    bract.translate(0, 0.17, 0);
+    for (let ring = 0; ring < 2; ring++) {
+      const n = ring ? 11 : 9;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + ring * 0.3;
+        const b = new THREE.Mesh(bract, pink);
+        b.position.set(Math.cos(a) * (0.14 + ring * 0.05), -0.1 - ring * 0.05, Math.sin(a) * (0.14 + ring * 0.05));
+        b.rotation.set(0, -a, 0, 'YXZ');
+        b.rotateZ(-(0.35 + ring * 0.35));
+        g.add(b);
+      }
+    }
+    const centre = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: 0xf0d8dc, roughness: 0.8, emissive: 0x4a3a3e, emissiveIntensity: 0.3 }));
+    centre.scale.set(1, 1.3, 1); centre.position.y = 0.02; g.add(centre);
+    const green = new THREE.MeshStandardMaterial({ color: 0x4a7a3a, roughness: 0.6 });
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.3, 6), green);
+    stem.position.y = -0.36; g.add(stem);
+    for (const s of [-1, 1]) {
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), green);
+      leaf.scale.set(0.5, 1.6, 0.25); leaf.position.set(s * 0.09, -0.38, 0); leaf.rotation.z = s * 0.5;
+      g.add(leaf);
+    }
   } else if (theme.id === 'bangkok') {
     // A little carved elephant figurine in grey, trunk raised, with a red
     // and gold saddle cloth on its back.

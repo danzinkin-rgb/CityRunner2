@@ -542,9 +542,11 @@ export class Track {
           // San Francisco decides cable car or car BEFORE building anything,
           // so the car lanes do not build a whole cable car and throw it away.
           const isCable = t.vehicle === 'cablecar' && rand() < (this.level === 1 ? 0.18 : 0.4);
-          // Jerusalem's city bus works the same way, for the same reason.
-          const isCityBus = t.vehicle === 'citybus' && rand() < (this.level === 1 ? 0.18 : 0.4);
-          const carInstead = (t.vehicle === 'cablecar' && !isCable) || (t.vehicle === 'citybus' && !isCityBus);
+          // Jerusalem's city bus works the same way, for the same reason, and
+          // so does Cape Town's minibus taxi.
+          const busLike = t.vehicle === 'citybus' || t.vehicle === 'minibus';
+          const isCityBus = busLike && rand() < (this.level === 1 ? 0.18 : 0.4);
+          const carInstead = (t.vehicle === 'cablecar' && !isCable) || (busLike && !isCityBus);
           mesh = carInstead ? makeParkedCar(t) : makeVehicle(t);
           // Honest hitboxes: buses are walls you must dodge; cars/taxis/vespas
           // are low enough that a well-timed jump clears them.
@@ -808,7 +810,7 @@ export class Track {
     for (const o of this.obstacles) {
       if (!o.mech) continue;
       const ahead = -(o.localZ + o.chunk.position.z + this.group.position.z);
-      const active = o.mech.move(o, ahead, dt);
+      const active = o.mech.move(o, ahead, dt, this, player);
       if (active && ahead > 0 && !this.mechSeen) {
         this.mechSeen = true;
         if (this.onMechanic) this.onMechanic(o.mech.hint);

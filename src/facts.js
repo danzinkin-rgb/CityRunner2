@@ -193,6 +193,28 @@ export const STREET_FACTS = {
         { text: 'Many canals were filled in to make roads, but in places like Bang Luang, wooden houses still stand right on the water.' },
       ] },
   ],
+  // Cape Town: DRAFT, awaiting Dan's sign-off (docs/CAPE-TOWN-FACTS-DRAFT.md,
+  // sources listed there).
+  capetown: [
+    { street: 'Bo-Kaap', tag: 'The painted hillside',
+      facts: [
+        { big: '1763', label: 'first houses', text: 'Jan de Waal began building houses to rent here in 1763. One of the first, on Wale Street, is now the Bo-Kaap Museum.' },
+        { text: 'It has more buildings from before 1850 than anywhere else in South Africa.' },
+        { text: 'Its houses are painted in bright colours. Many people say they were first painted to celebrate freedom when slavery ended.' },
+      ] },
+    { street: 'Long Street', tag: 'Iron-lace balconies',
+      facts: [
+        { text: 'Long Street is lined with Victorian buildings with wrought-iron balconies over the pavement.' },
+        { text: 'In the 1970s, local architects and preservation groups saved it from being knocked down.' },
+        { text: 'It once marked the edge of the Bo-Kaap, the neighbourhood on the hill above it.' },
+      ] },
+    { street: 'V&A Waterfront', tag: 'The working harbour',
+      facts: [
+        { big: '1860', label: 'harbour begun', text: "Prince Alfred, Queen Victoria's son, tipped the first load of stone for the harbour's breakwater in 1860." },
+        { text: 'The Waterfront is named after both of them: Victoria and Alfred.' },
+        { text: 'It is still a working harbour, with fishing boats and tugs moored among the shops and restaurants.' },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -335,6 +357,27 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Cape Town: DRAFT, awaiting Dan's sign-off (docs/CAPE-TOWN-FACTS-DRAFT.md).
+  // No sourced heights: altitude, the city centre at about 25 m above sea
+  // level (worldatlas.com/af/za/wc/where-is-cape-town.html).
+  clocktower: { altitude: 25,
+    facts: [
+      { big: '1882', label: 'built', text: "Finished in 1882, the tower was the harbour's first Port Captain's office." },
+      { text: 'Upstairs, mirrors let the Port Captain watch the whole harbour. Downstairs, a tide gauge showed ships how high the water was.' },
+      { text: 'When it was restored in the 1990s, layers of grey paint were stripped off to find its original red.' },
+    ] },
+  goodhope: { altitude: 25,
+    facts: [
+      { big: '1679', label: 'completed', text: 'Built between 1666 and 1679, it is the oldest colonial building in South Africa.' },
+      { big: '5', unit: 'bastions', label: 'one at each point', text: "It is shaped like a five-pointed star, with a bastion at each point, named after the titles of the Dutch Prince of Orange." },
+      { text: 'It replaced an earlier square fort built in 1652 by Jan van Riebeeck, who founded the settlement.' },
+    ] },
+  cityhall: { altitude: 25,
+    facts: [
+      { big: '1905', label: 'opened', text: 'Its cornerstone was laid in 1900, and the hall opened in 1905.' },
+      { big: '39', unit: 'bells', label: 'in its tower', text: 'Its clock tower holds a carillon of 39 bells, one of the largest in South Africa.' },
+      { text: 'On 11 February 1990, Nelson Mandela gave his first speech after his release from prison from its balcony.' },
     ] },
   // Bangkok: DRAFT, awaiting Dan's sign-off (docs/BANGKOK-FACTS-DRAFT.md).
   // 21.15 m (en.wikipedia.org/wiki/Giant_Swing)

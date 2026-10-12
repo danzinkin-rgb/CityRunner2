@@ -154,6 +154,17 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         }
 
         for (let cIdx = 0; cIdx < cols; cIdx++) {
+          if (style === 'flatpaint') {
+            // Bo-Kaap: small sash windows in crisp white frames on a wall of
+            // one bright colour
+            if ((cIdx + f) % 3 === 2) continue;
+            const x = cIdx * ww + ww * 0.28, y = rowY + wh * 0.22, w = ww * 0.44, h = wh * 0.56;
+            g.fillStyle = '#ffffff'; g.fillRect(x - 4, y - 4, w + 8, h + 8);
+            g.fillStyle = Math.random() < (theme.lit ?? 0.16) ? theme.windowLit : '#2a3a4c';
+            g.fillRect(x, y, w, h);
+            g.fillStyle = '#ffffff'; g.fillRect(x, y + h / 2 - 1, w, 2); g.fillRect(x + w / 2 - 1, y, 2, h);
+            continue;
+          }
           if (style === 'shophouse') {
             // Bangkok's shophouses: tall windows with round-arched heads and
             // louvred shutters, a stucco moulding over each, and here and
@@ -332,6 +343,11 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         }
       }
 
+      // Cape Town's harbour warehouses: red brick coursing
+      if (style === 'warehouse') {
+        g.fillStyle = 'rgba(0,0,0,.08)';
+        for (let y = 0; y < H; y += 8) g.fillRect(0, y, W, 1);
+      }
       // Marrakech: a band of green and white tile under the parapet
       if (theme.id === 'marrakech') {
         for (let x = 0, k = 0; x < W; x += 8, k++) {
@@ -368,6 +384,7 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
       else if (style === 'medina') paintMedinaGround(G);
       else if (style === 'bazaar') paintBazaarGround(G);
       else if (style === 'shophouse') paintShophouseGround(G);
+      else if (style === 'flatpaint') paintFlatpaintGround(G);
       else paintDefaultShops(G);
 
       g.fillStyle = 'rgba(0,0,0,.3)';
@@ -660,6 +677,25 @@ function paintMarketGround({ g, W, H, shopY, SHOP_H, theme }) {
     }
   }
   g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(0, shopY, W, 3);
+}
+
+// Bo-Kaap: a panelled front door up two steps, a window beside it, and the
+// odd corner shop with a painted sign.
+function paintFlatpaintGround({ g, W, H, shopY, SHOP_H, theme }) {
+  if (Math.random() < 0.3) {
+    g.fillStyle = pickR(theme.storefront); g.fillRect(8, shopY + 4, W - 16, SHOP_H * 0.24);
+    g.fillStyle = '#ffffff'; g.font = `900 ${Math.round(SHOP_H * 0.15)}px Arial`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(pickR(adWords(theme, ['SPICES'])), W / 2, shopY + 4 + SHOP_H * 0.12, W - 30);
+  }
+  const dx = W * 0.18, dw = W * 0.2;
+  g.fillStyle = pickR(['#2a2a30', '#5a3a24', '#1a4a6a', '#ffffff']);
+  g.fillRect(dx, shopY + SHOP_H * 0.32, dw, SHOP_H * 0.68 - 10);
+  g.fillStyle = 'rgba(255,255,255,.4)';
+  g.fillRect(dx + 4, shopY + SHOP_H * 0.38, dw - 8, 2); g.fillRect(dx + 4, shopY + SHOP_H * 0.7, dw - 8, 2);
+  g.fillStyle = '#c8c4bc'; g.fillRect(dx - 6, H - 10, dw + 12, 6);              // the stoep steps
+  const wx = W * 0.56, ww2 = W * 0.26;
+  g.fillStyle = '#ffffff'; g.fillRect(wx - 3, shopY + SHOP_H * 0.36, ww2 + 6, SHOP_H * 0.42);
+  g.fillStyle = '#2a3a4c'; g.fillRect(wx, shopY + SHOP_H * 0.39, ww2, SHOP_H * 0.36);
 }
 
 // Bangkok: the shophouse ground floor, one bay a roll-down shutter, the
@@ -1176,6 +1212,24 @@ export function makeBuilding(theme, w, h, d, rng = Math.random, side = 0) {
     front.position.set(-side * (w / 2 + 0.2), 0, 0);
     front.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
     group.add(front);
+  }
+  // Long Street: a first-floor balcony with an iron-lace railing, carried
+  // on slim columns at the pavement edge, the length of the house front.
+  if (theme.facade === 'veranda' && side !== 0) {
+    const iron = cached('mat:veranda', () => new THREE.MeshStandardMaterial({ color: 0x2a3a34, roughness: 0.5, metalness: 0.4 }));
+    const out = -side * (w / 2 + 0.75);
+    const deck = new THREE.Mesh(boxGeo, iron);
+    deck.scale.set(1.5, 0.14, d - 0.6); deck.position.set(out, 3.6, 0); group.add(deck);
+    const roof = new THREE.Mesh(boxGeo, cached('mat:verandaRoof', () => new THREE.MeshStandardMaterial({ color: 0xc8cccc, roughness: 0.5, metalness: 0.5 })));
+    roof.scale.set(1.6, 0.08, d - 0.5); roof.position.set(out, 6.4, 0); roof.rotation.z = side * 0.12; group.add(roof);
+    const rail = new THREE.Mesh(boxGeo, iron);
+    rail.scale.set(0.06, 0.9, d - 0.6); rail.position.set(out - side * 0.72, 4.15, 0); group.add(rail);
+    for (let z = -(d - 1) / 2; z <= (d - 1) / 2 + 0.01; z += (d - 1) / Math.max(1, Math.round((d - 1) / 2.6))) {
+      for (const y of [1.8, 5.0]) {
+        const col = new THREE.Mesh(cylGeo, iron);
+        col.scale.set(0.07, 3.2, 0.07); col.position.set(out - side * 0.7, y, z); group.add(col);
+      }
+    }
   }
   // Yaowarat: tall vertical neon signs hung out from the house fronts over
   // the street, a word spelled down each in lit letters. Cosmetic, so the
@@ -1880,6 +1934,7 @@ const ADS = {
   marrakech: ['TAPIS', 'ÉPICES', 'HAMMAM', 'ARGAN'],
   delhi: ['CHAI', 'MITHAI', 'SAREES', 'BOOKS'],
   bangkok: ['NOODLES', 'MANGO', 'SILK', 'COFFEE'],
+  capetown: ['SURF', 'BOOKS', 'COFFEE', 'MARKET'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -2333,6 +2388,29 @@ function makeSouvenirStall() {
   return g;
 }
 
+// Cape Town: a flag on a tall pole, standing out stiff in the wind.
+function makeWindFlag() {
+  const g = new THREE.Group();
+  const pole = new THREE.Mesh(cylGeo, mats.chrome);
+  pole.scale.set(0.05, 5.4, 0.05); pole.position.y = 2.7; g.add(pole);
+  const cols = [0x1a7ad0, 0xe8302a, 0xf2b418, 0x2a9a5a];
+  const ci = (Math.random() * cols.length) | 0;
+  const flag = new THREE.Mesh(boxGeo, cached(`mat:windflag:${ci}`, () => new THREE.MeshStandardMaterial({ color: cols[ci], roughness: 0.8, side: THREE.DoubleSide })));
+  flag.scale.set(0.03, 0.6, 1.0); flag.position.set(0, 5.05, -0.5); g.add(flag);
+  return g;
+}
+
+// Cape Town's quay: a cast-iron mooring bollard.
+function makeBollard() {
+  const g = new THREE.Group();
+  const m = cached('mat:bollard', () => new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.5, metalness: 0.5 }));
+  const post = new THREE.Mesh(cylGeo, m);
+  post.scale.set(0.22, 0.7, 0.22); post.position.y = 0.35; g.add(post);
+  const cap = new THREE.Mesh(ballGeo, m);
+  cap.scale.set(0.3, 0.14, 0.3); cap.position.y = 0.72; g.add(cap);
+  return g;
+}
+
 // Bangkok: a fruit seller's glass-sided cart, ice and cut fruit inside,
 // under a striped umbrella.
 function makeFruitCart() {
@@ -2561,6 +2639,8 @@ export function makeProp(kind, theme) {
     case 'rugs': return makeRugRack();
     case 'chaistall': return makeChaiStall();
     case 'fruitcart': return makeFruitCart();
+    case 'flagpole': return makeWindFlag();
+    case 'bollard': return makeBollard();
     case 'chestnut': return makeTree('chestnut');
     case 'planetree': return makeTree('plane');
     case 'phonebox': return makePhonebox();
@@ -2783,6 +2863,28 @@ export function makeVehicle(theme) {
     }
     const sign = new THREE.Mesh(boxGeo, mats.glow);
     sign.scale.set(0.5, 0.16, 0.2); sign.position.set(0, 1.6, -0.1); g.add(sign);
+  } else if (kind === 'minibus') {
+    // Cape Town's white minibus taxi: a tall, boxy van with a long row of
+    // side windows. A wall, as tall as its hitbox (3.2 m with the roof
+    // rack and luggage).
+    const white = cached('mat:minibus', () => new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.3, metalness: 0.2 }));
+    const body = new THREE.Mesh(boxGeo, white);
+    body.scale.set(1.95, 2.1, 5.0); body.position.y = 1.35; body.castShadow = true; g.add(body);
+    const glassM = cached('mat:carGlass', () => new THREE.MeshStandardMaterial({ color: 0xa8d0ec, roughness: 0.12, metalness: 0.5 }));
+    const screen = new THREE.Mesh(boxGeo, glassM);
+    screen.scale.set(1.8, 0.8, 0.06); screen.position.set(0, 1.9, 2.5); g.add(screen);
+    for (const sx of [-1, 1]) {
+      const side = new THREE.Mesh(boxGeo, glassM);
+      side.scale.set(0.04, 0.6, 3.8); side.position.set(sx * 0.99, 1.85, -0.3); g.add(side);
+    }
+    const rack = new THREE.Mesh(boxGeo, mats.black);
+    rack.scale.set(1.7, 0.1, 3.6); rack.position.y = 2.5; g.add(rack);
+    const bags = new THREE.Mesh(boxGeo, cached('mat:luggage', () => new THREE.MeshStandardMaterial({ color: 0x3a5a8a, roughness: 0.9 })));
+    bags.scale.set(1.4, 0.65, 2.2); bags.position.set(0, 2.85, -0.4); g.add(bags);
+    for (const sx of [-0.7, 0.7]) {
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), mats.glow);
+      lamp.position.set(sx, 0.85, 2.52); g.add(lamp);
+    }
   } else if (kind === 'tuktuk') {
     return makeTukTuk();
   } else if (kind === 'autorickshaw') {
@@ -2939,6 +3041,30 @@ export function makeVehicle(theme) {
     w.position.set(...p);
     g.add(w);
   }
+  return g;
+}
+
+// Cape Town's gust: a band of blown dust and sand streaming across the road
+// at the gust's row, which src/run/mechanics.js slides sideways the way the
+// wind blows as you approach. Nothing solid: it only shows the wind.
+export function makeGustDust() {
+  const g = new THREE.Group();
+  const dust = cached('mat:gust', () => new THREE.MeshBasicMaterial({
+    color: 0xe8cc98, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide,
+  }));
+  // puffs of sand, tilted with the wind, well up off the road so they never
+  // read as lane markings
+  const streaks = new THREE.Group();
+  for (let i = 0; i < 30; i++) {
+    const s = new THREE.Mesh(ballGeo, dust);
+    s.scale.set(0.9 + Math.random() * 1.4, 0.18 + Math.random() * 0.2, 0.3);
+    s.rotation.z = 0.15;
+    s.position.set(-10 + Math.random() * 20, 0.9 + Math.random() * 2.8, (Math.random() - 0.5) * 6);
+    streaks.add(s);
+  }
+  g.add(streaks);
+  g.userData.streaks = streaks;
+  g.visible = false;
   return g;
 }
 
@@ -3701,6 +3827,7 @@ const SIL_TINT = {
   marrakech: '#6a3c3a',  // red earth city under the blue-grey Atlas
   delhi: '#6a4a3a',      // red sandstone and domes through the afternoon haze
   bangkok: '#5a4a5a',    // temple spires and towers in the humid haze
+  capetown: '#3a4a5e',   // Table Mountain's blue-grey sandstone
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
@@ -3861,6 +3988,26 @@ function skylineTexture(theme) {
           g.fill();
         }
         x += bw + 1;
+      }
+    } else if (theme.id === 'capetown') {
+      // Table Mountain's long flat top with Devil's Peak on the left and
+      // Lion's Head on the right, a white tablecloth of cloud spilling over
+      // the edge, and the city low along its foot.
+      g.fillStyle = dark(0.42);
+      g.beginPath(); g.moveTo(0, GY - 20);
+      g.lineTo(200, GY - 70); g.lineTo(330, GY - 135); g.lineTo(380, GY - 118);
+      g.lineTo(470, GY - 146); g.lineTo(1060, GY - 150); g.lineTo(1180, GY - 90);
+      g.lineTo(1300, GY - 66); g.quadraticCurveTo(1370, GY - 156, 1440, GY - 70);
+      g.lineTo(1600, GY - 26); g.lineTo(1600, GY); g.lineTo(0, GY); g.fill();
+      g.fillStyle = light(0.9);
+      g.beginPath(); g.moveTo(480, GY - 146);
+      for (let x = 480; x <= 1060; x += 30) g.lineTo(x, GY - 152 - Math.sin(x * 0.05) * 4);
+      g.lineTo(1080, GY - 132); g.lineTo(1040, GY - 136); g.lineTo(980, GY - 126); g.lineTo(900, GY - 138);
+      g.lineTo(780, GY - 130); g.lineTo(640, GY - 140); g.lineTo(500, GY - 134); g.fill();
+      for (let x = 0, i = 0; x < 1600; i++) {
+        const bw = 30 + (i * 13) % 30, bh = 16 + (i * 7) % 26;
+        box(x, bw, bh, 0.22);
+        x += bw;
       }
     } else if (theme.id === 'bangkok') {
       // A mix of towers and temples: a few tall blocks behind, and in front
@@ -4069,6 +4216,20 @@ export function makeCameo(theme) {
       g.fillRect(cx + 50, GY - 196, 40, 50);                         // the tower
       g.fillStyle = light(0.2);
       for (let x = cx - 140; x < cx + 140; x += 16) g.fillRect(x, GY - 138, 7, 12);   // the gallery
+    } else if (key === 'tablemountain') {
+      // Table Mountain across the harbour, close and huge, with its
+      // tablecloth of cloud, and the masts of the quay in front.
+      g.fillStyle = dark(0.62);
+      g.beginPath(); g.moveTo(cx - 520, GY);
+      g.lineTo(cx - 420, GY - 230); g.lineTo(cx - 360, GY - 300); g.lineTo(cx + 300, GY - 306);
+      g.lineTo(cx + 420, GY - 180); g.lineTo(cx + 520, GY - 120); g.lineTo(cx + 520, GY); g.fill();
+      g.fillStyle = light(0.85);
+      g.beginPath(); g.moveTo(cx - 360, GY - 300);
+      for (let x = cx - 360; x <= cx + 300; x += 30) g.lineTo(x, GY - 312 - Math.sin(x * 0.04) * 8);
+      g.lineTo(cx + 320, GY - 270); g.lineTo(cx + 200, GY - 286); g.lineTo(cx, GY - 270); g.lineTo(cx - 200, GY - 290);
+      g.lineTo(cx - 340, GY - 276); g.fill();
+      g.fillStyle = dark(0.4);
+      for (const x of [cx - 300, cx - 180, cx + 120, cx + 260]) g.fillRect(x, GY - 150, 4, 150);
     } else if (key === 'watarun') {
       // Wat Arun across the river: the tall central prang with its four
       // smaller prangs, over the far bank's trees.

@@ -1199,6 +1199,100 @@ const defs = {
       B([sx * 11.0, 12.4, 0], [1.2, 4.6, 0.1], '#e0b040', 'tier', { sides: 8, metal: 1, em: '#ffd070', emI: 0.25 }),
     ]),
   ],
+  // ================= CAPE TOWN =================
+  // The Castle (1666-79) and the Clock Tower (1882) are centuries old. City
+  // Hall (1905) is by Harry Austin Reid and Frederick George Green, who won
+  // its competition in the 1890s; their death dates were not found, but
+  // South Africa's term is life + 50, so it would take an architect active
+  // in the 1890s living past 1975 to matter (docs/CAPE-TOWN-FACTS-DRAFT.md).
+
+  // The Waterfront Clock Tower: the old Port Captain's office, three
+  // storeys of red Gothic Revival with white trim, a clock stage with four
+  // faces, and a steep pointed roof. Street 1: about a dozen pieces.
+  clocktower: [
+    B([0, 0.25, 0], [7, 0.5, 7], '#8a8a86', 'box', { tex: 'stone' }),
+    B([0, 1.9, 0], [3.6, 2.8, 3.6], '#b8362a', 'box', { tex: 'gothic' }),
+    B([0, 4.6, 0], [3.4, 2.6, 3.4], '#bc3a2c', 'box', { tex: 'gothic' }),
+    B([0, 7.1, 0], [3.2, 2.4, 3.2], '#c03e2e', 'box', { tex: 'win', tx: { cols: 2, rows: 1 } }),
+    B([0, 8.55, 0], [3.5, 0.5, 3.5], '#f2ece0'),                                         // white cornice
+    B([0, 9.8, 0], [2.8, 2.0, 2.8], '#c4402e'),                                            // the clock stage
+    B([0, 9.8, 1.42], [1.6, 1.6, 0.14], '#f8f2e0', 'clock'),
+    B([0, 9.8, -1.42], [1.6, 1.6, 0.14], '#f8f2e0', 'clock'),
+    B([1.42, 9.8, 0], [1.6, 1.6, 0.14], '#f8f2e0', 'clock', { rotY: Math.PI / 2 }),
+    B([-1.42, 9.8, 0], [1.6, 1.6, 0.14], '#f8f2e0', 'clock', { rotY: Math.PI / 2 }),
+    B([0, 12.0, 0], [3.2, 2.4, 3.2], '#4a5a6a', 'pyramid'),                                 // the slate roof
+    B([0, 13.8, 0], [0.5, 1.2, 0.5], '#e0b040', 'group', {                              // the finial and its ball
+      adorn: [B([0, 0, 0], [0.08, 1.2, 0.08], '#e0b040', 'cyl', { metal: 1 }), B([0, -0.2, 0], [0.3, 0.3, 0.3], '#e0b040', 'sphere', { metal: 1 })],
+    }),
+  ],
+
+  // The Castle of Good Hope: a five-pointed star fort of grey stone, a
+  // pointed bastion at each corner, low curtain walls between, the moat
+  // in front, the gate with its bell tower, and the yellow buildings
+  // inside. Street 2: about eighteen pieces.
+  goodhope: (() => {
+    const out = [
+      B([0, 0.2, 0], [22, 0.4, 22], '#7a8a5a', 'box'),
+      B([0, 0.42, 9.6], [12, 0.12, 2.2], '#4a7a9a', 'box', { wet: 1, em: '#7ab4d4', emI: 0.3 }),   // the moat
+    ];
+    const R = 8.2;
+    for (let i = 0; i < 5; i++) {
+      const a = Math.PI / 2 + (i / 5) * Math.PI * 2;
+      const bx = Math.cos(a) * R, bz = Math.sin(a) * R;
+      out.push(B([bx, 1.7, bz], [3.2, 2.6, 3.2], '#8a8a80', 'box', { tex: 'stone', rotY: -a + Math.PI / 4 }));   // a bastion
+      const b = Math.PI / 2 + ((i + 0.5) / 5) * Math.PI * 2;
+      const wx = Math.cos(b) * R * 0.8, wz = Math.sin(b) * R * 0.8;
+      out.push(B([wx, 1.5, wz], [7.6, 2.2, 1.2], '#92928a', 'box', { tex: 'stone', rotY: -b + Math.PI / 2 }));   // a curtain wall
+    }
+    out.push(
+      B([0, 1.9, 6.6], [3.8, 3.0, 1.6], '#f0d060', 'extrude', {                            // the gate
+        outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+        holes: [{ x: 0, y: -0.18, w: 0.36, h: 0.6, arch: true }],
+      }),
+      B([0, 4.3, 6.6], [1.6, 1.8, 1.4], '#f2d468', 'box', {                                 // the bell tower over it
+        adorn: [B([0, 1.2, 0], [1.8, 0.6, 1.6], '#b84a2a', 'prism')],
+      }),
+      B([0, 2.0, -1.5], [8, 3.2, 3], '#f0d060', 'box', { tex: 'win', tx: { cols: 6, rows: 1 } }),   // the yellow buildings inside
+      B([0, 4.0, -1.5], [8.4, 1.0, 3.4], '#9a3a2a', 'prism'),
+      B([4.8, 5.4, -4.0], [0.1, 5.0, 0.1], '#e0e0e0', 'group', {                            // a flagpole on a bastion
+        adorn: [B([0, 0, 0], [0.08, 5.0, 0.08], '#e0e0e0', 'cyl', { metal: 1 })],
+      }),
+    );
+    return out;
+  })(),
+
+  // Cape Town City Hall: an Edwardian palace of honey-coloured stone, a
+  // colonnaded centre with the balcony over the entrance, domed corner
+  // pavilions, and the tall clock tower with four faces and a cupola.
+  // Street 3: about two dozen pieces.
+  cityhall: [
+    B([0, 0.3, 0], [26, 0.6, 12], '#9a948a', 'box', { tex: 'stone' }),
+    B([0, 0.8, 4.2], [8, 0.4, 2.4], '#cfc2a0', 'box', { tex: 'stone' }),                  // the front steps
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 6.5, 2.6, 0], [7, 3.6, 7], '#dcc898', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),
+      B([sx * 6.5, 6.0, 0], [7, 3.2, 7], '#e0cc9c', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),
+      B([sx * 10.8, 4.4, 0], [3.4, 7.6, 7.6], '#d8c494', 'box', { tex: 'arch', tx: { n: 2 } }),   // corner pavilion
+      B([sx * 10.8, 8.9, 0], [2.6, 1.4, 2.6], '#5a7a6a', 'dome', { metal: 1 }),
+    ]),
+    B([0, 2.6, 0.2], [6, 3.6, 7.4], '#e4d0a0', 'box', { tex: 'arch', tx: { n: 3 } }),
+    B([0, 6.0, 0.2], [6, 3.2, 7.4], '#e6d4a6', 'box', { tex: 'win', tx: { cols: 3, rows: 1 } }),
+    B([0, 4.4, 4.3], [5.6, 7.2, 0.9], '#f0e2be', 'colonnade', { cols: 6 }),
+    B([0, 4.3, 4.9], [3.0, 0.3, 1.2], '#d0bc90', 'box', {                                   // the balcony over the door
+      adorn: [B([0, 0.4, 0.5], [3.0, 0.5, 0.1], '#d0bc90')],
+    }),
+    B([0, 8.6, 4.4], [6.2, 1.6, 1.0], '#e8d6aa', 'prism'),                                   // the pediment
+    B([0, 8.0, 0], [21, 0.5, 7.6], '#d0bc90', 'box', { sortY: 8.1 }),                       // balustrade and cornice
+    B([0, 10.6, -1.8], [3.6, 4.6, 3.6], '#dcc898', 'box', { tex: 'arch', tx: { n: 2 } }),   // the tower
+    B([0, 14.3, -1.8], [3.2, 2.8, 3.2], '#e0cc9c', 'box', { tex: 'arch', tx: { n: 2 } }),
+    B([0, 16.6, -1.8], [3.0, 1.8, 3.0], '#e4d0a0'),                                          // the clock stage
+    B([0, 16.6, -0.28], [1.5, 1.5, 0.12], '#f8f2e0', 'clock'),
+    B([0, 16.6, -3.32], [1.5, 1.5, 0.12], '#f8f2e0', 'clock'),
+    B([1.52, 16.6, -1.8], [1.5, 1.5, 0.12], '#f8f2e0', 'clock', { rotY: Math.PI / 2 }),
+    B([-1.52, 16.6, -1.8], [1.5, 1.5, 0.12], '#f8f2e0', 'clock', { rotY: Math.PI / 2 }),
+    B([0, 18.3, -1.8], [2.6, 1.6, 2.6], '#d8c494', 'colonnade', { cols: 4 }),              // the open belfry
+    B([0, 19.4, -1.8], [2.4, 1.4, 2.4], '#5a7a6a', 'dome', { metal: 1 }),
+    B([0, 21.2, -1.8], [0.3, 1.6, 0.3], '#e0b040', 'cyl', { metal: 1 }),
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }

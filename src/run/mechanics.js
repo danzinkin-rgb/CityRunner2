@@ -22,7 +22,7 @@
 //           from the player to the obstacle, positive while it is in front
 // test/city-mechanics.mjs checks each move's rules against real courses.
 import { LANES } from './player.js';
-import { makeHandcart, makeAutoRickshaw, makeTukTuk } from '../cities/builders.js';
+import { makeHandcart, makeAutoRickshaw, makeTukTuk, makeGustDust } from '../cities/builders.js';
 
 // ---- Marrakech: porters' handcarts crossing the road --------------------
 // A porter pushes a laden cart straight across the road, kerb to kerb, at
@@ -173,8 +173,64 @@ const UTURN = {
   },
 };
 
+// ---- Cape Town: gusts of the Cape Doctor ---------------------------------
+// The south-easter blows hard here. At a gust's row, the wind shoves the
+// runner one lane over, the way it is blowing. A band of dust starts
+// streaming across the road GUST_WARN metres out, in the gust's direction,
+// so you can see it coming and which way it will push: be in a lane where
+// the push lands you somewhere safe, or steer straight back.
+//
+// The push is a lane change like the player's own (it is recorded in a
+// ghost like one, so a ghost replays it exactly).
+// Fairness, checked at the moment of the push:
+//   - it never pushes you into an obstacle: if anything stands in the lane
+//     you would land in, from just behind you to PUSH_CLEAR metres ahead,
+//     the gust does not push
+//   - against the edge of the road it does not push
+//   - a gust has its row to itself
+const GUST_CHANCE = [0.1, 0.15, 0.2];        // share of rows, by street
+const GUST_WARN = 45, PUSH_CLEAR = 16;
+const QUIET = { lane() {} };
+const GUST = {
+  hint: 'Wind! The gust will push you sideways.',
+  row({ level, rand, addObstacle, usedLanes }) {
+    if (rand() >= GUST_CHANCE[level - 1]) return null;
+    // no hitbox: it lies far below the road
+    const rec = addObstacle(1, 'full', { mesh: makeGustDust(), y0: -9, y1: -8, halfLen: 0.1 });
+    usedLanes.delete(1);
+    rec.gust = rand() < 0.5 ? -1 : 1;
+    return rec;
+  },
+  settle() {},
+  move(o, ahead, dt, track, player) {
+    const warn = ahead <= GUST_WARN && ahead > -6;
+    o.mesh.visible = warn;
+    if (warn) {
+      const s = o.mesh.userData.streaks;
+      s.position.x = ((GUST_WARN - ahead) * 0.9 % 8) * o.gust;
+    }
+    if (!o.blown && ahead <= 0 && player) {
+      o.blown = true;
+      const to = player.lane + o.gust;
+      let pushed = false;
+      if (to >= 0 && to <= 2) {
+        const blocked = track.obstacles.some((b) => {
+          if (b === o || b.y1 < 0) return false;
+          const a = -(b.localZ + b.chunk.position.z + track.group.position.z);
+          const lane = b.x !== undefined ? Math.round(b.x / 2.4) + 1 : b.lane;
+          return lane === to && a > -2 && a < PUSH_CLEAR;
+        });
+        if (!blocked) { player.moveLane(o.gust, QUIET); pushed = true; }
+      }
+      o.push = { to, pushed };
+    }
+    return warn && ahead > 0;
+  },
+};
+
 export const MECHANICS = {
   handcart: CART,
   braker: BRAKER,
   uturn: UTURN,
+  gust: GUST,
 };

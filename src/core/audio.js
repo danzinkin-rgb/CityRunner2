@@ -160,6 +160,7 @@ const SCALES = {
   sf: [0, 2, 4, 7, 11],   // major with a raised seventh: bright, a little wistful
   jerusalem: [0, 1, 4, 5, 7],   // a semitone then a third up: the scale heard across the region
   mexico: [0, 4, 7, 9, 12],     // bright major, mariachi-like
+  capetown: [0, 2, 4, 5, 7],     // bright major, the first five steps
   bangkok: [0, 2, 4, 7, 9],      // five even-ish steps, close to the Thai seven-tone scale's pentatonic core
   delhi: [0, 1, 4, 5, 8],        // a lowered second and sixth with a major third, like raga Bhairav
   marrakech: [0, 1, 4, 7, 8],    // a lowered second and sixth, as in much North African music
