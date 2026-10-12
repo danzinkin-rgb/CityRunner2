@@ -155,6 +155,24 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
 
         for (let cIdx = 0; cIdx < cols; cIdx++) {
           if (style === 'hanok' || style === 'hutong') continue;   // painted below
+          if (style === 'conventillo') {
+            // La Boca: corrugated tin walls, each panel a different bright
+            // colour, small wooden windows with shutters
+            if (cIdx === 0) {
+              for (let x = 0; x < W; x += W / 3) {
+                g.fillStyle = pickR(theme.palette);
+                g.fillRect(x, rowY, W / 3 + 1, wh + 1);
+                g.fillStyle = 'rgba(0,0,0,.12)';
+                for (let rx = x + 2; rx < x + W / 3; rx += 5) g.fillRect(rx, rowY, 1.5, wh);
+              }
+            }
+            if ((cIdx + f) % 2) continue;
+            const x = cIdx * ww + ww * 0.25, y = rowY + wh * 0.2, w = ww * 0.5, h = wh * 0.6;
+            g.fillStyle = '#f4f0e4'; g.fillRect(x - 3, y - 3, w + 6, h + 6);
+            g.fillStyle = Math.random() < (theme.lit ?? 0.16) ? theme.windowLit : pickR(['#2a6a4a', '#2a3a6a', '#6a2a2a']);
+            g.fillRect(x, y, w, h);
+            continue;
+          }
           if (style === 'colonial') {
             // Old Havana: tall French windows with louvred shutters, a small
             // iron balcony on each upper floor, faded paint
@@ -2055,7 +2073,17 @@ export function makeLamp(theme) {
 
 export function makeTree(kind = 'round') {
   const g = new THREE.Group();
-  if (kind === 'palm') {
+  if (kind === 'jacaranda') {
+    // jacaranda in flower: a dark twisting trunk under a wide, loose crown
+    // of violet-blue blossom
+    const trunk = new THREE.Mesh(cached('geo:jacTrunk', () => new THREE.CylinderGeometry(0.14, 0.24, 3.0, 7)), mats.trunk);
+    trunk.position.y = 1.5; trunk.rotation.z = 0.06; trunk.castShadow = true; g.add(trunk);
+    const bloom = cached('mat:jacBloom', () => new THREE.MeshStandardMaterial({ color: 0x8a6ad8, roughness: 0.9, emissive: 0x2a1a5a, emissiveIntensity: 0.25 }));
+    for (const [x, y, z, s] of [[0, 3.6, 0, 1.6], [-0.9, 3.2, 0.4, 1.1], [0.9, 3.3, -0.3, 1.2], [0.2, 4.2, 0.5, 1.0]]) {
+      const c = new THREE.Mesh(ballGeo, bloom);
+      c.scale.set(s, s * 0.6, s); c.position.set(x, y, z); c.castShadow = true; g.add(c);
+    }
+  } else if (kind === 'palm') {
     // date palm: a tall, slightly leaning ringed trunk and a crown of
     // drooping fronds, well above head height
     const lean = (Math.random() - 0.5) * 0.12;
@@ -2202,6 +2230,7 @@ const ADS = {
   havana: ['CAFÉ', 'MUSIC', 'BOOKS', 'ICE CREAM'],
   istanbul: ['SIMIT', 'TEA', 'BOOKS', 'LOKUM'],
   chicago: ['PIZZA', 'JAZZ', 'BLUES', 'HOT DOGS'],
+  buenosaires: ['CAFÉ', 'TANGO', 'BOOKS', 'EMPANADAS'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -2903,6 +2932,7 @@ export function makeProp(kind, theme) {
     case 'tree': return makeTree('round');
     case 'cypress': return makeTree('cypress');
     case 'palm': return makeTree('palm');
+    case 'jacaranda': return makeTree('jacaranda');
     case 'rugs': return makeRugRack();
     case 'chaistall': return makeChaiStall();
     case 'fruitcart': return makeFruitCart();
@@ -3143,6 +3173,34 @@ export function makeVehicle(theme) {
     }
     const sign = new THREE.Mesh(boxGeo, mats.glow);
     sign.scale.set(0.5, 0.16, 0.2); sign.position.set(0, 1.6, -0.1); g.add(sign);
+  } else if (kind === 'colectivo') {
+    // Buenos Aires' colectivo: a single-deck city bus in two bright colours,
+    // the front painted with fileteado, the city's swirling scroll-work. A
+    // wall, as tall as its hitbox (3.2 m).
+    const fil = cached('colTex', () => canvasTexture(128, 64, (c) => {
+      c.fillStyle = '#e8b020'; c.fillRect(0, 0, 128, 64);
+      c.strokeStyle = '#c8302a'; c.lineWidth = 4;
+      for (const [cx, s] of [[32, 1], [96, -1]]) {
+        c.beginPath();
+        for (let t = 0; t < 12; t += 0.2) { const r = 3 + t * 2; c.lineTo(cx + Math.cos(t * s) * r, 32 + Math.sin(t * s) * r); }
+        c.stroke();
+      }
+      c.strokeStyle = '#2a6ac8'; c.lineWidth = 3; c.strokeRect(4, 4, 120, 56);
+    }));
+    const green = cached('mat:colectivo', () => new THREE.MeshStandardMaterial({ color: 0x2a8a5a, roughness: 0.35, metalness: 0.2 }));
+    const body = new THREE.Mesh(boxGeo, green);
+    body.scale.set(2.2, 2.7, 5.4); body.position.y = 1.65; body.castShadow = true; g.add(body);
+    const front = new THREE.Mesh(boxGeo, cached('mat:colFront', () => new THREE.MeshStandardMaterial({ map: cache.get('colTex'), roughness: 0.5 })));
+    front.scale.set(2.1, 1.0, 0.06); front.position.set(0, 0.9, 2.72); g.add(front);
+    const glassM = cached('mat:carGlass', () => new THREE.MeshStandardMaterial({ color: 0xa8d0ec, roughness: 0.12, metalness: 0.5 }));
+    const screen = new THREE.Mesh(boxGeo, glassM);
+    screen.scale.set(2.0, 1.1, 0.06); screen.position.set(0, 2.2, 2.72); g.add(screen);
+    for (const sx of [-1, 1]) {
+      const side = new THREE.Mesh(boxGeo, glassM);
+      side.scale.set(0.04, 0.9, 4.4); side.position.set(sx * 1.11, 2.1, -0.2); g.add(side);
+    }
+    const roof = new THREE.Mesh(boxGeo, cached('mat:colRoof', () => new THREE.MeshStandardMaterial({ color: 0xe8b020, roughness: 0.5 })));
+    roof.scale.set(2.1, 0.3, 5.2); roof.position.y = 3.15; g.add(roof);
   } else if (kind === 'classiccar') {
     return makeClassicCar();
   } else if (kind === 'bjtaxi') {
@@ -4613,6 +4671,7 @@ const SIL_TINT = {
   havana: '#5a4a52',     // faded pastel blocks and the fortress over the harbour
   istanbul: '#4a4256',   // domes and minarets against the evening haze
   chicago: '#3a4252',    // the skyline's towers over the lake haze
+  buenosaires: '#4a4a5a',  // Parisian domes and blocks, a few towers behind
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
@@ -4773,6 +4832,21 @@ function skylineTexture(theme) {
           g.fill();
         }
         x += bw + 1;
+      }
+    } else if (theme.id === 'buenosaires') {
+      // A long, even line of seven- and eight-storey blocks with domed and
+      // spired corners, a few modern towers behind. (No Obelisco: it is
+      // still under copyright.)
+      for (const [x, w, h] of [[160, 60, 160], [600, 50, 180], [1180, 70, 170], [1440, 50, 150]]) box(x, w, h, 0.14);
+      for (let x = 0, i = 0; x < 1600; i++) {
+        const bw = 40 + (i * 13) % 26, bh = 50 + (i * 7) % 20;
+        box(x, bw, bh, 0.2);
+        if (i % 5 === 2) {
+          g.fillStyle = dark(0.26);
+          g.beginPath(); g.ellipse(x + bw / 2, GY - bh, 12, 16, 0, Math.PI, 0); g.fill();
+          g.fillRect(x + bw / 2 - 1.5, GY - bh - 30, 3, 16);
+        }
+        x += bw + 2;
       }
     } else if (theme.id === 'chicago') {
       // A wall of towers of every height, a few very tall with antennas.
@@ -5126,6 +5200,20 @@ export function makeCameo(theme) {
       g.fillRect(cx + 50, GY - 196, 40, 50);                         // the tower
       g.fillStyle = light(0.2);
       for (let x = cx - 140; x < cx + 140; x += 16) g.fillRect(x, GY - 138, 7, 12);   // the gallery
+    } else if (key === 'congresocameo') {
+      // The Palace of the Congress at the far end of Avenida de Mayo: the
+      // long colonnaded front and the great green dome over it.
+      g.fillStyle = dark(0.24);
+      for (const [ox, w, h] of [[-470, 160, 150], [-300, 130, 140], [170, 140, 150], [320, 150, 140]]) g.fillRect(cx + ox, GY - h, w, h);
+      g.fillStyle = dark(0.36);
+      g.fillRect(cx - 170, GY - 130, 340, 130);
+      g.fillStyle = light(0.25);
+      for (let x = cx - 150; x < cx + 150; x += 24) g.fillRect(x, GY - 120, 8, 80);
+      g.fillStyle = dark(0.4);
+      g.fillRect(cx - 60, GY - 200, 120, 70);
+      g.fillStyle = mixc(fogC, '#4a8a6a', 0.65);
+      g.beginPath(); g.ellipse(cx, GY - 200, 64, 90, 0, Math.PI, 0); g.fill();
+      g.fillStyle = dark(0.4); g.fillRect(cx - 8, GY - 312, 16, 26);
     } else if (key === 'watertowercameo') {
       // The old Water Tower on Michigan Avenue: a castellated stone tower
       // with turrets at its corners and a slim shaft rising from it.

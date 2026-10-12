@@ -136,6 +136,22 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'buenosaires') {
+    // A mate gourd: a round cup bound in a silver band, green leaves
+    // heaped inside, and the metal straw, the bombilla.
+    const gourd = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 14, 0, Math.PI * 2, 0.5, Math.PI - 0.5),
+      new THREE.MeshStandardMaterial({ color: 0x7a4a2a, roughness: 0.6, emissive: 0x2a1408, emissiveIntensity: 0.35, side: THREE.DoubleSide }));
+    gourd.scale.set(1, 1.15, 1); g.add(gourd);
+    const silver = new THREE.MeshStandardMaterial({ color: 0xd8dce4, roughness: 0.25, metalness: 0.85 });
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.03, 8, 28), silver);
+    band.rotation.x = Math.PI / 2; band.position.y = 0.2; g.add(band);
+    const leaves = new THREE.Mesh(new THREE.CircleGeometry(0.19, 18),
+      new THREE.MeshStandardMaterial({ color: 0x6a9a3a, roughness: 0.9, emissive: 0x1a3a0a, emissiveIntensity: 0.3 }));
+    leaves.rotation.x = -Math.PI / 2; leaves.position.y = 0.18; g.add(leaves);
+    const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.5, 6), silver);
+    straw.position.set(0.06, 0.32, 0); straw.rotation.z = -0.3; g.add(straw);
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.06, 16), silver);
+    foot.position.y = -0.26; g.add(foot);
   } else if (theme.id === 'chicago') {
     // A slice of deep-dish pizza: a tall golden crust round a thick layer
     // of cheese and red tomato on top, flecked with herbs.

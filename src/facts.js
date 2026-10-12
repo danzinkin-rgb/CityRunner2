@@ -391,6 +391,28 @@ export const STREET_FACTS = {
         { text: "Most are bascule bridges, a design so common here that it is called the 'Chicago type'." },
       ] },
   ],
+  // Buenos Aires: DRAFT, awaiting Dan's sign-off (docs/BUENOS-AIRES-FACTS-DRAFT.md,
+  // sources listed there).
+  buenosaires: [
+    { street: 'Caminito', tag: 'A street museum',
+      facts: [
+        { big: '1959', label: 'street museum', text: 'Caminito opened as an open-air street museum in 1959.' },
+        { text: 'Its houses are conventillos, homes of wood and sheet metal built by immigrants, many from Genoa, in the late 1800s.' },
+        { text: 'The painter Benito Quinquela Martín led the work to bring the lane back to life and cover it in colour.' },
+      ] },
+    { street: 'Avenida de Mayo', tag: 'The grand avenue',
+      facts: [
+        { big: '1894', label: 'opened', text: "Avenida de Mayo opened in 1894, running from the Plaza de Mayo, in front of the President's palace, to the Congress." },
+        { big: '1858', label: 'Café Tortoni', text: 'Café Tortoni, on this avenue, has served coffee since 1858, and was among the first cafés in the city to put tables out on the pavement.' },
+        { text: 'Its tall fronts, domes and balconies were built to look like the grand boulevards of Europe.' },
+      ] },
+    { street: 'Avenida 9 de Julio', tag: 'The wide avenue',
+      facts: [
+        { big: '140', unit: 'm', label: 'wide', text: 'The avenue is about 140 metres wide: it takes up a whole city block.' },
+        { text: 'It is often called the widest avenue in the world.' },
+        { big: '1937', label: 'building began', text: 'Work began in 1937, and the whole avenue was not finished until 1980.' },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -533,6 +555,28 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Buenos Aires: DRAFT, awaiting Dan's sign-off (docs/BUENOS-AIRES-FACTS-DRAFT.md).
+  // altitude: Buenos Aires stands 25 m above sea level
+  // (en.wikipedia.org/wiki/Buenos_Aires). No sourced heights for the first two.
+  casarosada: { altitude: 25,
+    facts: [
+      { big: '1898', label: 'completed', text: 'The palace took its present form in 1898, when two older buildings were joined by a great archway.' },
+      { text: 'It is the office of the President of Argentina.' },
+      { text: 'Its balcony looks out over the Plaza de Mayo, the square at the heart of the city.' },
+    ] },
+  colon: { altitude: 25,
+    facts: [
+      { big: '1908', label: 'opened', text: "The opera house opened on 25 May 1908, with Verdi's Aida." },
+      { text: 'It took nearly twenty years to build, and three architects worked on it in turn.' },
+      { text: 'Its sound is counted among the best of any opera house in the world.' },
+    ] },
+  // dome 80 m (en.wikipedia.org/wiki/Palace_of_the_Argentine_National_Congress)
+  congreso: { scale: 80, compare: 'bus',
+    facts: [
+      { big: '80', unit: 'm', label: 'to the dome', text: 'Its green copper dome rises 80 metres.' },
+      { big: '1906', label: 'opened', text: 'The palace opened in 1906, although the work was not fully finished until 1946.' },
+      { text: 'Its architect, Vittorio Meano, also worked on the Teatro Colón.' },
     ] },
   // Chicago: DRAFT, awaiting Dan's sign-off (docs/CHICAGO-FACTS-DRAFT.md).
   // 154 ft, 47 m (en.wikipedia.org/wiki/Chicago_Water_Tower)

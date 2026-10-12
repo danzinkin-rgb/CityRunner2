@@ -1907,6 +1907,83 @@ const defs = {
     );
     return out;
   })(),
+  // ================= BUENOS AIRES =================
+  // Argentina protects works for life + 70. The architects of all three
+  // died long ago: Francesco Tamburini 1891, Carl Kihlberg 1908, Henrik
+  // Åberg 1922 (Casa Rosada); Tamburini, Vittorio Meano 1904 and Jules
+  // Dormal 1924 (Teatro Colón, the Congress). Their sculptures are not
+  // modelled. The Obelisco (1936; its architect died 1970) is left out.
+
+  // The Casa Rosada: the pink presidential palace, two wings joined by a
+  // great arched gateway, mansard roofs, and the balcony over the square.
+  // Street 1: about a dozen pieces.
+  casarosada: [
+    B([0, 0.2, 0], [26, 0.4, 14], '#9a968e', 'box', { tex: 'stone' }),
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 7.2, 2.4, 0], [9, 4.0, 8], '#e0a8a0', 'box', { tex: 'arch', tx: { n: 5 } }),
+      B([sx * 7.2, 5.8, 0], [9, 2.8, 8], '#e4aca4', 'box', { tex: 'win', tx: { cols: 5, rows: 1 } }),
+      B([sx * 7.2, 7.9, 0], [9.2, 1.4, 8.2], '#4a5058', 'prism', { rotY: Math.PI / 2 }),   // mansard roof
+    ]),
+    B([0, 4.0, 0.5], [5.4, 7.2, 7], '#e8b0a8', 'extrude', {                               // the archway
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.15, w: 0.5, h: 0.62, arch: true }],
+    }),
+    B([0, 8.4, 0.5], [5.6, 2.0, 7.2], '#e8b0a8', 'prism'),                                // its pediment
+    B([0, 4.6, 4.3], [3.0, 0.3, 1.2], '#d8a098', 'box', {                                 // the balcony
+      adorn: [B([0, 0.4, 0.5], [3.0, 0.5, 0.1], '#d8a098')],
+    }),
+    B([0, 0.6, 5.6], [8, 0.4, 2.4], '#c8c0b4', 'box', { tex: 'stone' }),
+  ],
+
+  // The Teatro Colón: the great opera house, a stone front of arched doors
+  // and tall windows, a columned porch, corner pavilions and mansard roofs.
+  // Street 2: about eighteen pieces.
+  colon: [
+    B([0, 0.2, 0], [26, 0.4, 20], '#9a968e', 'box', { tex: 'stone' }),
+    B([0, 0.6, 7.2], [12, 0.4, 2.4], '#c8c0b4', 'box', { tex: 'stone' }),
+    ...[-1, 0, 1].flatMap((i) => [
+      B([i * 7, 2.6, 0], [7, 4.4, 12], '#e4dac4', 'box', { tex: 'arch', tx: { n: 3 } }),
+      B([i * 7, 6.4, 0], [7, 3.2, 12], '#e8dec8', 'box', { tex: 'win', tx: { cols: 3, rows: 1 } }),
+      B([i * 7, 8.7, 0], [7.2, 1.4, 12.2], '#4a5058', 'prism'),
+    ]),
+    B([0, 2.8, 6.6], [8, 4.8, 1.2], '#ece2cc', 'colonnade', { cols: 6 }),                // the porch
+    B([0, 5.4, 6.6], [8.4, 0.4, 1.6], '#ddd2bc', 'box', { sortY: 5.5 }),
+    B([0, 6.6, 6.4], [6, 2.0, 0.8], '#ece2cc', 'colonnade', { cols: 6, sortY: 6.7 }),     // the loggia above
+    ...[-1, 1].map((sx) => B([sx * 11.5, 5.0, 4.5], [3, 9.6, 3], '#e0d6c0', 'box', {     // corner pavilions
+      tex: 'win', tx: { cols: 1, rows: 3 },
+      adorn: [B([0, 5.4, 0], [3.2, 1.4, 3.2], '#4a5058', 'dome')],
+    })),
+  ],
+
+  // The Palace of the Congress: a long palace of grey stone with a deep
+  // columned portico and pediment at its centre, wings either side, and
+  // over it all the tall green copper dome on its drum.
+  // Street 3: about two dozen pieces.
+  congreso: [
+    B([0, 0.2, 0], [30, 0.4, 22], '#9a968e', 'box', { tex: 'stone' }),
+    B([0, 0.7, 7.5], [14, 0.6, 3], '#c8c0b4', 'box', { tex: 'stone' }),                   // the great stair
+    B([0, 1.3, 6.4], [10, 0.6, 2], '#ccc4b8', 'box', { tex: 'stone' }),
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 4.5, 3.0, 0], [9, 4.8, 12], '#d4cec2', 'box', { tex: 'arch', tx: { n: 4 } }),
+      B([sx * 4.5, 6.8, 0], [9, 2.8, 12], '#d8d2c6', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),
+      B([sx * 11.5, 2.8, 0], [5, 4.4, 9], '#d0cabe', 'box', { tex: 'arch', tx: { n: 2 } }),   // wings
+      B([sx * 11.5, 5.6, 0], [5.2, 1.2, 9.2], '#c4beb2', 'box'),
+      B([sx * 8.6, 9.2, 4.6], [2.4, 1.6, 2.4], '#4a8a6a', 'dome', { metal: 1 }),             // corner domes
+      B([sx * 3.6, 2.2, 9.4], [0.4, 3.6, 0.4], '#3a3a40', 'cyl', { metal: 1,                // lamps on the stair
+        adorn: [B([0, 2.0, 0], [0.6, 0.6, 0.6], '#fff2c0', 'sphere', { em: '#ffe9a0', emI: 1.2 })] }),
+    ]),
+    B([0, 4.4, 6.6], [7.6, 6.4, 1.4], '#e0dacc', 'colonnade', { cols: 6 }),              // the portico
+    B([0, 8.6, 6.6], [8.2, 2.0, 1.8], '#d8d2c6', 'prism'),                                // its pediment
+    B([0, 8.4, 0], [18.4, 0.6, 12.4], '#c4beb2', 'box', { sortY: 8.5 }),                  // cornice and balustrade
+    B([0, 10.4, -0.5], [7.4, 3.4, 7.4], '#d4cec2', 'cyl', { tex: 'arch', tx: { n: 12 } }),   // the drum
+    B([0, 12.6, -0.5], [6.8, 1.0, 6.8], '#c4beb2', 'cyl'),
+    B([0, 16.3, -0.5], [7.0, 6.4, 7.0], '#4a8a6a', 'lathe', {                              // the green dome
+      metal: 1,
+      profile: [[1, 0], [0.98, 0.2], [0.88, 0.45], [0.66, 0.7], [0.36, 0.9], [0.12, 1]],
+    }),
+    B([0, 20.3, -0.5], [1.2, 1.6, 1.2], '#d4cec2', 'cyl', { tex: 'arch', tx: { n: 6 } }),    // the lantern
+    B([0, 21.8, -0.5], [0.3, 1.4, 0.3], '#d8b04a', 'cyl', { metal: 1 }),
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }

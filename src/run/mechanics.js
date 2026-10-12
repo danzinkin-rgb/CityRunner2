@@ -603,7 +603,7 @@ const WAVES = {
 const PULL_CHANCE = [0.14, 0.18, 0.22];      // share of rows, by street
 const PO_SIGNAL = 46, PO_START = 32, PO_END = 18, PARKED_X = 5.3;
 const PULLOUT = {
-  hint: 'That parked car is signalling: it will pull out!',
+  hint: 'Indicator flashing at the kerb: it is about to pull out!',
   row({ level, rand, addObstacle, usedLanes, track }) {
     if (rand() >= PULL_CHANCE[level - 1]) return null;
     const lane = rand() < 0.5 ? 0 : 2;

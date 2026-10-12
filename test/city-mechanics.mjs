@@ -683,6 +683,25 @@ async function watch(page, ms, shotName) {
   await ctx.close();
 }
 
+// ------------------------------------------------------------ Buenos Aires
+// Colectivos pull out from their stops (the pull-out move, as Havana's
+// cars): into an outer lane, middle lane free, and a bus is a wall.
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337]) {
+    ({ page, ctx, errors } = await open('buenosaires', 3, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.some((o) => o.mech)) break;
+    await ctx.close();
+  }
+  const buses = snap.obs.filter((o) => o.mech);
+  check(buses.length > 0, 'Buenos Aires deals buses pulling out', `${buses.length}, seed ${SEED}`);
+  check(buses.every((b) => b.lane !== 1 && b.y1 === 3.2), 'a bus pulls into an outer lane, and is a wall');
+  check(buses.every((b) => !snap.obs.some((o) => o.row === b.row && o.lane === 1)), 'the middle lane stays free beside a bus pulling out');
+  check(!errors.length, 'Buenos Aires: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
 // ------------------------------------------------------- no stray moves
 for (const city of ['nyc', 'rome', 'sf', 'jerusalem', 'mexico']) {
   const { page, ctx } = await open(city, 3, 4242);

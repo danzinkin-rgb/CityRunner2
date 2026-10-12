@@ -1035,6 +1035,59 @@ export const ALL_CITIES = [
       },
     ],
   },
+  {
+    id: 'buenosaires', name: 'BUENOS AIRES', flag: '🇦🇷', region: 'latin-america',
+    streets: ['Caminito', 'Avenida de Mayo', 'Avenida 9 de Julio'],
+    // A spring afternoon: clear blue sky, soft gold light, jacaranda purple
+    // in the trees, grey Parisian stone and La Boca's bright tin.
+    sky: { top: '#3a6ec8', mid: '#88b4e4', horizon: '#f2e0c4', glow: '#ffd0a0' },
+    fog: 0xe8dcc8, fogDensity: 0.0086,
+    sun: { color: 0xfff0d4, intensity: 2.5, pos: [55, 65, -45] },
+    hemi: { sky: 0xd8e4f4, ground: 0x7a7060, intensity: 1.1 },
+    fill: { color: 0xfff0dc, intensity: 1.0 },
+    road: '#4c4c50', lane: '#f2f0e4', sidewalk: '#b4aea4',
+    palette: ['#d8d0c0', '#c8c0b0', '#e0d8c8', '#bcb4a4', '#d0c8b8', '#c4bcac'],
+    trim: '#ece6d8', roof: '#4a5058',
+    windowLit: '#ffd898', windowDay: '#9ab8d0', accent: '#2a6ac8',
+    storefront: ['#2a6ac8', '#c8302a', '#e8b020', '#2a8a5a', '#3a3a44'],
+    facade: 'beauxarts', hBase: 18, hVar: 8,
+    props: ['lamp', 'jacaranda'],
+    // The colectivo, the city bus, its front painted with fileteado scrolls.
+    // A wall, as rare as London's bus; the rest are ordinary cars. No route
+    // number, operator name or logo.
+    vehicle: 'colectivo',
+    // Buses pull out from their stops into your lane (src/run/mechanics.js).
+    mechanic: 'pullout',
+    landmarks: ['casarosada', 'colon', 'congreso'],
+    levels: [
+      { // Caminito: La Boca's lane of tin-clad houses painted in bright
+        // patches of colour, tango dancers and painters' stalls
+        key: 'caminito', facade: 'conventillo',
+        roadStyle: 'cobble', road: '#6a6662', lane: '#6a6662', sidewalk: '#b0a898',
+        palette: ['#e8302a', '#2a6ac8', '#f2c418', '#2a9a5a', '#e8702a', '#8a3ab0'],
+        setback: 3.2, hBase: 7, hVar: 2, secondRow: 0.2,
+        props: ['lamp', 'artstall', 'souvenirstall'],
+        ads: ['TANGO', 'EMPANADAS', 'PAINTINGS', 'CAFÉ'],
+        span: 'string', spanFreq: 0.5, lit: 0.2,
+      },
+      { // Avenida de Mayo: the grand avenue between the presidential palace
+        // and Congress, Parisian fronts, old cafés, domes on the corners
+        key: 'avmayo',
+        setback: 5.0, secondRow: 0.5,
+        props: ['lamp', 'jacaranda', 'flowerbed'],
+        ads: ['CAFÉ', 'HOTEL', 'THEATRE', 'BOOKS', 'MEDIALUNAS'],
+        cameo: 'congresocameo', lit: 0.18,
+      },
+      { // Avenida 9 de Julio: the very wide avenue, many lanes, broad
+        // planted medians and jacarandas
+        key: 'nuevedejulio', treeline: 'jacaranda',
+        setback: 9.4, hBase: 26, hVar: 20, secondRow: 0.5,
+        props: ['lamp', 'flowerbed'],
+        ads: ['CINEMA', 'THEATRE', 'PIZZERÍA', 'HELADOS'],
+        lit: 0.2,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -1058,6 +1111,7 @@ export const LANDMARK_NAMES = {
   realfuerza: 'Castillo de la Real Fuerza', habanacathedral: 'Havana Cathedral', morro: 'Morro Castle',
   galata: 'Galata Tower', bluemosque: 'Blue Mosque', hagiasophia: 'Hagia Sophia',
   watertower: 'Chicago Water Tower', buckingham: 'Buckingham Fountain', willis: 'Willis Tower',
+  casarosada: 'Casa Rosada', colon: 'Teatro Colón', congreso: 'Palace of the Congress',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags
