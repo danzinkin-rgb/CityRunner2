@@ -341,7 +341,7 @@ function startRun() {
     scene = new THREE.Scene();
     dressScene(scene, city());
     player = new Player(scene, characterById(save.equipped).style);
-    const pieceDefs = looseDefs(city().landmarks[level - 1], level, tapsHere());
+    const pieceDefs = looseDefs(city().landmarks[level - 1], level, tapsHere(), rules.name === 'gamer');
     track = new Track(scene, city(), level, runSeed, pieceDefs, rules.start[level - 1]);
     ghostRec = new GhostRecorder(track.seed);
     player.onAction = (a) => ghostRec.move(track.distance, a);
@@ -409,7 +409,7 @@ let testerInvincible = false;   // tester builds only; see the Tester section be
 function showGoal(lm) {
   $('hud-goal-img').src = `assets/monuments/${lm}.png`;
   $('hud-goal-name').textContent = LANDMARK_NAMES[lm];
-  const n = looseDefs(lm, level, tapsHere()).length;
+  const n = looseDefs(lm, level, tapsHere(), rules.name === 'gamer').length;
   $('hud-goal-sub').textContent = n ? `Collect its ${n} pieces on the way` : '';
   const el = $('hud-goal');
   el.classList.add('on');
@@ -649,7 +649,7 @@ function startPuzzle() {
     // Straight from a run, keep that run's rules: its pieces were dealt for
     // them, even if the mode was switched in Settings on the way.
     if (!lastRunPieces) rules = playRules();
-    puzzle = new Puzzle(scene, camera, lm, level, { collected: lastRunPieces, tap: tapsHere(), timeScale: puzzleTimeScale() });
+    puzzle = new Puzzle(scene, camera, lm, level, { collected: lastRunPieces, tap: tapsHere(), gamer: rules.name === 'gamer', timeScale: puzzleTimeScale() });
     lastRunPieces = null;
     puzzle.hintFn = hint;
     document.body.classList.remove('run-pieces');

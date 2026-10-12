@@ -1730,10 +1730,73 @@ export function buildOrder(def) {
     .sort((a, b) => (a.def.sortY ?? a.def.p[1]) - (b.def.sortY ?? b.def.p[1]));
 }
 /** The block defs a street leaves loose, in build order. */
-export function looseDefs(landmarkId, level, tap = false) {
-  const def = getLandmark(landmarkId);
+export function looseDefs(landmarkId, level, tap = false, gamer = false) {
+  const def = monumentDefs(landmarkId, level, gamer);
   if (!def) return [];
   return buildOrder(def).slice(preplacedFor(def.length, level, tap)).map((e) => e.def);
+}
+
+// ---------- Gamer mode: more pieces on streets 2 and 3 ----------
+// Strong players collect every piece on the run, so to them a build is only
+// as hard as its piece count. In Gamer mode a monument gets more pieces,
+// made from its own: a piece's attached detail (pinnacles, railings, window
+// strips) comes off as a piece of its own, placed after it; a tall box,
+// cylinder or tier is cut into a lower and an upper half; a long box into
+// two halves side by side. At most 30% more pieces on street 2 and 50% on
+// street 3, biggest pieces first. Deterministic: the same monument always
+// splits the same way. The shapes chosen are the ones that split cleanly.
+const GAMER_EXTRA = { 2: 0.3, 3: 0.5 };
+const bare = (d) => !d.rotX && !d.rotZ && !d.adorn && !d.outline;
+const isBox = (d) => !d.shape || d.shape === 'box';
+const canSplitTall = (d) => bare(d) && (isBox(d) || d.shape === 'cyl' || d.shape === 'tier')
+  && d.s[1] >= 1.4 && d.s[1] >= Math.max(d.s[0], d.shape === 'tier' ? 0 : d.s[2]);
+const canSplitLong = (d) => bare(d) && isBox(d)
+  && Math.max(d.s[0], d.s[2]) >= 1.6 && Math.max(d.s[0], d.s[2]) >= 1.8 * Math.min(d.s[0], d.s[2]);
+
+function splitTall(d) {
+  const [w, h, dd] = d.s, y = d.p[1];
+  const key = d.sortY;
+  if (d.shape === 'tier') {
+    const mid = (w + dd) / 2;   // a tier's s is [bottom width, height, top width]
+    return [
+      { ...d, p: [d.p[0], y - h / 4, d.p[2]], s: [w, h / 2, mid] },
+      { ...d, p: [d.p[0], y + h / 4, d.p[2]], s: [mid, h / 2, dd], ...(key !== undefined ? { sortY: key + 0.65 } : {}) },
+    ];
+  }
+  return [
+    { ...d, p: [d.p[0], y - h / 4, d.p[2]], s: [w, h / 2, dd] },
+    { ...d, p: [d.p[0], y + h / 4, d.p[2]], s: [w, h / 2, dd], ...(key !== undefined ? { sortY: key + 0.65 } : {}) },
+  ];
+}
+function splitLong(d) {
+  const [w, h, dd] = d.s, a = d.rotY || 0;
+  const alongX = w >= dd, off = (alongX ? w : dd) / 4;
+  // the piece's own axis, turned by its rotY into plaza coordinates
+  const dx = alongX ? Math.cos(a) * off : Math.sin(a) * off;
+  const dz = alongX ? -Math.sin(a) * off : Math.cos(a) * off;
+  const s = alongX ? [w / 2, h, dd] : [w, h, dd / 2];
+  return [
+    { ...d, p: [d.p[0] - dx, d.p[1], d.p[2] - dz], s },
+    { ...d, p: [d.p[0] + dx, d.p[1], d.p[2] + dz], s },
+  ];
+}
+function detachDetail(d) {
+  const { adorn, ...body } = d;
+  const key = d.sortY ?? d.p[1];
+  return [body, { p: d.p, s: d.s, c: d.c, shape: 'group', rotY: d.rotY, adorn, sortY: key + 0.65 }];
+}
+
+/** The monument's pieces as this street and mode deal them. */
+export function monumentDefs(landmarkId, level, gamer = false) {
+  const def = getLandmark(landmarkId);
+  if (!def || !gamer || !GAMER_EXTRA[level]) return def;
+  let budget = Math.ceil(def.length * GAMER_EXTRA[level]);
+  const vol = (d) => d.s[0] * d.s[1] * d.s[2];
+  const how = (d) => (d.adorn?.length && d.shape !== 'group' && !d.rotX && !d.rotZ ? detachDetail
+    : canSplitTall(d) ? splitTall : canSplitLong(d) ? splitLong : null);
+  const pick = new Set(def.map((d, i) => ({ d, i })).filter((e) => how(e.d))
+    .sort((a, b) => vol(b.d) - vol(a.d) || a.i - b.i).slice(0, budget).map((e) => e.i));
+  return def.flatMap((d, i) => (pick.has(i) ? how(d)(d) : [d]));
 }
 
 // ============================================================
@@ -1777,7 +1840,7 @@ export class Puzzle {
     // urgency pass can raise the rate without the sine phase jumping.
     this.bobT = 0;
 
-    const def = getLandmark(landmarkId);
+    const def = monumentDefs(landmarkId, level, !!opts.gamer);
     const P = PLAZA[CITY_OF[landmarkId]] || PLAZA.paris;
     this.P = P;
 

@@ -81,6 +81,9 @@ Since 1.1.1:
   glows and pieces arrive turned (one on street 2, up to three on street 3).
   Less time per piece (3.0 s, 3.6 s on street 3); Gamer gets 15% less time,
   and each city after the first three 3% less (at most 15%).
+- Gamer mode deals more monument pieces on streets 2 and 3 (up to +30% and
+  +50%): attached detail comes off as its own piece, and tall or long
+  pieces are cut in two. The finished monument looks the same.
 
 ## History
 
