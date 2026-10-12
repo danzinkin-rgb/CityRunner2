@@ -22,7 +22,9 @@
 //           from the player to the obstacle, positive while it is in front
 // test/city-mechanics.mjs checks each move's rules against real courses.
 import { LANES } from './player.js';
-import { makeHandcart, makeAutoRickshaw, makeTukTuk, makeGustDust } from '../cities/builders.js';
+import {
+  makeHandcart, makeAutoRickshaw, makeTukTuk, makeGustDust, makeMotorbike, makeTrainCar,
+} from '../cities/builders.js';
 
 // ---- Marrakech: porters' handcarts crossing the road --------------------
 // A porter pushes a laden cart straight across the road, kerb to kerb, at
@@ -228,9 +230,113 @@ const GUST = {
   },
 };
 
+// ---- Hanoi: motorbikes that swerve in pairs --------------------------------
+// Hanoi's traffic moves as a flock. Two motorbikes side by side flash their
+// indicators, then swerve one lane over together, so the free lane jumps
+// from one side of the road to the other. Distances ahead, as for the
+// tuk-tuks: signal from SW_SIGNAL, swerve from SW_START to SW_END.
+// Fairness:
+//   - a pair has its row to itself, and its row has no souvenirs
+//   - after the swerve exactly one lane is free: the one they left
+//   - the bikes are low enough to jump, as every motorbike in the game is
+const SWARM_CHANCE = [0.14, 0.2, 0.26];      // share of rows, by street
+const SW_SIGNAL = 44, SW_START = 30, SW_END = 18;
+const SWARM = {
+  hint: 'Those motorbikes are signalling: they will swerve together!',
+  row({ level, rand, addObstacle, usedLanes }) {
+    if (rand() >= SWARM_CHANCE[level - 1]) return null;
+    const right = rand() < 0.5;                  // lanes 0-1 moving right, or 1-2 moving left
+    const lanes = right ? [0, 1] : [1, 2], dir = right ? 1 : -1;
+    const recs = lanes.map((l) => addObstacle(l, 'full', { mesh: makeMotorbike(true), y0: 0, y1: 1.6, halfLen: 1.1 }));
+    for (let l = 0; l <= 2; l++) usedLanes.add(l);   // no souvenirs in a swarm's row
+    for (const r of recs) { r.uFrom = r.lane; r.uTo = r.lane + dir; r.mech = SWARM; }
+    return recs[0];
+  },
+  settle() {},
+  move(o, ahead) {
+    const sig = o.mesh.userData.signal;
+    const flashing = ahead <= SW_SIGNAL && ahead > SW_END;
+    sig.light.material = flashing && Math.floor(ahead / 2.2) % 2 === 0 ? sig.on : sig.off;
+    const t = Math.max(0, Math.min(1, (SW_START - ahead) / (SW_START - SW_END)));
+    const k = t * t * (3 - 2 * t);
+    o.x = LANES[o.uFrom] + (LANES[o.uTo] - LANES[o.uFrom]) * k;
+    o.mesh.position.x = o.x;
+    o.mesh.rotation.z = (o.uTo - o.uFrom) * -0.15 * Math.sin(Math.PI * t);   // lean into it
+    o.lane = t >= 1 ? o.uTo : o.uFrom;
+    return flashing;
+  },
+};
+
+// ---- Hanoi, Train Street: the train ----------------------------------------
+// The railway runs down the left lane (lane 0), between the houses. Now and
+// then a train comes through: a locomotive and three carriages, a wall the
+// length of a city block, rushing at you faster than the rest of the
+// street. Its red lamps flash from TRAIN_WARN out.
+//
+// It is drawn further away than where it will meet you and closes the gap
+// as it comes (at most RUSH_MAX metres), so it seems to come at you faster
+// than the street; its hitboxes are where they meet you, as for Delhi's
+// rickshaws.
+// Fairness:
+//   - the train fits inside its chunk, so it is never cut off early
+//   - every row alongside it has nothing in the rail lane and no souvenirs
+//     there, and always keeps one of the other two lanes free of vehicles
+//   - only the rail lane: the train never leaves its rails
+const TRAIN_CHANCE = [0.12, 0.16, 0.2];      // share of rows, by street
+const TRAIN_CARS = 4, CAR_LEN = 6, RUSH = 0.35, RUSH_MAX = 30, TRAIN_WARN = 90;
+const TRAIN = {
+  hint: 'Train coming! Keep out of the rail lane.',
+  row({ level, rand, addObstacle, zRow, chunkLen, track, chunk }) {
+    if (zRow + TRAIN_CARS * CAR_LEN > chunkLen - 2) return null;
+    if (rand() >= TRAIN_CHANCE[level - 1]) return null;
+    let head = null;
+    for (let k = 0; k < TRAIN_CARS; k++) {
+      const r = addObstacle(0, 'full', { mesh: makeTrainCar(k === 0), y0: 0, y1: 3.2, halfLen: 2.6, dz: k * CAR_LEN });
+      r.mech = TRAIN;
+      r.loco = k === 0;
+      if (!head) head = r;
+    }
+    track.trainHold = { chunk, from: zRow, to: zRow + TRAIN_CARS * CAR_LEN };
+    return head;
+  },
+  settle() {},
+  // A row laid alongside the train: clear the rail lane, and keep one of
+  // the other lanes free of vehicles.
+  after({ track, chunk, zRow }) {
+    const h = track.trainHold;
+    if (!h || h.chunk !== chunk || zRow <= h.from || zRow > h.to + 2) return;
+    const inRow = (o) => o.chunk === chunk && Math.abs(o.localZ + zRow) < 0.01 && !o.mech;
+    const drop = (o) => { chunk.remove(o.mesh); track.obstacles = track.obstacles.filter((x) => x !== o); };
+    for (const o of track.obstacles.filter((x) => inRow(x) && track.laneAtArrival(x) === 0)) drop(o);
+    const walls = track.obstacles.filter((x) => inRow(x) && x.kind === 'full');
+    if ([1, 2].every((l) => walls.some((w) => track.laneAtArrival(w) === l))) {
+      drop(walls.find((w) => track.laneAtArrival(w) === 2));
+    }
+    track.coins = track.coins.filter((c) => {
+      const hit = c.chunk === chunk && Math.abs(c.mesh.position.x - LANES[0]) < 0.1
+        && c.mesh.position.z <= -zRow + 0.1 && c.mesh.position.z > -zRow - 7.5;
+      if (hit) chunk.remove(c.mesh);
+      return !hit;
+    });
+  },
+  move(o, ahead) {
+    const off = Math.min(RUSH_MAX, Math.max(0, ahead) * RUSH);
+    o.mesh.position.z = o.localZ - off;
+    const warn = ahead <= TRAIN_WARN && ahead > -4;
+    if (o.loco) {
+      const L = o.mesh.userData.lamps;
+      const on = warn && Math.floor(ahead / 3) % 2 === 0;
+      for (const l of L.lamps) l.material = on ? L.on : L.off;
+    }
+    return o.loco && warn && ahead > 0;
+  },
+};
+
 export const MECHANICS = {
   handcart: CART,
   braker: BRAKER,
   uturn: UTURN,
   gust: GUST,
+  swarm: SWARM,
+  train: TRAIN,
 };

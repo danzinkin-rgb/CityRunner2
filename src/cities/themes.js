@@ -618,6 +618,57 @@ export const ALL_CITIES = [
       },
     ],
   },
+  {
+    id: 'hanoi', name: 'HANOI', flag: '🇻🇳', region: 'asia',
+    streets: ['Hang Gai', 'Train Street', 'Hoan Kiem Lake'],
+    // A soft, humid afternoon: milky blue sky, warm haze. Mustard-yellow
+    // plaster, green shutters, red lanterns, the lake's green water.
+    sky: { top: '#4a84c4', mid: '#9cbcd8', horizon: '#f0dcb8', glow: '#f2c890' },
+    fog: 0xe8d4b0, fogDensity: 0.0104,
+    sun: { color: 0xffe8c0, intensity: 2.4, pos: [55, 65, -45] },
+    hemi: { sky: 0xdce4ec, ground: 0x8a7a60, intensity: 1.1 },
+    fill: { color: 0xffe8d0, intensity: 1.0 },
+    road: '#4c4a4c', lane: '#ece6d4', sidewalk: '#a8a090',
+    palette: ['#e8c050', '#e0b048', '#d8c890', '#c8d0b0', '#e8d4a0', '#d0a858'],
+    trim: '#f4ecd8', roof: '#8a4a32',
+    windowLit: '#ffd08a', windowDay: '#88b0c8', accent: '#c8202a',
+    storefront: ['#c8202a', '#e8a818', '#2a7a5a', '#2a5ab0', '#a83a8a'],
+    facade: 'tubehouse', hBase: 11, hVar: 5,
+    props: ['lamp', 'tree'],
+    // Motorbikes, Hanoi's traffic. Low enough to jump, short as a Vespa.
+    vehicle: 'motorbike',
+    // Motorbikes ride in pairs and swerve together (src/run/mechanics.js);
+    // Train Street has its train instead.
+    mechanic: 'swarm',
+    landmarks: ['turtletower', 'longbien', 'vanmieu'],
+    levels: [
+      { // Hang Gai: the Old Quarter's silk street, narrow tube houses,
+        // strings of silk lanterns overhead
+        key: 'hanggai',
+        setback: 3.2, secondRow: 0.3,
+        props: ['lamp', 'souvenirstall'],
+        ads: ['SILK', 'TAILOR', 'PHO', 'LANTERNS', 'COFFEE'],
+        span: 'lanterns', spanFreq: 0.8, spanY: 7.4, lit: 0.28,
+      },
+      { // Train Street: houses a step from the rails, a train squeezing
+        // through between them
+        key: 'trainst', mechanic: 'train',
+        roadStyle: 'trainline', setback: 2.4, hBase: 9, hVar: 3, secondRow: 0,
+        palette: ['#d8b050', '#c8c090', '#b8c8a8', '#e0c070', '#c8a868', '#d0b888'],
+        props: ['lamp', 'tree'],
+        ads: ['COFFEE', 'EGG COFFEE', 'NOODLES'],
+        lit: 0.2,
+      },
+      { // Hoan Kiem Lake: the lakeside road, the green water and its trees
+        // on one side, the Turtle Tower on its island
+        key: 'hoankiem', lake: true,
+        setback: 4.4, hBase: 12, hVar: 4, secondRow: 0.4,
+        props: ['lamp', 'tree'],
+        ads: ['ICE CREAM', 'BOOKS', 'WATER PUPPETS'],
+        cameo: 'turtletower', lit: 0.18,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -633,6 +684,7 @@ export const LANDMARK_NAMES = {
   lahori: 'Red Fort', qutub: 'Qutub Minar', indiagate: 'India Gate',
   giantswing: 'Giant Swing', watarun: 'Wat Arun', chakri: 'Chakri Maha Prasat',
   clocktower: 'Waterfront Clock Tower', goodhope: 'Castle of Good Hope', cityhall: 'Cape Town City Hall',
+  turtletower: 'Turtle Tower', longbien: 'Long Bien Bridge', vanmieu: 'Temple of Literature',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

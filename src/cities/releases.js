@@ -12,4 +12,4 @@
 // test/releases.mjs checks the menu shows exactly the released cities.
 //
 // In release order: the first entry is the next city to ship.
-export const RELEASE_QUEUE = ['jerusalem', 'mexico', 'marrakech', 'delhi', 'bangkok', 'capetown'];
+export const RELEASE_QUEUE = ['jerusalem', 'mexico', 'marrakech', 'delhi', 'bangkok', 'capetown', 'hanoi'];

@@ -1293,6 +1293,84 @@ const defs = {
     B([0, 19.4, -1.8], [2.4, 1.4, 2.4], '#5a7a6a', 'dome', { metal: 1 }),
     B([0, 21.2, -1.8], [0.3, 1.6, 0.3], '#e0b040', 'cyl', { metal: 1 }),
   ],
+  // ================= HANOI =================
+  // The Turtle Tower (1886), Long Bien Bridge (1903, by the Paris firm
+  // Daydé & Pillé) and the Temple of Literature (1070, its pavilion 1805)
+  // are all long out of copyright. The One Pillar Pagoda was left out: the
+  // one standing is a 1955 rebuild by an architect who died this century.
+
+  // The Turtle Tower on its island in Hoan Kiem Lake: three small storeys
+  // of arched openings, each a step narrower, under a curved roof.
+  // Street 1: about a dozen pieces.
+  turtletower: [
+    B([0, 0.15, 0], [16, 0.3, 12], '#4a7a6a', 'box', { wet: 1, em: '#7ab0a0', emI: 0.3 }),   // the lake
+    B([0, 0.6, 0], [8, 0.8, 6], '#7a7058', 'lathe', { profile: [[1, 0], [0.92, 0.6], [0.7, 1]] }),
+    B([-2.6, 1.3, 1.2], [1.4, 1.2, 1.4], '#4a8a3a', 'sphere'),                              // shrubs
+    B([2.8, 1.2, -1.0], [1.2, 1.0, 1.2], '#3a7a34', 'sphere'),
+    B([0, 2.6, 0], [3.6, 2.6, 3.6], '#d8d0b8', 'box', { tex: 'arch', tx: { n: 3 } }),
+    B([0, 4.05, 0], [4.0, 0.3, 4.0], '#c8bea4'),
+    B([0, 5.2, 0], [2.8, 2.0, 2.8], '#dcd4bc', 'box', { tex: 'arch', tx: { n: 3 } }),
+    B([0, 6.35, 0], [3.2, 0.3, 3.2], '#c8bea4'),
+    B([0, 7.3, 0], [2.0, 1.6, 2.0], '#e0d8c0', 'box', { tex: 'arch', tx: { n: 1 } }),
+    B([0, 8.6, 0], [2.8, 1.0, 2.8], '#8a5a3a', 'pyramid'),
+    B([0, 9.5, 0], [0.4, 0.8, 0.4], '#e0b040', 'cone4', { metal: 1 }),
+    B([3.2, 1.6, 1.8], [0.4, 1.2, 0.4], '#9a9488', 'box'),                                  // a stone lantern
+  ],
+
+  // Long Bien Bridge: dark steel cantilever trusses on tall stone piers over
+  // the Red River, the railway running along the deck between them.
+  // Street 2: about eighteen pieces.
+  longbien: [
+    B([0, 0.15, 0], [30, 0.3, 8], '#8a6a4a', 'box', { wet: 1, em: '#a08060', emI: 0.2 }),   // the Red River
+    B([-13.5, 0.9, 0], [4, 1.2, 8], '#6a7a4a', 'box'),                                      // the banks
+    B([13.5, 0.9, 0], [4, 1.2, 8], '#6a7a4a', 'box'),
+    ...[-9, -3, 3, 9].map((x) => B([x, 2.3, 0], [1.4, 4.6, 2.2], '#8a8a80', 'box', { tex: 'stone' })),
+    ...[-6, 0, 6].flatMap((x) => [
+      B([x, 4.75, 0], [6, 0.3, 2.0], '#4a4a46'),                                            // the deck
+      B([x, 5.9, 0], [6, 2.0, 1.8], '#4e4e48', 'box', { tex: 'lattice' }),                  // a truss
+      B([x, 7.4, 0], [6, 1.0, 1.8], '#4e4e48', 'prism', { tex: 'lattice' }),                // its humped top chord
+    ]),
+    B([-13.5, 4.75, 0], [6, 0.3, 2.0], '#7a6a5a', 'box', {                                 // the stone approaches
+      adorn: [B([0, -1.7, 0], [1.0, 3.2, 1.6], '#8a8a80')],
+    }),
+    B([13.5, 4.75, 0], [6, 0.3, 2.0], '#7a6a5a', 'box', {
+      adorn: [B([0, -1.7, 0], [1.0, 3.2, 1.6], '#8a8a80')],
+    }),
+    B([0, 5.05, 0], [24, 0.12, 0.9], '#9a9aa0', 'box', { metal: 1, sortY: 7.5 }),          // the rails
+  ],
+
+  // The Temple of Literature: the Khue Van Cac pavilion on its four white
+  // pillars, the square Well of Heavenly Clarity, rows of stone tablets on
+  // the backs of stone turtles, and the great middle gate behind.
+  // Street 3: about two dozen pieces.
+  vanmieu: [
+    B([0, 0.15, 0], [20, 0.3, 16], '#7a8a5a', 'box'),
+    B([0, 0.35, 0], [3, 0.1, 14], '#c8bca0', 'box', { tex: 'stone' }),                     // the path
+    B([0, 0.4, 4.2], [5.6, 0.2, 4.4], '#a8a090', 'box', { tex: 'stone' }),                  // the well's rim
+    B([0, 0.52, 4.2], [5.0, 0.12, 3.8], '#3a7a8a', 'box', { wet: 1, em: '#6ab0c0', emI: 0.3 }),
+    ...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([x, z]) => B([x * 1.2, 1.9, z * 1.2 - 0.5], [0.9, 3.2, 0.9], '#ece6d8', 'box')),
+    B([0, 4.6, -0.5], [3.4, 2.2, 3.4], '#a8302a', 'box', {                                 // the wooden upper storey
+      adorn: [
+        B([0, 0, 1.72], [1.2, 1.2, 0.08], '#f0c050', 'cyl', { rotX: Math.PI / 2, em: '#ffd070', emI: 0.3 }),
+        B([0, 0, -1.72], [1.2, 1.2, 0.08], '#f0c050', 'cyl', { rotX: Math.PI / 2, em: '#ffd070', emI: 0.3 }),
+      ],
+    }),
+    B([0, 6.1, -0.5], [4.8, 0.9, 4.8], '#6a3a2a', 'pyramid'),
+    B([0, 6.9, -0.5], [3.0, 0.8, 3.0], '#6a3a2a', 'pyramid', {
+      adorn: [B([0, 0.6, 0], [0.3, 0.5, 0.3], '#e0b040', 'cone4', { metal: 1 })],
+    }),
+    ...[-1, 1].flatMap((sx) => [-3.4, -1.2, 1.0, 3.2].map((z) => B([sx * 5.6, 1.1, z], [1.0, 1.6, 1.4], '#8a8a84', 'group', {
+      adorn: [
+        B([0, -0.5, 0], [0.9, 0.5, 1.3], '#7a7a74', 'sphere'),                             // the turtle
+        B([0, 0.25, 0], [0.8, 1.1, 0.16], '#9a9a90', 'box'),                                // the tablet
+        B([0, 0.85, 0], [0.9, 0.25, 0.3], '#8a8a80', 'prism'),
+      ],
+    }))),
+    B([0, 1.7, -6.0], [8, 3.0, 1.6], '#d8c8a0', 'box', { tex: 'arch', tx: { n: 3 } }),    // the middle gate
+    B([0, 3.8, -6.0], [2.6, 1.2, 9], '#8a3a2a', 'prism', { rotY: Math.PI / 2 }),
+    B([-7.0, 1.2, -6.0], [6, 2.4, 0.8], '#c8b890', 'box', { tex: 'stone' }),
+    B([7.0, 1.2, -6.0], [6, 2.4, 0.8], '#c8b890', 'box', { tex: 'stone' }),
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }

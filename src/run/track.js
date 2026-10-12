@@ -276,9 +276,9 @@ export class Track {
           eq.rotation.y = side * Math.PI / 2.5;
           g.add(eq);
         }
-      } else if (t.canal && side < 0) {
-        // Khlong Bang Luang: the canal instead of a row of houses, beyond
-        // the pavement's far edge
+      } else if ((t.canal || t.lake) && side < 0) {
+        // Khlong Bang Luang's canal, or Hoan Kiem's lake, instead of a row
+        // of houses, beyond the pavement's far edge
         const canal = makeCanalSide(t, CHUNK_LEN);
         canal.position.x = -(ROAD_W / 2 + swW);
         g.add(canal);
@@ -536,8 +536,10 @@ export class Track {
       const addObstacle = (lane, kind, custom) => {
         usedLanes.add(lane);
         let mesh, y0 = 0, y1 = 0, halfLen = 0.35;
+        let dz = 0;                 // a custom obstacle may sit behind its row
         if (custom) {
           ({ mesh, y0, y1, halfLen } = custom);
+          dz = custom.dz || 0;
         } else if (kind === 'full') {
           // San Francisco decides cable car or car BEFORE building anything,
           // so the car lanes do not build a whole cable car and throw it away.
@@ -566,7 +568,7 @@ export class Track {
           // vehicle, so no other city's seeded stream moves.
           const tall = isBus || isCable || isCityBus;
           y0 = 0; y1 = tall ? 3.2 : 1.6;
-          halfLen = tall ? 2.6 : t.vehicle === 'vespa' ? 1.1 : 2.1;
+          halfLen = tall ? 2.6 : t.vehicle === 'vespa' || t.vehicle === 'motorbike' ? 1.1 : 2.1;
           if (mesh.userData.asCab) mesh.scale.set(0.82, 0.5, 0.86);
         } else if (kind === 'low') {
           mesh = new THREE.Group();
@@ -600,9 +602,9 @@ export class Track {
           sign.position.y = 2.5; mesh.add(sign);
           y0 = 1.3; y1 = 3.4;   // gap below 1.3 → roll under
         }
-        mesh.position.set(LANES[lane], 0, -zRow);
+        mesh.position.set(LANES[lane], 0, -zRow - dz);
         chunkGroup.add(mesh);
-        const rec = { mesh, lane, kind, y0, y1, halfLen, chunk: chunkGroup, localZ: -zRow };
+        const rec = { mesh, lane, kind, y0, y1, halfLen, chunk: chunkGroup, localZ: -zRow - dz };
         this.obstacles.push(rec);
         return rec;
       };
@@ -610,7 +612,8 @@ export class Track {
       // Level 1 sees fewer vehicles and more single jump/roll obstacles.
       const fullCut = this.level === 1 ? 0.18 : 0.3;
       const special = mech
-        ? mech.row({ level: this.level, rand, randInt, addObstacle, usedLanes, prev: this.prevRow })
+        ? mech.row({ level: this.level, rand, randInt, addObstacle, usedLanes, prev: this.prevRow,
+          zRow, chunkLen: CHUNK_LEN, track: this, chunk: chunkGroup })
         : null;
       if (special) {
         // the city's move took this row
@@ -666,6 +669,9 @@ export class Track {
         special.mech = mech;
         mech.settle(special, { coinLane, usedLanes, rand, randInt });
       }
+      // a move that holds a lane over the following rows (Hanoi's train)
+      // clears them out of it; removing draws nothing from the seeded stream
+      if (mech && mech.after) mech.after({ track: this, chunk: chunkGroup, zRow });
       this.prevRow = { used: usedLanes, coin: coinLane };
       // Rome: now the row is complete, decide where (if anywhere) the Vespa
       // can go — see the fairness rules above WEAVE_CHANCE.

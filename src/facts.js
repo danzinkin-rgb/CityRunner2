@@ -215,6 +215,28 @@ export const STREET_FACTS = {
         { text: 'It is still a working harbour, with fishing boats and tugs moored among the shops and restaurants.' },
       ] },
   ],
+  // Hanoi: DRAFT, awaiting Dan's sign-off (docs/HANOI-FACTS-DRAFT.md,
+  // sources listed there).
+  hanoi: [
+    { street: 'Hang Gai', tag: 'The silk street',
+      facts: [
+        { text: "Hanoi's Old Quarter is called the 36 Streets. Each street was named after the trade of the guild that worked there." },
+        { text: "'Hang' means goods. Hang Gai was a centre of the silk trade, and it is still known for silk and tailors." },
+        { text: 'The number 36 is not exact: the Old Quarter has more streets than that today.' },
+      ] },
+    { street: 'Train Street', tag: 'Houses beside the rails',
+      facts: [
+        { big: '1902', label: 'railway built', text: 'The railway through here was built in 1902, and trains still run along it.' },
+        { text: 'The houses stand so close to the rails that people step back into their doorways when a train goes by.' },
+        { text: 'In 2019 the cafés along the tracks were closed to visitors for safety. They reopened in 2023 under stricter rules.' },
+      ] },
+    { street: 'Hoan Kiem Lake', tag: 'The lake of the returned sword',
+      facts: [
+        { text: "Hoan Kiem means 'lake of the returned sword'." },
+        { big: '1428', label: 'the legend', text: 'The story goes that in 1428 a golden turtle rose from the lake and took back the magic sword Emperor Le Loi had used to win his war.' },
+        { text: "Before the legend, the lake was called Luc Thuy, 'green water'." },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -357,6 +379,29 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Hanoi: DRAFT, awaiting Dan's sign-off (docs/HANOI-FACTS-DRAFT.md).
+  // altitude: Hanoi's urban core lies about 4 to 11 m above sea level (a 1988
+  // survey, ircwash.org); 10 m used. No sourced heights for the tower or the
+  // temple.
+  turtletower: { altitude: 10,
+    facts: [
+      { big: '1886', label: 'built', text: 'The little tower was built on its island in the lake in 1886.' },
+      { text: "It is named for the golden turtle of the lake's legend." },
+      { text: 'Visitors cannot go out to it: everyone sees it from the shore.' },
+    ] },
+  // 43.5 m (en.wikipedia.org/wiki/Long_Biên_Bridge)
+  longbien: { scale: 43.5, compare: 'bus',
+    facts: [
+      { big: '1903', label: 'opened', text: 'Designed by the Paris firm Daydé & Pillé, it opened in 1903 as the first steel bridge across the Red River.' },
+      { big: '2,290', unit: 'm', label: 'long', text: 'It is 2,290 metres long and crosses the river on 19 spans.' },
+      { text: 'It was first named after Paul Doumer, the French governor-general, and was renamed Long Bien after 1954.' },
+    ] },
+  vanmieu: { altitude: 10,
+    facts: [
+      { big: '1070', label: 'founded', text: "The temple was founded in 1070, and in 1076 Vietnam's first national university opened beside it." },
+      { big: '82', unit: 'tablets', label: 'on stone turtles', text: 'Eighty-two stone tablets, each carried on the back of a stone turtle, record the scholars who passed the royal exams.' },
+      { big: '1805', label: 'the pavilion', text: 'Its Constellation of Literature Pavilion was built in 1805, and it has become a symbol of Hanoi.' },
     ] },
   // Cape Town: DRAFT, awaiting Dan's sign-off (docs/CAPE-TOWN-FACTS-DRAFT.md).
   // No sourced heights: altitude, the city centre at about 25 m above sea

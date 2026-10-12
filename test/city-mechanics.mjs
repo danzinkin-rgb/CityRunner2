@@ -301,6 +301,98 @@ async function watch(page, ms, shotName) {
   await again.ctx.close();
 }
 
+// ------------------------------------------------------------ Hanoi
+// Motorbikes swerve in pairs (SW_* in mechanics.js), on Hang Gai and by the
+// lake:
+//   - a pair has its row to itself, side by side, and the row has no
+//     souvenirs
+//   - both swerve one lane the same way, so exactly one lane is free after
+// Train Street's train (TRAIN_* in mechanics.js):
+//   - four cars nose to tail in the rail lane, all inside one chunk
+//   - rows alongside have nothing in the rail lane, no souvenirs there, and
+//     keep one other lane free of vehicles
+//   - it is drawn at most 30 m further off than where it meets you
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337]) {
+    ({ page, ctx, errors } = await open('hanoi', 3, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.some((o) => o.mech)) break;
+    await ctx.close();
+  }
+  const bikes = snap.obs.filter((o) => o.mech);
+  check(bikes.length > 0, 'Hanoi deals swerving pairs of motorbikes', `${bikes.length / 2} pairs, seed ${SEED}`);
+  const rows = [...new Set(bikes.map((b) => b.row))];
+  let pairBad = 0, coinBad = 0;
+  for (const row of rows) {
+    const inRow = snap.obs.filter((o) => o.row === row);
+    const pair = inRow.filter((o) => o.mech);
+    const ok = inRow.length === 2 && pair.length === 2 && Math.abs(pair[0].from - pair[1].from) === 1
+      && pair[0].to - pair[0].from === pair[1].to - pair[1].from && Math.abs(pair[0].to - pair[0].from) === 1;
+    if (!ok) pairBad++;
+    // a row's own souvenirs start exactly at the row (an arc from the row
+    // before can run on past it, over the bikes, which is fine)
+    const [ch, lz] = row.split(':').map(Number);
+    if (snap.coins.some((c) => c.chunk === ch && Math.abs(c.z - lz) < 0.1)) coinBad++;
+    const after = new Set(pair.map((b) => b.to));
+    if (after.size !== 2) pairBad++;
+  }
+  check(pairBad === 0, 'a pair rides side by side, alone in its row, and swerves one lane together');
+  check(coinBad === 0, "a pair's row has no souvenirs", `${coinBad} bad`);
+  check(!errors.length, 'Hanoi street 3: no page errors', errors[0] || '');
+  await ctx.close();
+  const again = await open('hanoi', 3, SEED);
+  const snap2 = await again.page.evaluate(SNAP);
+  const sig = (s) => JSON.stringify(s.obs.filter((o) => o.mech).map((o) => [o.row, o.from, o.to]));
+  check(sig(snap) === sig(snap2), 'the same seed deals the same pairs');
+  await again.ctx.close();
+
+  // Train Street
+  let tsnap;
+  for (SEED of [7, 4242, 99, 1234, 31337, 2024, 5]) {
+    ({ page, ctx, errors } = await open('hanoi', 2, SEED));
+    tsnap = await page.evaluate(() => {
+      const tr = window.__cr.track;
+      const cars = tr.obstacles.filter((o) => o.mech).map((o) => ({
+        chunk: tr.chunks.indexOf(o.chunk), z: o.localZ, lane: tr.laneAtArrival(o), loco: !!o.loco,
+      }));
+      const rows = tr.obstacles.filter((o) => !o.mech).map((o) => ({
+        chunk: tr.chunks.indexOf(o.chunk), z: o.localZ, lane: tr.laneAtArrival(o), kind: o.kind,
+      }));
+      const coins = tr.coins.map((c) => ({ chunk: tr.chunks.indexOf(c.chunk), x: c.mesh.position.x, z: c.mesh.position.z }));
+      return { cars, rows, coins };
+    });
+    if (tsnap.cars.length) break;
+    await ctx.close();
+  }
+  const trains = tsnap.cars.filter((c) => c.loco);
+  check(trains.length > 0, 'Train Street deals trains', `${trains.length} in the opening chunks, seed ${SEED}`);
+  let carBad = 0, alongBad = 0, coinsBad = 0;
+  for (const t of trains) {
+    const cars = tsnap.cars.filter((c) => c.chunk === t.chunk && c.z <= t.z && c.z > t.z - 24.5);
+    if (cars.length !== 4 || cars.some((c) => c.lane !== 0) || cars.some((c) => c.z < -34)) carBad++;
+    const along = tsnap.rows.filter((r) => r.chunk === t.chunk && r.z < t.z && r.z >= t.z - 26);
+    if (along.some((r) => r.lane === 0)) alongBad++;
+    const zs = [...new Set(along.map((r) => r.z))];
+    for (const z of zs) {
+      const walls = along.filter((r) => r.z === z && r.kind === 'full').map((r) => r.lane);
+      if (walls.includes(1) && walls.includes(2)) alongBad++;
+    }
+    if (tsnap.coins.some((c) => c.chunk === t.chunk && c.z < t.z && c.z >= t.z - 26 && Math.abs(c.x + 2.4) < 0.2)) coinsBad++;
+  }
+  check(carBad === 0, 'a train is four cars in the rail lane, inside one chunk', `${carBad} bad`);
+  check(alongBad === 0, 'rows beside a train keep out of the rail lane and leave a lane free', `${alongBad} bad`);
+  check(coinsBad === 0, 'no souvenirs lie in the rail lane beside a train', `${coinsBad} bad`);
+  const offs = await page.evaluate(() => {
+    const o = window.__cr.track.obstacles.find((x) => x.mech);
+    const probe = (a) => { const r = { localZ: 0, loco: false, mesh: { position: {}, userData: {} } }; o.mech.move(r, a); return -r.mesh.position.z; };
+    return [probe(0), probe(20), probe(500)];
+  });
+  check(offs[0] === 0 && offs[1] > 0 && offs[2] <= 30, 'a train is drawn at most 30 m off, and exactly where it meets you', offs.join(', '));
+  check(!errors.length, 'Train Street: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
 // ------------------------------------------------------- no stray moves
 for (const city of ['nyc', 'rome', 'sf', 'jerusalem', 'mexico']) {
   const { page, ctx } = await open(city, 3, 4242);

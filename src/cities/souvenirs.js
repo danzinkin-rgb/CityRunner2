@@ -136,6 +136,21 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'hanoi') {
+    // A conical leaf hat, the non la: a shallow cone of palm leaf with its
+    // rings of stitching, and a red ribbon to tie under the chin.
+    const straw = new THREE.MeshStandardMaterial({ color: 0xe8d4a0, roughness: 0.7, emissive: 0x5a4a20, emissiveIntensity: 0.35, side: THREE.DoubleSide });
+    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.46, 0.34, 24, 1, true), straw);
+    hat.position.y = 0.08; g.add(hat);
+    const ringMat = new THREE.MeshStandardMaterial({ color: 0xb89a60, roughness: 0.8 });
+    for (const t of [0.25, 0.5, 0.75]) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.46 * t, 0.008, 4, 28), ringMat);
+      ring.rotation.x = Math.PI / 2; ring.position.y = 0.25 - 0.34 * t; g.add(ring);
+    }
+    const ribbon = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.02, 6, 20, Math.PI),
+      new THREE.MeshStandardMaterial({ color: 0xd8202a, roughness: 0.5, emissive: 0x5a0a0a, emissiveIntensity: 0.4 }));
+    ribbon.rotation.z = Math.PI; ribbon.position.y = -0.09; g.add(ribbon);
+    g.rotation.x = 0.35;
   } else if (theme.id === 'capetown') {
     // A king protea, South Africa's national flower: a cup of pointed pink
     // bracts around a domed, silvery centre, on a short stem with leaves.
