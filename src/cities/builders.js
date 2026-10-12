@@ -2201,6 +2201,7 @@ const ADS = {
   beijing: ['TEA', 'DUMPLINGS', 'NOODLES', 'BOOKS'],
   havana: ['CAFÉ', 'MUSIC', 'BOOKS', 'ICE CREAM'],
   istanbul: ['SIMIT', 'TEA', 'BOOKS', 'LOKUM'],
+  chicago: ['PIZZA', 'JAZZ', 'BLUES', 'HOT DOGS'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -3433,6 +3434,67 @@ export function makeMotorbike(signal = false) {
   return g;
 }
 
+// Chicago's bascule bridge, one lane's share of it: a steel deck leaf
+// hinged 4 m beyond the crossing line, so as it tilts up its near edge
+// rises into a lip across the lane (src/run/mechanics.js tilts it). The
+// outer lanes also carry the warning gate and its flashing lights at the
+// kerb. Faces the player.
+export function makeBridgeLeaf(lane) {
+  const g = new THREE.Group();
+  const steel = cached('mat:bridgeDeck', () => new THREE.MeshStandardMaterial({ color: 0x5a6068, roughness: 0.5, metalness: 0.5 }));
+  const pivot = new THREE.Group();
+  pivot.position.set(0, 0.02, -4.2);
+  const leaf = new THREE.Mesh(boxGeo, steel);
+  leaf.scale.set(2.4, 0.3, 4.2); leaf.position.set(0, 0, 2.1); pivot.add(leaf);
+  const stripe = new THREE.Mesh(boxGeo, cached('mat:bridgeEdge', () => new THREE.MeshStandardMaterial({ color: 0xf2c418, roughness: 0.6 })));
+  stripe.scale.set(2.4, 0.32, 0.25); stripe.position.set(0, 0.01, 4.1); pivot.add(stripe);
+  g.add(pivot);
+  g.userData.leaf = pivot;
+  if (lane !== 1) {
+    const out = lane === 0 ? -1 : 1;
+    const post = new THREE.Mesh(cylGeo, mats.black);
+    post.scale.set(0.12, 1.4, 0.12); post.position.set(out * 2.9, 0.7, 1.4); g.add(post);
+    const arm = new THREE.Mesh(boxGeo, cached('mat:gateArm', () => new THREE.MeshStandardMaterial({ color: 0xf4f0e8, roughness: 0.5 })));
+    arm.scale.set(0.1, 2.2, 0.1); arm.position.set(out * 2.9, 2.5, 1.4); g.add(arm);
+    const off = cached('mat:gateOff', () => new THREE.MeshStandardMaterial({ color: 0x5a1010, roughness: 0.4 }));
+    const on = cached('mat:gateOn', () => new THREE.MeshStandardMaterial({ color: 0xff3030, emissive: 0xff1a1a, emissiveIntensity: 3 }));
+    const lights = [];
+    for (const dz of [-0.2, 0.2]) {
+      const l = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), off);
+      l.position.set(out * 2.9, 1.5, 1.4 + dz); g.add(l); lights.push(l);
+    }
+    g.userData.lights = lights; g.userData.on = on; g.userData.off = off;
+  }
+  return g;
+}
+
+// Chicago's Loop: one chunk's stretch of the elevated railway over the
+// street, steel columns along both kerbs carrying girders and a deck high
+// overhead, and now and then a train passing above.
+export function makeElevated(len) {
+  const g = new THREE.Group();
+  const steel = cached('mat:elSteel', () => new THREE.MeshStandardMaterial({ color: 0x3a4a3e, roughness: 0.6, metalness: 0.5 }));
+  for (let z = 3; z < len; z += 9) {
+    for (const x of [-5.0, 5.0]) {
+      const col = new THREE.Mesh(boxGeo, steel);
+      col.scale.set(0.4, 7.6, 0.4); col.position.set(x, 3.8, -z); g.add(col);
+    }
+    const beam = new THREE.Mesh(boxGeo, steel);
+    beam.scale.set(10.6, 0.6, 0.5); beam.position.set(0, 7.8, -z); g.add(beam);
+  }
+  for (const x of [-3.2, 3.2]) {
+    const girder = new THREE.Mesh(boxGeo, steel);
+    girder.scale.set(0.5, 1.0, len); girder.position.set(x, 8.4, -len / 2); g.add(girder);
+  }
+  const deck = new THREE.Mesh(boxGeo, steel);
+  deck.scale.set(7.0, 0.2, len); deck.position.set(0, 8.95, -len / 2); g.add(deck);
+  if (Math.random() < 0.3) {
+    const car = new THREE.Mesh(boxGeo, cached('mat:elCar', () => new THREE.MeshStandardMaterial({ color: 0xc8ccd2, roughness: 0.35, metalness: 0.6 })));
+    car.scale.set(2.6, 2.8, 14); car.position.set(1.6, 10.5, -len / 2); g.add(car);
+  }
+  return g;
+}
+
 // Istanbul's tram: a car of the old red-and-cream tram, with its trolley
 // pole up to the wire. A wall (3.2 m). The front car carries two big
 // lamps that flash as it comes.
@@ -4550,6 +4612,7 @@ const SIL_TINT = {
   beijing: '#4a4a52',    // grey roofs and the curved eaves of the old towers
   havana: '#5a4a52',     // faded pastel blocks and the fortress over the harbour
   istanbul: '#4a4256',   // domes and minarets against the evening haze
+  chicago: '#3a4252',    // the skyline's towers over the lake haze
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
@@ -4710,6 +4773,18 @@ function skylineTexture(theme) {
           g.fill();
         }
         x += bw + 1;
+      }
+    } else if (theme.id === 'chicago') {
+      // A wall of towers of every height, a few very tall with antennas.
+      for (let x = 0, i = 0; x < 1600; i++) {
+        const bw = 40 + (i * 17) % 40, bh = 70 + (i * 37) % 140;
+        box(x, bw, bh, 0.16 + ((i * 3) % 4) * 0.02);
+        if (bh > 180) box(x + bw * 0.4, bw * 0.2, bh + 24, 0.2);
+        x += bw + 6;
+      }
+      for (const [x, w, h] of [[700, 56, 290], [1020, 50, 250]]) {
+        box(x, w, h * 0.7, 0.28); box(x + w * 0.2, w * 0.6, h * 0.9, 0.28); box(x + w * 0.35, w * 0.3, h, 0.3);
+        box(x + w * 0.4, 3, h + 40, 0.32);
       }
     } else if (theme.id === 'istanbul') {
       // The old city's skyline from the water: hills of houses, and on them
@@ -5051,6 +5126,28 @@ export function makeCameo(theme) {
       g.fillRect(cx + 50, GY - 196, 40, 50);                         // the tower
       g.fillStyle = light(0.2);
       for (let x = cx - 140; x < cx + 140; x += 16) g.fillRect(x, GY - 138, 7, 12);   // the gallery
+    } else if (key === 'watertowercameo') {
+      // The old Water Tower on Michigan Avenue: a castellated stone tower
+      // with turrets at its corners and a slim shaft rising from it.
+      g.fillStyle = dark(0.22);
+      for (const [ox, w, h] of [[-460, 160, 300], [-280, 120, 250], [180, 140, 280], [340, 120, 320]]) g.fillRect(cx + ox, GY - h, w, h);
+      g.fillStyle = dark(0.36);
+      g.fillRect(cx - 70, GY - 110, 140, 110);
+      for (const x of [cx - 78, cx + 62]) { g.fillRect(x, GY - 130, 16, 130); g.beginPath(); g.moveTo(x, GY - 130); g.lineTo(x + 8, GY - 146); g.lineTo(x + 16, GY - 130); g.fill(); }
+      g.fillRect(cx - 18, GY - 280, 36, 170);
+      g.fillRect(cx - 24, GY - 230, 48, 10);
+      g.beginPath(); g.moveTo(cx - 20, GY - 280); g.lineTo(cx, GY - 320); g.lineTo(cx + 20, GY - 280); g.fill();
+    } else if (key === 'williscameo') {
+      // The Willis Tower at the end of Wacker Drive: black bundled tubes
+      // stepping back as they rise, two antennas on top.
+      g.fillStyle = dark(0.22);
+      for (const [ox, w, h] of [[-460, 110, 200], [-330, 90, 160], [200, 120, 220], [340, 110, 180]]) g.fillRect(cx + ox, GY - h, w, h);
+      g.fillStyle = dark(0.5);
+      g.fillRect(cx - 60, GY - 230, 120, 230);
+      g.fillRect(cx - 60, GY - 300, 80, 70);
+      g.fillRect(cx - 20, GY - 360, 60, 60);
+      g.fillRect(cx - 20, GY - 400, 40, 40);
+      g.fillRect(cx - 12, GY - 470, 4, 70); g.fillRect(cx + 10, GY - 460, 4, 60);
     } else if (key === 'galatacameo') {
       // The Galata Tower at the far end of İstiklal, over the rooftops:
       // the round stone shaft, its gallery and the tall conical cap.

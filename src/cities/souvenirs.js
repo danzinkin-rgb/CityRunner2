@@ -136,6 +136,23 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'chicago') {
+    // A slice of deep-dish pizza: a tall golden crust round a thick layer
+    // of cheese and red tomato on top, flecked with herbs.
+    const wedge = (r, h, col, em) => {
+      const geo = new THREE.CylinderGeometry(r, r, h, 16, 1, false, -Math.PI / 6, Math.PI / 3);
+      return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.6, emissive: em, emissiveIntensity: 0.35 }));
+    };
+    const crust = wedge(0.5, 0.26, 0xd89a48, 0x5a3a10);
+    crust.position.y = -0.05; g.add(crust);
+    const sauce = wedge(0.44, 0.06, 0xc8301a, 0x5a0a04);
+    sauce.position.y = 0.09; g.add(sauce);
+    const herb = new THREE.MeshStandardMaterial({ color: 0x3a7a2a });
+    for (const [a, rr] of [[0.2, 0.2], [-0.25, 0.3], [0.05, 0.38], [0.3, 0.32]]) {
+      const h = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 4), herb);
+      h.position.set(Math.sin(a) * rr, 0.13, Math.cos(a) * rr); g.add(h);
+    }
+    g.rotation.set(0.6, Math.PI, 0); g.position.z = -0.2;
   } else if (theme.id === 'istanbul') {
     // A tulip-shaped glass of tea on its little red saucer.
     const glass = new THREE.Mesh(new THREE.LatheGeometry([

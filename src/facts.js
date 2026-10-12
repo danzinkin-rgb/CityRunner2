@@ -369,6 +369,28 @@ export const STREET_FACTS = {
         { text: 'At its start stood the Milion, the marker from which distances across the empire were measured.' },
       ] },
   ],
+  // Chicago: DRAFT, awaiting Dan's sign-off (docs/CHICAGO-FACTS-DRAFT.md,
+  // sources listed there).
+  chicago: [
+    { street: 'Michigan Avenue', tag: 'North of the river',
+      facts: [
+        { text: 'This stretch of Michigan Avenue runs about a mile north from the Chicago River, lined with shops, hotels and towers.' },
+        { text: 'It was once a narrow road called Pine Street. It grew into a grand avenue after a double-decked bridge opened over the river in 1920.' },
+        { big: '1920', label: 'the bridge', text: 'That bridge is a bascule bridge: its two halves tip up to let tall boats through.' },
+      ] },
+    { street: 'The Loop', tag: 'Under the tracks',
+      facts: [
+        { big: '1897', label: 'the Loop opened', text: "In 1897 the elevated railway's loop of track opened over the streets of downtown Chicago." },
+        { text: "The tracks run round a rectangle of streets, and that loop gave the whole downtown its name: the Loop." },
+        { text: 'It is one of only a few city railways that have kept running, day in, day out, for well over a century.' },
+      ] },
+    { street: 'Wacker Drive', tag: 'Along the river',
+      facts: [
+        { text: 'Wacker Drive runs along the Chicago River, and has a second road on a lower level beneath it.' },
+        { big: '37', unit: 'bridges', label: 'that move', text: 'Chicago has 37 bridges that open to let boats through, by most counts more than any other city in the world.' },
+        { text: "Most are bascule bridges, a design so common here that it is called the 'Chicago type'." },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -511,6 +533,28 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Chicago: DRAFT, awaiting Dan's sign-off (docs/CHICAGO-FACTS-DRAFT.md).
+  // 154 ft, 47 m (en.wikipedia.org/wiki/Chicago_Water_Tower)
+  watertower: { scale: 47, compare: 'bus',
+    facts: [
+      { big: '1869', label: 'built', text: 'The Water Tower was finished in 1869 to hide a tall iron pipe that helped pump water to the city.' },
+      { big: '1871', label: 'the Great Fire', text: 'It was the only public building in the burned area to survive the Great Chicago Fire of 1871.' },
+      { big: '47', unit: 'm', label: 'tall', text: 'It stands 47 metres tall, built of yellow limestone.' },
+    ] },
+  // the centre jet reaches 150 ft, about 46 m (chicagoparkdistrict.com)
+  buckingham: { scale: 46, compare: 'bus',
+    facts: [
+      { big: '1927', label: 'opened', text: 'Buckingham Fountain opened in 1927, one of the largest fountains in the world.' },
+      { big: '46', unit: 'm', label: 'the centre jet', text: 'In its big display, the centre jet shoots water 46 metres into the air.' },
+      { text: 'The water show runs for 20 minutes every hour, from spring to autumn.' },
+    ] },
+  // 442 m to the roof (en.wikipedia.org/wiki/Willis_Tower)
+  willis: { scale: 442, compare: 'bus',
+    facts: [
+      { big: '442', unit: 'm', label: 'tall', text: 'The tower rises 442 metres to its roof, more with its antennas.' },
+      { big: '1973', label: 'opened', text: 'When it opened in 1973 it was the tallest building in the world, and it held that title for nearly 25 years.' },
+      { text: 'It is built as nine square tubes bundled together. They stop at different heights, so the tower steps back as it rises.' },
     ] },
   // Istanbul: DRAFT, awaiting Dan's sign-off (docs/ISTANBUL-FACTS-DRAFT.md).
   // 66.9 m to the tip of its cap (en.wikipedia.org/wiki/Galata_Tower)

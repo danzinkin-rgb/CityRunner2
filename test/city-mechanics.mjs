@@ -653,6 +653,36 @@ async function watch(page, ms, shotName) {
   await ctx.close();
 }
 
+// ------------------------------------------------------------ Chicago
+// Bascule bridges (BR_* in mechanics.js):
+//   - a bridge is a jump-height lip (1.2 m) in all three lanes, alone in its
+//     row, with no souvenirs
+//   - nothing to roll under 16 m before it or 18 m after it
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337, 2024, 5]) {
+    ({ page, ctx, errors } = await open('chicago', 3, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.some((o) => o.mech)) break;
+    await ctx.close();
+  }
+  const lips = snap.obs.filter((o) => o.mech);
+  check(lips.length > 0, 'Chicago deals bascule bridges', `${lips.length / 3} bridges, seed ${SEED}`);
+  let bad = 0, rollBad = 0;
+  for (const row of new Set(lips.map((l) => l.row))) {
+    const inRow = snap.obs.filter((o) => o.row === row);
+    if (inRow.length !== 3 || inRow.some((o) => !o.mech || o.kind !== 'low' || o.y1 !== 1.2) || new Set(inRow.map((o) => o.lane)).size !== 3) bad++;
+    const [ch, lz] = row.split(':').map(Number);
+    if (snap.coins.some((c) => c.chunk === ch && Math.abs(c.z - lz) < 0.1)) bad++;
+    const z = inRow[0].z;
+    if (snap.obs.some((o) => o.kind === 'high' && o.z > z - 18 && o.z < z + 16)) rollBad++;
+  }
+  check(bad === 0, 'a bridge is a jump-height lip across all three lanes, alone, with no souvenirs');
+  check(rollBad === 0, 'nothing to roll under just before or after a bridge', `${rollBad} bad`);
+  check(!errors.length, 'Chicago: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
 // ------------------------------------------------------- no stray moves
 for (const city of ['nyc', 'rome', 'sf', 'jerusalem', 'mexico']) {
   const { page, ctx } = await open(city, 3, 4242);

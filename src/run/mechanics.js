@@ -25,7 +25,7 @@ import { LANES } from './player.js';
 import {
   makeHandcart, makeAutoRickshaw, makeTukTuk, makeGustDust, makeMotorbike, makeTrainCar,
   makeCrowd, makeCrossing, makeArchBay, makeJutHouse, makeTricycle, makeWave, makeVehicle, makePullBlinker,
-  makeTramCar,
+  makeTramCar, makeBridgeLeaf,
 } from '../cities/builders.js';
 
 // A move that takes a lane for a stretch (Hanoi's train, Zanzibar's narrow
@@ -631,7 +631,60 @@ const PULLOUT = {
   },
 };
 
+// ---- Chicago: the river's bascule bridges -----------------------------------
+// The road crosses the river on a bascule bridge. As you come, the warning
+// gates flash and the two leaves of the bridge begin to lift from the
+// middle, and by the time you reach it their raised edges are a lip across
+// the whole road: jump it. Distances ahead: the lights flash from BR_WARN,
+// the leaves lift between BR_LIFT and BR_SET and then hold.
+// Fairness:
+//   - the lip is a barrier's height (1.2 m) in every lane, so a jump always
+//     clears it, and it is at that height from BR_SET (22 m) out
+//   - nothing to roll under in the 16 m before it (no bridge is placed
+//     there) or the 18 m after it (cleared), so a jump is never squeezed
+//     against a roll
+//   - a bridge has its row to itself, and no souvenirs on the ground
+const BRIDGE_CHANCE = [0.08, 0.1, 0.12];     // share of rows, by street
+const BR_WARN = 60, BR_LIFT = 44, BR_SET = 22, BR_CLEAR_BEFORE = 16, BR_CLEAR_AFTER = 18;
+const BRIDGE = {
+  hint: 'The bridge is lifting: jump the edge!',
+  row({ level, rand, addObstacle, usedLanes, zRow, track, chunk }) {
+    if (rand() >= BRIDGE_CHANCE[level - 1]) return null;
+    const here = chunk.position.z - zRow;
+    const rollBefore = track.obstacles.some((o) => o.kind === 'high'
+      && o.chunk.position.z + o.localZ > here && o.chunk.position.z + o.localZ < here + BR_CLEAR_BEFORE);
+    if (rollBefore) return null;
+    let head = null;
+    for (let l = 0; l <= 2; l++) {
+      const r = addObstacle(l, 'low', { mesh: makeBridgeLeaf(l), y0: 0, y1: 1.2, halfLen: 0.6 });
+      r.mech = BRIDGE;
+      if (!head) head = r;
+    }
+    for (let l = 0; l <= 2; l++) usedLanes.add(l);
+    track.bridgeHold = { chunk, zRow };
+    return head;
+  },
+  settle() {},
+  // the rows just past a bridge: nothing to roll under
+  after({ track, chunk, zRow }) {
+    const h = track.bridgeHold;
+    if (!h || h.chunk !== chunk || zRow <= h.zRow || zRow > h.zRow + BR_CLEAR_AFTER) return;
+    for (const o of track.obstacles.filter((x) => x.chunk === chunk && Math.abs(x.localZ + zRow) < 0.01 && x.kind === 'high')) {
+      chunk.remove(o.mesh); track.obstacles = track.obstacles.filter((x) => x !== o);
+    }
+  },
+  move(o, ahead) {
+    const U = o.mesh.userData;
+    const t = Math.max(0, Math.min(1, (BR_LIFT - ahead) / (BR_LIFT - BR_SET)));
+    U.leaf.rotation.x = -0.26 * t;
+    const warn = ahead <= BR_WARN && ahead > -4;
+    if (U.lights) for (const l of U.lights) l.material = warn && Math.floor(ahead / 2.4) % 2 === 0 ? U.on : U.off;
+    return o.lane === 1 && warn && ahead > 0;
+  },
+};
+
 export const MECHANICS = {
+  bridge: BRIDGE,
   tram: TRAM,
   waves: WAVES,
   pullout: PULLOUT,

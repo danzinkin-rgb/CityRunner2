@@ -15,7 +15,7 @@ import {
   makeArcade, makeGardenRail, makeWindmill, makeObeliskFountain,
   makeEquestrian, makeErosFountain, makeCurvedLED, makeZebra, makeCameo,
   makeGardenParterre, makeStepStreet, makeArtistPitch, makeSquareStalls, makeWireTangle,
-  makeCanalSide,
+  makeCanalSide, makeElevated,
   SHARED_GEO,
 } from '../cities/builders.js';
 import { makeCollectible } from '../cities/souvenirs.js';
@@ -431,6 +431,8 @@ export class Track {
 
     // ---- road-wide + one-off street set pieces ----
 
+    // Chicago's Loop: the elevated railway over the street, the whole way
+    if (t.elevated) g.add(makeElevated(CHUNK_LEN));
     // Abbey Road: THE zebra crossing, a recurring road set piece
     if (t.zebra && nChunk % 2 === 0) {
       const zb = makeZebra(t, ROAD_W);

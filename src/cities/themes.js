@@ -984,6 +984,57 @@ export const ALL_CITIES = [
       },
     ],
   },
+  {
+    id: 'chicago', name: 'CHICAGO', flag: '🌆', region: 'north-america',
+    streets: ['Michigan Avenue', 'The Loop', 'Wacker Drive'],
+    // A crisp autumn afternoon off the lake: clear blue, a cool bright
+    // haze. Brick and limestone, steel and glass, and the river.
+    sky: { top: '#2a62c0', mid: '#80b0e0', horizon: '#e8e4d8', glow: '#ffd8a0' },
+    fog: 0xd8d8d0, fogDensity: 0.0082,
+    sun: { color: 0xfff0d8, intensity: 2.5, pos: [-55, 65, -40] },
+    hemi: { sky: 0xd4e0f0, ground: 0x7a7468, intensity: 1.05 },
+    fill: { color: 0xf8f0e4, intensity: 1.0 },
+    road: '#46464c', lane: '#f2d040', sidewalk: '#b0aca4',
+    palette: ['#a8604a', '#c8b898', '#8a9aa8', '#b8784e', '#d0c4a8', '#7a8898'],
+    trim: '#e8e2d4', roof: '#4a4a50',
+    windowLit: '#ffd898', windowDay: '#9cc0e0', accent: '#2a5ab0',
+    storefront: ['#2a5ab0', '#c8302a', '#2a7a4a', '#e8a018', '#3a3a44'],
+    hBase: 26, hVar: 30,
+    props: ['lamp', 'tree', 'hydrant'],
+    // The yellow city taxi. No operator name or logo.
+    vehicle: 'taxi',
+    // The river's bascule bridges rise as you come (src/run/mechanics.js);
+    // under the elevated tracks of the Loop, cabs pull out from the kerb.
+    mechanic: 'bridge',
+    landmarks: ['watertower', 'buckingham', 'willis'],
+    levels: [
+      { // Michigan Avenue: the grand shopping avenue north of the river,
+        // limestone and terracotta towers, the old Water Tower on it
+        key: 'michigan', facade: 'deptstore',
+        palette: ['#d8ccb0', '#c8bca0', '#e0d4bc', '#b8ac94', '#d0c4a8', '#c4b89c'],
+        setback: 5.6, secondRow: 0.7,
+        props: ['lamp', 'tree', 'flowerbed'],
+        ads: ['DEPARTMENT STORE', 'BOOKS', 'CHOCOLATE', 'SHOES', 'CAFÉ'],
+        cameo: 'watertowercameo', lit: 0.16,
+      },
+      { // The Loop: under the elevated railway, its steel columns along the
+        // kerbs and trains rumbling overhead
+        key: 'loop', elevated: true, mechanic: 'pullout',
+        setback: 4.4, hBase: 30, hVar: 34, secondRow: 0.8,
+        props: ['lamp', 'hydrant', 'newsstand'],
+        ads: ['THEATRE', 'JAZZ', 'HOT DOGS', 'PIZZA', 'RECORDS'],
+        lit: 0.2,
+      },
+      { // Wacker Drive: along the river, its bridges, the towers stepping
+        // up to the tallest of them all
+        key: 'wacker', facade: 'beauxarts', lake: true,
+        setback: 5.0, hBase: 34, hVar: 40, secondRow: 0.6,
+        props: ['lamp', 'tree'],
+        ads: ['BOAT TOURS', 'ARCHITECTURE', 'RIVERWALK'],
+        cameo: 'williscameo', lit: 0.18,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -1006,6 +1057,7 @@ export const LANDMARK_NAMES = {
   drumtower: 'Drum Tower', qiniandian: 'Hall of Prayer for Good Harvests', taihedian: 'Hall of Supreme Harmony',
   realfuerza: 'Castillo de la Real Fuerza', habanacathedral: 'Havana Cathedral', morro: 'Morro Castle',
   galata: 'Galata Tower', bluemosque: 'Blue Mosque', hagiasophia: 'Hagia Sophia',
+  watertower: 'Chicago Water Tower', buckingham: 'Buckingham Fountain', willis: 'Willis Tower',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

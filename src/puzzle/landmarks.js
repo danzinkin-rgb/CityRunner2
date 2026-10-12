@@ -1840,6 +1840,73 @@ const defs = {
       adorn: [B([0, 1.8, 0], [3.6, 2.0, 3.6], '#7a8088', 'dome')],
     })),
   ],
+  // ================= CHICAGO =================
+  // All three are US buildings or structures finished before 1990 (the
+  // Water Tower 1869, Buckingham Fountain 1927, the Willis Tower 1973):
+  // US copyright does not cover buildings built before 1 December 1990.
+  // The fountain's bronze sea horses (1927) are sculptures and are not
+  // modelled; their pedestals stand empty.
+
+  // The Chicago Water Tower: a little castle of yellow limestone, turrets at
+  // its corners, and a slim octagonal shaft rising to a lantern and cap.
+  // Street 1: about a dozen pieces.
+  watertower: [
+    B([0, 0.2, 0], [14, 0.4, 14], '#8a8a80', 'box', { tex: 'stone' }),
+    B([-1.6, 2.6, 0], [3.2, 4.4, 6.4], '#e0d0a0', 'box', { tex: 'gothic' }),
+    B([1.6, 2.6, 0], [3.2, 4.4, 6.4], '#dccc9c', 'box', { tex: 'gothic' }),
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) => B([sx * 3.3, 3.2, sz * 3.3], [1.0, 5.6, 1.0], '#e4d4a4', 'cyl', {
+      adorn: [B([0, 3.2, 0], [1.1, 0.9, 1.1], '#d8c898', 'cone4')],
+    })),
+    B([0, 7.1, 0], [2.6, 4.6, 2.4], '#e0d0a0', 'tier', { sides: 8, tex: 'stone' }),
+    B([0, 11.2, 0], [2.2, 3.6, 2.0], '#e4d4a4', 'tier', { sides: 8, tex: 'gothic' }),
+    B([0, 14.0, 0], [1.6, 2.0, 1.4], '#e8d8a8', 'tier', { sides: 8, tex: 'arch', tx: { n: 4 } }),
+    B([0, 15.6, 0], [1.6, 1.2, 0.2], '#8a8070', 'tier', { sides: 8 }),
+    B([0, 16.6, 0], [0.4, 0.8, 0.4], '#d8b04a', 'cone4', { metal: 1 }),
+  ],
+
+  // Buckingham Fountain: a wide pink-granite basin, three stepped basins
+  // rising from it like a wedding cake, water falling from each, and the
+  // great jet from the top. Street 2: about eighteen pieces.
+  buckingham: [
+    B([0, 0.2, 0], [28, 0.4, 28], '#a8a49c', 'box', { tex: 'stone' }),
+    B([0, 0.6, 0], [22, 0.4, 22], '#3a8ab0', 'water', { wet: 1, em: '#6ab4d4', emI: 0.4 }),   // the lower pool
+    B([0, 0.75, 0], [22.4, 0.5, 0.5], '#d8a8a0', 'torus', { rotX: Math.PI / 2, sortY: 0.8 }),   // its rim
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) => B([sx * 6.2, 1.4, sz * 6.2], [1.6, 1.6, 1.6], '#c8a098', 'box', { sortY: 0.9 })),   // empty pedestals
+    B([0, 1.6, 0], [12, 1.6, 11], '#d4aca4', 'tier', { tex: 'stone' }),                       // the first basin
+    B([0, 2.6, 0], [11.2, 0.4, 11.2], '#5ab0d4', 'water', { wet: 1, em: '#8ad0e8', emI: 0.4 }),
+    B([0, 3.6, 0], [7.4, 1.6, 6.6], '#d8b0a8', 'tier', { tex: 'stone' }),                     // the second
+    B([0, 4.6, 0], [6.6, 0.4, 6.6], '#5ab0d4', 'water', { wet: 1, em: '#8ad0e8', emI: 0.4 }),
+    B([0, 5.6, 0], [3.8, 1.6, 3.2], '#dcb4ac', 'tier', { tex: 'stone' }),                     // the third
+    B([0, 6.6, 0], [3.2, 0.4, 3.2], '#5ab0d4', 'water', { wet: 1, em: '#8ad0e8', emI: 0.4 }),
+    B([0, 7.4, 0], [1.2, 1.2, 1.2], '#dcb4ac', 'cyl'),
+    B([0, 11.6, 0], [0.6, 7.2, 0.6], '#b4ecfc', 'water', { wet: 1, em: '#d8faff', emI: 0.8 }),   // the great jet
+    B([0, 0.9, 11.5], [10, 0.2, 2], '#b8b4ac', 'box', { tex: 'stone' }),                       // the promenade
+    ...[[-1], [1]].map(([sx]) => B([sx * 12, 2.4, 11.5], [0.4, 4.4, 0.4], '#3a3a40', 'cyl', {
+      metal: 1, adorn: [B([0, 2.4, 0], [0.6, 0.6, 0.6], '#fff2c0', 'sphere', { em: '#ffe9a0', emI: 1.2 })],
+    })),
+  ],
+
+  // The Willis Tower: nine square tubes of black steel and dark glass
+  // bundled together, dropping away at different heights so the tower
+  // steps back as it rises, and two antennas on top. Street 3: about two
+  // dozen pieces.
+  willis: (() => {
+    const out = [B([0, 0.6, 0], [12, 1.2, 12], '#5a5c64', 'box', { tex: 'stone' })];
+    const tubes = [[-3, -3, 10], [3, 3, 10], [3, -3, 13], [-3, 3, 13], [-3, 0, 18], [3, 0, 18], [0, 3, 18], [0, 0, 22], [0, -3, 22]];
+    for (const [x, z, h] of tubes) {
+      for (let y = 0; y < h; y += 7) {
+        const seg = Math.min(7, h - y);
+        out.push(B([x, 1.2 + y + seg / 2, z], [2.9, seg, 2.9], '#2a2c32', 'box', {
+          tex: 'win', tx: { cols: 3, rows: Math.max(1, Math.round(seg * 1.6)), lit: '#e8c890' },
+        }));
+      }
+    }
+    out.push(
+      B([-0.5, 25.2, -1.5], [0.25, 6.0, 0.25], '#c8ccd4', 'cyl', { metal: 1 }),
+      B([0.5, 24.8, -1.5], [0.25, 5.2, 0.25], '#c8ccd4', 'cyl', { metal: 1 }),
+    );
+    return out;
+  })(),
 };
 
 export function getLandmark(id) { return defs[id]; }
