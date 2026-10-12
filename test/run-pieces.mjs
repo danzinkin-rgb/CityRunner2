@@ -188,7 +188,9 @@ const VIEW = { viewport: { width: 390, height: 844 } };
   await page.evaluate(async () => {
     const tr = window.__cr.track, pl = window.__cr.player;
     const t0 = performance.now();
-    while (performance.now() - t0 < 20000 && !document.getElementById('screen-facts').classList.contains('on')) {
+    // Up to 60 s of real time, ending as soon as the street does: under a
+    // busy machine (four suites at once) 20 s did not always reach the piece.
+    while (performance.now() - t0 < 60000 && !document.getElementById('screen-facts').classList.contains('on')) {
       const p = tr.pieces.find((x) => !x.taken);
       if (p) pl.lane = [-2.4, 0, 2.4].indexOf(p.mesh.position.x);
       await new Promise((r) => setTimeout(r, 30));

@@ -84,6 +84,11 @@ Since 1.1.1:
 - Gamer mode deals more monument pieces on streets 2 and 3 (up to +30% and
   +50%): attached detail comes off as its own piece, and tall or long
   pieces are cut in two. The finished monument looks the same.
+- Moving hazards from street 2 (feedback: more going on): birds that swoop
+  (roll under), a traffic officer stepping in from the kerb (change lane),
+  a runaway suitcase (jump). An amber patch and a sound warn of each about
+  2.4 s ahead; there is always a clear lane. About 3-4 a street in Newbie,
+  8-9 in Gamer.
 
 ## History
 

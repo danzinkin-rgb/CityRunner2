@@ -16,6 +16,7 @@ import { initIAP, getOffer, purchase, restore, onEntitlementGranted } from './co
 import { STORAGE } from './core/storage-keys.js';
 import { DEBUG_HOOKS, TESTER } from './core/debug.js';
 import { loadGhost, saveGhostIfBest, GhostRecorder, GhostRunner } from './run/ghost.js';
+import { HAZARD_RATE } from './run/hazards.js';
 
 export const VERSION = '1.1.1';
 import { Player, DEFAULT_STYLE } from './run/player.js';
@@ -159,6 +160,7 @@ function playRules() {
 }
 // set again by startRun() and startPuzzle(); dailyMode is not declared yet here
 let rules = { name: 'newbie', ...MODES.newbie };
+const hazardHintsShown = new Set();   // once per kind per session
 const addScore = (n) => { score += n * rules.scoreMul; };
 
 // ---------- daily challenge ----------
@@ -342,7 +344,7 @@ function startRun() {
     dressScene(scene, city());
     player = new Player(scene, characterById(save.equipped).style);
     const pieceDefs = looseDefs(city().landmarks[level - 1], level, tapsHere(), rules.name === 'gamer');
-    track = new Track(scene, city(), level, runSeed, pieceDefs, rules.start[level - 1]);
+    track = new Track(scene, city(), level, runSeed, pieceDefs, rules.start[level - 1], HAZARD_RATE[rules.name][level - 1]);
     ghostRec = new GhostRecorder(track.seed);
     player.onAction = (a) => ghostRec.move(track.distance, a);
     ghost = best && best.seed === track.seed
@@ -362,6 +364,14 @@ function startRun() {
     $('hud-piece-icon').src = `assets/monuments/${city().landmarks[level - 1]}.png`;
     document.body.classList.add('run-pieces');
     track.onWeave = () => hint('That Vespa is signalling — it\'s about to change lanes!');
+    track.onHazard = (kind) => {
+      ({ birds: sfx.flap, officer: sfx.whistle, suitcase: sfx.rumble })[kind]?.();
+      if (hazardHintsShown.has(kind)) return;
+      hazardHintsShown.add(kind);
+      hint({ birds: 'Birds swooping in — roll under them!',
+        officer: 'A traffic officer is stepping out — change lanes!',
+        suitcase: 'A runaway suitcase! Jump over it.' }[kind]);
+    };
     speed = rules.start[level - 1];
     coins = 0; score = 0; shake = 0;
     continuesUsed = 0;

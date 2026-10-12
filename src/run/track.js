@@ -19,7 +19,8 @@ import {
 } from '../cities/builders.js';
 import { makeCollectible } from '../cities/souvenirs.js';
 import { makeBlockMesh } from '../puzzle/puzzle.js';
-import { startRun, randomSeed, rand, randInt } from '../core/rng.js';
+import { startRun, randomSeed, rand, randInt, makeRng } from '../core/rng.js';
+import { HAZARDS, makeHazard, stepHazard, MARK_GEO } from './hazards.js';
 
 const CHUNK_LEN = 36;
 const CHUNKS = 7;          // visible chunks ahead
@@ -107,7 +108,7 @@ const BLINK_MAT = new THREE.MeshStandardMaterial({
 // rider says which way in a form a four-year-old can read.
 const BLINK_GEO = new THREE.BoxGeometry(0.34, 0.26, 0.2);
 const CHEVRON_GEO = new THREE.ConeGeometry(0.62, 1.15, 3);
-SHARED_GEO.add(BLINK_GEO); SHARED_GEO.add(CHEVRON_GEO);
+SHARED_GEO.add(BLINK_GEO); SHARED_GEO.add(CHEVRON_GEO); SHARED_GEO.add(MARK_GEO);
 
 // ---- the monument's pieces, laid along the street ------------------------------
 // Each piece the puzzle will leave loose appears on the run as a small,
@@ -140,7 +141,7 @@ SHARED_GEO.add(PIECE_RING_GEO); SHARED_GEO.add(PIECE_BEAM_GEO);
 //   'full' — vehicle, must change lane
 //   'coin' — collectible
 export class Track {
-  constructor(scene, theme, level, seed, pieceDefs = [], startSpeed = 0) {
+  constructor(scene, theme, level, seed, pieceDefs = [], startSpeed = 0, hazardRate = 0) {
     this.scene = scene;
     // The run's opening speed (it differs by game mode), so the souvenir arcs
     // in the chunks built before the first update() are spaced for it.
@@ -163,6 +164,12 @@ export class Track {
     this.baseTheme = theme;
     this.theme = resolveStreet(theme, level);
     this.level = level;            // 1..3, drives density + speed
+    // Moving hazards (src/run/hazards.js): their own stream, seeded from the
+    // course seed, so they never move an obstacle. The rate is per eligible
+    // gap and depends on street and mode.
+    this.hazardRate = hazardRate;
+    this.hazRng = makeRng((this.seed ^ 0x48415a44) >>> 0);
+    this.onHazard = null;
     this.group = new THREE.Group();
     scene.add(this.group);
     this.chunks = [];
@@ -675,6 +682,7 @@ export class Track {
     for (let r = 0; r + 1 < rows.length; r++) mids.push((rows[r] + rows[r + 1]) / 2);
     if (rows.length) mids.push((8 + rows[rows.length - 1] - CHUNK_LEN) / 2);
     const slots = mids.filter((m) => m > 1 && m < CHUNK_LEN - 1);
+    const piecesHere = [];
     // The lanes taken in the rows either side of a slot. A weaving Vespa
     // counts in the lane it weaves into: it has left its own by the time the
     // player reaches it. Read from the course already built, so choosing a
@@ -739,7 +747,49 @@ export class Track {
       });
       this.pieces.push({ mesh: holder, chunk: chunkGroup, idx: k, taken: false });
       this.pieceSpawned[k] = true;
+      piecesHere.push(zz);
+    }
+
+    // Moving hazards, in the gaps between this chunk's own rows that hold no
+    // piece and leave at least two lanes clear in both rows. Three draws per
+    // gap, always, so whether one gap gets a hazard never shifts the next.
+    if (this.hazardRate > 0) {
+      const reach = step / 2 + 1;
+      for (let r = 0; r + 1 < rows.length; r++) {
+        const m = (rows[r] + rows[r + 1]) / 2;
+        const roll = this.hazRng(), kindRoll = this.hazRng(), laneRoll = this.hazRng();
+        if (roll >= this.hazardRate || piecesHere.some((z) => Math.abs(z - m) < 1)) continue;
+        const pz = chunkZ - m;
+        const before = takenBetween(pz + reach, pz), after = takenBetween(pz, pz - reach);
+        const clear = [0, 1, 2].filter((l) => !before.has(l) && !after.has(l));
+        if (clear.length < 2) continue;
+        const kinds = Object.keys(HAZARDS);
+        const kind = kinds[Math.floor(kindRoll * kinds.length)];
+        const lanes = HAZARDS[kind].outerOnly ? clear.filter((l) => l !== 1) : clear;
+        if (!lanes.length) continue;
+        this.addHazard(chunkGroup, kind, lanes[Math.floor(laneRoll * lanes.length)], m);
+      }
     }  }
+
+  addHazard(chunkGroup, kind, lane, m) {
+    const spec = HAZARDS[kind];
+    const { mesh, marker, from, to } = makeHazard(kind, this.theme, LANES[lane]);
+    mesh.position.z = -m;
+    marker.position.set(LANES[lane], 0.04, -m);
+    chunkGroup.add(mesh, marker);
+    this.obstacles.push({
+      mesh, lane, kind: spec.as, hazard: kind, y0: spec.y0, y1: spec.y1, halfLen: spec.halfLen,
+      chunk: chunkGroup, localZ: -m, x: from.x, haz: { marker, from, to },
+    });
+    // as for pieces: a souvenir line trailing into this gap in the same lane
+    // would lead the player straight into it, so those few are dropped
+    this.coins = this.coins.filter((c) => {
+      const clash = c.chunk === chunkGroup && Math.abs(c.mesh.position.x - LANES[lane]) < 0.1
+        && Math.abs(c.mesh.position.z + m) < 4;
+      if (clash) chunkGroup.remove(c.mesh);
+      return !clash;
+    });
+  }
 
   update(dt, speed, player, onCoin, onHit) {
     this.speed = speed;   // arcs spawned later match the ramped-up pace
@@ -773,6 +823,13 @@ export class Track {
           for (const b of o.blinkers) b.visible = false;
         }
       }
+    }
+
+    // moving hazards: warn, then move in (src/run/hazards.js)
+    for (const o of this.obstacles) {
+      if (!o.haz) continue;
+      const wz = o.localZ + o.chunk.position.z + this.group.position.z;
+      if (stepHazard(o, -wz / Math.max(1, speed), dt, this.clock) && this.onHazard) this.onHazard(o.hazard);
     }
 
     // recycle chunks that passed behind the camera
@@ -848,6 +905,7 @@ export class Track {
       const wz = o.localZ + o.chunk.position.z + this.group.position.z;
       if (wz > -ahead && wz < behind) {
         o.chunk.remove(o.mesh);
+        if (o.haz) o.chunk.remove(o.haz.marker);
       } else {
         kept.push(o);
       }
