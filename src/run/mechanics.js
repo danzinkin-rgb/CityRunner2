@@ -644,12 +644,17 @@ const PULLOUT = {
 //     there) or the 18 m after it (cleared), so a jump is never squeezed
 //     against a roll
 //   - a bridge has its row to itself, and no souvenirs on the ground
+//   - no bridge within BR_PIECE_GAP (24 m) of a monument piece: a piece
+//     sits in the slot nearest its spot, up to half a row away
 const BRIDGE_CHANCE = [0.08, 0.1, 0.12];     // share of rows, by street
-const BR_WARN = 60, BR_LIFT = 44, BR_SET = 22, BR_CLEAR_BEFORE = 16, BR_CLEAR_AFTER = 18;
+const BR_WARN = 60, BR_LIFT = 44, BR_SET = 22, BR_CLEAR_BEFORE = 16, BR_CLEAR_AFTER = 18, BR_PIECE_GAP = 24;
 const BRIDGE = {
   hint: 'The bridge is lifting: jump the edge!',
   row({ level, rand, addObstacle, usedLanes, zRow, track, chunk }) {
     if (rand() >= BRIDGE_CHANCE[level - 1]) return null;
+    // no bridge next to a monument piece: the lip fills every lane, so a
+    // piece just before it would have nowhere clear to be collected
+    if (track.pieceDist.some((d) => Math.abs(d + chunk.position.z - zRow) < BR_PIECE_GAP)) return null;
     const here = chunk.position.z - zRow;
     const rollBefore = track.obstacles.some((o) => o.kind === 'high'
       && o.chunk.position.z + o.localZ > here && o.chunk.position.z + o.localZ < here + BR_CLEAR_BEFORE);
