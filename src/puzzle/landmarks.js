@@ -1114,6 +1114,91 @@ const defs = {
       metal: 1, adorn: [B([0, 1.7, 0], [0.5, 0.5, 0.5], '#fff2c0', 'sphere', { em: '#ffe9a0', emI: 1.2 })],
     })),
   ],
+  // ================= BANGKOK =================
+  // All three are 18th and 19th-century royal or religious buildings: no
+  // copyright question. The Giant Swing's timbers were replaced to the old
+  // design in 2007. Shown as buildings only: no Buddha images, and nothing
+  // said about the monarchy (docs/BANGKOK-FACTS-DRAFT.md).
+
+  // The Giant Swing: two tall red teak pillars on a stepped white stone
+  // base, joined by a carved crossbeam with upturned ends, braced by
+  // struts at the foot. Street 1: about a dozen pieces.
+  giantswing: [
+    B([0, 0.3, 0], [12, 0.6, 7], '#d8d0c0', 'box', { tex: 'stone' }),
+    B([0, 0.85, 0], [9, 0.5, 4.4], '#e8e2d4', 'box', { tex: 'stone' }),
+    B([0, 0.85, 3.0], [3, 0.5, 1.6], '#e0d8c8', 'box', { tex: 'stone' }),                // steps
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 3.2, 4.6, 0], [0.9, 7.0, 0.9], '#c8282a', 'cyl'),
+      B([sx * 3.2, 11.6, 0], [0.8, 7.0, 0.8], '#cc2c2c', 'cyl'),
+      B([sx * 3.9, 2.3, 0], [0.3, 2.8, 0.3], '#b82424', 'box', { rotZ: sx * 0.5 }),       // a strut at the foot
+    ]),
+    B([0, 7.6, 0], [6.4, 0.4, 0.5], '#b82424'),                                           // a lower tie beam
+    B([0, 15.4, 0], [9.0, 0.6, 0.9], '#c8282a', 'box', {                                  // the crossbeam
+      adorn: [-1, 1].map((sx) => B([sx * 4.7, 0.4, 0], [0.6, 1.0, 0.6], '#c8282a', 'cone4', { rotZ: -sx * 0.6 })),
+    }),
+    B([0, 16.1, 0], [7.4, 0.8, 0.5], '#e0b040', 'box', {                                  // its carved, gilded crest
+      metal: 1, em: '#ffd070', emI: 0.2,
+      adorn: [-2.4, -1.2, 0, 1.2, 2.4].map((x) => B([x, 0.5, 0], [0.5, 0.5, 0.3], '#e0b040', 'pyramid', { metal: 1 })),
+    }),
+  ],
+
+  // Wat Arun: the central prang on three steep terraces, its tiers crusted
+  // with coloured porcelain, four smaller prangs at the corners, and steep
+  // stairs up each face. Street 2: about twenty pieces.
+  watarun: [
+    B([0, 0.4, 0], [18, 0.8, 18], '#d8d0c0', 'box', { tex: 'stone' }),
+    B([0, 1.5, 0], [12, 1.4, 12], '#e4dccc', 'tier', { sides: 4, tex: 'tile', tx: {} }),
+    B([0, 3.2, 0], [9.6, 2.0, 9.6], '#e8e0d0', 'tier', { sides: 4 }),
+    B([0, 5.2, 0], [7.2, 2.0, 7.2], '#ece4d4', 'tier', { sides: 4 }),
+    ...[[0, 1], [0, -1], [1, 0], [-1, 0]].map(([x, z]) => B([x * 5.0, 3.0, z * 5.0], [1.6, 4.4, 2.4], '#dcd2c0', 'prism', {
+      rotY: x ? Math.PI / 2 : 0, sortY: 6.3,                                             // steep stairs, one per face
+    })),
+    B([0, 7.5, 0], [5.6, 2.6, 4.8], '#d8c8b0', 'tier', { sides: 8, tex: 'tile' }),
+    B([0, 10.0, 0], [4.8, 2.4, 4.0], '#e0d0b8', 'tier', { sides: 8, tex: 'niche', tx: { n: 4 } }),
+    B([0, 12.3, 0], [4.0, 2.2, 3.2], '#e4d4bc', 'tier', { sides: 8, tex: 'tile' }),
+    B([0, 14.6, 0], [3.2, 2.4, 2.0], '#e8d8c0', 'tier', { sides: 8, tex: 'tile' }),
+    B([0, 17.0, 0], [2.0, 2.4, 0.6], '#ecdcc4', 'tier', { sides: 8 }),
+    B([0, 18.9, 0], [0.5, 1.4, 0.5], '#e0b040', 'group', {                                // the spire's top
+      adorn: [B([0, 0, 0], [0.16, 1.4, 0.16], '#e0b040', 'cyl', { metal: 1 }), B([0, -0.4, 0], [0.45, 0.2, 0.45], '#e0b040', 'cyl', { metal: 1 })],
+    }),
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([x, z]) => B([x * 6.8, 4.4, z * 6.8], [2.4, 7.2, 2.4], '#e0d4c0', 'group', {
+      adorn: [
+        B([0, -2.8, 0], [2.4, 1.6, 2.0], '#e4dccc', 'tier', { sides: 4 }),
+        B([0, -0.6, 0], [1.8, 2.8, 1.2], '#e0d0b8', 'tier', { sides: 8, tex: 'tile' }),
+        B([0, 1.8, 0], [1.2, 2.2, 0.3], '#e8d8c0', 'tier', { sides: 8 }),
+        B([0, 3.3, 0], [0.1, 0.8, 0.1], '#e0b040', 'cyl', { metal: 1 }),
+      ],
+    })),
+  ],
+
+  // The Chakri Maha Prasat throne hall at the Grand Palace: a European
+  // classical body of three pavilions joined by wings, under three tiered
+  // Thai roofs, each crowned with a tall gilded spire. Street 3: about
+  // two dozen pieces.
+  chakri: [
+    B([0, 0.3, 0], [26, 0.6, 12], '#d8d0c0', 'box', { tex: 'stone' }),
+    B([0, 0.9, 1.5], [10, 0.6, 3], '#e4dccc', 'box', { tex: 'stone' }),                     // front steps
+    B([0, 3.0, 0], [8, 4.2, 8], '#f0ece2', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),
+    B([0, 6.6, 0], [8, 3.0, 8], '#f2eee6', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),
+    B([0, 4.6, 4.3], [6.0, 7.4, 0.8], '#f6f2ea', 'colonnade', { cols: 6 }),                  // the portico
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 7.5, 2.6, 0], [7, 3.4, 6], '#ece8de', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),   // wing, ground
+      B([sx * 7.5, 5.5, 0], [7, 2.4, 6], '#eeeae0', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),   // wing, upper
+      B([sx * 7.5, 6.9, 0], [7.2, 0.4, 6.2], '#d8d0c0', 'box', { sortY: 6.95 }),                        // wing balustrade
+      B([sx * 11.0, 3.6, 0], [4, 6.6, 6], '#f0ece2', 'box', { tex: 'win', tx: { cols: 2, rows: 2 } }), // end pavilion
+    ]),
+    B([0, 8.4, 0], [8.6, 0.6, 8.6], '#d8d0c0'),                                               // the central cornice
+    B([0, 9.6, 0], [8.0, 1.8, 7.0], '#c8402a', 'prism'),                                      // central roof, lower tier
+    B([0, 11.0, 0], [6.2, 1.6, 5.4], '#2a7a4a', 'prism'),                                      // upper tier
+    B([0, 12.6, 0], [4.4, 1.6, 4.0], '#c8402a', 'prism'),
+    B([0, 15.6, 0], [1.6, 6.0, 0.1], '#e0b040', 'tier', { sides: 8, metal: 1, em: '#ffd070', emI: 0.25 }),   // gilded spire
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 11.0, 7.3, 0], [4.6, 0.6, 6.4], '#d8d0c0'),
+      B([sx * 11.0, 8.4, 0], [4.2, 1.6, 6.0], '#c8402a', 'prism', { rotY: Math.PI / 2 }),
+      B([sx * 11.0, 9.8, 0], [3.0, 1.4, 4.4], '#2a7a4a', 'prism', { rotY: Math.PI / 2 }),
+      B([sx * 11.0, 12.4, 0], [1.2, 4.6, 0.1], '#e0b040', 'tier', { sides: 8, metal: 1, em: '#ffd070', emI: 0.25 }),
+    ]),
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }

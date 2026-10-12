@@ -136,6 +136,32 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'bangkok') {
+    // A little carved elephant figurine in grey, trunk raised, with a red
+    // and gold saddle cloth on its back.
+    const hide = new THREE.MeshStandardMaterial({ color: 0x9a9aa4, roughness: 0.6, emissive: 0x2a2a34, emissiveIntensity: 0.3 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 12), hide);
+    body.scale.set(1.25, 0.95, 0.9); g.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 14, 10), hide);
+    head.position.set(0.32, 0.12, 0); g.add(head);
+    for (const z of [-0.15, 0.15]) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), hide);
+      ear.scale.set(0.25, 1, 0.9); ear.position.set(0.28, 0.14, z * 1.15); g.add(ear);
+    }
+    const trunk = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.045, 8, 14, Math.PI * 0.9), hide);
+    trunk.rotation.z = -Math.PI * 0.55; trunk.position.set(0.5, 0.02, 0); g.add(trunk);
+    for (const [x, z] of [[-0.18, -0.13], [-0.18, 0.13], [0.16, -0.13], [0.16, 0.13]]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.075, 0.26, 10), hide);
+      leg.position.set(x, -0.3, z); g.add(leg);
+    }
+    const cloth = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.03, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0xc8202a, roughness: 0.5, emissive: 0x5a0a0a, emissiveIntensity: 0.4 }));
+    cloth.position.y = 0.25; g.add(cloth);
+    const gold = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.035, 0.08),
+      new THREE.MeshStandardMaterial({ color: 0xe8b830, roughness: 0.3, metalness: 0.6 }));
+    for (const z of [-0.22, 0.22]) { const b = gold.clone(); b.position.set(0, 0.24, z); g.add(b); }
+    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.18, 5), hide);
+    tail.rotation.z = -0.5; tail.position.set(-0.36, 0.0, 0); g.add(tail);
   } else if (theme.id === 'delhi') {
     // A paper fighter kite, the kind flown from Delhi's rooftops: a diamond
     // in two bright colours on a bamboo spine and bow, with a short tail.

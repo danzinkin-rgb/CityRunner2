@@ -22,7 +22,7 @@
 //           from the player to the obstacle, positive while it is in front
 // test/city-mechanics.mjs checks each move's rules against real courses.
 import { LANES } from './player.js';
-import { makeHandcart, makeAutoRickshaw } from '../cities/builders.js';
+import { makeHandcart, makeAutoRickshaw, makeTukTuk } from '../cities/builders.js';
 
 // ---- Marrakech: porters' handcarts crossing the road --------------------
 // A porter pushes a laden cart straight across the road, kerb to kerb, at
@@ -120,7 +120,61 @@ const BRAKER = {
   },
 };
 
+// ---- Bangkok: tuk-tuks that make a U-turn across the road ------------------
+// A tuk-tuk coming towards you flashes its big amber roof light, then swings
+// round in a U-turn across one or two lanes and stops, facing away. Where it
+// ends up is the lane to avoid; where it was is now free.
+//
+// Distances ahead of the player: the light starts flashing at UT_SIGNAL, the
+// turn runs from UT_START to UT_END, so there are 16 m of warning before it
+// moves and it has finished moving 16 m out (about three quarters of a
+// second at top speed).
+// Fairness:
+//   - every lane it crosses or ends in is empty in its row, and none of them
+//     is the row's coin lane (souvenirs are laid only in a lane it never
+//     touches)
+//   - on streets 2 and 3 a one-lane turn may share its row with a barrier,
+//     in the lane it never touches
+//   - two-lane turns get more likely on later streets
+const UTURN_CHANCE = [0.12, 0.18, 0.24];     // share of rows, by street
+const UTURN_WIDE = [0.2, 0.4, 0.6];          // of those, how many cross two lanes
+const UT_SIGNAL = 44, UT_START = 28, UT_END = 16;
+const UTURN = {
+  hint: 'Flashing light: that tuk-tuk is about to U-turn!',
+  row({ level, rand, randInt, addObstacle, usedLanes }) {
+    if (rand() >= UTURN_CHANCE[level - 1]) return null;
+    let from, to;
+    if (rand() < UTURN_WIDE[level - 1]) {
+      from = rand() < 0.5 ? 0 : 2; to = 2 - from;
+    } else {
+      from = randInt(3);
+      const opts = [from - 1, from + 1].filter((l) => l >= 0 && l <= 2);
+      to = opts[randInt(opts.length)];
+    }
+    const rec = addObstacle(from, 'full', { mesh: makeTukTuk(true), y0: 0, y1: 1.6, halfLen: 1.2 });
+    for (let l = Math.min(from, to); l <= Math.max(from, to); l++) usedLanes.add(l);   // its whole path
+    const spare = [0, 1, 2].find((l) => !usedLanes.has(l));
+    if (spare !== undefined && level >= 2 && rand() < 0.5) addObstacle(spare, 'low');
+    rec.uFrom = from; rec.uTo = to;
+    return rec;
+  },
+  settle() {},
+  move(o, ahead, dt) {
+    const sig = o.mesh.userData.signal;
+    const flashing = ahead <= UT_SIGNAL && ahead > UT_END;
+    sig.light.material = flashing && Math.floor(ahead / 2.2) % 2 === 0 ? sig.on : sig.off;
+    const t = Math.max(0, Math.min(1, (UT_START - ahead) / (UT_START - UT_END)));
+    const k = t * t * (3 - 2 * t);
+    o.x = LANES[o.uFrom] + (LANES[o.uTo] - LANES[o.uFrom]) * k;
+    o.mesh.position.x = o.x;
+    o.mesh.rotation.y = Math.PI * k * (o.uTo > o.uFrom ? -1 : 1);
+    o.lane = t >= 1 ? o.uTo : o.uFrom;
+    return flashing;
+  },
+};
+
 export const MECHANICS = {
   handcart: CART,
   braker: BRAKER,
+  uturn: UTURN,
 };

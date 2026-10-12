@@ -15,6 +15,7 @@ import {
   makeArcade, makeGardenRail, makeWindmill, makeObeliskFountain,
   makeEquestrian, makeErosFountain, makeCurvedLED, makeZebra, makeCameo,
   makeGardenParterre, makeStepStreet, makeArtistPitch, makeSquareStalls, makeWireTangle,
+  makeCanalSide,
   SHARED_GEO,
 } from '../cities/builders.js';
 import { makeCollectible } from '../cities/souvenirs.js';
@@ -272,6 +273,12 @@ export class Track {
           eq.rotation.y = side * Math.PI / 2.5;
           g.add(eq);
         }
+      } else if (t.canal && side < 0) {
+        // Khlong Bang Luang: the canal instead of a row of houses, beyond
+        // the pavement's far edge
+        const canal = makeCanalSide(t, CHUNK_LEN);
+        canal.position.x = -(ROAD_W / 2 + swW);
+        g.add(canal);
       } else {
         // buildings — packed shoulder to shoulder, varied heights
         let bz = 0;

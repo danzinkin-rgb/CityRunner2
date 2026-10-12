@@ -513,6 +513,61 @@ export const ALL_CITIES = [
       },
     ],
   },
+  {
+    id: 'bangkok', name: 'BANGKOK', flag: '🇹🇭', region: 'asia',
+    streets: ['Yaowarat Road', 'Khao San Road', 'Khlong Bang Luang'],
+    // Humid late afternoon: a clear blue top over a warm peach haze. The
+    // colour is in the signs, the temple roofs and the tuk-tuks.
+    sky: { top: '#3a78c8', mid: '#94bce0', horizon: '#ffd4a8', glow: '#ffb88a' },
+    fog: 0xf4c8a0, fogDensity: 0.0102,
+    sun: { color: 0xffe2b8, intensity: 2.5, pos: [50, 65, -45] },
+    hemi: { sky: 0xd8e4f0, ground: 0x8a7a64, intensity: 1.1 },
+    fill: { color: 0xffe6cc, intensity: 1.0 },
+    road: '#4e4e54', lane: '#f2d040', sidewalk: '#b0a898',
+    palette: ['#d8c8a8', '#e0b4a0', '#a8c8c0', '#d8d0b8', '#c8a888', '#b8c4a8'],
+    trim: '#f2ece0', roof: '#a8442c',
+    windowLit: '#ffd08a', windowDay: '#8ab4c8', accent: '#e8302a',
+    storefront: ['#c8202a', '#e8a818', '#2a8a5a', '#2a5ab0', '#e85a8a'],
+    facade: 'shophouse', hBase: 10, hVar: 5,
+    props: ['lamp', 'tree', 'fruitcart'],
+    // The three-wheeled tuk-tuk, in bright two-tone paint. No operator name
+    // or logo.
+    vehicle: 'tuktuk',
+    // Some tuk-tuks make a U-turn across the road (src/run/mechanics.js).
+    mechanic: 'uturn',
+    landmarks: ['giantswing', 'watarun', 'chakri'],
+    levels: [
+      { // Yaowarat Road: Chinatown, gold shops and restaurants under tall
+        // vertical neon signs that hang out over the street
+        key: 'yaowarat', neonSigns: true,
+        setback: 3.8, hBase: 12, hVar: 6, secondRow: 0.5,
+        palette: ['#c8b898', '#d0a890', '#a0b8b0', '#c8c0a8', '#b89878', '#a8b498'],
+        storefront: ['#c8202a', '#e8a818', '#c8202a', '#2a8a5a'],
+        props: ['lamp', 'fruitcart', 'souvenirstall'],
+        ads: ['GOLD', 'NOODLES', 'DIM SUM', 'TEA', 'BIRD NEST'],
+        lit: 0.32,
+      },
+      { // Khao San Road: once the city's rice market, now guesthouses,
+        // street food and string lights
+        key: 'khaosan',
+        setback: 3.4, hBase: 9, hVar: 3, secondRow: 0.2,
+        palette: ['#e8c8a8', '#a8d0c8', '#e8b0b0', '#d8d8b0', '#b8c8e0', '#e0c0a0'],
+        props: ['lamp', 'fruitcart', 'souvenirstall', 'awning'],
+        ads: ['GUESTHOUSE', 'PAD THAI', 'MANGO', 'ICE CREAM', 'SILK'],
+        span: 'string', spanFreq: 0.8, lit: 0.36,
+      },
+      { // Khlong Bang Luang: a canal-side lane of old wooden houses, the
+        // water on one side, Wat Arun's spire across the river
+        key: 'khlong', canal: true,
+        setback: 3.2, hBase: 6, hVar: 2, secondRow: 0,
+        palette: ['#8a6a4a', '#9a7a5a', '#7a5a3e', '#a08060', '#6a8a7a', '#8a7a5a'],
+        trim: '#e8dcc4',
+        props: ['lamp', 'tree'],
+        ads: ['ART HOUSE', 'COFFEE', 'BOAT TRIPS'],
+        cameo: 'watarun', lit: 0.2,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -526,6 +581,7 @@ export const LANDMARK_NAMES = {
   templomayor: 'Templo Mayor', catedral: 'Metropolitan Cathedral', castillo: 'Chapultepec Castle',
   koutoubia: 'Koutoubia Minaret', babagnaou: 'Bab Agnaou', benyoussef: 'Ben Youssef Madrasa',
   lahori: 'Red Fort', qutub: 'Qutub Minar', indiagate: 'India Gate',
+  giantswing: 'Giant Swing', watarun: 'Wat Arun', chakri: 'Chakri Maha Prasat',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

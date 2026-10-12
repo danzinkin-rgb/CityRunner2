@@ -154,6 +154,28 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         }
 
         for (let cIdx = 0; cIdx < cols; cIdx++) {
+          if (style === 'shophouse') {
+            // Bangkok's shophouses: tall windows with round-arched heads and
+            // louvred shutters, a stucco moulding over each, and here and
+            // there an air-conditioning box or a potted plant on the sill.
+            const x = cIdx * ww + ww * 0.22, y = rowY + wh * 0.18, w = ww * 0.56, h = wh * 0.68;
+            const lit = Math.random() < (theme.lit ?? 0.16);
+            g.fillStyle = theme.trim;
+            g.beginPath(); g.arc(x + w / 2, y + w / 2, w / 2 + 4, Math.PI, 0); g.fill();
+            g.fillRect(x - 4, y + w / 2, w + 8, h - w / 2 + 4);
+            g.fillStyle = lit ? theme.windowLit : '#2c3640';
+            g.beginPath(); g.moveTo(x, y + h); g.lineTo(x, y + w / 2);
+            g.arc(x + w / 2, y + w / 2, w / 2, Math.PI, 0); g.lineTo(x + w, y + h); g.closePath(); g.fill();
+            if (!lit && Math.random() < 0.55) {
+              g.fillStyle = pickR(['#4a7a6a', '#7a5a3a', '#5a6a8a']);    // closed louvres
+              g.fillRect(x + 1, y + w / 2, w - 2, h - w / 2);
+              g.fillStyle = 'rgba(0,0,0,.25)';
+              for (let ly = y + w / 2 + 2; ly < y + h; ly += 4) g.fillRect(x + 1, ly, w - 2, 1);
+            }
+            if (Math.random() < 0.15) { g.fillStyle = '#d8d8d0'; g.fillRect(x + w * 0.2, y + h - 8, w * 0.6, 9); }
+            else if (Math.random() < 0.2) { g.fillStyle = '#3a8a3a'; g.beginPath(); g.arc(x + w / 2, y + h - 3, 6, 0, 7); g.fill(); }
+            continue;
+          }
           if (style === 'bazaar') {
             // Old Delhi: tall shuttered windows in bright paint, many with a
             // small balcony, and the odd painted signboard nailed between
@@ -345,6 +367,7 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
       else if (style === 'market') paintMarketGround(G);
       else if (style === 'medina') paintMedinaGround(G);
       else if (style === 'bazaar') paintBazaarGround(G);
+      else if (style === 'shophouse') paintShophouseGround(G);
       else paintDefaultShops(G);
 
       g.fillStyle = 'rgba(0,0,0,.3)';
@@ -637,6 +660,30 @@ function paintMarketGround({ g, W, H, shopY, SHOP_H, theme }) {
     }
   }
   g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(0, shopY, W, 3);
+}
+
+// Bangkok: the shophouse ground floor, one bay a roll-down shutter, the
+// next an open front (a gold shop in red and gold, or a noodle counter).
+function paintShophouseGround({ g, W, H, shopY, SHOP_H, theme }) {
+  const n = 2, sw = W / n;
+  for (let i = 0; i < n; i++) {
+    const x = i * sw;
+    if (Math.random() < 0.35) {
+      g.fillStyle = '#9a9a98'; g.fillRect(x + 3, shopY + 4, sw - 6, SHOP_H - 8);
+      g.fillStyle = 'rgba(0,0,0,.2)';
+      for (let y = shopY + 6; y < H - 4; y += 4) g.fillRect(x + 3, y, sw - 6, 1);
+      continue;
+    }
+    const col = pickR(theme.storefront);
+    g.fillStyle = col; g.fillRect(x + 2, shopY, sw - 4, SHOP_H * 0.24);            // signboard
+    g.fillStyle = '#f4e4a0';
+    g.font = `900 ${Math.round(SHOP_H * 0.14)}px Arial`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(pickR(adWords(theme, ['NOODLES'])), x + sw / 2, shopY + SHOP_H * 0.12, sw - 10);
+    g.fillStyle = col === '#c8202a' ? '#5a0a0a' : '#2a2420';
+    g.fillRect(x + 4, shopY + SHOP_H * 0.26, sw - 8, SHOP_H * 0.74 - 4);
+    g.fillStyle = col === '#c8202a' ? '#f0c040' : '#f4e8d0';                     // gold, or a lit counter
+    g.fillRect(x + 10, shopY + SHOP_H * 0.55, sw - 20, SHOP_H * 0.14);
+  }
 }
 
 // Old Delhi: open shopfronts under bold painted signboards, goods stacked to
@@ -1129,6 +1176,33 @@ export function makeBuilding(theme, w, h, d, rng = Math.random, side = 0) {
     front.position.set(-side * (w / 2 + 0.2), 0, 0);
     front.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
     group.add(front);
+  }
+  // Yaowarat: tall vertical neon signs hung out from the house fronts over
+  // the street, a word spelled down each in lit letters. Cosmetic, so the
+  // choices use Math.random, not the seeded stream.
+  if (theme.neonSigns && side !== 0 && Math.random() < 0.7) {
+    const words = adWords(theme, ['GOLD']);
+    const wi = (Math.random() * words.length) | 0, ci = (Math.random() * 3) | 0;
+    const mat = cached(`mat:vneon:${sKey(theme)}:${wi}:${ci}`, () => {
+      const word = words[wi], bg = ['#a8141c', '#f0c020', '#1a3a8a'][ci], fg = ['#fff2b0', '#a8141c', '#ffe060'][ci];
+      const tex = canvasTexture(64, 256, (c) => {
+        c.fillStyle = bg; c.fillRect(0, 0, 64, 256);
+        c.strokeStyle = fg; c.lineWidth = 3; c.strokeRect(4, 4, 56, 248);
+        c.fillStyle = fg; c.font = '900 30px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle';
+        const letters = word.replace(/ /g, '').slice(0, 7);
+        const step = 236 / letters.length;
+        [...letters].forEach((ch, k) => c.fillText(ch, 32, 10 + step * (k + 0.5)));
+      });
+      return new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.9, roughness: 0.5 });
+    });
+    const sign = new THREE.Mesh(boxGeo, mat);
+    const hh = Math.min(4.2, h - 5);
+    if (hh > 2) {
+      // sticks out from the facade (x), its faces towards the oncoming runner
+      sign.scale.set(1.3, hh, 0.18);
+      sign.position.set(-side * (w / 2 + 0.75), 4.2 + hh / 2, (Math.random() - 0.5) * (d - 2));
+      group.add(sign);
+    }
   }
   // Via Veneto: entrance canopy + national flags over the door
   if (theme.facade === 'hotel' && side !== 0) {
@@ -1805,6 +1879,7 @@ const ADS = {
   mexico: ['TACOS', 'PAN DULCE', 'MERCADO', 'CAFÉ'],
   marrakech: ['TAPIS', 'ÉPICES', 'HAMMAM', 'ARGAN'],
   delhi: ['CHAI', 'MITHAI', 'SAREES', 'BOOKS'],
+  bangkok: ['NOODLES', 'MANGO', 'SILK', 'COFFEE'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -2258,6 +2333,28 @@ function makeSouvenirStall() {
   return g;
 }
 
+// Bangkok: a fruit seller's glass-sided cart, ice and cut fruit inside,
+// under a striped umbrella.
+function makeFruitCart() {
+  const g = new THREE.Group();
+  const frame = cached('mat:fruitFrame', () => new THREE.MeshStandardMaterial({ color: 0xd8dce4, roughness: 0.35, metalness: 0.5 }));
+  const cart = new THREE.Mesh(boxGeo, frame);
+  cart.scale.set(0.9, 0.7, 1.5); cart.position.y = 0.6; cart.castShadow = true; g.add(cart);
+  const glass = new THREE.Mesh(boxGeo, cached('mat:fruitGlass', () =>
+    new THREE.MeshStandardMaterial({ color: 0xcfe8f0, roughness: 0.1, transparent: true, opacity: 0.5 })));
+  glass.scale.set(0.86, 0.5, 1.46); glass.position.y = 1.2; g.add(glass);
+  const cols = [0xf2c418, 0xe8506a, 0x8ac040, 0xf28a20];
+  for (let i = 0; i < 6; i++) {
+    const f = new THREE.Mesh(ballGeo, cached(`mat:fruit:${i % 4}`, () => new THREE.MeshStandardMaterial({ color: cols[i % 4], roughness: 0.5 })));
+    f.scale.setScalar(0.1); f.position.set(-0.2 + (i % 2) * 0.4, 1.08, -0.5 + ((i / 2) | 0) * 0.5); g.add(f);
+  }
+  const pole = new THREE.Mesh(cylGeo, mats.black);
+  pole.scale.set(0.03, 1.4, 0.03); pole.position.set(0, 1.9, 0); g.add(pole);
+  const umb = new THREE.Mesh(coneGeo, cached('mat:fruitUmb', () => new THREE.MeshStandardMaterial({ color: 0x2a8a5a, roughness: 0.9 })));
+  umb.scale.set(1.0, 0.4, 1.0); umb.position.y = 2.7; g.add(umb);
+  return g;
+}
+
 // Delhi: a tea seller's cart, a brass kettle on a little stove, glasses
 // lined up, under a faded umbrella.
 function makeChaiStall() {
@@ -2463,6 +2560,7 @@ export function makeProp(kind, theme) {
     case 'palm': return makeTree('palm');
     case 'rugs': return makeRugRack();
     case 'chaistall': return makeChaiStall();
+    case 'fruitcart': return makeFruitCart();
     case 'chestnut': return makeTree('chestnut');
     case 'planetree': return makeTree('plane');
     case 'phonebox': return makePhonebox();
@@ -2685,6 +2783,8 @@ export function makeVehicle(theme) {
     }
     const sign = new THREE.Mesh(boxGeo, mats.glow);
     sign.scale.set(0.5, 0.16, 0.2); sign.position.set(0, 1.6, -0.1); g.add(sign);
+  } else if (kind === 'tuktuk') {
+    return makeTukTuk();
   } else if (kind === 'autorickshaw') {
     return makeAutoRickshaw();
   } else if (kind === 'petittaxi') {
@@ -2838,6 +2938,95 @@ export function makeVehicle(theme) {
     w.rotation.z = Math.PI / 2;
     w.position.set(...p);
     g.add(w);
+  }
+  return g;
+}
+
+// Bangkok's tuk-tuk: a three-wheeler with a long bench behind the driver,
+// open sides, a broad roof with a fringe, in bright two-tone paint. Low
+// enough to jump. Built facing the player (front at +z); `signal` adds the
+// big amber roof light that flashes before a U-turn (src/run/mechanics.js).
+const TUK_COLS = [[0x2a9a5a, 0xf2c418], [0x2a5ab0, 0xe8302a], [0xe8506a, 0x2a2a30], [0xf28a20, 0x2a6a8a]];
+export function makeTukTuk(signal = false) {
+  const g = new THREE.Group();
+  const ci = (Math.random() * TUK_COLS.length) | 0;
+  const [bc, rc] = TUK_COLS[ci];
+  const body = cached(`mat:tukBody:${ci}`, () => new THREE.MeshStandardMaterial({ color: bc, roughness: 0.35, metalness: 0.2 }));
+  const roofM = cached(`mat:tukRoof:${ci}`, () => new THREE.MeshStandardMaterial({ color: rc, roughness: 0.6 }));
+  const tyre = cached('mat:tyre', () => new THREE.MeshStandardMaterial({ color: 0x14141a, roughness: 0.8 }));
+  const cab = new THREE.Mesh(boxGeo, body);
+  cab.scale.set(0.9, 0.7, 1.0); cab.position.set(0, 0.7, 1.0); cab.castShadow = true; g.add(cab);
+  const tub = new THREE.Mesh(boxGeo, body);
+  tub.scale.set(1.5, 0.6, 1.6); tub.position.set(0, 0.62, -0.5); g.add(tub);
+  const seat = new THREE.Mesh(boxGeo, cached('mat:tukSeat', () => new THREE.MeshStandardMaterial({ color: 0x5a1a1a, roughness: 0.8 })));
+  seat.scale.set(1.3, 0.5, 0.3); seat.position.set(0, 1.1, -1.15); g.add(seat);
+  const roof = new THREE.Mesh(boxGeo, roofM);
+  roof.scale.set(1.6, 0.14, 2.9); roof.position.set(0, 1.66, 0); g.add(roof);
+  const fringe = new THREE.Mesh(boxGeo, mats.chrome);
+  fringe.scale.set(1.64, 0.08, 2.94); fringe.position.set(0, 1.56, 0); g.add(fringe);
+  for (const [x, z] of [[-0.42, 1.35], [0.42, 1.35], [-0.72, -1.3], [0.72, -1.3]]) {
+    const post = new THREE.Mesh(boxGeo, mats.chrome);
+    post.scale.set(0.05, 0.75, 0.05); post.position.set(x, 1.22, z); g.add(post);
+  }
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), mats.glow);
+  lamp.position.set(0, 0.85, 1.52); g.add(lamp);
+  for (const [x, z] of [[0, 1.1], [-0.68, -0.7], [0.68, -0.7]]) {
+    const w = new THREE.Mesh(wheelGeo, tyre);
+    w.rotation.z = Math.PI / 2; w.scale.set(0.8, 0.8, 0.8); w.position.set(x, 0.3, z); g.add(w);
+  }
+  if (signal) {
+    const off = cached('mat:signalOff', () => new THREE.MeshStandardMaterial({ color: 0x8a6a20, roughness: 0.4 }));
+    const on = cached('mat:signalOn', () => new THREE.MeshStandardMaterial({ color: 0xffc040, emissive: 0xffa000, emissiveIntensity: 3 }));
+    const light = new THREE.Mesh(boxGeo, off);
+    light.scale.set(0.9, 0.3, 0.5); light.position.set(0, 1.88, 0.4); g.add(light);
+    g.userData.signal = { light, off, on };
+  }
+  return g;
+}
+
+// Bangkok, Khlong Bang Luang: the canal side of the lane, one chunk long,
+// placed at the far edge of the pavement (which is the landing): mooring
+// posts, the water, a moored long-tail boat or two, and old wooden houses
+// on stilts along the far bank. Everything is at negative x, away from the
+// road.
+export function makeCanalSide(theme, len) {
+  const g = new THREE.Group();
+  const water = new THREE.Mesh(boxGeo, cached('mat:canal', () =>
+    new THREE.MeshStandardMaterial({ color: 0x4a7a6a, roughness: 0.2, metalness: 0.3 })));
+  water.scale.set(9, 0.1, len); water.position.set(-4.5, 0.06, -len / 2); g.add(water);
+  const plank = cached('mat:landing', () => new THREE.MeshStandardMaterial({ color: 0x7a5a3a, roughness: 0.9 }));
+  for (let z = 2; z < len; z += 4) {
+    const post = new THREE.Mesh(cylGeo, plank);
+    post.scale.set(0.1, 1.4, 0.1); post.position.set(-0.3, -0.1, -z); g.add(post);
+  }
+  for (let k = 0; k < 2; k++) {
+    if (Math.random() < 0.35) continue;
+    const boat = new THREE.Group();
+    const hull = new THREE.Mesh(boxGeo, cached('mat:boat', () => new THREE.MeshStandardMaterial({ color: 0x6a3a22, roughness: 0.7 })));
+    hull.scale.set(1.0, 0.4, 6.0); boat.add(hull);
+    const prow = new THREE.Mesh(coneGeo, hull.material);
+    prow.scale.set(0.5, 1.2, 0.3); prow.rotation.x = -0.9; prow.position.set(0, 0.4, 3.2); boat.add(prow);
+    const band = new THREE.Mesh(boxGeo, cached('mat:boatBand', () => new THREE.MeshStandardMaterial({ color: 0xe8c040, roughness: 0.6 })));
+    band.scale.set(1.04, 0.08, 6.04); band.position.y = 0.15; boat.add(band);
+    boat.position.set(-1.8 - k * 1.8, 0.3, -6 - k * 16 - Math.random() * 4);
+    g.add(boat);
+  }
+  for (let z = 0; z < len - 4; z += 7 + Math.random() * 3) {
+    const house = new THREE.Group();
+    const col = theme.palette[(Math.random() * theme.palette.length) | 0];
+    const wall = new THREE.Mesh(boxGeo, cached(`mat:stilt:${col}`, () => new THREE.MeshStandardMaterial({ color: col, roughness: 0.9 })));
+    wall.scale.set(4, 3.2, 5.5); wall.position.y = 3.0; house.add(wall);
+    const roof = new THREE.Mesh(cached('geo:stiltRoof', () => {
+      const geo = new THREE.CylinderGeometry(0.01, 3.4, 1.8, 4, 1);
+      geo.rotateY(Math.PI / 4); return geo;
+    }), cached('mat:stiltRoof', () => new THREE.MeshStandardMaterial({ color: 0x8a3a2a, roughness: 0.8 })));
+    roof.scale.set(1, 1, 1.4); roof.position.y = 5.5; house.add(roof);
+    for (const [x, zz] of [[-1.6, -2.2], [1.6, -2.2], [-1.6, 2.2], [1.6, 2.2]]) {
+      const stilt = new THREE.Mesh(cylGeo, plank);
+      stilt.scale.set(0.12, 1.8, 0.12); stilt.position.set(x, 0.6, zz); house.add(stilt);
+    }
+    house.position.set(-11.5, 0, -z - 3);
+    g.add(house);
   }
   return g;
 }
@@ -3511,6 +3700,7 @@ const SIL_TINT = {
   mexico: '#5a3a52',     // plum dusk over the volcano-ringed valley
   marrakech: '#6a3c3a',  // red earth city under the blue-grey Atlas
   delhi: '#6a4a3a',      // red sandstone and domes through the afternoon haze
+  bangkok: '#5a4a5a',    // temple spires and towers in the humid haze
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
@@ -3671,6 +3861,34 @@ function skylineTexture(theme) {
           g.fill();
         }
         x += bw + 1;
+      }
+    } else if (theme.id === 'bangkok') {
+      // A mix of towers and temples: a few tall blocks behind, and in front
+      // the stepped roofs, tall prangs and bell-shaped chedis of the wats.
+      for (const [x, w, h] of [[80, 60, 150], [260, 50, 190], [420, 70, 130], [1080, 60, 200], [1250, 80, 160], [1450, 55, 140]]) box(x, w, h, 0.14);
+      for (let x = 0, i = 0; x < 1600; i++) {
+        const bw = 34 + (i * 11) % 28, bh = 22 + (i * 7) % 20;
+        box(x, bw, bh, 0.22);
+        x += bw;
+      }
+      const prang = (cx, h, f) => {
+        g.fillStyle = dark(f);
+        g.beginPath(); g.moveTo(cx - h * 0.2, GY - 30);
+        g.quadraticCurveTo(cx - h * 0.18, GY - h * 0.8, cx, GY - h);
+        g.quadraticCurveTo(cx + h * 0.18, GY - h * 0.8, cx + h * 0.2, GY - 30);
+        g.fill();
+      };
+      prang(640, 170, 0.32); prang(560, 90, 0.28); prang(720, 90, 0.28);
+      for (const cx of [300, 980, 1180]) {                            // chedis
+        g.fillStyle = dark(0.28);
+        g.beginPath(); g.moveTo(cx - 26, GY - 30); g.quadraticCurveTo(cx, GY - 110, cx + 26, GY - 30); g.fill();
+        g.fillRect(cx - 2, GY - 140, 4, 40);
+      }
+      for (const cx of [860, 1340]) {                                 // stepped temple roofs
+        g.fillStyle = dark(0.3);
+        for (let k = 0; k < 3; k++) {
+          g.beginPath(); g.moveTo(cx - 60 + k * 12, GY - 34 - k * 16); g.lineTo(cx, GY - 70 - k * 18); g.lineTo(cx + 60 - k * 12, GY - 34 - k * 16); g.fill();
+        }
       }
     } else if (theme.id === 'delhi') {
       // Domes and minarets of the old city, chhatri pavilions on the
@@ -3851,6 +4069,23 @@ export function makeCameo(theme) {
       g.fillRect(cx + 50, GY - 196, 40, 50);                         // the tower
       g.fillStyle = light(0.2);
       for (let x = cx - 140; x < cx + 140; x += 16) g.fillRect(x, GY - 138, 7, 12);   // the gallery
+    } else if (key === 'watarun') {
+      // Wat Arun across the river: the tall central prang with its four
+      // smaller prangs, over the far bank's trees.
+      g.fillStyle = dark(0.22);
+      for (let x = cx - 480; x < cx + 480; x += 34) { g.beginPath(); g.arc(x, GY - 26, 24, 0, 7); g.fill(); }
+      const prang = (x, h, f) => {
+        g.fillStyle = dark(f);
+        g.fillRect(x - h * 0.24, GY - h * 0.22, h * 0.48, h * 0.22);
+        g.beginPath(); g.moveTo(x - h * 0.18, GY - h * 0.2);
+        g.quadraticCurveTo(x - h * 0.16, GY - h * 0.82, x, GY - h);
+        g.quadraticCurveTo(x + h * 0.16, GY - h * 0.82, x + h * 0.18, GY - h * 0.2);
+        g.fill();
+      };
+      prang(cx - 170, 130, 0.3); prang(cx + 170, 130, 0.3);
+      prang(cx, 240, 0.36);
+      g.fillStyle = light(0.4);
+      for (let k = 0; k < 5; k++) g.fillRect(cx - 36 + k * 3, GY - 90 - k * 22, 72 - k * 6, 3);
     } else if (key === 'lahori') {
       // The Red Fort's Lahori Gate at the end of Chandni Chowk: the long
       // battlemented wall, the gate with its two octagonal towers, and the

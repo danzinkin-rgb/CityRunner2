@@ -50,6 +50,7 @@ const SNAP = () => {
   const rowKey = (o) => `${tr.chunks.indexOf(o.chunk)}:${o.localZ.toFixed(2)}`;
   const obs = tr.obstacles.map((o) => ({
     row: rowKey(o), lane: o.lane, kind: o.kind, mech: !!o.mech, cross: o.cross ?? 0,
+    from: o.uFrom ?? null, to: o.uTo ?? null,
     z: o.chunk.position.z + o.localZ,
   }));
   const coins = tr.coins.map((c) => ({ chunk: tr.chunks.indexOf(c.chunk), x: c.mesh.position.x, z: c.mesh.position.z,
@@ -179,6 +180,64 @@ async function watch(page, ms, shotName) {
   const snap2 = await again.page.evaluate(SNAP);
   const sig = (s) => JSON.stringify(s.obs.filter((o) => o.mech).map((o) => [o.row, o.lane]));
   check(sig(snap) === sig(snap2), 'the same seed deals the same braking rickshaws');
+  await again.ctx.close();
+}
+
+// ------------------------------------------------------------ Bangkok
+// Tuk-tuks U-turn across the road (UT_* in mechanics.js):
+//   - every lane it crosses or ends in is empty in its row and is not the
+//     row's coin lane
+//   - it turns across one or two lanes, and some cross two
+//   - it has finished turning, centred in its new lane, 16 m out
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337]) {
+    ({ page, ctx, errors } = await open('bangkok', 3, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.filter((o) => o.mech).length >= 2) break;
+    await ctx.close();
+  }
+  const tuks = snap.obs.filter((o) => o.mech);
+  check(tuks.length > 0, 'Bangkok deals U-turning tuk-tuks', `${tuks.length} in the opening chunks, seed ${SEED}`);
+  let pathBad = 0, coinBad = 0;
+  for (const t of tuks) {
+    for (let l = Math.min(t.from, t.to); l <= Math.max(t.from, t.to); l++) {
+      if (snap.obs.some((o) => o !== t && o.row === t.row && o.lane === l)) pathBad++;
+      if (coinIn(snap, t.row, l)) coinBad++;
+    }
+  }
+  check(pathBad === 0, "nothing else stands in a U-turn's path", `${pathBad} bad`);
+  check(coinBad === 0, "no souvenirs lie in a U-turn's path", `${coinBad} bad`);
+  check(tuks.every((t) => t.from !== t.to && Math.abs(t.from - t.to) <= 2), 'a U-turn crosses one or two lanes');
+  const settled = await page.evaluate(() => {
+    const t = window.__cr.track.obstacles.find((o) => o.mech);
+    const probe = (from, to, ahead) => {
+      const o = { uFrom: from, uTo: to, lane: from, x: 0, mesh: { position: {}, rotation: {}, userData: { signal: { light: {}, on: 1, off: 0 } } } };
+      t.mech.move(o, ahead, 0);
+      return { x: o.x, lane: o.lane };
+    };
+    return [probe(0, 2, 16), probe(2, 1, 16), probe(1, 0, 15.9), probe(0, 2, 28.1)];
+  });
+  check(Math.abs(settled[0].x - 2.4) < 1e-6 && settled[0].lane === 2 && Math.abs(settled[1].x) < 1e-6 && Math.abs(settled[2].x + 2.4) < 1e-6,
+    'a U-turn has finished, centred in its new lane, 16 m out');
+  check(Math.abs(settled[3].x + 2.4) < 1e-6, 'a U-turn has not started 28 m out');
+  const seen = await watch(page, 14000, SHOTS && 'bangkok-uturn');
+  if (SHOTS && seen.shot) await page.screenshot({ path: join(SHOTS, 'bangkok-uturn.png') });
+  check(!errors.length, 'Bangkok: no page errors', errors[0] || '');
+  await ctx.close();
+  const wide = [];
+  for (const sd of [7, 4242, 99, 1234, 31337, 2024]) {
+    const o = await open('bangkok', 3, sd);
+    wide.push(...(await o.page.evaluate(SNAP)).obs.filter((x) => x.mech && Math.abs(x.from - x.to) === 2));
+    await o.ctx.close();
+    if (wide.length) break;
+  }
+  check(wide.length > 0, 'some U-turns cross two lanes');
+
+  const again = await open('bangkok', 3, SEED);
+  const snap2 = await again.page.evaluate(SNAP);
+  const sig = (s) => JSON.stringify(s.obs.filter((o) => o.mech).map((o) => [o.row, o.from, o.to]));
+  check(sig(snap) === sig(snap2), 'the same seed deals the same U-turns');
   await again.ctx.close();
 }
 

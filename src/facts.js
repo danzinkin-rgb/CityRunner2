@@ -171,6 +171,28 @@ export const STREET_FACTS = {
         { text: 'Every year on 26 January, the Republic Day parade marches along it.' },
       ] },
   ],
+  // Bangkok: DRAFT, awaiting Dan's sign-off (docs/BANGKOK-FACTS-DRAFT.md,
+  // sources listed there).
+  bangkok: [
+    { street: 'Yaowarat Road', tag: "Bangkok's Chinatown",
+      facts: [
+        { big: '1.5', unit: 'km', label: 'long', text: "Yaowarat Road runs about one and a half kilometres through the heart of Bangkok's Chinatown." },
+        { big: '1891', label: 'ordered', text: 'King Chulalongkorn ordered the road built in 1891, over land that had been rice fields and canals.' },
+        { text: 'It bends because it was laid out around the homes already there. People say it looks like the body of a dragon.' },
+      ] },
+    { street: 'Khao San Road', tag: 'The rice street',
+      facts: [
+        { big: '410', unit: 'm', label: 'long', text: 'Khao San Road is only about 410 metres long.' },
+        { text: "Its name means 'milled rice': by the end of the 1800s this district was the biggest rice market in the country." },
+        { text: 'Rice came up the Chao Phraya River on barges and was unloaded at a canal nearby.' },
+      ] },
+    { street: 'Khlong Bang Luang', tag: 'Life by the canal',
+      facts: [
+        { text: "Bangkok was once called the 'Venice of the East', because canals, called khlongs, crossed the whole city." },
+        { big: '1,682', label: 'canals', text: 'In 2019 the city counted 1,682 canals, with 2,604 kilometres of waterways between them.' },
+        { text: 'Many canals were filled in to make roads, but in places like Bang Luang, wooden houses still stand right on the water.' },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -313,6 +335,30 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Bangkok: DRAFT, awaiting Dan's sign-off (docs/BANGKOK-FACTS-DRAFT.md).
+  // 21.15 m (en.wikipedia.org/wiki/Giant_Swing)
+  giantswing: { scale: 21.15, compare: 'bus',
+    facts: [
+      { big: '21', unit: 'm', label: 'tall', text: 'The Giant Swing stands 21 metres tall, in front of the Devasathan shrine.' },
+      { big: '1784', label: 'first built', text: 'It was first built in 1784. Its great teak pillars were replaced, to the same design, in 2007.' },
+      { text: 'A swinging ceremony was once held here every year. It stopped in 1935.' },
+    ] },
+  // Sources give 66.8 to 86 m for the central prang (en.wikipedia.org/
+  // wiki/Wat_Arun); the scale uses the lowest, and the fact says "at least".
+  watarun: { scale: 66.8, compare: 'bus',
+    facts: [
+      { big: '67', unit: 'm', label: 'at least', text: 'Its central tower, the prang, is at least 67 metres tall. Sources differ, and some say as much as 86.' },
+      { big: '1851', label: 'completed', text: 'The central prang was finished in 1851, after building began under King Rama II and went on under King Rama III.' },
+      { text: 'Its tiers are covered in broken porcelain and seashells. Some of the china came to Bangkok as ballast in ships from China.' },
+    ] },
+  // altitude: Bangkok stands about 1.5 m above sea level
+  // (en.wikipedia.org/wiki/Bangkok). No sourced height for the hall.
+  chakri: { altitude: 1.5,
+    facts: [
+      { big: '1882', label: 'completed', text: 'The throne hall was finished in 1882, a hundred years after the Grand Palace was founded.' },
+      { text: 'Its body is built in a European style, but its three roofs are traditional Thai, each crowned with a tall spire.' },
+      { big: '1782', label: 'palace founded', text: 'The Grand Palace was begun in 1782, the year Bangkok became the capital.' },
     ] },
   // Delhi: DRAFT, awaiting Dan's sign-off (docs/DELHI-FACTS-DRAFT.md).
   // altitude: Delhi stands about 216 m above sea level
