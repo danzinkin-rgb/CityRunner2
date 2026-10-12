@@ -52,7 +52,7 @@ async function layoutFor(seed, city = 'nyc', level = 2) {
     // part of the course too (they score), and were left out until a
     // placement change in October 2026 would have slipped past.
     return [
-      ...track.obstacles.map((o) => `${o.chunk.position.z}|${o.localZ.toFixed(3)}|${o.lane}|${o.kind}|${o.y1}|${o.halfLen}`),
+      ...track.obstacles.map((o) => `${o.chunk.position.z}|${o.localZ.toFixed(3)}|${o.lane}|${o.kind}|${o.y1}|${o.halfLen}${o.hazard ? `|haz:${o.hazard}` : ''}`),
       ...track.pieces.map((p) => `piece|${p.idx}|${p.chunk.position.z}|${p.mesh.position.x}|${p.mesh.position.z.toFixed(3)}`),
     ].join('\n');
   });
@@ -123,12 +123,16 @@ check('every daily city exists, and only pool cities are dealt',
 // seed, so a change to what a seed builds must come with a new COURSE_VERSION
 // (src/run/track.js), which retires the old ghosts. Three streets that cover
 // the city-specific branches (Rome's weaving Vespas, SF's cable cars).
-const KNOWN_COURSE = { 2: 'd3c8fea0' };   // v2 also fingerprints the monument pieces
+const KNOWN_COURSE = { 2: '5ba20cef' };   // v2 also fingerprints the monument pieces
 const fnv = (str) => { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, '0'); };
 const courseSrc = readFileSync(join(HERE, '..', 'src', 'run', 'track.js'), 'utf8');
 const courseVersion = +(courseSrc.match(/export const COURSE_VERSION = (\d+);/) || [])[1];
 const prints = [];
-for (const [c, lv] of [['nyc', 1], ['rome', 3], ['sf', 2]]) prints.push(await layoutFor(4242, c, lv));
+// Paris street 3 because its opening chunks hold a moving hazard on this
+// seed (src/run/hazards.js), so the fingerprint covers hazards too.
+for (const [c, lv] of [['nyc', 1], ['rome', 3], ['sf', 2], ['paris', 3]]) prints.push(await layoutFor(4242, c, lv));
+check('the fingerprinted courses include a moving hazard', prints.join('\n').includes('|haz:'),
+  'pick a seed/street whose opening chunks hold one');
 const courseHash = fnv(prints.join('#'));
 check('the courses match the fingerprint recorded for COURSE_VERSION',
   KNOWN_COURSE[courseVersion] === courseHash,

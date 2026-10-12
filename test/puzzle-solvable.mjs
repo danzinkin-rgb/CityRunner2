@@ -56,6 +56,10 @@ if (!CITIES.length) {
 const VIEWS = [
   ['portrait', { width: 393, height: 659 }],
   ['landscape', { width: 844, height: 390 }],
+  // Gamer mode deals more pieces on streets 2 and 3 (split pieces, detail
+  // taken off as pieces of its own: monumentDefs in src/puzzle/puzzle.js), so
+  // those boards are checked too. Portrait only, to keep the suite's time.
+  ['portrait gamer', { width: 393, height: 659 }, { mode: 'gamer', levels: [2, 3] }],
 ];
 
 let failures = 0, checked = 0;
@@ -142,10 +146,15 @@ const browser = await webkit.launch();
 console.log(`puzzle solvability — ${CITIES.length} cities x 3 levels x ${VIEWS.length} orientations`);
 console.log(`cities [${CITIES.join(', ')}] from src/cities/themes.js\n`);
 
-for (const [vname, viewport] of VIEWS) {
+for (const [vname, viewport, opt = {}] of VIEWS) {
   const ctx = await browser.newContext({ viewport, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  if (opt.mode) {
+    await ctx.addInitScript((mode) => {
+      localStorage.setItem('cityrunner2', JSON.stringify({ stars: {}, coins: 0, best: 0, mode }));
+    }, opt.mode);
+  }
   for (const city of CITIES) {
-    for (const level of [1, 2, 3]) {
+    for (const level of opt.levels || [1, 2, 3]) {
       const page = await ctx.newPage();
       const errors = [];
       page.on('pageerror', (e) => errors.push(String(e)));

@@ -279,11 +279,12 @@ const SWARM = {
 // rickshaws.
 // Fairness:
 //   - the train fits inside its chunk, so it is never cut off early
-//   - every row alongside it has nothing in the rail lane and no souvenirs
-//     there, and always keeps one of the other two lanes free of vehicles
+//   - every row alongside it, and up to TRAIN_TAIL metres past its last
+//     car, has nothing in the rail lane and no souvenirs there, and always
+//     keeps one of the other two lanes free of vehicles
 //   - only the rail lane: the train never leaves its rails
 const TRAIN_CHANCE = [0.12, 0.16, 0.2];      // share of rows, by street
-const TRAIN_CARS = 4, CAR_LEN = 6, RUSH = 0.35, RUSH_MAX = 30, TRAIN_WARN = 90;
+const TRAIN_CARS = 4, CAR_LEN = 6, RUSH = 0.35, RUSH_MAX = 30, TRAIN_WARN = 90, TRAIN_TAIL = 14;
 const TRAIN = {
   hint: 'Train coming! Keep out of the rail lane.',
   row({ level, rand, addObstacle, zRow, chunkLen, track, chunk }) {
@@ -304,7 +305,7 @@ const TRAIN = {
   // the other lanes free of vehicles.
   after({ track, chunk, zRow }) {
     const h = track.trainHold;
-    if (!h || h.chunk !== chunk || zRow <= h.from || zRow > h.to + 2) return;
+    if (!h || h.chunk !== chunk || zRow <= h.from || zRow > h.to + TRAIN_TAIL) return;
     const inRow = (o) => o.chunk === chunk && Math.abs(o.localZ + zRow) < 0.01 && !o.mech;
     const drop = (o) => { chunk.remove(o.mesh); track.obstacles = track.obstacles.filter((x) => x !== o); };
     for (const o of track.obstacles.filter((x) => inRow(x) && track.laneAtArrival(x) === 0)) drop(o);

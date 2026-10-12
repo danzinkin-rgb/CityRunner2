@@ -152,6 +152,10 @@ export const sfx = {
   win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.22, 'triangle', 0.28, i * 0.11)); },
   tick() { tone(880, 0.05, 'square', 0.1); },
   powerup() { [440, 554, 659, 880].forEach((f, i) => tone(f, 0.1, 'square', 0.15, i * 0.05)); },
+  // moving hazards' warnings (src/run/hazards.js)
+  whistle() { [0, 0.11, 0.22].forEach((t) => tone(2600, 0.08, 'square', 0.12, t, 180)); },
+  flap() { [0, 0.07, 0.14, 0.21].forEach((t) => tone(140, 0.05, 'triangle', 0.18, t, 60)); },
+  rumble() { tone(90, 0.5, 'sawtooth', 0.12, 0, -30); tone(130, 0.5, 'sawtooth', 0.08, 0.05, -40); },
 };
 
 // Minimal driving music loop: bass pulse + arpeggio, per-city scale flavor.

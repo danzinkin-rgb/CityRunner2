@@ -61,12 +61,15 @@ for (const city of CITIES) for (const level of [1, 2, 3]) for (const seed of SEE
         if (seen.has(p.idx)) continue;
         const pz = z(p.mesh.position.z, p.chunk);
         const lane = LANES.indexOf(p.mesh.position.x);
-        // the rows either side are half a row-spacing away; 13 m covers the
-        // widest spacing (level 1) without reaching the row beyond
+        // the rows either side are half a row-spacing away (track.js); look
+        // that far and no further, so a hazard in the gap beyond a row is not
+        // mistaken for one beside the piece
+        const step = 12 / [0.55, 0.8, 1.05][t.level - 1];
+        const reach = step / 2 + 1;
         const inLane = t.obstacles
           .filter((o) => t.laneAtArrival(o) === lane)
           .map((o) => ({ kind: o.kind, dz: z(o.localZ, o.chunk) - pz }))
-          .filter((o) => Math.abs(o.dz) < 13);
+          .filter((o) => Math.abs(o.dz) < reach);
         seen.set(p.idx, {
           lane,
           before: inLane.filter((o) => o.dz > 0).map((o) => `${o.kind} ${o.dz.toFixed(1)}m before`),

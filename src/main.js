@@ -16,6 +16,7 @@ import { initIAP, getOffer, purchase, restore, onEntitlementGranted } from './co
 import { STORAGE } from './core/storage-keys.js';
 import { DEBUG_HOOKS, TESTER } from './core/debug.js';
 import { loadGhost, saveGhostIfBest, GhostRecorder, GhostRunner } from './run/ghost.js';
+import { HAZARD_RATE } from './run/hazards.js';
 
 export const VERSION = '1.1.1';
 import { Player, DEFAULT_STYLE } from './run/player.js';
@@ -159,6 +160,7 @@ function playRules() {
 }
 // set again by startRun() and startPuzzle(); dailyMode is not declared yet here
 let rules = { name: 'newbie', ...MODES.newbie };
+const hazardHintsShown = new Set();   // once per kind per session
 const addScore = (n) => { score += n * rules.scoreMul; };
 
 // ---------- daily challenge ----------
@@ -341,8 +343,8 @@ function startRun() {
     scene = new THREE.Scene();
     dressScene(scene, city());
     player = new Player(scene, characterById(save.equipped).style);
-    const pieceDefs = looseDefs(city().landmarks[level - 1], level, tapsHere());
-    track = new Track(scene, city(), level, runSeed, pieceDefs, rules.start[level - 1]);
+    const pieceDefs = looseDefs(city().landmarks[level - 1], level, tapsHere(), rules.name === 'gamer');
+    track = new Track(scene, city(), level, runSeed, pieceDefs, rules.start[level - 1], HAZARD_RATE[rules.name][level - 1]);
     ghostRec = new GhostRecorder(track.seed);
     player.onAction = (a) => ghostRec.move(track.distance, a);
     ghost = best && best.seed === track.seed
@@ -363,6 +365,14 @@ function startRun() {
     document.body.classList.add('run-pieces');
     track.onWeave = () => hint('That Vespa is signalling — it\'s about to change lanes!');
     track.onMechanic = (text) => hint(text);
+    track.onHazard = (kind) => {
+      ({ birds: sfx.flap, officer: sfx.whistle, suitcase: sfx.rumble })[kind]?.();
+      if (hazardHintsShown.has(kind)) return;
+      hazardHintsShown.add(kind);
+      hint({ birds: 'Birds swooping in — roll under them!',
+        officer: 'A traffic officer is stepping out — change lanes!',
+        suitcase: 'A runaway suitcase! Jump over it.' }[kind]);
+    };
     speed = rules.start[level - 1];
     coins = 0; score = 0; shake = 0;
     continuesUsed = 0;
@@ -410,7 +420,7 @@ let testerInvincible = false;   // tester builds only; see the Tester section be
 function showGoal(lm) {
   $('hud-goal-img').src = `assets/monuments/${lm}.png`;
   $('hud-goal-name').textContent = LANDMARK_NAMES[lm];
-  const n = looseDefs(lm, level, tapsHere()).length;
+  const n = looseDefs(lm, level, tapsHere(), rules.name === 'gamer').length;
   $('hud-goal-sub').textContent = n ? `Collect its ${n} pieces on the way` : '';
   const el = $('hud-goal');
   el.classList.add('on');
@@ -650,7 +660,7 @@ function startPuzzle() {
     // Straight from a run, keep that run's rules: its pieces were dealt for
     // them, even if the mode was switched in Settings on the way.
     if (!lastRunPieces) rules = playRules();
-    puzzle = new Puzzle(scene, camera, lm, level, { collected: lastRunPieces, tap: tapsHere(), timeScale: puzzleTimeScale() });
+    puzzle = new Puzzle(scene, camera, lm, level, { collected: lastRunPieces, tap: tapsHere(), gamer: rules.name === 'gamer', timeScale: puzzleTimeScale() });
     lastRunPieces = null;
     puzzle.hintFn = hint;
     document.body.classList.remove('run-pieces');

@@ -40,6 +40,7 @@ const SUITES = [
   { file: 'test/run-pieces.mjs' },
   { file: 'test/piece-lanes.mjs' },
   { file: 'test/modes.mjs' },
+  { file: 'test/hazards.mjs' },
   { file: 'test/boot.mjs' },
   { file: 'test/audio-unlock.mjs' },
   { file: 'test/daily-rules.mjs' },

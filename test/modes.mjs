@@ -13,6 +13,7 @@
  *   - the daily ignores the mode: Newbie pace, full score, for everyone;
  *   - which street-1 puzzles tap and which drag, in each mode;
  *   - the drag card: shown on a dragged street 1, holds the clock, once per city;
+ *   - Gamer deals more pieces on streets 2 and 3, within its cap;
  *   - the Settings switch saves the mode.
  *
  * Usage: node test/modes.mjs [baseUrl]
@@ -74,6 +75,20 @@ for (const [mode, city, lv, want] of [
   const got = await page.evaluate(() => window.__cr.puzzle.mode);
   check(got === want, `${mode}, ${city} street ${lv}: built by ${want === 'tap' ? 'tapping' : 'dragging'}`, got);
   await ctx.close();
+}
+
+// ---- Gamer deals more pieces on streets 2 and 3 --------------------------------
+for (const [city, lv] of [['sf', 3], ['paris', 2]]) {
+  const counts = {};
+  for (const mode of ['newbie', 'gamer']) {
+    const { page, ctx } = await open(`?view=puzzle&city=${city}&level=${lv}`, { mode, ...told });
+    await page.waitForFunction(() => window.__cr?.puzzle?.items?.length, null, { timeout: 20000 });
+    counts[mode] = await page.evaluate(() => window.__cr.puzzle.items.length);
+    await ctx.close();
+  }
+  const cap = Math.ceil(counts.newbie * (lv === 3 ? 0.5 : 0.3));
+  check(counts.gamer > counts.newbie && counts.gamer <= counts.newbie + cap,
+    `Gamer deals more pieces on ${city} street ${lv}, within the cap`, `${counts.newbie} -> ${counts.gamer}`);
 }
 
 // ---- the drag card ------------------------------------------------------------
