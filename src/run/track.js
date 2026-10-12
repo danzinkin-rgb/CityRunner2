@@ -140,8 +140,11 @@ SHARED_GEO.add(PIECE_RING_GEO); SHARED_GEO.add(PIECE_BEAM_GEO);
 //   'full' — vehicle, must change lane
 //   'coin' — collectible
 export class Track {
-  constructor(scene, theme, level, seed, pieceDefs = []) {
+  constructor(scene, theme, level, seed, pieceDefs = [], startSpeed = 0) {
     this.scene = scene;
+    // The run's opening speed (it differs by game mode), so the souvenir arcs
+    // in the chunks built before the first update() are spaced for it.
+    this.speed = startSpeed;
     // Every draw THIS FILE makes — obstacle spacing/pattern/lane/kind, bus
     // chance, collectible placement, and also the chunk layout (building
     // size/height/position, props, parked cars, banners, festoons) — is

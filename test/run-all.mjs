@@ -38,6 +38,7 @@ const SUITES = [
   { file: 'test/puzzle-drag.mjs' },
   { file: 'test/run-pieces.mjs' },
   { file: 'test/piece-lanes.mjs' },
+  { file: 'test/modes.mjs' },
   { file: 'test/boot.mjs' },
   { file: 'test/audio-unlock.mjs' },
   { file: 'test/daily-rules.mjs' },

@@ -1752,7 +1752,9 @@ export class Puzzle {
     this.time = 60;                // replaced once the loose pieces are counted
     this.elapsed = 0;
     // ---- difficulty, by street ----------------------------------------------
-    // Street 1: tap a glowing piece and it flies home.
+    // Street 1: drag, the next course glows. Tapping instead (a glowing
+    //           piece flies home) is kept only for newcomers: Newbie mode, in
+    //           the first three cities. main.js decides, via opts.tap.
     // Street 2: drag each piece to its spot yourself; the next course glows.
     // Street 3: drag, NO glow, and some pieces arrive a quarter-turn out and
     //           must be turned (tap) before they fit. The ghost silhouette
@@ -1761,7 +1763,7 @@ export class Puzzle {
     // The order rule (bottom-up by course, with authored sortY for things like
     // a bridge deck hung after its cables) is the same on every street.
     this.level = level;
-    this.mode = level >= 2 ? 'drag' : 'tap';
+    this.mode = level === 1 && opts.tap ? 'tap' : 'drag';
     this.glow = level < 3;
     this.turning = level >= 3;
     this.dragging = null;
@@ -2004,7 +2006,8 @@ export class Puzzle {
     // each piece costs more handling. The bonus in main.js is a SHARE of
     // this clock, so it still tops out at 3000 whatever the total.
     const looseCount = this.items.length - this.placedCount;
-    const PER = { 1: 2.6, 2: 3.4, 3: 4.2 }[level] || 3.4;
+    // Tapping is quicker than dragging, so a tapped build gets less per piece.
+    const PER = this.mode === 'tap' ? 2.6 : level >= 3 ? 4.2 : 3.4;
     this.timeTotal = Math.round(Math.min(120, Math.max(40, 20 + PER * looseCount)));
     this.time = t0 > 0 ? Math.min(this.timeTotal, t0) : this.timeTotal;
 

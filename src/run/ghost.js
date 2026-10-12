@@ -28,17 +28,22 @@ function readAll() {
   try { return JSON.parse(localStorage.getItem(STORAGE.GHOSTS) || '{}') || {}; } catch { return {}; }
 }
 
+// One ghost per street per game mode: a Gamer run is faster and scores in
+// full, so a ghost from the other mode would be neither the same pace nor a
+// fair score to race.
+const keyOf = (cityId, level, mode) => `${cityId}:${level}:${mode}`;
+
 /** The saved ghost for a street, or null (none, or from an older course). */
-export function loadGhost(cityId, level) {
-  const g = readAll()[`${cityId}:${level}`];
+export function loadGhost(cityId, level, mode = 'newbie') {
+  const g = readAll()[keyOf(cityId, level, mode)];
   if (!g || g.v !== COURSE_VERSION || !Array.isArray(g.moves)) return null;
   return g;
 }
 
 /** Keep `data` as the street's ghost if it beats the one saved. Returns true if kept. */
-export function saveGhostIfBest(cityId, level, data) {
+export function saveGhostIfBest(cityId, level, data, mode = 'newbie') {
   const all = readAll();
-  const key = `${cityId}:${level}`;
+  const key = keyOf(cityId, level, mode);
   const old = all[key];
   if (old && old.v === COURSE_VERSION && old.score >= data.score) return false;
   all[key] = { ...data, v: COURSE_VERSION };

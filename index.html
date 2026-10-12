@@ -91,7 +91,12 @@
      stays visible behind it; holds input while it is up. */
   #missing-help{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
     background:rgba(4,6,16,.55);pointer-events:auto;padding:16px}
-  #missing-help.on{display:flex}
+  #missing-help.on,#drag-help.on{display:flex}
+  #drag-help{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(4,6,16,.55);pointer-events:auto;padding:16px}
+  .mode-pick{display:flex;gap:10px;justify-content:center;margin:10px 0 4px}
+  .mode-pick .btn{font-size:14px;padding:10px 18px;min-height:44px;opacity:.55}
+  .mode-pick .btn.on{opacity:1}
   .mh-card{max-width:340px;text-align:center;padding:20px 22px;border-radius:18px;
     background:rgba(14,20,44,.94);border:1px solid rgba(255,209,102,.35)}
   .mh-title{font-size:18px;font-weight:900;letter-spacing:3px;color:var(--gold)}
@@ -931,6 +936,14 @@
       <button class="btn ghost" id="mh-bring"></button>
     </div>
   </div>
+  <!-- The first time a city's street-1 monument is built by dragging. -->
+  <div id="drag-help" role="dialog" aria-modal="true" aria-labelledby="dh-title">
+    <div class="mh-card">
+      <div class="mh-title" id="dh-title">DRAG TO BUILD</div>
+      <p id="dh-text"></p>
+      <button class="btn" id="dh-ok">GOT IT</button>
+    </div>
+  </div>
   <button id="btn-pause" aria-label="Pause">❚❚</button>
   <!-- Only on a ghost run: one tap and the ghost is gone (fun, but it can
        also get in the way). Tap again to bring it back. -->
@@ -1013,6 +1026,15 @@
 <div id="screen-help" class="screen">
   <div class="title" style="font-size:clamp(26px,7vmin,48px)">HOW TO PLAY</div>
   <div class="sheet">
+    <h3>Game mode</h3>
+    <p><b>Newbie</b> runs at a gentle pace and scores 70%. <b>Gamer</b> runs faster, every monument is
+       dragged into place, and scores in full. Change it any time in Settings.</p>
+    <div class="mode-pick">
+      <button class="btn" id="help-mode-newbie" aria-pressed="true">NEWBIE</button>
+      <button class="btn" id="help-mode-gamer" aria-pressed="false">GAMER</button>
+    </div>
+    <p class="tip">The daily challenge is the same for everyone, whatever your mode.</p>
+
     <h3>Running</h3>
     <div class="row"><span class="key">← →</span><span>Swipe or press to change lane</span></div>
     <div class="row"><span class="key">↑</span><span>Jump — clears barriers, cars and taxis</span></div>
@@ -1021,7 +1043,7 @@
     <p class="tip">Buses are solid walls — change lane, you cannot jump those.</p>
 
     <h3>Souvenirs</h3>
-    <p>Each city has its own collectible, worth 25 points each.</p>
+    <p>Each city has its own collectible, worth 25 points each in Gamer mode.</p>
     <div class="souv-row">
       <div class="souv"><img src="assets/souvenirs/nyc.png" alt="I heart NY heart"><span>New York<br><b>Hearts</b></span></div>
       <div class="souv"><img src="assets/souvenirs/paris.png" alt="Croissant"><span>Paris<br><b>Croissants</b></span></div>
@@ -1033,8 +1055,9 @@
     </div>
 
     <h3>Building the monument</h3>
-    <p>Reach the end of a street and you get 60 seconds to rebuild that city's landmark.
-       Tap the <b>glowing</b> blocks — they are the ones you may place next.
+    <p>Reach the end of a street and you race the clock to rebuild that city's landmark.
+       <b>Drag</b> each block onto its outline; the <b>glowing</b> blocks are the ones you may place next.
+       In Newbie mode, the first street of New York, Paris and London is built by tapping instead.
        Build from the ground up: a block cannot go on before whatever it rests on.
        Blocks in the same course glow together and may be placed in any order.</p>
     <p class="tip">Drag anywhere to spin the view. Finishing early is worth 50 points per second left.</p>
@@ -1054,6 +1077,7 @@
     <div class="row"><span>Reduced motion</span><button class="toggle" id="set-motion" aria-label="Reduced motion">OFF</button></div>
     <div class="row"><span>On-screen controls</span><button class="toggle" id="set-touchbtns" aria-label="On-screen controls">OFF</button></div>
     <div class="row"><span>Race your best run</span><button class="toggle" id="set-ghost" aria-label="Race your best run">ON</button></div>
+    <div class="row"><span>Game mode</span><button class="toggle on" id="set-mode" aria-label="Game mode">NEWBIE</button></div>
     <h3>Player</h3>
     <div class="row"><span id="set-name" class="muted">—</span>
       <button class="linkbtn" id="set-reroll" aria-label="Get a new nickname">new nickname</button></div>

@@ -69,6 +69,13 @@ Since 1.1.1:
   collected without hitting anything (player feedback). This changes the
   courses, so `COURSE_VERSION` is 2 and saved ghosts from earlier versions
   are retired.
+- Two game modes (player feedback: too slow for experienced players).
+  Newbie keeps the original pace and scores 70%; Gamer starts at 20/23/26
+  m/s with a steeper ramp and scores in full. Chosen in Settings or on the
+  How to Play screen. The daily ignores the mode (Newbie pace, full score).
+- Monuments are built by dragging, except street 1 of New York, Paris and
+  London in Newbie mode, which stay tap-to-place. The first dragged street 1
+  in each city shows a "Drag to build" card before the clock starts.
 
 ## History
 
