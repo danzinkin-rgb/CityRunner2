@@ -310,7 +310,7 @@ async function watch(page, ms, shotName) {
 // Train Street's train (TRAIN_* in mechanics.js):
 //   - four cars nose to tail in the rail lane, all inside one chunk
 //   - rows alongside have nothing in the rail lane, no souvenirs there, and
-//     keep one other lane free of vehicles
+//     keep one other lane completely empty
 //   - it is drawn at most 30 m further off than where it meets you
 {
   let snap, page, ctx, errors, SEED;
@@ -375,13 +375,13 @@ async function watch(page, ms, shotName) {
     if (along.some((r) => r.lane === 0)) alongBad++;
     const zs = [...new Set(along.map((r) => r.z))];
     for (const z of zs) {
-      const walls = along.filter((r) => r.z === z && r.kind === 'full').map((r) => r.lane);
-      if (walls.includes(1) && walls.includes(2)) alongBad++;
+      const lanes = along.filter((r) => r.z === z).map((r) => r.lane);
+      if (lanes.includes(1) && lanes.includes(2)) alongBad++;
     }
     if (tsnap.coins.some((c) => c.chunk === t.chunk && c.z < t.z && c.z >= t.z - 26 && Math.abs(c.x + 2.4) < 0.2)) coinsBad++;
   }
   check(carBad === 0, 'a train is four cars in the rail lane, inside one chunk', `${carBad} bad`);
-  check(alongBad === 0, 'rows beside a train keep out of the rail lane and leave a lane free', `${alongBad} bad`);
+  check(alongBad === 0, 'rows beside a train keep out of the rail lane and leave another lane empty', `${alongBad} bad`);
   check(coinsBad === 0, 'no souvenirs lie in the rail lane beside a train', `${coinsBad} bad`);
   const offs = await page.evaluate(() => {
     const o = window.__cr.track.obstacles.find((x) => x.mech);

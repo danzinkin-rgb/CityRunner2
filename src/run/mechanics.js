@@ -281,7 +281,7 @@ const SWARM = {
 //   - the train fits inside its chunk, so it is never cut off early
 //   - every row alongside it, and up to TRAIN_TAIL metres past its last
 //     car, has nothing in the rail lane and no souvenirs there, and always
-//     keeps one of the other two lanes free of vehicles
+//     keeps one of the other two lanes completely empty
 //   - only the rail lane: the train never leaves its rails
 const TRAIN_CHANCE = [0.12, 0.16, 0.2];      // share of rows, by street
 const TRAIN_CARS = 4, CAR_LEN = 6, RUSH = 0.35, RUSH_MAX = 30, TRAIN_WARN = 90, TRAIN_TAIL = 14;
@@ -309,9 +309,12 @@ const TRAIN = {
     const inRow = (o) => o.chunk === chunk && Math.abs(o.localZ + zRow) < 0.01 && !o.mech;
     const drop = (o) => { chunk.remove(o.mesh); track.obstacles = track.obstacles.filter((x) => x !== o); };
     for (const o of track.obstacles.filter((x) => inRow(x) && track.laneAtArrival(x) === 0)) drop(o);
-    const walls = track.obstacles.filter((x) => inRow(x) && x.kind === 'full');
-    if ([1, 2].every((l) => walls.some((w) => track.laneAtArrival(w) === l))) {
-      drop(walls.find((w) => track.laneAtArrival(w) === 2));
+    // keep a lane beside the train completely empty, so the row never asks
+    // for a jump or a roll with the train alongside and nowhere else to go
+    const rest = track.obstacles.filter((x) => inRow(x));
+    if ([1, 2].every((l) => rest.some((o) => track.laneAtArrival(o) === l))) {
+      const lane = rest.some((o) => track.laneAtArrival(o) === 2 && o.kind === 'full') ? 1 : 2;
+      for (const o of rest.filter((x) => track.laneAtArrival(x) === lane)) drop(o);
     }
     track.coins = track.coins.filter((c) => {
       const hit = c.chunk === chunk && Math.abs(c.mesh.position.x - LANES[0]) < 0.1
