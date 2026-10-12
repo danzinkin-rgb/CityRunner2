@@ -155,6 +155,21 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
 
         for (let cIdx = 0; cIdx < cols; cIdx++) {
           if (style === 'hanok' || style === 'hutong') continue;   // painted below
+          if (style === 'colonial') {
+            // Old Havana: tall French windows with louvred shutters, a small
+            // iron balcony on each upper floor, faded paint
+            const x = cIdx * ww + ww * 0.24, y = rowY + wh * 0.08, w = ww * 0.52, h = wh * 0.8;
+            g.fillStyle = theme.trim; g.fillRect(x - 4, y - 6, w + 8, h + 8);
+            const open = Math.random() < 0.4;
+            g.fillStyle = open ? (Math.random() < (theme.lit ?? 0.16) ? theme.windowLit : '#2a3440') : pickR(['#2a7a8a', '#3a6a4a', '#5a7aa0', '#8a5a3a']);
+            g.fillRect(x, y, w, h);
+            if (!open) { g.fillStyle = 'rgba(0,0,0,.22)'; for (let ly = y + 2; ly < y + h; ly += 4) g.fillRect(x, ly, w, 1); }
+            if (f > 0) {
+              g.fillStyle = 'rgba(30,30,34,.9)'; g.fillRect(x - 6, y + h - 2, w + 12, 3);
+              for (let bx = x - 4; bx < x + w + 6; bx += 4) g.fillRect(bx, y + h - 14, 1.5, 12);
+            }
+            continue;
+          }
           if (style === 'coral') {
             // Stone Town: small shuttered windows in thick coral-stone walls,
             // and on the upper floors the odd closed wooden balcony
@@ -399,6 +414,13 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         }
       }
 
+      // Havana: sun-faded paint, peeling here and there to the plaster
+      if (style === 'colonial') {
+        for (let i = 0; i < 26; i++) {
+          g.fillStyle = `rgba(240,230,210,${0.15 + Math.random() * 0.25})`;
+          g.beginPath(); g.ellipse(Math.random() * W, Math.random() * H, 4 + Math.random() * 14, 3 + Math.random() * 8, 0, 0, 7); g.fill();
+        }
+      }
       // Stone Town: lime-washed coral stone, weathered in grey-brown streaks
       if (style === 'coral') {
         for (let i = 0; i < 40; i++) {
@@ -492,6 +514,7 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
       else if (style === 'hanok') paintHanokGround(G);
       else if (style === 'coral') paintCoralGround(G);
       else if (style === 'hutong') paintHutongGround(G);
+      else if (style === 'colonial') paintColonialGround(G);
       else paintDefaultShops(G);
 
       g.fillStyle = 'rgba(0,0,0,.3)';
@@ -784,6 +807,27 @@ function paintMarketGround({ g, W, H, shopY, SHOP_H, theme }) {
     }
   }
   g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(0, shopY, W, 3);
+}
+
+// Old Havana: a shaded arcade of round arches on columns along the
+// pavement, shopfronts and doorways deep inside it.
+function paintColonialGround({ g, W, H, shopY, SHOP_H, theme }) {
+  g.fillStyle = 'rgba(40,30,24,.55)'; g.fillRect(0, shopY, W, SHOP_H);
+  const n = 3, bw = W / n;
+  for (let i = 0; i < n; i++) {
+    const x = i * bw;
+    g.fillStyle = theme.trim;
+    g.fillRect(x, shopY, 8, SHOP_H); g.fillRect(x + bw - 8, shopY, 8, SHOP_H);
+    g.beginPath(); g.moveTo(x, shopY); g.lineTo(x + bw, shopY); g.lineTo(x + bw, shopY + SHOP_H * 0.3);
+    g.arc(x + bw / 2, shopY + SHOP_H * 0.3, bw / 2 - 8, 0, Math.PI, true); g.lineTo(x, shopY); g.fill();
+    if (i === 1 && Math.random() < 0.6) {
+      g.fillStyle = pickR(theme.storefront); g.fillRect(x + 12, shopY + SHOP_H * 0.42, bw - 24, SHOP_H * 0.14);
+      g.fillStyle = '#fff6e0'; g.font = `900 ${Math.round(SHOP_H * 0.1)}px Arial`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(pickR(adWords(theme, ['CAFÉ'])), x + bw / 2, shopY + SHOP_H * 0.49, bw - 28);
+    }
+    g.fillStyle = Math.random() < 0.5 ? '#ffd498' : '#3a2a20';
+    g.fillRect(x + bw * 0.3, shopY + SHOP_H * 0.6, bw * 0.4, SHOP_H * 0.4 - 4);
+  }
 }
 
 // Beijing: a red courtyard gate with brass knockers under a little tiled
@@ -2155,6 +2199,7 @@ const ADS = {
   samarkand: ['SILK', 'CERAMICS', 'BREAD', 'TEA'],
   zanzibar: ['SPICES', 'KANGA', 'COFFEE', 'TOURS'],
   beijing: ['TEA', 'DUMPLINGS', 'NOODLES', 'BOOKS'],
+  havana: ['CAFÉ', 'MUSIC', 'BOOKS', 'ICE CREAM'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -3096,6 +3141,8 @@ export function makeVehicle(theme) {
     }
     const sign = new THREE.Mesh(boxGeo, mats.glow);
     sign.scale.set(0.5, 0.16, 0.2); sign.position.set(0, 1.6, -0.1); g.add(sign);
+  } else if (kind === 'classiccar') {
+    return makeClassicCar();
   } else if (kind === 'bjtaxi') {
     // A two-tone city taxi, yellow below and dark green above, with a lit
     // roof sign. A car, low enough to jump.
@@ -3385,6 +3432,72 @@ export function makeMotorbike(signal = false) {
   return g;
 }
 
+// Havana's old cars: long, rounded 1950s shapes with tail fins and plenty
+// of chrome, in bright two-tone paint. Generic: no make's grille, badge or
+// name. A car, low enough to jump. Faces the player.
+const CLASSIC_COLS = [[0xe85a8a, 0xf4f0e8], [0x3ab0c8, 0xf4f0e8], [0xe8a018, 0xf4f0e8], [0x2a6ac8, 0xe8e8e0], [0xc8302a, 0xf4f0e8], [0x5ac878, 0xf4f0e8]];
+export function makeClassicCar() {
+  const g = new THREE.Group();
+  const ci = (Math.random() * CLASSIC_COLS.length) | 0;
+  const [bc, tc] = CLASSIC_COLS[ci];
+  const body = cached(`mat:classic:${ci}`, () => new THREE.MeshStandardMaterial({ color: bc, roughness: 0.25, metalness: 0.3 }));
+  const top = cached(`mat:classicTop:${ci}`, () => new THREE.MeshStandardMaterial({ color: tc, roughness: 0.3, metalness: 0.2 }));
+  const hull = new THREE.Mesh(boxGeo, body);
+  hull.scale.set(1.9, 0.62, 4.4); hull.position.y = 0.66; hull.castShadow = true; g.add(hull);
+  const cab = new THREE.Mesh(cached('geo:classicCab', () => new THREE.CylinderGeometry(0.9, 0.9, 2.0, 14, 1, false, 0, Math.PI)), top);
+  cab.rotation.set(0, Math.PI / 2, Math.PI / 2); cab.scale.set(0.62, 1, 0.82); cab.position.set(0, 0.96, -0.2); g.add(cab);
+  const glass = new THREE.Mesh(boxGeo, cached('mat:carGlass', () => new THREE.MeshStandardMaterial({ color: 0xa8d0ec, roughness: 0.12, metalness: 0.5 })));
+  glass.scale.set(1.6, 0.36, 0.06); glass.position.set(0, 1.18, 0.6); glass.rotation.x = -0.5; g.add(glass);
+  for (const sx of [-0.78, 0.78]) {
+    const fin = new THREE.Mesh(boxGeo, body);
+    fin.scale.set(0.12, 0.34, 1.0); fin.position.set(sx, 1.05, -1.8); fin.rotation.x = 0.3; g.add(fin);
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), mats.glow);
+    lamp.position.set(sx * 0.9, 0.78, 2.2); g.add(lamp);
+  }
+  const bumper = new THREE.Mesh(boxGeo, mats.chrome);
+  bumper.scale.set(2.0, 0.18, 0.18); bumper.position.set(0, 0.4, 2.22); g.add(bumper);
+  const rear = new THREE.Mesh(boxGeo, mats.chrome);
+  rear.scale.set(2.0, 0.18, 0.18); rear.position.set(0, 0.4, -2.22); g.add(rear);
+  const strip = new THREE.Mesh(boxGeo, mats.chrome);
+  strip.scale.set(1.94, 0.05, 4.2); strip.position.y = 0.85; g.add(strip);
+  return g;
+}
+
+// A big amber indicator lamp for a vehicle about to pull out from the kerb
+// (src/run/mechanics.js), on the side facing the road. Hidden until used.
+export function makePullBlinker(vehicle, side) {
+  const lamp = new THREE.Mesh(boxGeo, cached('mat:pullBlink', () =>
+    new THREE.MeshStandardMaterial({ color: 0xffb020, emissive: 0xff9a00, emissiveIntensity: 2.6 })));
+  lamp.scale.set(0.3, 0.3, 0.3);
+  lamp.position.set(-side * 1.05, 1.3, 2.0);
+  lamp.visible = false;
+  vehicle.add(lamp);
+  return lamp;
+}
+
+// Havana's wave: foam building against the sea wall, then a wall of white
+// water rising over the lane. src/run/mechanics.js grows them as you come.
+export function makeWave(lane) {
+  const g = new THREE.Group();
+  const white = cached('mat:waveFoam', () => new THREE.MeshStandardMaterial({ color: 0xf4f8fa, roughness: 0.4, transparent: true, opacity: 0.85, emissive: 0xaad8e8, emissiveIntensity: 0.3 }));
+  const foam = new THREE.Group();
+  for (let i = 0; i < 6; i++) {
+    const b = new THREE.Mesh(ballGeo, white);
+    b.scale.setScalar(0.5 + (i % 3) * 0.2); b.position.set(-1.2 + (i % 3) * 0.3 - (lane === 0 ? 1.6 : 0), 0.6, (i - 2.5) * 0.6);
+    foam.add(b);
+  }
+  foam.visible = false; g.add(foam);
+  const wave = new THREE.Group();
+  for (let i = 0; i < 8; i++) {
+    const b = new THREE.Mesh(ballGeo, white);
+    b.scale.set(1.0, 1.3, 0.9); b.position.set(((i % 3) - 1) * 0.7, 0.8 + ((i / 3) | 0) * 0.9, ((i % 2) - 0.5) * 1.2);
+    wave.add(b);
+  }
+  wave.visible = false; g.add(wave);
+  g.userData.foam = foam; g.userData.wave = wave;
+  return g;
+}
+
 // Beijing's delivery tricycle, parked: a three-wheeled cargo bike with its
 // load. `tall` stacks it high with boxes and sacks, a wall to go round;
 // otherwise it carries a low load, under 1.2 m, to jump over. Its height
@@ -3665,6 +3778,15 @@ export function makeCanalSide(theme, len) {
   for (let z = 2; z < len; z += 4) {
     const post = new THREE.Mesh(cylGeo, plank);
     post.scale.set(0.1, 1.4, 0.1); post.position.set(-0.3, -0.1, -z); g.add(post);
+  }
+  if (theme.seawall) {
+    // Havana's Malecón: a low stone sea wall along the pavement's edge, the
+    // open sea beyond it out to the horizon
+    water.scale.set(60, 0.1, len); water.position.set(-30, -0.2, -len / 2);
+    water.material = cached('mat:sea', () => new THREE.MeshStandardMaterial({ color: 0x2a6a8a, roughness: 0.25, metalness: 0.3 }));
+    const wall = new THREE.Mesh(boxGeo, cached('mat:seawall', () => new THREE.MeshStandardMaterial({ color: 0xc8c0b0, roughness: 0.9 })));
+    wall.scale.set(0.7, 0.9, len); wall.position.set(-0.35, 0.45, -len / 2); g.add(wall);
+    return g;
   }
   if (theme.lake) {
     // Hoan Kiem: no boats or houses, the lake runs away to the trees on the
@@ -4385,6 +4507,7 @@ const SIL_TINT = {
   samarkand: '#5a4a3a',  // sand brick, and the blue domes catching the light
   zanzibar: '#4a5a64',   // white stone town, palms and minarets against the sea haze
   beijing: '#4a4a52',    // grey roofs and the curved eaves of the old towers
+  havana: '#5a4a52',     // faded pastel blocks and the fortress over the harbour
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
@@ -4546,6 +4669,21 @@ function skylineTexture(theme) {
         }
         x += bw + 1;
       }
+    } else if (theme.id === 'havana') {
+      // Old Havana's skyline: low pastel blocks, church towers and domes,
+      // and a few taller old hotels behind.
+      for (let x = 0, i = 0; x < 1600; i++) {
+        const bw = 30 + (i * 17) % 30, bh = 26 + (i * 11) % 34;
+        box(x, bw, bh, 0.18 + ((i * 7) % 3) * 0.02);
+        x += bw + 2;
+      }
+      for (const [x, w, h] of [[300, 50, 110], [1100, 60, 130], [1380, 40, 100]]) box(x, w, h, 0.22);
+      for (const [cx, r] of [[620, 34], [880, 26]]) {
+        g.fillStyle = dark(0.3);
+        g.fillRect(cx - r, GY - 70, r * 2, 70);
+        g.beginPath(); g.ellipse(cx, GY - 70, r, r * 1.2, 0, Math.PI, 0); g.fill();
+      }
+      for (const x of [500, 740]) { box(x, 18, 110, 0.3); box(x + 4, 10, 124, 0.32); }
     } else if (theme.id === 'beijing') {
       // Grey courtyard roofs in long low lines, the double-eaved towers of
       // the old city here and there, and modern towers behind.
@@ -4850,6 +4988,19 @@ export function makeCameo(theme) {
       g.fillRect(cx + 50, GY - 196, 40, 50);                         // the tower
       g.fillStyle = light(0.2);
       for (let x = cx - 140; x < cx + 140; x += 16) g.fillRect(x, GY - 138, 7, 12);   // the gallery
+    } else if (key === 'morro') {
+      // Morro Castle across the harbour mouth: the long fortress walls on
+      // their rock, and the lighthouse rising from the point.
+      g.fillStyle = dark(0.24);
+      g.beginPath(); g.moveTo(cx - 480, GY); g.lineTo(cx - 420, GY - 40); g.lineTo(cx + 260, GY - 50); g.lineTo(cx + 380, GY - 20); g.lineTo(cx + 480, GY); g.fill();
+      g.fillStyle = dark(0.32);
+      g.fillRect(cx - 400, GY - 90, 600, 46);
+      for (let x = cx - 400; x < cx + 200; x += 26) g.fillRect(x, GY - 100, 14, 10);
+      g.fillStyle = dark(0.4);
+      g.fillRect(cx + 120, GY - 260, 34, 170);
+      g.fillRect(cx + 114, GY - 272, 46, 14);
+      g.fillStyle = light(0.7); g.fillRect(cx + 124, GY - 292, 26, 20);
+      g.fillStyle = dark(0.4); g.beginPath(); g.moveTo(cx + 118, GY - 292); g.lineTo(cx + 137, GY - 308); g.lineTo(cx + 156, GY - 292); g.fill();
     } else if (key === 'wonders') {
       // The House of Wonders on the seafront: a tall square block wrapped in
       // balconies on slim columns, with its clock tower rising in front.

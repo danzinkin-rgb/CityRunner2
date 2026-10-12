@@ -557,6 +557,62 @@ async function watch(page, ms, shotName) {
   await ctx.close();
 }
 
+// ------------------------------------------------------------ Havana
+// Waves over the Malecón's sea wall (WV_* in mechanics.js):
+//   - a wave fills the sea-side lane (sometimes two later on), never the far
+//     lane, alone in its row with no souvenirs
+// Old cars pulling out from the kerb (PO_* in mechanics.js), on Obispo and
+// the Prado:
+//   - into an outer lane, with at most one other obstacle in its row, in
+//     the far lane, so the middle lane is free; no souvenirs in its lane
+//   - parked at the kerb until PO_START, in its lane by PO_END (18 m)
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337]) {
+    ({ page, ctx, errors } = await open('havana', 1, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.some((o) => o.mech)) break;
+    await ctx.close();
+  }
+  const waves = snap.obs.filter((o) => o.mech);
+  check(waves.length > 0, 'the Malecón deals waves', `${waves.length}, seed ${SEED}`);
+  let waveBad = 0;
+  for (const row of new Set(waves.map((w) => w.row))) {
+    const inRow = snap.obs.filter((o) => o.row === row);
+    const [ch, lz] = row.split(':').map(Number);
+    if (inRow.some((o) => !o.mech) || !inRow.some((o) => o.lane === 0) || inRow.some((o) => o.lane === 2)) waveBad++;
+    if (snap.coins.some((c) => c.chunk === ch && Math.abs(c.z - lz) < 0.1)) waveBad++;
+  }
+  check(waveBad === 0, 'a wave fills the sea-side lane, never the far one, alone and with no souvenirs');
+  check(!errors.length, 'Malecón: no page errors', errors[0] || '');
+  await ctx.close();
+
+  for (SEED of [7, 4242, 99, 1234, 31337]) {
+    ({ page, ctx, errors } = await open('havana', 3, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.some((o) => o.mech)) break;
+    await ctx.close();
+  }
+  const cars = snap.obs.filter((o) => o.mech);
+  check(cars.length > 0, 'the Prado deals cars pulling out', `${cars.length}, seed ${SEED}`);
+  let carBad = 0;
+  for (const c of cars) {
+    const others = snap.obs.filter((o) => o.row === c.row && o !== c);
+    if (c.lane === 1 || others.length > 1 || others.some((o) => o.lane !== 2 - c.lane)) carBad++;
+    const [ch, lz] = c.row.split(':').map(Number);
+    if (snap.coins.some((k) => k.chunk === ch && Math.abs(k.z - lz) < 0.1 && Math.abs(k.x - LANES[c.lane]) < 0.2)) carBad++;
+  }
+  check(carBad === 0, 'a car pulls into an outer lane, leaving the middle lane free and no souvenirs in its way');
+  const pos = await page.evaluate(() => {
+    const o = window.__cr.track.obstacles.find((x) => x.mech);
+    const at = (a) => { const r = { lane: 0, side: -1, x: 0, mesh: { position: {}, rotation: {} }, blink: {} }; o.mech.move(r, a); return r.x; };
+    return [at(40), at(18), at(5)];
+  });
+  check(pos[0] < -4 && Math.abs(pos[1] + 2.4) < 1e-6 && Math.abs(pos[2] + 2.4) < 1e-6, 'a car is at the kerb until it pulls out, and in its lane 18 m out', pos.map((v) => v.toFixed(2)).join(', '));
+  check(!errors.length, 'Prado: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
 // ------------------------------------------------------- no stray moves
 for (const city of ['nyc', 'rome', 'sf', 'jerusalem', 'mexico']) {
   const { page, ctx } = await open(city, 3, 4242);

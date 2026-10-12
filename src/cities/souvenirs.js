@@ -136,6 +136,24 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'havana') {
+    // A pair of maracas, crossed: round gourd heads painted in bright
+    // stripes, on wooden handles.
+    const handle = new THREE.MeshStandardMaterial({ color: 0x8a5a32, roughness: 0.6 });
+    const cols = [[0xe8302a, 0xf2c418], [0x2a8ac8, 0x3ab05a]];
+    for (const [i, s] of [[0, -1], [1, 1]]) {
+      const m = new THREE.Group();
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 12),
+        new THREE.MeshStandardMaterial({ color: cols[i][0], roughness: 0.4, emissive: cols[i][0], emissiveIntensity: 0.25 }));
+      head.scale.set(1, 1.15, 1); head.position.y = 0.2; m.add(head);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.03, 6, 20),
+        new THREE.MeshStandardMaterial({ color: cols[i][1], roughness: 0.4, emissive: cols[i][1], emissiveIntensity: 0.25 }));
+      band.rotation.x = Math.PI / 2; band.position.y = 0.2; m.add(band);
+      const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.34, 8), handle);
+      stick.position.y = -0.1; m.add(stick);
+      m.rotation.z = s * 0.4; m.position.x = s * 0.1;
+      g.add(m);
+    }
   } else if (theme.id === 'beijing') {
     // A little panda sitting up, white with black ears, eye patches, arms
     // and legs, holding a sprig of bamboo.

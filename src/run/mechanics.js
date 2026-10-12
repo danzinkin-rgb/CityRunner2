@@ -24,7 +24,7 @@
 import { LANES } from './player.js';
 import {
   makeHandcart, makeAutoRickshaw, makeTukTuk, makeGustDust, makeMotorbike, makeTrainCar,
-  makeCrowd, makeCrossing, makeArchBay, makeJutHouse, makeTricycle,
+  makeCrowd, makeCrossing, makeArchBay, makeJutHouse, makeTricycle, makeWave, makeVehicle, makePullBlinker,
 } from '../cities/builders.js';
 
 // A move that takes a lane for a stretch (Hanoi's train, Zanzibar's narrow
@@ -536,7 +536,91 @@ const TRIKE = {
   move(o, ahead) { return ahead < 50 && ahead > 0; },
 };
 
+// ---- Havana, the Malecón: waves over the sea wall ---------------------------
+// In a swell, waves break over the Malecón's sea wall and sweep across the
+// road. Foam builds against the wall from WV_WARN out; at WV_BREAK the wave
+// comes over and fills the sea-side lane (on the last street sometimes two),
+// and it is still there when you reach it. A wall of water: go round it.
+// Fairness:
+//   - a wave has its row to itself, and no souvenirs
+//   - it always leaves the far lane clear
+//   - the foam shows WV_WARN - WV_BREAK (20 m) before the wave rises, and it
+//     is up WV_BREAK (26 m) before you reach it
+const WAVE_CHANCE = [0.12, 0.16, 0.2];       // share of rows, by street
+const WAVE_WIDE = [0, 0.3, 0.5];             // of those, how many cover two lanes
+const WV_WARN = 46, WV_BREAK = 26;
+const WAVES = {
+  hint: 'Foam on the sea wall: a wave is coming over!',
+  row({ level, rand, addObstacle, usedLanes }) {
+    if (rand() >= WAVE_CHANCE[level - 1]) return null;
+    const lanes = rand() < WAVE_WIDE[level - 1] ? [0, 1] : [0];
+    let head = null;
+    for (const l of lanes) {
+      const r = addObstacle(l, 'full', { mesh: makeWave(l), y0: 0, y1: 3.2, halfLen: 1.4 });
+      r.mech = WAVES;
+      if (!head) head = r;
+    }
+    for (let l = 0; l <= 2; l++) usedLanes.add(l);   // no souvenirs where the sea comes over
+    return head;
+  },
+  settle() {},
+  move(o, ahead) {
+    const U = o.mesh.userData;
+    const foam = Math.max(0, Math.min(1, (WV_WARN - ahead) / (WV_WARN - WV_BREAK)));
+    U.foam.scale.setScalar(0.2 + foam);
+    U.foam.visible = foam > 0;
+    const up = Math.max(0, Math.min(1, (WV_BREAK - ahead) / 6));
+    U.wave.scale.set(1, Math.max(0.01, up), 1);
+    U.wave.visible = up > 0;
+    return ahead <= WV_WARN && ahead > 0;
+  },
+};
+
+// ---- Havana and Buenos Aires: cars and buses that pull out -------------------
+// A vehicle parked at the kerb, its indicator flashing, pulls out into the
+// outer lane as you come up to it. Distances ahead: it signals from PO_SIGNAL,
+// pulls out between PO_START and PO_END, and is then in its lane like any
+// other vehicle. Its hitbox is the lane it ends in, so it is fair to treat it
+// as there all along; the skill is noticing which parked car is signalling.
+// Fairness:
+//   - it has its row to itself, or shares it on later streets with one other
+//     obstacle in the far lane, leaving the middle lane free
+//   - no souvenirs in the lane it pulls into
+//   - it is in its lane PO_END (18 m) out
+const PULL_CHANCE = [0.14, 0.18, 0.22];      // share of rows, by street
+const PO_SIGNAL = 46, PO_START = 32, PO_END = 18, PARKED_X = 5.3;
+const PULLOUT = {
+  hint: 'That parked car is signalling: it will pull out!',
+  row({ level, rand, addObstacle, usedLanes, track }) {
+    if (rand() >= PULL_CHANCE[level - 1]) return null;
+    const lane = rand() < 0.5 ? 0 : 2;
+    const theme = track.theme;
+    const mesh = makeVehicle(theme);
+    const tall = theme.vehicle === 'colectivo';
+    const r = addObstacle(lane, 'full', { mesh, y0: 0, y1: tall ? 3.2 : 1.6, halfLen: tall ? 2.6 : 2.1 });
+    r.mech = PULLOUT;
+    r.side = lane === 0 ? -1 : 1;
+    if (level >= 2 && rand() < 0.5) addObstacle(2 - lane, 'low');
+    r.blink = makePullBlinker(mesh, r.side);
+    PULLOUT.move(r, 200);
+    return r;
+  },
+  settle() {},
+  move(o, ahead) {
+    const t = Math.max(0, Math.min(1, (PO_START - ahead) / (PO_START - PO_END)));
+    const k = t * t * (3 - 2 * t);
+    o.x = o.side * PARKED_X + (LANES[o.lane] - o.side * PARKED_X) * k;
+    o.mesh.position.x = o.x;
+    o.mesh.rotation.y = -o.side * 0.35 * Math.sin(Math.PI * t);
+    const flashing = ahead <= PO_SIGNAL && ahead > PO_END;
+    o.blink.visible = flashing && Math.floor(ahead / 2.2) % 2 === 0;
+    return flashing;
+  },
+};
+
 export const MECHANICS = {
+  waves: WAVES,
+  pullout: PULLOUT,
   tricycle: TRIKE,
   narrows: NARROWS,
   arches: ARCHES,

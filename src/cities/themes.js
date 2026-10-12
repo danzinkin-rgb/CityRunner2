@@ -879,6 +879,57 @@ export const ALL_CITIES = [
       },
     ],
   },
+  {
+    id: 'havana', name: 'HAVANA', flag: '🇨🇺', region: 'latin-america',
+    streets: ['Malecón', 'Calle Obispo', 'Paseo del Prado'],
+    // Caribbean late afternoon: a deep warm blue sky, the sun low over the
+    // sea, sun-faded pastel walls, and the chrome of old cars.
+    sky: { top: '#2a6ac8', mid: '#7ab6e8', horizon: '#ffe0b0', glow: '#ffbc80' },
+    fog: 0xf4d4b0, fogDensity: 0.0086,
+    sun: { color: 0xffe2b0, intensity: 2.6, pos: [-60, 55, -40] },
+    hemi: { sky: 0xd4e8f8, ground: 0x9a8a70, intensity: 1.1 },
+    fill: { color: 0xffe8d0, intensity: 1.0 },
+    road: '#5a5856', lane: '#f2ead8', sidewalk: '#c4b8a4',
+    palette: ['#e8a0b0', '#a0d0c8', '#f0d090', '#b0c8e8', '#e8c0a0', '#c8e0a0'],
+    trim: '#f4efe4', roof: '#a86a4a',
+    windowLit: '#ffd498', windowDay: '#8ab8d0', accent: '#2a7ab0',
+    storefront: ['#2a7ab0', '#c8402a', '#e8a018', '#3a8a5a', '#8a3a8a'],
+    facade: 'colonial', hBase: 10, hVar: 3,
+    props: ['lamp', 'palm'],
+    // Old American cars of the 1950s, kept running and painted bright:
+    // generic shapes, no make's grille, badge or name. Low enough to jump.
+    vehicle: 'classiccar',
+    // Old cars pull out from the kerb (src/run/mechanics.js); on the
+    // Malecón, waves break over the sea wall instead.
+    mechanic: 'pullout',
+    landmarks: ['realfuerza', 'habanacathedral', 'morro'],
+    levels: [
+      { // The Malecón: the seafront road, the sea wall on one side and a
+        // row of weathered, colourful houses on the other
+        key: 'malecon', lake: true, seawall: true, mechanic: 'waves',
+        setback: 4.6, hBase: 11, hVar: 4, secondRow: 0.2,
+        props: ['lamp'],
+        ads: ['CAFÉ', 'MOJITO', 'MUSIC'],
+        cameo: 'morro', lit: 0.16,
+      },
+      { // Calle Obispo: the narrow old shopping street of Old Havana,
+        // balconies, shutters and music from open doors
+        key: 'obispo',
+        setback: 3.0, hBase: 9, hVar: 2, secondRow: 0,
+        props: ['lamp', 'souvenirstall'],
+        ads: ['BOOKS', 'PHARMACY', 'CAFÉ', 'MUSIC', 'ICE CREAM'],
+        span: 'string', spanFreq: 0.5, lit: 0.22,
+      },
+      { // Paseo del Prado: the tree-lined promenade with its marble benches
+        // down the middle, grand old houses either side
+        key: 'prado', treeline: 'tree',
+        setback: 5.6, hBase: 13, hVar: 3, secondRow: 0.4,
+        props: ['lamp', 'flowerbed'],
+        ads: ['HOTEL', 'THEATRE', 'CAFÉ'],
+        lit: 0.18,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -899,6 +950,7 @@ export const LANDMARK_NAMES = {
   observatory: 'Ulugh Beg Observatory', gurlamir: 'Gur-e-Amir', registan: 'The Registan',
   oldfort: 'The Old Fort', christchurch: 'Christ Church Cathedral', wonders: 'House of Wonders',
   drumtower: 'Drum Tower', qiniandian: 'Hall of Prayer for Good Harvests', taihedian: 'Hall of Supreme Harmony',
+  realfuerza: 'Castillo de la Real Fuerza', habanacathedral: 'Havana Cathedral', morro: 'Morro Castle',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

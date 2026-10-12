@@ -1693,6 +1693,78 @@ const defs = {
     ...[-1, 1].map((sx) => B([sx * 6.2, 16.0, -1], [0.6, 1.2, 0.6], '#d8a020', 'cone4')),    // ridge beasts
     ...[-1, 1].map((sx) => B([sx * 10.5, 4.5, 6.0], [1.2, 1.4, 1.2], '#4a4038', 'cyl', { metal: 1 })),   // bronze cauldrons
   ],
+  // ================= HAVANA =================
+  // Spanish colonial work of the 1500s to 1700s: no copyright question.
+  // El Capitolio (1929) was left out: it is a joint work, and Cuba protects
+  // it until 50 years after the last of its architects died; not every
+  // co-author's death date could be confirmed.
+
+  // The Castillo de la Real Fuerza: a square stone fort with an arrowhead
+  // bastion at each corner, a moat, and the watchtower with the Giraldilla
+  // weathervane on top. Street 1: about a dozen pieces.
+  realfuerza: [
+    B([0, 0.15, 0], [22, 0.3, 22], '#4a7a8a', 'box', { wet: 1, em: '#6aa0b0', emI: 0.3 }),   // the moat
+    B([0, 0.55, 0], [14, 0.6, 14], '#8a8a72', 'box'),
+    ...[[0, 5.5, 0], [0, -5.5, 0], [5.5, 0, Math.PI / 2], [-5.5, 0, Math.PI / 2]].map(([x, z, rot]) =>
+      B([x, 2.6, z], [9, 3.6, 1.6], '#b8a888', 'box', { tex: 'stone', tx: { rough: 1 }, rotY: rot })),
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) =>
+      B([sx * 6.2, 2.4, sz * 6.2], [3.4, 3.2, 3.4], '#c0b090', 'box', { tex: 'stone', tx: { rough: 1 }, rotY: Math.PI / 4 })),
+    B([4.8, 6.0, -4.8], [2.2, 4.0, 2.2], '#c8b896', 'box', { tex: 'arch', tx: { n: 1 } }),   // the watchtower
+    B([4.8, 8.6, -4.8], [1.4, 1.6, 1.4], '#8a5a3a', 'cyl', {
+      adorn: [B([0, 1.2, 0], [0.4, 0.9, 0.4], '#c8a050', 'cone4', { metal: 1 })],         // the Giraldilla's perch
+    }),
+  ],
+
+  // Havana Cathedral: a curving Baroque front of coral stone between two
+  // bell towers of different widths, three doorways, and the dome behind.
+  // Street 2: about eighteen pieces.
+  habanacathedral: [
+    B([0, 0.2, 0], [22, 0.4, 20], '#a89c84', 'box', { tex: 'stone' }),
+    B([0, 0.55, 5.2], [11, 0.3, 2.0], '#c0b49c', 'box', { tex: 'stone' }),                   // the steps
+    B([0, 3.6, 3.6], [9.0, 6.4, 1.2], '#d4c8a8', 'extrude', {                                 // the front
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: -0.3, y: -0.2, w: 0.12, h: 0.5, arch: true }, { x: 0, y: -0.15, w: 0.16, h: 0.6, arch: true }, { x: 0.3, y: -0.2, w: 0.12, h: 0.5, arch: true }],
+    }),
+    B([0, 3.0, 3.2], [8, 5.4, 0.2], '#3a2a20'),                                              // the doors, in shadow
+    B([0, 7.8, 3.6], [6.0, 2.4, 1.0], '#d8ccac', 'extrude', {                               // the curving gable
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.42, -0.1], [0.3, 0.1], [0.15, 0.25], [0.06, 0.5], [-0.06, 0.5], [-0.15, 0.25], [-0.3, 0.1], [-0.42, -0.1]],
+    }),
+    B([0, 4.4, 4.25], [8.6, 0.4, 0.2], '#c8bc9c', 'box', { sortY: 6.9 }),                     // the cornice between storeys
+    ...[[-1, 3.2], [1, 2.6]].flatMap(([sx, w]) => [
+      B([sx * (4.5 + w / 2), 3.4, 3.0], [w, 6.4, w], '#d0c4a4', 'box', { tex: 'stone' }),
+      B([sx * (4.5 + w / 2), 7.8, 3.0], [w * 0.9, 2.4, w * 0.9], '#d4c8a8', 'box', { tex: 'arch', tx: { n: 1 } }),
+      B([sx * (4.5 + w / 2), 9.6, 3.0], [w * 0.8, 1.2, w * 0.8], '#d8ccac', 'box', { tex: 'arch', tx: { n: 1 } }),
+      B([sx * (4.5 + w / 2), 10.7, 3.0], [w * 0.7, 1.0, w * 0.7], '#c0b090', 'pyramid'),
+    ]),
+    B([0, 3.4, -2.5], [9, 6.4, 11], '#cfc2a2', 'box', { tex: 'stone' }),                     // the nave
+    B([0, 7.0, -2.5], [9.4, 0.8, 11.4], '#a89a7a', 'prism'),
+    B([0, 7.8, -5.0], [3.6, 1.6, 3.6], '#d0c4a4', 'cyl'),                                   // the dome
+    B([0, 8.6, -5.0], [3.8, 2.6, 3.8], '#c8bca0', 'dome'),
+  ],
+
+  // Morro Castle: the fortress on its rock at the harbour mouth, walls
+  // stepping down to the sea in tiers, sentry boxes on the corners, and the
+  // lighthouse at the point. Street 3: about two dozen pieces.
+  morro: [
+    B([0, 0.15, 0], [30, 0.3, 24], '#2a6a8a', 'box', { wet: 1, em: '#4a8aaa', emI: 0.3 }),   // the sea
+    B([-2, 1.2, -1], [24, 2.4, 16], '#7a6a5a', 'rock'),
+    B([6, 1.4, 4], [10, 2.6, 8], '#6a5a4a', 'rock'),
+    ...[[-8, -4, 10, 6], [-1, -5, 8, 6], [5, -3, 6, 6], [-7, 3, 8, 5], [0, 2, 8, 5]].map(([x, z, w, d], i) =>
+      B([x, 3.6 + (i % 2) * 0.8, z], [w, 2.6 + (i % 2) * 0.8, d], '#c0a888', 'box', { tex: 'stone', tx: { rough: 1 } })),
+    ...[[-12, -6], [3, -7], [-11, 5], [4, 5]].map(([x, z]) => B([x, 5.4, z], [2.4, 2.0, 2.4], '#c8b090', 'box', { tex: 'stone', rotY: Math.PI / 4 })),   // bastion tips
+    B([-3, 5.6, -0.5], [14, 0.6, 10], '#b8a080', 'box', { sortY: 5.9 }),                     // the parade ground
+    B([-6, 6.9, -2], [6, 2.0, 4], '#d0b898', 'box', { tex: 'arch', tx: { n: 3 } }),          // barracks
+    B([-6, 8.2, -2], [6.4, 0.8, 4.4], '#9a7a5a', 'prism', { rotY: Math.PI / 2 }),
+    ...[[-12.6, -6.6], [3.6, -7.6], [-11.6, 5.6], [4.6, 5.6]].map(([x, z]) => B([x, 7.1, z], [1.0, 1.4, 1.0], '#d0b898', 'cyl', {   // sentry boxes
+      adorn: [B([0, 0.9, 0], [1.1, 0.5, 1.1], '#c0a888', 'dome')],
+    })),
+    B([7.5, 6.0, 4.5], [2.6, 3.0, 2.6], '#d8d0c0', 'cyl'),                                  // the lighthouse
+    B([7.5, 9.5, 4.5], [2.2, 4.0, 2.2], '#e8e2d4', 'cyl'),
+    B([7.5, 12.5, 4.5], [1.8, 2.0, 1.8], '#ece6d8', 'cyl'),
+    B([7.5, 14.0, 4.5], [2.4, 0.4, 2.4], '#3a3a40', 'cyl', { metal: 1 }),
+    B([7.5, 14.9, 4.5], [1.4, 1.4, 1.4], '#fff2c0', 'cyl', { glass: 1, em: '#ffe090', emI: 1.2 }),
+    B([7.5, 16.0, 4.5], [1.7, 0.9, 1.7], '#3a3a40', 'dome', { metal: 1 }),
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }

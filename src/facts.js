@@ -325,6 +325,28 @@ export const STREET_FACTS = {
         { text: 'Some of the oldest shops in Beijing stand here, known for roast duck, tea, silk, shoes and hats.' },
       ] },
   ],
+  // Havana: DRAFT, awaiting Dan's sign-off (docs/HAVANA-FACTS-DRAFT.md,
+  // sources listed there).
+  havana: [
+    { street: 'Malecón', tag: 'The sea wall',
+      facts: [
+        { big: '1901', label: 'begun', text: 'Building of the Malecón began in 1901, to protect the city from the sea.' },
+        { big: '7', unit: 'km', label: 'of sea wall', text: 'It runs for about seven kilometres along the shore, built in stages over more than fifty years.' },
+        { text: 'In rough weather, waves break right over the wall and across the road.' },
+      ] },
+    { street: 'Calle Obispo', tag: 'The bishop\'s street',
+      facts: [
+        { text: 'Calle Obispo goes back to the 1500s, one of the oldest streets in Old Havana.' },
+        { text: "It has had many names, among them Pi Margall from 1905, but in 1936 it went back to Obispo, 'bishop'." },
+        { big: '1982', label: 'World Heritage', text: 'Old Havana and its forts were listed by UNESCO in 1982.' },
+      ] },
+    { street: 'Paseo del Prado', tag: 'The promenade',
+      facts: [
+        { big: '1772', label: 'begun', text: 'The Paseo del Prado was begun in 1772, a tree-lined promenade outside the old city walls.' },
+        { text: 'Its raised walk down the middle is lined with trees, marble benches and bronze lions.' },
+        { text: 'The lions were cast in 1928 from the metal of old cannons.' },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -467,6 +489,27 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Havana: DRAFT, awaiting Dan's sign-off (docs/HAVANA-FACTS-DRAFT.md).
+  // altitude: Havana stands 59 m above sea level (en.wikipedia.org/wiki/
+  // Havana). No sourced heights for the three.
+  realfuerza: { altitude: 59,
+    facts: [
+      { big: '1577', label: 'completed', text: 'Completed in 1577, it is one of the oldest stone forts in the Americas.' },
+      { text: 'The bronze weathervane on its tower, La Giraldilla, was cast in the 1630s and has become a symbol of Havana.' },
+      { text: 'The Giraldilla on the tower today is a copy; the original is kept safe inside.' },
+    ] },
+  habanacathedral: { altitude: 59,
+    facts: [
+      { big: '1777', label: 'completed', text: 'Begun by the Jesuits in 1748, it was finished in 1777.' },
+      { text: 'Its two bell towers are different widths, so that rainwater could drain from the square beside it.' },
+      { big: '1789', label: 'made a cathedral', text: 'It became Havana\'s cathedral in 1789.' },
+    ] },
+  morro: { altitude: 59,
+    facts: [
+      { big: '1589', label: 'begun', text: 'Work began in 1589, to a design by the Italian engineer Battista Antonelli.' },
+      { text: 'In times of danger, an iron chain was stretched across the harbour mouth to the fort on the other side.' },
+      { text: 'The lighthouse on its point was added in the 1800s, and still guides ships into the harbour.' },
     ] },
   // Beijing: DRAFT, awaiting Dan's sign-off (docs/BEIJING-FACTS-DRAFT.md).
   // 46.7 m (en.wikipedia.org/wiki/Drum_Tower_and_Bell_Tower_of_Beijing)
