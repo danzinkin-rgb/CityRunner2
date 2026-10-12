@@ -906,9 +906,11 @@ const defs = {
   // tall, its faces carved with arches and a lozenge net (sebka) that grows
   // busier towards the top, a band of turquoise tile under stepped merlons,
   // then the small lantern tower, its dome, and the spire of copper balls.
+  // Street 1: about a dozen pieces.
   koutoubia: [
     B([0, 0.3, 0], [7.2, 0.6, 7.2], '#a88468', 'box', { tex: 'stone' }),
-    B([0, 2.9, 0], [4.4, 4.6, 4.4], '#c08660', 'box', { tex: 'stone', tx: { cols: 4, rows: 5 } }),
+    B([0, 1.75, 0], [4.4, 2.3, 4.4], '#bc845e', 'box', { tex: 'stone', tx: { cols: 4, rows: 3 } }),
+    B([0, 4.05, 0], [4.4, 2.3, 4.4], '#c08660', 'box', { tex: 'stone', tx: { cols: 4, rows: 3 } }),
     B([0, 7.2, 0], [4.4, 4.0, 4.4], '#c48a62', 'box', { tex: 'arch', tx: { n: 2 } }),
     B([0, 11.2, 0], [4.4, 4.0, 4.4], '#c68c64', 'box', { tex: 'sebka', tx: { n: 3 } }),
     B([0, 15.2, 0], [4.4, 4.0, 4.4], '#c88e66', 'box', { tex: 'sebka', tx: { n: 4 } }),
@@ -922,12 +924,10 @@ const defs = {
         ]),
       ],
     }),
-    B([0, 20.4, 0], [1.8, 2.8, 1.8], '#c88e66', 'box', {
-      tex: 'sebka', tx: { n: 1 },
-      adorn: [B([0, 1.1, 0], [1.85, 0.4, 1.85], '#2e8a86', 'box', { tex: 'tile' })],
-    }),
-    B([0, 22.1, 0], [1.6, 0.9, 1.6], '#3a8a6a', 'dome'),
-    B([0, 23.6, 0], [0.9, 2.2, 0.9], '#d8b04a', 'group', {
+    B([0, 20.2, 0], [1.8, 2.4, 1.8], '#c88e66', 'box', { tex: 'sebka', tx: { n: 1 } }),
+    B([0, 21.6, 0], [1.9, 0.4, 1.9], '#2e8a86', 'box', { tex: 'tile' }),
+    B([0, 22.25, 0], [1.6, 0.9, 1.6], '#3a8a6a', 'dome'),
+    B([0, 23.75, 0], [0.9, 2.2, 0.9], '#d8b04a', 'group', {
       adorn: [
         B([0, 0, 0], [0.1, 2.2, 0.1], '#c8a040', 'cyl', { metal: 1 }),
         B([0, -0.6, 0], [0.62, 0.62, 0.62], '#e0b84e', 'sphere', { metal: 1, em: '#ffd070', emI: 0.3 }),
@@ -940,33 +940,32 @@ const defs = {
   // Bab Agnaou: the carved stone gate of the royal kasbah. A horseshoe arch
   // under bands of carved stone, set in a rectangular frame with an
   // inscription band across the top, between walls of rammed red earth.
+  // Street 2: about eighteen pieces; the carving goes on piece by piece.
   babagnaou: [
     B([0, 0.2, 0], [20, 0.4, 5], '#9a7a62', 'box', { tex: 'stone' }),
-    ...[-1, 1].map((sx) => B([sx * 7.4, 3.4, -0.4], [5.6, 6.0, 1.8], '#c46a4c', 'box', {
-      tex: 'stone', tx: { cols: 4, rows: 5, rough: 1 },
-      adorn: [-2.1, -0.7, 0.7, 2.1].map((x) => B([x, 3.3, 0], [0.6, 0.6, 1.0], '#c46a4c', 'pyramid')),
-    })),
+    B([0, 0.55, 2.0], [4.0, 0.3, 1.2], '#8a6c54', 'box', { tex: 'stone' }),          // threshold step
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 7.4, 1.9, -0.4], [5.6, 3.0, 1.8], '#c06648', 'box', { tex: 'stone', tx: { cols: 4, rows: 2, rough: 1 } }),
+      B([sx * 7.4, 4.9, -0.4], [5.6, 3.0, 1.8], '#c46a4c', 'box', { tex: 'stone', tx: { cols: 4, rows: 2, rough: 1 } }),
+      B([sx * 7.4, 6.75, -0.4], [5.6, 0.7, 1.0], '#c46a4c', 'group', {
+        adorn: [-2.1, -0.7, 0.7, 2.1].map((x) => B([x, 0, 0], [0.6, 0.7, 1.0], '#c46a4c', 'pyramid')),
+      }),
+    ]),
+    B([0, 3.4, -0.6], [3.2, 5.8, 0.2], '#3a2a20'),                                    // the dark passage
     B([0, 4.4, 0], [9.0, 8.0, 2.0], '#b08c6a', 'extrude', {
       outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
       holes: [{ x: 0, y: -0.12, w: 0.36, h: 0.72, arch: 'horseshoe' }],
-      adorn: [
-        B([0, -1.0, -0.6], [3.2, 5.8, 0.2], '#3a2a20'),                                  // the dark passage
-        B([0, 0.0, 1.05], [5.2, 2.6, 0.5], '#d4aa7a', 'arch'),                             // carved bands
-        B([0, 0.0, 1.15], [6.2, 3.1, 0.3], '#9a7454', 'arch'),
-      ],
     }),
-    B([0, 7.0, 1.15], [7.6, 2.6, 0.3], '#d4aa7a', 'group', {                            // frame and inscription
-      adorn: [
-        B([0, 0.9, 0], [7.6, 0.7, 0.3], '#6a4a34'),
-        B([0, 0.9, 0.12], [6.8, 0.3, 0.1], '#e0c08a', 'box', { em: '#ffd8a0', emI: 0.1 }),
-        B([-3.6, -0.5, 0], [0.4, 2.2, 0.3], '#d4aa7a'), B([3.6, -0.5, 0], [0.4, 2.2, 0.3], '#d4aa7a'),
-      ],
+    B([0, 4.41, 1.05], [5.2, 2.6, 0.5], '#d4aa7a', 'arch'),                           // inner carved band
+    B([0, 4.42, 1.15], [6.2, 3.1, 0.3], '#9a7454', 'arch'),                           // outer carved band
+    B([-3.6, 6.5, 1.15], [0.4, 2.2, 0.3], '#d4aa7a'),                                 // the frame
+    B([3.6, 6.5, 1.15], [0.4, 2.2, 0.3], '#d4aa7a'),
+    B([0, 7.9, 1.15], [7.6, 0.7, 0.3], '#6a4a34', 'box', {                           // inscription band
+      adorn: [B([0, 0, 0.12], [6.8, 0.3, 0.1], '#e0c08a', 'box', { em: '#ffd8a0', emI: 0.1 })],
     }),
-    B([0, 8.9, 0], [9.2, 1.4, 2.2], '#b08c6a', 'group', {
-      adorn: [
-        B([0, -0.4, 0], [9.2, 0.6, 2.2], '#a8845e'),
-        ...[-3.6, -1.8, 0, 1.8, 3.6].map((x) => B([x, 0.3, 0], [0.7, 0.8, 1.2], '#b08c6a', 'pyramid')),
-      ],
+    B([0, 8.5, 0], [9.2, 0.6, 2.2], '#a8845e'),
+    B([0, 9.2, 0], [9.2, 0.8, 1.2], '#b08c6a', 'group', {
+      adorn: [-3.6, -1.8, 0, 1.8, 3.6].map((x) => B([x, 0, 0], [0.7, 0.8, 1.2], '#b08c6a', 'pyramid')),
     }),
   ],
 
@@ -974,31 +973,33 @@ const defs = {
   // on a marble floor, cedar-and-stucco galleries down both sides with the
   // students' rooms above, green-tiled eaves, and the prayer hall's great
   // arch at the far end over a band of zellige tile.
+  // Street 3: about two dozen pieces, the galleries in bays.
   benyoussef: [
-    B([0, 0.2, 0], [17, 0.4, 13], '#e6e0d2', 'box', { tex: 'stone', tx: { cols: 12, rows: 8 } }),
-    B([0, 0.5, 1.2], [3.4, 0.3, 7.4], '#5cc0dc', 'box', { wet: 1, em: '#9ce4f4', emI: 0.4 }),
-    ...[-1, 1].map((sx) => B([sx * 6.8, 2.4, 0.6], [1.6, 4.0, 10], '#ece2cc', 'box', {
-      tex: 'arch', tx: { n: 5 },
-      adorn: [B([0, -1.6, 0], [1.7, 0.8, 10.05], '#2e7a5a', 'box', { tex: 'tile' })],
-    })),
-    ...[-1, 1].map((sx) => B([sx * 6.8, 5.6, 0.6], [1.6, 2.4, 10], '#e2d4b4', 'box', {
-      tex: 'win', tx: { cols: 6, rows: 1, lit: '#e8b070' },
-      adorn: [B([0, -1.0, 0], [1.7, 0.3, 10.05], '#7a4a2a')],
-    })),
-    ...[-1, 1].map((sx) => B([sx * 6.8, 7.3, 0.6], [2.2, 1.0, 10.4], '#2e7a5a', 'prism')),
+    B([-4.25, 0.2, 0], [8.5, 0.4, 13], '#e6e0d2', 'box', { tex: 'stone', tx: { cols: 6, rows: 8 } }),
+    B([4.25, 0.2, 0], [8.5, 0.4, 13], '#e2dccc', 'box', { tex: 'stone', tx: { cols: 6, rows: 8 } }),
+    B([0, 0.45, 1.2], [4.0, 0.2, 8.0], '#cfc6b2'),                                       // the pool's rim
+    B([0, 0.6, 1.2], [3.4, 0.3, 7.4], '#5cc0dc', 'box', { wet: 1, em: '#9ce4f4', emI: 0.4 }),
+    B([0, 0.9, 5.4], [1.2, 0.6, 1.2], '#e6e0d2', 'cyl'),                                 // the basin
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 6.8, 0.8, 0.6], [1.7, 0.8, 10.05], '#2e7a5a', 'box', { tex: 'tile' }),     // zellige dado
+      B([sx * 6.8, 2.4, -1.9], [1.6, 4.0, 5], '#ece2cc', 'box', { tex: 'arch', tx: { n: 3 } }),
+      B([sx * 6.8, 2.4, 3.1], [1.6, 4.0, 5], '#ece2cc', 'box', { tex: 'arch', tx: { n: 3 } }),
+      B([sx * 6.8, 4.55, 0.6], [1.7, 0.3, 10.05], '#7a4a2a'),                            // cedar beam
+      B([sx * 6.8, 5.9, -1.9], [1.6, 2.4, 5], '#e2d4b4', 'box', { tex: 'win', tx: { cols: 3, rows: 1, lit: '#e8b070' } }),
+      B([sx * 6.8, 5.9, 3.1], [1.6, 2.4, 5], '#e2d4b4', 'box', { tex: 'win', tx: { cols: 3, rows: 1, lit: '#e8b070' } }),
+      B([sx * 6.8, 7.6, -1.9], [2.2, 1.0, 5.2], '#2e7a5a', 'prism'),
+      B([sx * 6.8, 7.6, 3.1], [2.2, 1.0, 5.2], '#2e7a5a', 'prism'),
+    ]),
+    B([0, 3.4, -6.1], [3.4, 5.4, 0.2], '#4a3424'),                                       // the prayer hall, dark within
     B([0, 4.2, -5.6], [10, 8.0, 1.0], '#eadfc6', 'extrude', {
       outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
       holes: [{ x: 0, y: -0.08, w: 0.34, h: 0.7, arch: 'horseshoe' }],
-      adorn: [
-        B([0, -1.0, -0.4], [3.4, 5.4, 0.2], '#4a3424'),
-        B([-3.4, -3.0, 0.55], [3.0, 1.8, 0.1], '#2e7a5a', 'box', { tex: 'tile' }),
-        B([3.4, -3.0, 0.55], [3.0, 1.8, 0.1], '#2e7a5a', 'box', { tex: 'tile' }),
-        B([0, 3.0, 0.55], [10, 1.2, 0.1], '#7a4a2a', 'box', { tex: 'sebka', tx: { n: 8 } }),
-      ],
     }),
+    B([-3.4, 1.25, -5.0], [3.0, 1.8, 0.1], '#2e7a5a', 'box', { tex: 'tile', sortY: 4.3 }),
+    B([3.4, 1.25, -5.0], [3.0, 1.8, 0.1], '#2e7a5a', 'box', { tex: 'tile', sortY: 4.3 }),
+    B([0, 7.2, -5.0], [10, 1.2, 0.1], '#7a4a2a', 'box', { tex: 'sebka', tx: { n: 8 } }),
     B([0, 8.7, -5.6], [10.8, 1.0, 2.0], '#2e7a5a', 'prism'),
   ],
-
 };
 
 export function getLandmark(id) { return defs[id]; }

@@ -38,7 +38,7 @@ import { makeHandcart } from '../cities/builders.js';
 // Fairness:
 //   - a cart has its row to itself
 //   - its target lane is never the row's coin lane
-const CART_CHANCE = [0.16, 0.18, 0.2];      // of rows, by level: about 3, 6, 8 a street
+const CART_CHANCE = [0.14, 0.2, 0.26];     // share of rows, by street: more on later streets
 const CART_RATE = 0.16;
 const KERB_X = 5.7;
 const CART = {
