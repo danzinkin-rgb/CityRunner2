@@ -136,6 +136,27 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'seoul') {
+    // A folding fan, open, its paper painted with plum blossom on bamboo
+    // ribs, and a red tassel hanging from the pivot.
+    const paper = new THREE.MeshStandardMaterial({ color: 0xf4ead4, roughness: 0.7, emissive: 0x4a4030, emissiveIntensity: 0.3, side: THREE.DoubleSide });
+    const leaf = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.48, 24, 1, Math.PI * 0.15, Math.PI * 0.7), paper);
+    leaf.position.y = -0.14; g.add(leaf);
+    const rib = new THREE.MeshStandardMaterial({ color: 0x8a5a3a, roughness: 0.7 });
+    for (let i = 0; i <= 8; i++) {
+      const a = Math.PI * (0.15 + 0.7 * i / 8);
+      const s = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.5, 0.02), rib);
+      s.position.set(Math.cos(a) * 0.25, -0.14 + Math.sin(a) * 0.25, 0.01);
+      s.rotation.z = a - Math.PI / 2; g.add(s);
+    }
+    const bloom = new THREE.MeshStandardMaterial({ color: 0xe8507a, emissive: 0x7a1a3a, emissiveIntensity: 0.4 });
+    for (const [x, y] of [[-0.18, 0.2], [0.05, 0.27], [0.22, 0.14], [-0.04, 0.12]]) {
+      const b = new THREE.Mesh(new THREE.CircleGeometry(0.04, 5), bloom);
+      b.position.set(x, y - 0.06, 0.02); g.add(b);
+    }
+    const tassel = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.04, 0.18, 6),
+      new THREE.MeshStandardMaterial({ color: 0xc8202a, roughness: 0.6 }));
+    tassel.position.set(0, -0.26, 0); g.add(tassel);
   } else if (theme.id === 'hanoi') {
     // A conical leaf hat, the non la: a shallow cone of palm leaf with its
     // rings of stitching, and a red ribbon to tie under the chin.

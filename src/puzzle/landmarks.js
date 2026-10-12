@@ -1371,6 +1371,91 @@ const defs = {
     B([-7.0, 1.2, -6.0], [6, 2.4, 0.8], '#c8b890', 'box', { tex: 'stone' }),
     B([7.0, 1.2, -6.0], [6, 2.4, 0.8], '#c8b890', 'box', { tex: 'stone' }),
   ],
+  // ================= SEOUL =================
+  // All three stand as rebuilt in 1867-1869, to the Joseon designs: long
+  // out of copyright. Sungnyemun was left out (rebuilt 2013), and so was N
+  // Seoul Tower (1971).
+  // Roofs are built as a dark eave slab under a ridge, the closest the
+  // block shapes come to the curved Korean hip-and-gable roof.
+
+  // Heunginjimun, the Great East Gate: a stone base pierced by an arched
+  // passage, a two-storey timber gatehouse on it under two tiled roofs,
+  // and in front the ongseong, the half-ring of wall that guards it.
+  // Street 1: about a dozen pieces.
+  heunginjimun: [
+    B([0, 0.2, 2], [22, 0.4, 18], '#8a8a80', 'box'),
+    B([0, 2.4, 0], [10, 4.0, 5], '#bcb4a4', 'extrude', {
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.12, w: 0.3, h: 0.76, arch: true }],
+    }),
+    ...[0, 1, 2, 3].map((i) => {
+      const a = 0.25 + (i / 3) * (Math.PI - 0.9);
+      return B([Math.cos(a) * 7.2, 1.6, 2.6 + Math.sin(a) * 7.2], [4.4, 2.8, 1.4], '#b8b0a0', 'box', { tex: 'stone', rotY: Math.PI / 2 - a });
+    }),
+    B([0, 5.4, 0], [8.4, 2.0, 3.8], '#a8302a', 'box', { tex: 'arch', tx: { n: 5 } }),
+    B([0, 6.7, 0], [10.4, 0.5, 5.6], '#4a4c52', 'box', {                                // lower eaves, painted beneath
+      adorn: [B([0, -0.35, 0], [9.6, 0.2, 5.0], '#2a7a6a')],
+    }),
+    B([0, 8.0, 0], [7.4, 2.0, 3.4], '#a8302a', 'box', { tex: 'arch', tx: { n: 4 } }),
+    B([0, 9.3, 0], [9.6, 0.5, 5.2], '#4a4c52', 'box', {
+      adorn: [B([0, -0.35, 0], [8.8, 0.2, 4.6], '#2a7a6a')],
+    }),
+    B([0, 10.4, 0], [8.4, 1.6, 4.4], '#4a4c52', 'prism', { rotY: Math.PI / 2 }),
+  ],
+
+  // Gyeonghoeru: the royal banquet pavilion on its island in the palace
+  // pond, raised on 48 stone pillars, its wide timber hall and great roof
+  // above them, reached by stone bridges. Street 2: about eighteen pieces.
+  gyeonghoeru: [
+    B([0, 0.15, 0], [26, 0.3, 20], '#3a6a6a', 'box', { wet: 1, em: '#6aa0a0', emI: 0.3 }),   // the pond
+    B([0, 0.55, 0], [17, 0.8, 12], '#bcb4a4', 'box', { tex: 'stone' }),                     // the island
+    ...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => B([sx * 3.6, 2.4, sz * 2.4], [6.4, 3.0, 4.2], '#d8d0c0', 'group', {
+      adorn: [0, 1, 2, 3].flatMap((i) => [0, 1, 2].map((j) => B([-2.7 + i * 1.8, 0, -1.6 + j * 1.6], [0.5, 3.0, 0.5], '#d8d0c0', i % 3 && j === 1 ? 'cyl' : 'box'))),
+    }))),
+    B([0, 4.1, 0], [15.4, 0.4, 10.4], '#8a5a3a'),                                             // the timber floor
+    B([0, 4.6, 0], [15.6, 0.6, 10.6], '#a8302a', 'box', { sortY: 4.25,                       // its red railing
+      adorn: [B([0, 0, 0], [15.0, 0.5, 10.0], '#7a2a24')] }),
+    B([0, 5.9, 0], [13, 2.6, 8], '#b83a2c', 'box', { tex: 'win', tx: { cols: 8, rows: 1, lit: '#f2e2b8' } }),
+    B([0, 7.5, 0], [17.4, 0.6, 12.2], '#4a4c52', 'box', {
+      adorn: [B([0, -0.4, 0], [16.4, 0.2, 11.2], '#2a7a6a')],
+    }),
+    B([0, 9.0, 0], [11.4, 2.4, 15], '#4a4c52', 'prism', { rotY: Math.PI / 2 }),
+    B([0, 10.3, 0], [0.4, 0.4, 9], '#3a3c42'),                                              // the ridge
+    ...[-4, 0, 4].map((x) => B([x, 0.75, 7.4], [2.2, 0.4, 3.0], '#c8c0b0', 'box', { tex: 'stone' })),   // three bridges
+    B([-10, 1.4, -7.5], [2.6, 2.6, 2.6], '#4a8a3a', 'sphere'),                              // willows by the pond
+  ],
+
+  // Geunjeongjeon, the throne hall: a great two-storey timber hall on a
+  // two-tier stone terrace ringed with balustrades and stone animals, in a
+  // stone-paved courtyard. Street 3: about two dozen pieces.
+  geunjeongjeon: [
+    B([0, 0.2, 0], [24, 0.4, 22], '#b8b0a0', 'box', { tex: 'stone', tx: { cols: 16, rows: 14 } }),
+    B([0, 0.9, -1.5], [18, 1.0, 13], '#c8c0b0', 'box', { tex: 'stone' }),                    // the lower terrace
+    B([0, 1.9, -2.0], [15, 1.0, 10], '#ccc4b4', 'box', { tex: 'stone' }),                    // the upper terrace
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 8.8, 1.7, -1.5], [12.8, 0.6, 0.3], '#d8d0c0', 'colonnade', { cols: 10, rotY: Math.PI / 2, sortY: 1.45 }),
+      B([sx * 7.3, 2.7, -2.0], [9.8, 0.6, 0.3], '#d8d0c0', 'colonnade', { cols: 8, rotY: Math.PI / 2, sortY: 2.45 }),
+      B([sx * 8.6, 1.9, 4.6], [0.7, 1.0, 0.7], '#a8a090', 'sphere', { sortY: 1.5 }),         // stone guardians
+      B([sx * 7.1, 2.9, 2.6], [0.7, 1.0, 0.7], '#a8a090', 'sphere', { sortY: 2.5 }),
+      B([sx * 6.0, 0.7, 7.5], [0.9, 1.0, 0.9], '#5a4a3a', 'cyl', { metal: 1 }),              // bronze cauldrons
+    ]),
+    B([0, 1.4, 5.4], [3.0, 1.0, 2.0], '#c8c0b0', 'prism', { sortY: 1.6 }),                  // the front stairs
+    B([0, 2.4, 3.3], [3.0, 1.0, 2.0], '#c8c0b0', 'prism', { sortY: 2.6 }),
+    B([0, 4.4, -3.0], [12, 4.0, 7], '#a8302a', 'box', { tex: 'arch', tx: { n: 7 } }),        // the hall, lower storey
+    B([0, 6.7, -3.0], [14.4, 0.6, 9.4], '#4a4c52', 'box', {
+      adorn: [B([0, -0.4, 0], [13.6, 0.2, 8.6], '#2a7a6a')],
+    }),
+    B([0, 8.2, -3.0], [10, 2.4, 5.4], '#a8302a', 'box', { tex: 'win', tx: { cols: 7, rows: 1, lit: '#f2e2b8' } }),
+    B([0, 9.7, -3.0], [12.8, 0.6, 8.0], '#4a4c52', 'box', {
+      adorn: [B([0, -0.4, 0], [12.0, 0.2, 7.2], '#2a7a6a')],
+    }),
+    B([0, 11.2, -3.0], [7.0, 2.4, 11.4], '#4a4c52', 'prism', { rotY: Math.PI / 2 }),
+    B([0, 12.5, -3.0], [0.4, 0.4, 8], '#3a3c42'),
+    B([0, 0.5, 9.0], [2.4, 0.2, 4.0], '#d8d0c0', 'box', { tex: 'stone' }),                   // the royal path
+    ...[-1, 1].map((sx) => B([sx * 3.0, 0.6, 8.6], [0.4, 0.4, 4.4], '#a8a090', 'group', {   // rank stones
+      adorn: [-1.8, -0.6, 0.6, 1.8].map((z) => B([0, 0, z], [0.4, 0.4, 0.3], '#a8a090')),
+    })),
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }

@@ -669,6 +669,62 @@ export const ALL_CITIES = [
       },
     ],
   },
+  {
+    id: 'seoul', name: 'SEOUL', flag: '🇰🇷', region: 'asia',
+    streets: ['Insadong', 'Bukchon Hanok Village', 'Myeongdong'],
+    // A crisp autumn day: deep clear blue, golden light, the mountains that
+    // ring the city on the horizon. Grey tile roofs, white walls, dark
+    // timber, and in Myeongdong the colour of a thousand shop signs.
+    sky: { top: '#2a68c8', mid: '#7cb0e4', horizon: '#f2e4c8', glow: '#ffd8a0' },
+    fog: 0xe8dcc4, fogDensity: 0.0086,
+    sun: { color: 0xfff0d0, intensity: 2.5, pos: [-55, 70, -40] },
+    hemi: { sky: 0xd8e4f4, ground: 0x7a7060, intensity: 1.1 },
+    fill: { color: 0xfff0dc, intensity: 1.0 },
+    road: '#4a4a50', lane: '#f2f0e4', sidewalk: '#b0aaa0',
+    palette: ['#ece6d8', '#e4dccc', '#f0eadc', '#d8d0c0', '#e8e0d0', '#dcd4c4'],
+    trim: '#3a3a40', roof: '#3a3c42',
+    windowLit: '#ffdca0', windowDay: '#a8c4dc', accent: '#c8302a',
+    storefront: ['#6a3a2a', '#2a5a7a', '#8a2a3a', '#3a6a4a', '#c8902a'],
+    facade: 'hanok', hBase: 5, hVar: 2,
+    props: ['lamp', 'tree'],
+    // Seoul's green city bus. A wall, as rare as London's; the rest of the
+    // traffic is ordinary cars. No operator name or logo.
+    vehicle: 'seoulbus',
+    // Crowds cross when the countdown runs out (src/run/mechanics.js).
+    mechanic: 'crossing',
+    landmarks: ['heunginjimun', 'gyeonghoeru', 'geunjeongjeon'],
+    levels: [
+      { // Insadong: the street of tea houses, galleries and craft shops,
+        // in low traditional-style buildings
+        key: 'insadong', hBase: 6, hVar: 2,
+        setback: 3.4, secondRow: 0.4,
+        props: ['lamp', 'tree', 'souvenirstall'],
+        ads: ['TEA HOUSE', 'GALLERY', 'PAPER', 'POTTERY', 'BRUSHES'],
+        span: 'lanterns', spanFreq: 0.5, spanY: 6.6, lit: 0.22,
+      },
+      { // Bukchon: lanes of hanok houses under curved tile roofs, on the
+        // hill between two palaces
+        key: 'bukchon', hBase: 4, hVar: 1,
+        roadStyle: 'cobble', road: '#6a6a6c', lane: '#6a6a6c', sidewalk: '#a8a49c',
+        setback: 2.8, secondRow: 0.6,
+        props: ['lamp', 'tree'],
+        ads: ['TEA', 'CRAFTS'],
+        lit: 0.14,
+      },
+      { // Myeongdong: the shopping streets, signs stacked up every front,
+        // street-food stalls down the middle of the evening
+        key: 'myeongdong', facade: 'neon', hBase: 16, hVar: 14,
+        palette: ['#4e5462', '#5a606e', '#3e4452', '#565064', '#4a5668', '#605a6e'],
+        storefront: ['#e3128a', '#12c4e3', '#f2e216', '#8a2ae8', '#ff5a1e'],
+        sky: { top: '#1a2a5a', mid: '#4a5a9a', horizon: '#c08ab0', glow: '#d898b8' },
+        fog: 0xc890b0, fogDensity: 0.0098,
+        mood: { sun: 0.5, hemi: 0.7, fill: 0.85 },
+        props: ['lamp', 'fruitcart', 'souvenirstall'],
+        ads: ['SKINCARE', 'K-POP', 'HOTTEOK', 'SOCKS', 'CAFÉ', 'NOODLES'],
+        span: 'string', spanFreq: 0.6, lit: 0.42,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -685,6 +741,7 @@ export const LANDMARK_NAMES = {
   giantswing: 'Giant Swing', watarun: 'Wat Arun', chakri: 'Chakri Maha Prasat',
   clocktower: 'Waterfront Clock Tower', goodhope: 'Castle of Good Hope', cityhall: 'Cape Town City Hall',
   turtletower: 'Turtle Tower', longbien: 'Long Bien Bridge', vanmieu: 'Temple of Literature',
+  heunginjimun: 'Heunginjimun Gate', gyeonghoeru: 'Gyeonghoeru Pavilion', geunjeongjeon: 'Geunjeongjeon Hall',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

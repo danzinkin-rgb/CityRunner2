@@ -24,6 +24,7 @@
 import { LANES } from './player.js';
 import {
   makeHandcart, makeAutoRickshaw, makeTukTuk, makeGustDust, makeMotorbike, makeTrainCar,
+  makeCrowd, makeCrossing,
 } from '../cities/builders.js';
 
 // ---- Marrakech: porters' handcarts crossing the road --------------------
@@ -336,7 +337,62 @@ const TRAIN = {
   },
 };
 
+// ---- Seoul: crowds at the crossing -------------------------------------------
+// A zebra crossing with a walk signal at the kerb. As you come up to it the
+// signal counts down, 3, 2, 1, then the walker turns green and the crowd
+// waiting at the kerb steps out and walks into the road, stopping in one or
+// two lanes. Distances ahead: the count runs from CR_COUNT to CR_GO, they
+// walk from CR_GO to CR_STOP.
+// Fairness:
+//   - a crossing has its row to itself, and no souvenirs
+//   - the crowd always leaves at least one lane free
+//   - it has stopped, in its lanes, CR_STOP (22 m) out, about a second at
+//     top speed
+//   - two-lane crowds get more likely on later streets
+const CROSS_CHANCE = [0.12, 0.16, 0.2];      // share of rows, by street
+const CROSS_WIDE = [0.15, 0.5, 0.7];         // of those, how many fill two lanes
+const CR_COUNT = 64, CR_GO = 40, CR_STOP = 22, KERB = 5.6;
+const CROSSING = {
+  hint: 'When the signal goes green, the crowd will cross!',
+  row({ level, rand, randInt, addObstacle, usedLanes, zRow, chunk }) {
+    if (rand() >= CROSS_CHANCE[level - 1]) return null;
+    let lanes, fromLeft;
+    if (rand() < CROSS_WIDE[level - 1]) {
+      fromLeft = rand() < 0.5; lanes = fromLeft ? [0, 1] : [1, 2];
+    } else {
+      const l = randInt(3);
+      lanes = [l];
+      fromLeft = l === 0 ? true : l === 2 ? false : rand() < 0.5;
+    }
+    const recs = lanes.map((l) => addObstacle(l, 'full', { mesh: makeCrowd(), y0: 0, y1: 3.2, halfLen: 0.6 }));
+    for (let l = 0; l <= 2; l++) usedLanes.add(l);   // no souvenirs at a crossing
+    const zebra = makeCrossing({}, 8.6);
+    zebra.position.z = -zRow;
+    if (!fromLeft) zebra.userData.face.parent.position.x *= -1;   // the signal on their kerb
+    chunk.add(zebra);
+    for (const r of recs) {
+      r.mech = CROSSING;
+      r.walkFrom = fromLeft ? -KERB : KERB;
+      r.signal = zebra.userData;
+      r.mesh.rotation.y = fromLeft ? 0 : Math.PI;
+    }
+    return recs[0];
+  },
+  settle() {},
+  move(o, ahead) {
+    const S = o.signal;
+    const face = ahead > CR_COUNT ? 0 : ahead > CR_GO ? Math.min(2, Math.floor((CR_COUNT - ahead) / ((CR_COUNT - CR_GO) / 3))) : 3;
+    S.face.material = S.faces[face];
+    const t = Math.max(0, Math.min(1, (CR_GO - ahead) / (CR_GO - CR_STOP)));
+    o.x = o.walkFrom + (LANES[o.lane] - o.walkFrom) * t;
+    o.mesh.position.x = o.x;
+    o.mesh.position.y = t > 0 && t < 1 ? Math.abs(Math.sin(t * 20)) * 0.06 : 0;   // a walking bob
+    return ahead <= CR_COUNT && ahead > CR_STOP;
+  },
+};
+
 export const MECHANICS = {
+  crossing: CROSSING,
   handcart: CART,
   braker: BRAKER,
   uturn: UTURN,

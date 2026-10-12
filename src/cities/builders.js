@@ -154,6 +154,7 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         }
 
         for (let cIdx = 0; cIdx < cols; cIdx++) {
+          if (style === 'hanok') continue;     // a hanok's wall is painted below
           if (style === 'tubehouse') {
             // Hanoi's tube houses: narrow fronts, tall French windows behind
             // green shutters, a little balcony with plants on most floors
@@ -364,6 +365,21 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         }
       }
 
+      // Seoul's hanok: white plaster between dark timber posts and beams,
+      // and windows of paper on a wooden lattice
+      if (style === 'hanok') {
+        g.fillStyle = '#4a3a2e';
+        for (let x = 0; x <= W; x += W / 3) g.fillRect(Math.min(W - 8, x), 0, 8, H);
+        g.fillRect(0, H * 0.14, W, 7); g.fillRect(0, H * 0.5, W, 6);
+        for (let k = 0; k < 3; k++) {
+          const x = k * W / 3 + W / 3 * 0.22, y = H * 0.2, w = W / 3 * 0.56, h = H * 0.24;
+          g.fillStyle = Math.random() < (theme.lit ?? 0.16) ? '#ffe2a8' : '#f2ead2';
+          g.fillRect(x, y, w, h);
+          g.strokeStyle = '#6a4a32'; g.lineWidth = 2; g.strokeRect(x, y, w, h);
+          for (let gx = x + w / 4; gx < x + w - 1; gx += w / 4) { g.beginPath(); g.moveTo(gx, y); g.lineTo(gx, y + h); g.stroke(); }
+          for (let gy = y + h / 4; gy < y + h - 1; gy += h / 4) { g.beginPath(); g.moveTo(x, gy); g.lineTo(x + w, gy); g.stroke(); }
+        }
+      }
       // Cape Town's harbour warehouses: red brick coursing
       if (style === 'warehouse') {
         g.fillStyle = 'rgba(0,0,0,.08)';
@@ -407,6 +423,7 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
       else if (style === 'shophouse') paintShophouseGround(G);
       else if (style === 'flatpaint') paintFlatpaintGround(G);
       else if (style === 'tubehouse') paintTubehouseGround(G);
+      else if (style === 'hanok') paintHanokGround(G);
       else paintDefaultShops(G);
 
       g.fillStyle = 'rgba(0,0,0,.3)';
@@ -699,6 +716,25 @@ function paintMarketGround({ g, W, H, shopY, SHOP_H, theme }) {
     }
   }
   g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(0, shopY, W, 3);
+}
+
+// Seoul: a hanok's ground floor, sliding lattice doors, and in Insadong a
+// craft shop with its name on a hanging wooden board.
+function paintHanokGround({ g, W, H, shopY, SHOP_H, theme }) {
+  g.fillStyle = '#c8b8a0'; g.fillRect(0, H - 12, W, 8);                         // stone base
+  for (let k = 0; k < 3; k++) {
+    const x = k * W / 3 + 10, w = W / 3 - 20, y = shopY + SHOP_H * 0.2, h = SHOP_H * 0.72 - 12;
+    g.fillStyle = '#f2ead2'; g.fillRect(x, y, w, h);
+    g.strokeStyle = '#5a3a28'; g.lineWidth = 2; g.strokeRect(x, y, w, h);
+    for (let gx = x + w / 3; gx < x + w - 1; gx += w / 3) { g.beginPath(); g.moveTo(gx, y); g.lineTo(gx, y + h); g.stroke(); }
+    for (let gy = y + h / 5; gy < y + h - 1; gy += h / 5) { g.beginPath(); g.moveTo(x, gy); g.lineTo(x + w, gy); g.stroke(); }
+  }
+  if (Math.random() < 0.5) {
+    g.fillStyle = '#5a3a28'; g.fillRect(W * 0.2, shopY + 2, W * 0.6, SHOP_H * 0.16);
+    g.fillStyle = '#f2e4c4';
+    g.font = `900 ${Math.round(SHOP_H * 0.11)}px Arial`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(pickR(adWords(theme, ['TEA'])), W / 2, shopY + 2 + SHOP_H * 0.08, W * 0.56);
+  }
 }
 
 // Hanoi: one open shop across the whole narrow front, its name on a board
@@ -1259,6 +1295,20 @@ export function makeBuilding(theme, w, h, d, rng = Math.random, side = 0) {
     front.position.set(-side * (w / 2 + 0.2), 0, 0);
     front.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
     group.add(front);
+  }
+  // Seoul's hanok: a hipped roof of dark grey tiles, its eaves reaching out
+  // well past the walls
+  if (theme.facade === 'hanok') {
+    const roof = new THREE.Mesh(cached('geo:hanokRoof', () => {
+      const geo = new THREE.CylinderGeometry(0.01, 1, 1, 4, 1);
+      geo.rotateY(Math.PI / 4);
+      return geo;
+    }), cached('mat:hanokRoof', () => new THREE.MeshStandardMaterial({ color: 0x3a3c42, roughness: 0.7 })));
+    roof.scale.set((w + 1.6) / Math.SQRT2, 2.0, (d + 1.6) / Math.SQRT2);
+    roof.position.y = h + 1.2;
+    group.add(roof);
+    const ridge = new THREE.Mesh(boxGeo, cached('mat:hanokRidge', () => new THREE.MeshStandardMaterial({ color: 0xe8e4dc, roughness: 0.8 })));
+    ridge.scale.set(0.3, 0.25, d * 0.5); ridge.position.y = h + 2.0; group.add(ridge);
   }
   // Long Street: a first-floor balcony with an iron-lace railing, carried
   // on slim columns at the pavement edge, the length of the house front.
@@ -1983,6 +2033,7 @@ const ADS = {
   bangkok: ['NOODLES', 'MANGO', 'SILK', 'COFFEE'],
   capetown: ['SURF', 'BOOKS', 'COFFEE', 'MARKET'],
   hanoi: ['PHO', 'SILK', 'COFFEE', 'LANTERNS'],
+  seoul: ['TEA', 'GALLERY', 'CAFÉ', 'BOOKS'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -2924,6 +2975,21 @@ export function makeVehicle(theme) {
     }
     const sign = new THREE.Mesh(boxGeo, mats.glow);
     sign.scale.set(0.5, 0.16, 0.2); sign.position.set(0, 1.6, -0.1); g.add(sign);
+  } else if (kind === 'seoulbus') {
+    // Seoul's green city bus: a single-deck bus with a long glass side.
+    // A wall, as tall as its hitbox (3.2 m).
+    const green = cached('mat:seoulBus', () => new THREE.MeshStandardMaterial({ color: 0x3aa04a, roughness: 0.35, metalness: 0.2 }));
+    const body = new THREE.Mesh(boxGeo, green);
+    body.scale.set(2.2, 2.7, 5.4); body.position.y = 1.65; body.castShadow = true; g.add(body);
+    const glassM = cached('mat:carGlass', () => new THREE.MeshStandardMaterial({ color: 0xa8d0ec, roughness: 0.12, metalness: 0.5 }));
+    const screen = new THREE.Mesh(boxGeo, glassM);
+    screen.scale.set(2.0, 1.2, 0.06); screen.position.set(0, 2.1, 2.72); g.add(screen);
+    for (const sx of [-1, 1]) {
+      const side = new THREE.Mesh(boxGeo, glassM);
+      side.scale.set(0.04, 0.9, 4.4); side.position.set(sx * 1.11, 2.1, -0.2); g.add(side);
+    }
+    const roof = new THREE.Mesh(boxGeo, cached('mat:seoulBusRoof', () => new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.5 })));
+    roof.scale.set(2.1, 0.3, 5.2); roof.position.y = 3.15; g.add(roof);
   } else if (kind === 'motorbike') {
     return makeMotorbike();
   } else if (kind === 'minibus') {
@@ -3140,6 +3206,63 @@ export function makeMotorbike(signal = false) {
     light.scale.set(0.8, 0.26, 0.26); light.position.set(0, 2.4, 0.15); g.add(light);
     g.userData.signal = { light, off, on };
   }
+  return g;
+}
+
+// Seoul's crossing: a few people waiting at the kerb who step out together
+// when the signal changes. A wall: nobody jumps over people. Faces the way
+// they walk (+x).
+const PED_COLS = [0x2a3a5a, 0xc8302a, 0xe8e0d0, 0x3a6a4a, 0x8a5a3a, 0xe8a018, 0x5a3a7a];
+export function makeCrowd() {
+  const g = new THREE.Group();
+  for (let i = 0; i < 4; i++) {
+    const p = new THREE.Group();
+    const col = PED_COLS[(Math.random() * PED_COLS.length) | 0];
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.75, 4, 8),
+      cached(`mat:ped:${col}`, () => new THREE.MeshStandardMaterial({ color: col, roughness: 0.8 })));
+    body.position.y = 0.95; body.castShadow = true; p.add(body);
+    const head = new THREE.Mesh(ballGeo, cached('mat:pedHead', () => new THREE.MeshStandardMaterial({ color: 0xd8b08a, roughness: 0.7 })));
+    head.scale.setScalar(0.17); head.position.y = 1.62; p.add(head);
+    const hair = new THREE.Mesh(ballGeo, cached('mat:pedHair', () => new THREE.MeshStandardMaterial({ color: 0x1a1612, roughness: 0.8 })));
+    hair.scale.set(0.18, 0.11, 0.18); hair.position.y = 1.72; p.add(hair);
+    p.position.set((i % 2) * 0.5 - 0.25, 0, (i - 1.5) * 0.55);
+    g.add(p);
+  }
+  return g;
+}
+
+// The crossing's walk signal at the kerb, and the zebra stripes across the
+// road. src/run/mechanics.js swaps the face: 3, 2, 1, then the green walker.
+const SIGNAL_FACES = ['3', '2', '1', 'WALK'];
+function signalMat(k) {
+  return cached(`mat:walksig:${k}`, () => {
+    const tex = canvasTexture(64, 64, (c) => {
+      c.fillStyle = '#14141a'; c.fillRect(0, 0, 64, 64);
+      if (k === 3) {
+        c.fillStyle = '#3ae86a';
+        c.beginPath(); c.arc(32, 14, 7, 0, 7); c.fill();
+        c.fillRect(27, 22, 10, 22);
+        c.fillRect(22, 44, 7, 16); c.fillRect(35, 44, 7, 16);
+      } else {
+        c.fillStyle = '#ff4a3a'; c.font = '900 48px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(SIGNAL_FACES[k], 32, 34);
+      }
+    });
+    return new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 1.2 });
+  });
+}
+export function makeCrossing(theme, roadW) {
+  const g = makeZebra(theme, roadW);
+  for (const c of g.children.slice(1)) g.remove(c);     // London's beacons: not here
+  const sig = new THREE.Group();
+  const pole = new THREE.Mesh(cylGeo, mats.black);
+  pole.scale.set(0.07, 3.0, 0.07); pole.position.y = 1.5; sig.add(pole);
+  const face = new THREE.Mesh(boxGeo, signalMat(0));
+  face.scale.set(0.12, 0.7, 0.7); face.position.y = 3.2; face.rotation.y = Math.PI / 2; sig.add(face);
+  sig.position.set(roadW / 2 + 0.7, 0.3, 0);
+  g.add(sig);
+  g.userData.face = face;
+  g.userData.faces = [0, 1, 2, 3].map(signalMat);
   return g;
 }
 
@@ -3973,6 +4096,7 @@ const SIL_TINT = {
   bangkok: '#5a4a5a',    // temple spires and towers in the humid haze
   capetown: '#3a4a5e',   // Table Mountain's blue-grey sandstone
   hanoi: '#5a4e42',      // tiled roofs and tube houses in the haze
+  seoul: '#3e4a5a',      // the granite mountains around the city
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
@@ -4133,6 +4257,18 @@ function skylineTexture(theme) {
           g.fill();
         }
         x += bw + 1;
+      }
+    } else if (theme.id === 'seoul') {
+      // The granite peaks that ring the city, and the city's towers in
+      // front. (No tower on the summit: N Seoul Tower is too recent.)
+      g.fillStyle = dark(0.22);
+      g.beginPath(); g.moveTo(0, GY - 60);
+      for (const [x, h] of [[160, 150], [300, 110], [470, 190], [640, 130], [820, 170], [1000, 120], [1180, 200], [1360, 140], [1600, 90]]) g.lineTo(x, GY - h);
+      g.lineTo(1600, GY); g.lineTo(0, GY); g.fill();
+      for (let x = 0, i = 0; x < 1600; i++) {
+        const bw = 30 + (i * 11) % 40, bh = 40 + (i * 37) % 90;
+        box(x, bw, bh, 0.18 + ((i * 5) % 3) * 0.03);
+        x += bw + 4;
       }
     } else if (theme.id === 'hanoi') {
       // A dense ragged line of narrow tube houses of every height, a few

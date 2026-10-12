@@ -23,6 +23,7 @@ const CITY_OF = {
   giantswing: 'bangkok', watarun: 'bangkok', chakri: 'bangkok',
   clocktower: 'capetown', goodhope: 'capetown', cityhall: 'capetown',
   turtletower: 'hanoi', longbien: 'hanoi', vanmieu: 'hanoi',
+  heunginjimun: 'seoul', gyeonghoeru: 'seoul', geunjeongjeon: 'seoul',
 };
 // Plaza floors deliberately contrast their monuments. Every landmark in the
 // game is a warm stone/limestone/bronze hero, and every city theme lights the
@@ -46,6 +47,7 @@ const PLAZA = {
   bangkok: { stone: '#5c687a', dark: '#444e60', trim: '#8a98ac', ground: '#2c303c', sky: '#344868' },
   capetown: { stone: '#5a6676', dark: '#424c5c', trim: '#8896a8', ground: '#2a2e3a', sky: '#304a70' },
   hanoi: { stone: '#5e687a', dark: '#465060', trim: '#8c98aa', ground: '#2c303c', sky: '#384a68' },
+  seoul: { stone: '#626a7c', dark: '#4a5264', trim: '#909aae', ground: '#2e3240', sky: '#30466e' },
 };
 
 // Painted-panorama palette. Near layer is the darker, more saturated band the
@@ -63,6 +65,7 @@ const SKYPAL = {
   bangkok: { near: '#4e4050', far: '#7a6a78', trim: '#6a4a52', roof: '#8a3a2a', win: '255,214,150', accent: '#e8a818' },
   capetown: { near: '#3a4a5e', far: '#6a7a8e', trim: '#4a5a6e', roof: '#2a3440', win: '255,224,170', accent: '#e8508a' },
   hanoi: { near: '#5a4a3a', far: '#827260', trim: '#6a5240', roof: '#6a3a2a', win: '255,212,150', accent: '#c8202a' },
+  seoul: { near: '#3a4454', far: '#6a7486', trim: '#4a5466', roof: '#2a2e36', win: '255,222,170', accent: '#2a7a6a' },
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 

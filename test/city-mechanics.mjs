@@ -393,6 +393,52 @@ async function watch(page, ms, shotName) {
   await ctx.close();
 }
 
+// ------------------------------------------------------------ Seoul
+// Crowds cross when the countdown ends (CR_* in mechanics.js):
+//   - a crossing has its row to itself, and no souvenirs of its own
+//   - the crowd fills one or two lanes, side by side, and leaves one free
+//   - it has stopped in its lanes 22 m out, and waits at the kerb before
+//     the signal goes green
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337]) {
+    ({ page, ctx, errors } = await open('seoul', 3, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.some((o) => o.mech)) break;
+    await ctx.close();
+  }
+  const crowds = snap.obs.filter((o) => o.mech);
+  check(crowds.length > 0, 'Seoul deals crossing crowds', `${crowds.length} groups, seed ${SEED}`);
+  let rowBad = 0, coinBad = 0;
+  for (const row of new Set(crowds.map((c) => c.row))) {
+    const inRow = snap.obs.filter((o) => o.row === row);
+    const lanes = inRow.map((o) => o.lane).sort();
+    if (inRow.some((o) => !o.mech) || lanes.length > 2 || (lanes.length === 2 && lanes[1] - lanes[0] !== 1)) rowBad++;
+    const [ch, lz] = row.split(':').map(Number);
+    if (snap.coins.some((c) => c.chunk === ch && Math.abs(c.z - lz) < 0.1)) coinBad++;
+  }
+  check(rowBad === 0, 'a crowd fills one or two lanes side by side, alone in its row, leaving a lane free');
+  check(coinBad === 0, 'a crossing has no souvenirs of its own', `${coinBad} bad`);
+  const probe = await page.evaluate(() => {
+    const o = window.__cr.track.obstacles.find((x) => x.mech);
+    const at = (ahead) => {
+      const r = { lane: 0, walkFrom: -5.6, signal: { face: {}, faces: [0, 1, 2, 3] }, mesh: { position: {} } };
+      o.mech.move(r, ahead);
+      return r.x;
+    };
+    return [at(22), at(10), at(41), at(80)];
+  });
+  check(probe[0] === -2.4 && probe[1] === -2.4, 'a crowd has stopped in its lane 22 m out', probe.join(', '));
+  check(probe[2] === -5.6 && probe[3] === -5.6, 'a crowd waits at the kerb until the signal goes green');
+  check(!errors.length, 'Seoul: no page errors', errors[0] || '');
+  await ctx.close();
+  const again = await open('seoul', 3, SEED);
+  const snap2 = await again.page.evaluate(SNAP);
+  const sig = (s) => JSON.stringify(s.obs.filter((o) => o.mech).map((o) => [o.row, o.lane]));
+  check(sig(snap) === sig(snap2), 'the same seed deals the same crossings');
+  await again.ctx.close();
+}
+
 // ------------------------------------------------------- no stray moves
 for (const city of ['nyc', 'rome', 'sf', 'jerusalem', 'mexico']) {
   const { page, ctx } = await open(city, 3, 4242);

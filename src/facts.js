@@ -237,6 +237,28 @@ export const STREET_FACTS = {
         { text: "Before the legend, the lake was called Luc Thuy, 'green water'." },
       ] },
   ],
+  // Seoul: DRAFT, awaiting Dan's sign-off (docs/SEOUL-FACTS-DRAFT.md,
+  // sources listed there).
+  seoul: [
+    { street: 'Insadong', tag: 'Tea, paper and pottery',
+      facts: [
+        { big: '500', unit: 'years', label: 'old', text: 'Insadong began about 500 years ago as a neighbourhood where government officials lived.' },
+        { text: "In the 1900s it became the city's street of antique shops, and today it is full of galleries, tea houses and craft shops." },
+        { text: 'Tongmungwan, on this street, is the oldest bookshop in Seoul.' },
+      ] },
+    { street: 'Bukchon Hanok Village', tag: 'Roofs of grey tile',
+      facts: [
+        { text: 'Bukchon sits on the hill between two royal palaces, Gyeongbokgung and Changdeokgung.' },
+        { text: 'Hundreds of hanok, traditional houses of timber and plaster under curved tile roofs, still stand in its lanes.' },
+        { text: 'People still live here, so visitors are asked to keep their voices down as they walk through.' },
+      ] },
+    { street: 'Myeongdong', tag: 'The shopping streets',
+      facts: [
+        { text: 'In the days of the Joseon kings it was a quiet neighbourhood of homes, called Myeongryebang.' },
+        { big: '1898', label: 'the cathedral', text: 'Myeongdong Cathedral, at the top of the hill, was finished in 1898.' },
+        { text: 'Every evening, street-food stalls set up down the middle of its lanes.' },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -379,6 +401,27 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Seoul: DRAFT, awaiting Dan's sign-off (docs/SEOUL-FACTS-DRAFT.md).
+  // altitude: Seoul stands 38 m above sea level (en.wikipedia.org/wiki/Seoul).
+  // No sourced heights for the three buildings.
+  heunginjimun: { altitude: 38,
+    facts: [
+      { big: '1869', label: 'rebuilt', text: 'First built in 1398, the gate that stands today was rebuilt in 1869.' },
+      { text: "It is the only one of Seoul's great city gates guarded by an ongseong, a half-ring of wall built out in front of it." },
+      { big: '1962', label: 'Treasure No. 1', text: 'In 1962 South Korea listed it as Treasure No. 1.' },
+    ] },
+  gyeonghoeru: { altitude: 38,
+    facts: [
+      { big: '48', unit: 'pillars', label: 'of stone', text: 'The pavilion stands on 48 stone pillars: square ones around the outside, round ones within.' },
+      { big: '1867', label: 'rebuilt', text: 'First built in 1412, it burned in 1592, leaving only its stone base, and was rebuilt in 1867.' },
+      { text: 'Kings held banquets here and welcomed foreign envoys, out on its island in the palace pond.' },
+    ] },
+  geunjeongjeon: { altitude: 38,
+    facts: [
+      { big: '1867', label: 'rebuilt', text: 'The throne hall was first built in 1395, burned in 1592 and was rebuilt in 1867.' },
+      { text: 'Stone animals, among them the twelve animals of the zodiac, guard the balustrades of its terraces.' },
+      { text: 'Rows of stone markers in the courtyard showed each official where to stand, by rank.' },
     ] },
   // Hanoi: DRAFT, awaiting Dan's sign-off (docs/HANOI-FACTS-DRAFT.md).
   // altitude: Hanoi's urban core lies about 4 to 11 m above sea level (a 1988
