@@ -136,6 +136,29 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'delhi') {
+    // A paper fighter kite, the kind flown from Delhi's rooftops: a diamond
+    // in two bright colours on a bamboo spine and bow, with a short tail.
+    const half = (col, s) => {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0.42, 0, 0, -0.42, 0, s * 0.36, 0.04, 0], 3));
+      geo.computeVertexNormals();
+      return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+        color: col, emissive: col, emissiveIntensity: 0.35, roughness: 0.6, side: THREE.DoubleSide,
+      }));
+    };
+    g.add(half(0xe8306a, -1), half(0xf2b418, 1));
+    const bamboo = new THREE.MeshStandardMaterial({ color: 0xc8a060, roughness: 0.7 });
+    const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.86, 5), bamboo);
+    spine.position.z = 0.01; g.add(spine);
+    const bow = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.012, 4, 16, Math.PI * 0.62), bamboo);
+    bow.rotation.z = Math.PI * 0.19; bow.position.set(0, -0.34, 0.01); g.add(bow);
+    const tailMat = new THREE.MeshStandardMaterial({ color: 0x2a9a4a, emissive: 0x2a9a4a, emissiveIntensity: 0.3, side: THREE.DoubleSide });
+    for (let i = 0; i < 3; i++) {
+      const t = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 0.1), tailMat);
+      t.position.set(Math.sin(i) * 0.04, -0.5 - i * 0.1, 0); t.rotation.z = (i % 2 ? 0.4 : -0.4);
+      g.add(t);
+    }
   } else if (theme.id === 'marrakech') {
     // A brass lantern: a six-sided body of coloured glass behind brass
     // ribs, a pointed cap with a ball finial, and a ring to hang it by.

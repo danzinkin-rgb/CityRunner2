@@ -22,7 +22,7 @@
 //           from the player to the obstacle, positive while it is in front
 // test/city-mechanics.mjs checks each move's rules against real courses.
 import { LANES } from './player.js';
-import { makeHandcart } from '../cities/builders.js';
+import { makeHandcart, makeAutoRickshaw } from '../cities/builders.js';
 
 // ---- Marrakech: porters' handcarts crossing the road --------------------
 // A porter pushes a laden cart straight across the road, kerb to kerb, at
@@ -71,6 +71,56 @@ const CART = {
   },
 };
 
+// ---- Delhi: auto-rickshaws that drive on ahead, then brake ----------------
+// Some rickshaws are going your way. Far off, one drives on ahead of you at
+// half your pace, so it seems to come at you slowly; then, BRAKE_AT metres
+// out, it brakes hard, its brake lights flash, and it stops dead in its
+// lane. From there it closes at your full speed. The skill is not trusting
+// the slow approach: be ready to jump it or change lane.
+//
+// Only its position on screen changes: its hitbox is where it stops, so it
+// can never touch the player before it has braked. It drives on for at most
+// BRAKE_FROM - BRAKE_AT metres of approach, so it is never more than
+// (BRAKE_FROM - BRAKE_AT) * BRAKE_PACE (13 m) nearer than where it stops,
+// which is less than the gap between rows on any street.
+// Fairness:
+//   - it brakes at least BRAKE_AT (22 m, over a second at top speed) out
+//   - it never drives through the row before it: its lane is free there,
+//     and is not that row's coin lane
+//   - on streets 2 and 3 its row may also hold a barrier, never in its lane
+const BRAKE_CHANCE = [0.12, 0.18, 0.24];     // share of rows, by street
+const BRAKE_AT = 22, BRAKE_FROM = 48, BRAKE_PACE = 0.5;
+const BRAKER = {
+  hint: 'That rickshaw is braking! Jump it or change lanes.',
+  row({ level, rand, randInt, addObstacle, prev }) {
+    if (rand() >= BRAKE_CHANCE[level - 1]) return null;
+    const lanes = [0, 1, 2].filter((l) => !prev || (!prev.used.has(l) && prev.coin !== l));
+    if (!lanes.length) return null;
+    const lane = lanes[randInt(lanes.length)];
+    const mesh = makeAutoRickshaw(true);
+    mesh.rotation.y = Math.PI;                     // going your way: tail lights to you
+    const rec = addObstacle(lane, 'full', { mesh, y0: 0, y1: 1.6, halfLen: 1.3 });
+    if (level >= 2 && rand() < 0.5) {
+      const others = [0, 1, 2].filter((l) => l !== lane);
+      addObstacle(others[randInt(others.length)], 'low');
+    }
+    return rec;
+  },
+  settle() {},
+  move(o, ahead) {
+    const a = Math.min(ahead, BRAKE_FROM);
+    const shown = a <= BRAKE_AT ? a : BRAKE_AT + (a - BRAKE_AT) * (1 - BRAKE_PACE);
+    o.mesh.position.z = o.localZ + (a - shown);
+    const braking = ahead <= BRAKE_AT && ahead > -4;
+    const on = braking && Math.floor(ahead / 2.5) % 2 === 0;
+    const [off, lit] = o.mesh.userData.brakeMats;
+    for (const l of o.mesh.userData.brakeLights) l.material = on ? lit : off;
+    o.mesh.position.y = braking && ahead > BRAKE_AT - 2 ? 0.04 : 0;   // the nose dips as it brakes
+    return braking;
+  },
+};
+
 export const MECHANICS = {
   handcart: CART,
+  braker: BRAKER,
 };

@@ -14,7 +14,7 @@ import {
   makeBillboard, makeParkedCar, makeStreetSpan, makeGardenWall,
   makeArcade, makeGardenRail, makeWindmill, makeObeliskFountain,
   makeEquestrian, makeErosFountain, makeCurvedLED, makeZebra, makeCameo,
-  makeGardenParterre, makeStepStreet, makeArtistPitch, makeSquareStalls,
+  makeGardenParterre, makeStepStreet, makeArtistPitch, makeSquareStalls, makeWireTangle,
   SHARED_GEO,
 } from '../cities/builders.js';
 import { makeCollectible } from '../cities/souvenirs.js';
@@ -568,6 +568,10 @@ export class Track {
             leg.position.set(lx, 0.3, 0); mesh.add(leg);
           }
           y0 = 0; y1 = 1.2;
+        } else if (t.span === 'tangle') {
+          // Chandni Chowk: the roll-under is a sagging bundle of cables
+          mesh = makeWireTangle();
+          y0 = 1.3; y1 = 3.4;
         } else { // high
           mesh = new THREE.Group();
           const beam = new THREE.Mesh(OB_GEO.beam, this.accentMat);
@@ -594,7 +598,7 @@ export class Track {
       // Level 1 sees fewer vehicles and more single jump/roll obstacles.
       const fullCut = this.level === 1 ? 0.18 : 0.3;
       const special = mech
-        ? mech.row({ level: this.level, rand, randInt, addObstacle, usedLanes })
+        ? mech.row({ level: this.level, rand, randInt, addObstacle, usedLanes, prev: this.prevRow })
         : null;
       if (special) {
         // the city's move took this row
@@ -650,6 +654,7 @@ export class Track {
         special.mech = mech;
         mech.settle(special, { coinLane, usedLanes, rand, randInt });
       }
+      this.prevRow = { used: usedLanes, coin: coinLane };
       // Rome: now the row is complete, decide where (if anywhere) the Vespa
       // can go — see the fairness rules above WEAVE_CHANCE.
       if (weaver) {

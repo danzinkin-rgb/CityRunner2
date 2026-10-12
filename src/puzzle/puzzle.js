@@ -19,6 +19,7 @@ const CITY_OF = {
   templomayor: 'mexico', catedral: 'mexico', castillo: 'mexico',
   kotel: 'jerusalem', domerock: 'jerusalem', towerdavid: 'jerusalem', holysepulchre: 'jerusalem',
   koutoubia: 'marrakech', babagnaou: 'marrakech', benyoussef: 'marrakech',
+  lahori: 'delhi', qutub: 'delhi', indiagate: 'delhi',
 };
 // Plaza floors deliberately contrast their monuments. Every landmark in the
 // game is a warm stone/limestone/bronze hero, and every city theme lights the
@@ -38,6 +39,7 @@ const PLAZA = {
   jerusalem: { stone: '#667080', dark: '#4c5462', trim: '#96a0b0', ground: '#30343e', sky: '#3c4468' },
   mexico: { stone: '#626a80', dark: '#4a5066', trim: '#9098b0', ground: '#2e3242', sky: '#3e3a6a' },
   marrakech: { stone: '#5e6a7c', dark: '#465062', trim: '#8c9aac', ground: '#2c323e', sky: '#34466a' },
+  delhi: { stone: '#606a7a', dark: '#48505e', trim: '#8e98a8', ground: '#2e323c', sky: '#3a4a66' },
 };
 
 // Painted-panorama palette. Near layer is the darker, more saturated band the
@@ -51,6 +53,7 @@ const SKYPAL = {
   jerusalem: { near: '#6a5a44', far: '#8c7c62', trim: '#7a6a50', roof: '#5a4a36', win: '255,216,160', accent: '#d8b460' },
   mexico: { near: '#5a3e4a', far: '#806a7a', trim: '#7a4a52', roof: '#6a3a30', win: '255,210,150', accent: '#d81b7a' },
   marrakech: { near: '#6a3a30', far: '#8e6a5a', trim: '#7a4a3a', roof: '#5a3428', win: '255,206,140', accent: '#2e8a6a' },
+  delhi: { near: '#5e4034', far: '#86705e', trim: '#7a4e3a', roof: '#5a3a2a', win: '255,210,150', accent: '#e8780a' },
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 
@@ -295,6 +298,23 @@ function makeBlockTexture(def) {
         }
         g.fillStyle = shade(c, -0.28); g.fillRect(0, j * h + h - 2, S, 2);
       }
+      return;
+    }
+    if (tex === 'flute') {
+      // Vertical flutes, alternately rounded and sharp-edged, as on the
+      // lower storeys of the Qutub Minar. tx.n flutes round the whole piece.
+      baseFill(g, S, c);
+      const n = tx.n || 12, w = S / n;
+      for (let i = 0; i < n; i++) {
+        const grad = g.createLinearGradient(i * w, 0, (i + 1) * w, 0);
+        grad.addColorStop(0, shade(c, -0.25));
+        grad.addColorStop(i % 2 ? 0.5 : 0.25, shade(c, 0.18));
+        grad.addColorStop(1, shade(c, -0.25));
+        g.fillStyle = grad; g.fillRect(i * w, 0, w, S);
+      }
+      g.fillStyle = shade(c, -0.35); g.fillRect(0, S * 0.46, S, 6);   // a band of carved script
+      g.fillStyle = shade(c, 0.25);
+      for (let x = 4; x < S; x += 9) g.fillRect(x, S * 0.47, 4, 3);
       return;
     }
     if (tex === 'sebka') {
@@ -1239,7 +1259,7 @@ export function makeBlockMesh(def, isGhost = false, isChild = false) {
         geo = new THREE.CylinderGeometry(Math.max(0.02, d / Math.SQRT2), w / Math.SQRT2, h, 4);
         geo.rotateY(Math.PI / 4);
       } else {
-        geo = new THREE.CylinderGeometry(Math.max(0.02, d / 2), w / 2, h, 20);
+        geo = new THREE.CylinderGeometry(Math.max(0.02, d / 2), w / 2, h, def.sides || 20);
       }
       break;
     case 'eifleg': {

@@ -149,6 +149,28 @@ export const STREET_FACTS = {
         { text: 'The Lazama Synagogue, built around a tiled courtyard in the heart of the quarter, still stands and is open to visitors.' },
       ] },
   ],
+  // Delhi: DRAFT, awaiting Dan's sign-off (docs/DELHI-FACTS-DRAFT.md,
+  // sources listed there).
+  delhi: [
+    { street: 'Chandni Chowk', tag: 'The moonlit square',
+      facts: [
+        { big: '1650', label: 'laid out', text: 'Princess Jahanara, daughter of Emperor Shah Jahan, designed the market in 1650, leading up to the gates of the Red Fort.' },
+        { text: "Its name means 'moonlit square': a pool in the middle of the street once reflected the moon." },
+        { text: 'A canal once ran down the centre of the street. Today it is one of the biggest wholesale markets in India.' },
+      ] },
+    { street: 'Connaught Place', tag: 'Rings of white colonnades',
+      facts: [
+        { big: '1933', label: 'completed', text: 'Built between 1929 and 1933, it was named after the Duke of Connaught, a son of Queen Victoria.' },
+        { text: 'Architect Robert Tor Russell set its white colonnades in rings around a central park.' },
+        { text: 'The design was modelled on the Royal Crescent, a curving terrace of houses in the English city of Bath.' },
+      ] },
+    { street: 'Kartavya Path', tag: 'The path of duty',
+      facts: [
+        { big: '2022', label: 'renamed', text: "First called Kingsway and then Rajpath, the avenue was renamed Kartavya Path, 'the path of duty', in 2022." },
+        { text: "It runs from India Gate to Rashtrapati Bhavan, the President's house, between long lawns and canals." },
+        { text: 'Every year on 26 January, the Republic Day parade marches along it.' },
+      ] },
+  ],
   // Approved by Dan, 6 September 2026 (docs/JERUSALEM-FACTS-DRAFT.md): facts
   // are architectural, historical and measurable; no claims about sovereignty.
   jerusalem: [
@@ -291,6 +313,29 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Delhi: DRAFT, awaiting Dan's sign-off (docs/DELHI-FACTS-DRAFT.md).
+  // altitude: Delhi stands about 216 m above sea level
+  // (en.wikipedia.org/wiki/Delhi). No sourced height for the Lahori Gate.
+  lahori: { altitude: 216,
+    facts: [
+      { big: '1648', label: 'completed', text: "Emperor Shah Jahan's fort took about nine years to build, from 1639 to 1648." },
+      { big: '2.4', unit: 'km', label: 'of walls', text: 'Its red sandstone walls run for about 2.4 kilometres, and give the Red Fort its name.' },
+      { text: 'The main entrance, the Lahori Gate, is named after the city of Lahore, which it faces.' },
+    ] },
+  // 72.5 m (en.wikipedia.org/wiki/Qutb_Minar)
+  qutub: { scale: 72.5, compare: 'bus',
+    facts: [
+      { big: '72.5', unit: 'm', label: 'tall', text: 'At 72.5 metres, it is the tallest minaret in the world built of brick.' },
+      { big: '1199', label: 'begun', text: 'Qutb ud-Din Aibak began the tower in 1199, and his successor Iltutmish added three more storeys.' },
+      { text: 'It narrows from 14.3 metres across at the base to just 2.7 metres at the top.' },
+    ] },
+  // 42 m (britannica.com/topic/India-Gate)
+  indiagate: { scale: 42, compare: 'bus',
+    facts: [
+      { big: '42', unit: 'm', label: 'tall', text: 'India Gate stands 42 metres high at the eastern end of Kartavya Path.' },
+      { big: '1931', label: 'unveiled', text: 'Designed by the architect Edwin Lutyens, it was begun in 1921 and unveiled in 1931.' },
+      { text: 'It is a war memorial: the names of more than 13,000 soldiers of the Indian Army who died are carved into its stone.' },
     ] },
   // Marrakech: DRAFT, awaiting Dan's sign-off (docs/MARRAKECH-FACTS-DRAFT.md).
   // 77 m including the spire (en.wikipedia.org/wiki/Kutubiyya_Mosque).

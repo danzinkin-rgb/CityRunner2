@@ -460,6 +460,59 @@ export const ALL_CITIES = [
       },
     ],
   },
+  {
+    id: 'delhi', name: 'DELHI', flag: '🇮🇳', region: 'asia',
+    streets: ['Chandni Chowk', 'Connaught Place', 'Kartavya Path'],
+    // A warm, hazy afternoon: pale sky, a dusty gold horizon, the light
+    // softened by the haze. Red sandstone, marigold, white marble.
+    sky: { top: '#5a8ac8', mid: '#a8c0d8', horizon: '#f4d8a8', glow: '#f0c080' },
+    fog: 0xe8c890, fogDensity: 0.0108,
+    sun: { color: 0xffe4b8, intensity: 2.4, pos: [-50, 70, -40] },
+    hemi: { sky: 0xe0e4ec, ground: 0x9a7a5a, intensity: 1.1 },
+    fill: { color: 0xffe8cc, intensity: 1.0 },
+    road: '#5a5650', lane: '#f0e0b0', sidewalk: '#b8a690',
+    palette: ['#c8603a', '#e0b860', '#5a9ab0', '#d88a5a', '#a0c070', '#e8d0a8'],
+    trim: '#f2e8d4', roof: '#8a4a30',
+    windowLit: '#ffd28a', windowDay: '#8ab0c8', accent: '#e8780a',
+    storefront: ['#e8780a', '#c8203a', '#2a7ab0', '#3a9a4a', '#f0c020', '#8a2a8a'],
+    props: ['lamp', 'tree', 'chaistall'],
+    // The green-and-yellow auto-rickshaw. No operator name or logo.
+    vehicle: 'autorickshaw',
+    // Some rickshaws drive on ahead of you, then brake hard
+    // (src/run/mechanics.js).
+    mechanic: 'braker',
+    landmarks: ['lahori', 'qutub', 'indiagate'],
+    levels: [
+      { // Chandni Chowk: the old city's great bazaar, painted shopfronts and
+        // signboards, a tangle of wires overhead, the Red Fort at the end
+        key: 'chandni', facade: 'bazaar',
+        setback: 3.2, hBase: 9, hVar: 4, secondRow: 0.2,
+        props: ['lamp', 'chaistall', 'souvenirstall'],
+        ads: ['PARATHE', 'MITHAI', 'SAREES', 'SILVER', 'SPICES', 'BOOKS'],
+        span: 'tangle', spanFreq: 0.9, spanY: 6.8, lit: 0.26,
+        cameo: 'lahori',
+      },
+      { // Connaught Place: the white Georgian colonnades in a ring, shops
+        // and cafes under them, a green park at the centre
+        key: 'cp', facade: 'arcade', arcade: true,
+        palette: ['#f2efe6', '#ece8dc', '#f4f0e8', '#e8e2d4', '#f0ece2', '#eae6da'],
+        trim: '#ffffff', hBase: 10, hVar: 2, secondRow: 0.5,
+        storefront: ['#2a7ab0', '#c8203a', '#3a9a4a', '#e8780a'],
+        props: ['lamp', 'tree', 'flowerbed', 'souvenirstall'],
+        ads: ['COFFEE HOUSE', 'BOOKS', 'CINEMA', 'TAILOR', 'CAFÉ'],
+        lit: 0.18,
+      },
+      { // Kartavya Path: the long ceremonial avenue, lawns and trees either
+        // side, red sandstone ministries, India Gate at the end
+        key: 'kartavya', facade: 'beauxarts', setback: 8.4, hBase: 12, hVar: 3, secondRow: 0,
+        palette: ['#c0644a', '#b85c44', '#c86c50', '#e8d0b0', '#bc6048', '#e0c8a8'],
+        trim: '#f0dcc0', treeline: 'tree',
+        props: ['lamp', 'flowerbed'],
+        ads: ['INDIA GATE 1KM', 'CENTRAL VISTA'],
+        cameo: 'indiagate', lit: 0.12,
+      },
+    ],
+  },
 ];
 
 export const LANDMARK_NAMES = {
@@ -472,6 +525,7 @@ export const LANDMARK_NAMES = {
   holysepulchre: 'Church of the Holy Sepulchre',
   templomayor: 'Templo Mayor', catedral: 'Metropolitan Cathedral', castillo: 'Chapultepec Castle',
   koutoubia: 'Koutoubia Minaret', babagnaou: 'Bab Agnaou', benyoussef: 'Ben Youssef Madrasa',
+  lahori: 'Red Fort', qutub: 'Qutub Minar', indiagate: 'India Gate',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

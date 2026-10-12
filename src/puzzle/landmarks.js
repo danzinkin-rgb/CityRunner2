@@ -1000,6 +1000,120 @@ const defs = {
     B([0, 7.2, -5.0], [10, 1.2, 0.1], '#7a4a2a', 'box', { tex: 'sebka', tx: { n: 8 } }),
     B([0, 8.7, -5.6], [10.8, 1.0, 2.0], '#2e7a5a', 'prism'),
   ],
+  // ================= DELHI =================
+  // The Red Fort (1639-48) and the Qutub Minar (from 1199) are centuries
+  // old. India Gate (1931) was designed by Edwin Lutyens, who died in 1944:
+  // out of copyright in India since 2005 (life + 60) and in the UK since
+  // 2015 (life + 70); the United States does not protect buildings
+  // completed before 1990.
+
+  // The Red Fort's Lahori Gate: a red sandstone gatehouse with a pointed
+  // arch, two octagonal towers each topped by a domed pavilion (chhatri),
+  // a row of small white chhatris along the top, and the battlemented
+  // walls either side. Street 1: about a dozen pieces.
+  lahori: [
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 8.2, 3.0, -0.6], [6.4, 6.0, 2.4], '#b04e38', 'box', { tex: 'stone', tx: { cols: 5, rows: 4, rough: 1 } }),
+      B([sx * 8.2, 6.4, -0.6], [6.4, 0.8, 1.2], '#b85640', 'group', {
+        adorn: [-2.6, -1.3, 0, 1.3, 2.6].map((x) => B([x, 0, 0], [0.7, 0.8, 1.2], '#b85640', 'dome')),
+      }),
+    ]),
+    B([0, 3.4, -0.8], [3.0, 5.4, 0.2], '#2e2420'),                                       // the dark passage
+    B([0, 4.5, 0], [8.0, 9.0, 3.0], '#bc5a40', 'extrude', {
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.15, w: 0.34, h: 0.62, arch: 'pointed' }],
+    }),
+    B([0, 4.0, 1.55], [3.6, 6.4, 0.15], '#ece4d4', 'extrude', {                         // white marble frame
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.07, w: 0.76, h: 0.86, arch: 'pointed' }],
+    }),
+    ...[-1, 1].map((sx) => B([sx * 4.6, 5.5, 0.6], [2.6, 11, 2.3], '#c46446', 'tier', {
+      sides: 8, tex: 'stone', tx: { cols: 8, rows: 8 },
+    })),
+    ...[-1, 1].map((sx) => B([sx * 4.6, 12.3, 0.6], [2.4, 2.6, 2.4], '#ece4d4', 'group', {
+      adorn: [
+        ...[[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]].map(([x, z]) => B([x, -0.5, z], [0.18, 1.4, 0.18], '#ece4d4')),
+        B([0, 0.25, 0], [2.2, 0.2, 2.2], '#e0d6c4'),
+        B([0, 0.35, 0], [1.8, 1.0, 1.8], '#f4f0e8', 'dome', { adorn: [B([0, 1.0, 0], [0.12, 0.5, 0.12], '#d8b04a', 'cyl', { metal: 1 })] }),
+      ],
+    })),
+    B([0, 9.5, 0.2], [8.2, 1.4, 1.6], '#ece4d4', 'group', {                            // the row of little chhatris
+      adorn: [-3.3, -2.2, -1.1, 0, 1.1, 2.2, 3.3].flatMap((x) => [
+        B([x, -0.35, 0], [0.7, 0.6, 0.7], '#e8e0d0'),
+        B([x, 0.0, 0], [0.62, 0.6, 0.62], '#f4f0e8', 'dome'),
+      ]),
+    }),
+  ],
+
+  // The Qutub Minar: five storeys of fluted red sandstone and white marble,
+  // tapering from a wide base to a narrow top, each storey ringed by a
+  // carved balcony on stone brackets; the iron pillar stands nearby.
+  // Street 2: about eighteen pieces.
+  qutub: [
+    B([0, 0.3, 0], [16, 0.6, 11], '#9a8a76', 'box', { tex: 'stone' }),
+    B([0, 0.8, 0], [7.4, 0.4, 7.4], '#a8604a', 'cyl'),                                   // the base step
+    B([0, 2.75, 0], [6.0, 3.5, 5.45], '#b0583e', 'tier', { tex: 'flute', tx: { n: 16 } }),
+    B([0, 4.5, 0], [5.6, 0.4, 5.6], '#d89070', 'cyl'),                                    // a band of carved script
+    B([0, 6.25, 0], [5.45, 3.5, 4.9], '#b25a40', 'tier', { tex: 'flute', tx: { n: 16 } }),
+    B([0, 8.25, 0], [4.9, 0.5, 5.6], '#c87050', 'tier'),                                  // balcony 1, on its brackets
+    B([0, 9.75, 0], [4.6, 2.5, 4.3], '#b65c42', 'tier', { tex: 'flute', tx: { n: 14 } }),
+    B([0, 11.0, 0], [4.4, 0.35, 4.4], '#d89070', 'cyl'),
+    B([0, 12.25, 0], [4.3, 2.5, 4.0], '#b85e44', 'tier', { tex: 'flute', tx: { n: 14 } }),
+    B([0, 13.75, 0], [4.0, 0.5, 4.7], '#c87050', 'tier'),                                 // balcony 2
+    B([0, 15.0, 0], [3.8, 2.0, 3.55], '#ba6046', 'tier', { tex: 'flute', tx: { n: 12 } }),
+    B([0, 17.0, 0], [3.55, 2.0, 3.3], '#bc6248', 'tier', { tex: 'flute', tx: { n: 12 } }),
+    B([0, 18.25, 0], [3.3, 0.5, 4.0], '#c87050', 'tier'),                                 // balcony 3
+    B([0, 20.0, 0], [3.1, 3.0, 2.7], '#ece6da', 'tier', {                                // marble, with sandstone bands
+      adorn: [B([0, 0.4, 0], [2.95, 0.3, 2.95], '#c06a4c', 'cyl'), B([0, -0.8, 0], [3.05, 0.3, 3.05], '#c06a4c', 'cyl')],
+    }),
+    B([0, 21.75, 0], [2.7, 0.5, 3.3], '#c87050', 'tier'),                                 // balcony 4
+    B([0, 23.25, 0], [2.6, 2.5, 2.2], '#c06a4c', 'tier', {
+      adorn: [B([0, 0.2, 0], [2.45, 0.6, 2.45], '#ece6da', 'cyl')],
+    }),
+    B([0, 24.85, 0], [2.4, 0.7, 2.4], '#d8d0c0', 'group', {                              // the railing at the top
+      adorn: [B([0, -0.25, 0], [2.4, 0.2, 2.4], '#d0c4b0', 'cyl'), B([0, 0.1, 0], [2.2, 0.12, 0.12], '#d8d0c0', 'torus', { rotX: Math.PI / 2 })],
+    }),
+    B([6.0, 3.95, 2.6], [0.6, 6.7, 0.6], '#4a3e36', 'cyl', {                             // the iron pillar
+      metal: 1, adorn: [B([0, 3.2, 0], [0.8, 0.4, 0.8], '#5a4c42', 'cyl', { metal: 1 })],
+    }),
+  ],
+
+  // India Gate: the great arch of buff sandstone on a red sandstone base,
+  // the deep cornice, the stepped attic carrying INDIA across its face, and
+  // the shallow bowl on top. Street 3: about two dozen pieces.
+  indiagate: [
+    B([0, 0.25, 0], [20, 0.5, 11], '#a85a40', 'box', { tex: 'stone' }),
+    B([0, 0.75, 0], [16, 0.5, 8], '#b06248', 'box', { tex: 'stone' }),
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 4.75, 3.0, 0], [4.5, 4.0, 6], '#d6be96', 'box', { tex: 'stone', tx: { cols: 3, rows: 4 } }),
+      B([sx * 4.75, 7.0, 0], [4.5, 4.0, 6], '#d8c098', 'box', { tex: 'stone', tx: { cols: 3, rows: 4 } }),
+      B([sx * 4.75, 5.0, 3.06], [3.4, 6.6, 0.15], '#c8ae86', 'box', { tex: 'niche', tx: { n: 1 }, sortY: 9.05 }),
+      B([sx * 4.75, 5.0, -3.06], [3.4, 6.6, 0.15], '#c8ae86', 'box', { tex: 'niche', tx: { n: 1 }, sortY: 9.05 }),
+      B([sx * 4.75, 9.2, 0], [4.9, 0.4, 6.4], '#e4d0aa', 'box', { sortY: 9.1 }),          // impost moulding
+    ]),
+    B([0, 12.2, 0], [14, 6.0, 6], '#dac29c', 'extrude', {                               // the arch and its crown
+      outline: (() => {
+        const pts = [[-0.5, -0.5]];
+        for (let k = 0; k <= 16; k++) {
+          const a = Math.PI - (k / 16) * Math.PI;
+          pts.push([Math.cos(a) * 2.5 / 14, -0.5 + Math.sin(a) * 2.5 / 6]);
+        }
+        pts.push([0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]);
+        return pts;
+      })(),
+    }),
+    B([0, 13.6, 3.06], [8.0, 1.4, 0.15], '#ecdcb8', 'box', {                           // the INDIA panel
+      adorn: [-2.0, -1.0, 0, 1.0, 2.0].map((x) => B([x, 0, 0.05], [0.5, 0.8, 0.06], '#8a7458')),
+    }),
+    B([0, 15.5, 0], [14.8, 0.6, 6.8], '#e4d0aa'),                                        // the cornice
+    B([0, 16.6, 0], [12.0, 1.6, 5.2], '#d6be96', 'box', { tex: 'stone' }),               // the attic, stepping in
+    B([0, 18.1, 0], [9.6, 1.4, 4.4], '#d8c098', 'box', { tex: 'stone' }),
+    B([0, 19.4, 0], [7.2, 1.2, 3.6], '#dac29c'),
+    B([0, 20.4, 0], [2.8, 0.8, 4.2], '#e4d0aa', 'tier'),                                 // the shallow bowl
+    ...[[-1, 1], [1, 1], [-1, -1], [1, -1]].map(([sx, sz]) => B([sx * 7.4, 2.4, sz * 3.4], [0.5, 3.2, 0.5], '#3a3a40', 'cyl', {
+      metal: 1, adorn: [B([0, 1.7, 0], [0.5, 0.5, 0.5], '#fff2c0', 'sphere', { em: '#ffe9a0', emI: 1.2 })],
+    })),
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }

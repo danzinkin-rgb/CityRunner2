@@ -50,8 +50,10 @@ const SNAP = () => {
   const rowKey = (o) => `${tr.chunks.indexOf(o.chunk)}:${o.localZ.toFixed(2)}`;
   const obs = tr.obstacles.map((o) => ({
     row: rowKey(o), lane: o.lane, kind: o.kind, mech: !!o.mech, cross: o.cross ?? 0,
+    z: o.chunk.position.z + o.localZ,
   }));
-  const coins = tr.coins.map((c) => ({ chunk: tr.chunks.indexOf(c.chunk), x: c.mesh.position.x, z: c.mesh.position.z }));
+  const coins = tr.coins.map((c) => ({ chunk: tr.chunks.indexOf(c.chunk), x: c.mesh.position.x, z: c.mesh.position.z,
+    wz: c.chunk.position.z + c.mesh.position.z }));
   return { obs, coins };
 };
 
@@ -76,12 +78,14 @@ async function watch(page, ms, shotName) {
         if (!o.mech) continue;
         const ahead = -(o.localZ + o.chunk.position.z + tr.group.position.z);
         if (Math.abs(ahead) < 1.2 && !met.has(o)) met.set(o, { lane: o.lane, x: o.x, ahead });
+        // how far nearer than its own spot it is drawn, by distance ahead
+        if (ahead > 0) (window.__offsets ||= []).push([ahead, o.mesh.position.z - o.localZ]);
         if (wantShot && !shotAt && ahead > 14 && ahead < 22) shotAt = performance.now() - t0;
       }
-      if (wantShot && shotAt && !window.__shotTaken) { window.__shotTaken = true; return { met: [...met.values()], shot: true }; }
+      if (wantShot && shotAt && !window.__shotTaken) { window.__shotTaken = true; return { met: [...met.values()], shot: true, offsets: window.__offsets || [] }; }
       await new Promise((r) => requestAnimationFrame(r));
     }
-    return { met: [...met.values()], shot: false };
+    return { met: [...met.values()], shot: false, offsets: window.__offsets || [] };
   }, { ms, wantShot: !!shotName });
 }
 
@@ -128,6 +132,53 @@ async function watch(page, ms, shotName) {
   const snap2 = await again.page.evaluate(SNAP);
   const sig = (s) => JSON.stringify(s.obs.filter((o) => o.mech).map((o) => [o.row, o.lane, o.cross]));
   check(sig(snap) === sig(snap2), 'the same seed deals the same handcarts');
+  await again.ctx.close();
+}
+
+// ------------------------------------------------------------ Delhi
+// Auto-rickshaws drive on ahead, then brake (BRAKE_* in mechanics.js):
+//   - its hitbox is where it stops; it is drawn at most 13 m nearer than
+//     that, and exactly there from BRAKE_AT (22 m) out
+//   - its lane is free in the row before, and is not that row's coin lane
+//   - a barrier sharing its row is never in its lane
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234]) {
+    ({ page, ctx, errors } = await open('delhi', 3, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.some((o) => o.mech)) break;
+    await ctx.close();
+  }
+  const brakers = snap.obs.filter((o) => o.mech);
+  check(brakers.length > 0, 'Delhi deals braking rickshaws', `${brakers.length} in the opening chunks, seed ${SEED}`);
+  const rowZs = [...new Set(snap.obs.map((o) => o.z))].sort((a, b) => b - a);   // nearest first
+  let prevBad = 0, coinBad = 0, laneBad = 0;
+  for (const b of brakers) {
+    const i = rowZs.indexOf(b.z);
+    if (snap.obs.some((o) => o !== b && o.z === b.z && o.lane === b.lane)) laneBad++;
+    if (i <= 0) continue;
+    const prevZ = rowZs[i - 1];
+    if (prevZ - b.z > 26) continue;                     // no obstacle row just before it
+    if (snap.obs.some((o) => o.z === prevZ && o.lane === b.lane)) prevBad++;
+    if (snap.coins.some((c) => c.wz <= prevZ + 0.1 && c.wz > prevZ - 7.5 && Math.abs(c.x - LANES[b.lane]) < 0.2)) coinBad++;
+  }
+  check(laneBad === 0, "a barrier never shares a braking rickshaw's lane", `${laneBad} bad`);
+  check(prevBad === 0, 'a braking rickshaw never drives through the row before it', `${prevBad} bad`);
+  check(coinBad === 0, "a braking rickshaw's lane is not the coin lane of the row before", `${coinBad} bad`);
+  const seen = await watch(page, 14000, SHOTS && 'delhi-braker');
+  if (SHOTS && seen.shot) await page.screenshot({ path: join(SHOTS, 'delhi-braker.png') });
+  const more = seen.shot ? await watch(page, 10000) : { met: [], offsets: [] };
+  const offs = [...seen.offsets, ...more.offsets];
+  check(offs.length > 0 && offs.every(([, d]) => d >= -0.01 && d <= 13.01), 'a braking rickshaw is drawn at most 13 m nearer than where it stops');
+  check(offs.filter(([a]) => a <= 22).every(([, d]) => Math.abs(d) < 0.01), 'from 22 m out it is exactly where its hitbox is');
+  check([...seen.met, ...more.met].length > 0, 'the player reaches braking rickshaws');
+  check(!errors.length, 'Delhi: no page errors', errors[0] || '');
+  await ctx.close();
+
+  const again = await open('delhi', 3, SEED);
+  const snap2 = await again.page.evaluate(SNAP);
+  const sig = (s) => JSON.stringify(s.obs.filter((o) => o.mech).map((o) => [o.row, o.lane]));
+  check(sig(snap) === sig(snap2), 'the same seed deals the same braking rickshaws');
   await again.ctx.close();
 }
 

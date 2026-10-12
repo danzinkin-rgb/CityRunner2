@@ -154,6 +154,32 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
         }
 
         for (let cIdx = 0; cIdx < cols; cIdx++) {
+          if (style === 'bazaar') {
+            // Old Delhi: tall shuttered windows in bright paint, many with a
+            // small balcony, and the odd painted signboard nailed between
+            // floors. Every house a different colour.
+            if (cIdx === 0 && f % 2 === 1 && Math.random() < 0.6) {
+              g.fillStyle = pickR(theme.storefront);
+              g.fillRect(4, rowY + 2, W - 8, wh * 0.3);
+              g.fillStyle = 'rgba(255,250,235,.9)';
+              g.fillRect(14, rowY + wh * 0.12, W - 28, 3);
+              g.fillRect(24, rowY + wh * 0.2, W - 48, 2);
+            }
+            const x = cIdx * ww + ww * 0.24, y = rowY + wh * 0.3, w = ww * 0.52, h = wh * 0.6;
+            const lit = Math.random() < (theme.lit ?? 0.16);
+            g.fillStyle = theme.trim; g.fillRect(x - 3, y - 4, w + 6, h + 6);
+            g.fillStyle = lit ? theme.windowLit : '#2a3440';
+            g.fillRect(x, y, w, h);
+            const sh = pickR(['#2a8a6a', '#2a6ab0', '#c8403a', '#e0a020']);
+            g.fillStyle = sh;                                             // open shutters
+            g.fillRect(x - w * 0.3, y, w * 0.26, h); g.fillRect(x + w * 1.04, y, w * 0.26, h);
+            if (Math.random() < 0.4) {
+              g.fillStyle = 'rgba(40,30,24,.85)';                         // a little balcony
+              g.fillRect(x - 6, y + h - 2, w + 12, 4);
+              for (let bx = x - 4; bx < x + w + 6; bx += 4) g.fillRect(bx, y + h - 10, 1.5, 8);
+            }
+            continue;
+          }
           if (style === 'medina') {
             // Houses in the medina look inwards: few, small windows behind
             // carved wooden grilles, many bays left as blank wall. In the
@@ -318,6 +344,7 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
       else if (style === 'beauxarts') paintBeauxGround(G);
       else if (style === 'market') paintMarketGround(G);
       else if (style === 'medina') paintMedinaGround(G);
+      else if (style === 'bazaar') paintBazaarGround(G);
       else paintDefaultShops(G);
 
       g.fillStyle = 'rgba(0,0,0,.3)';
@@ -610,6 +637,27 @@ function paintMarketGround({ g, W, H, shopY, SHOP_H, theme }) {
     }
   }
   g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(0, shopY, W, 3);
+}
+
+// Old Delhi: open shopfronts under bold painted signboards, goods stacked to
+// the ceiling, a striped awning or two.
+function paintBazaarGround({ g, W, H, shopY, SHOP_H, theme }) {
+  const n = 2, sw = W / n;
+  for (let i = 0; i < n; i++) {
+    const x = i * sw;
+    g.fillStyle = pickR(theme.storefront);                             // signboard
+    g.fillRect(x + 2, shopY, sw - 4, SHOP_H * 0.24);
+    g.fillStyle = 'rgba(255,250,235,.95)';
+    g.font = `900 ${Math.round(SHOP_H * 0.15)}px Arial`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(pickR(adWords(theme, ['SWEETS', 'SPICES'])), x + sw / 2, shopY + SHOP_H * 0.12, sw - 12);
+    g.fillStyle = '#2a2018'; g.fillRect(x + 4, shopY + SHOP_H * 0.26, sw - 8, SHOP_H * 0.74 - 4);
+    for (let r = 0; r < 3; r++) {                                       // shelves of goods
+      for (let cx = x + 8; cx < x + sw - 10; cx += 10) {
+        g.fillStyle = pickR(['#e8780a', '#c8203a', '#f0c020', '#2a7ab0', '#e8e0d0', '#8a2a8a']);
+        g.fillRect(cx, shopY + SHOP_H * (0.32 + r * 0.22), 8, SHOP_H * 0.16);
+      }
+    }
+  }
 }
 
 // Marrakech: a horseshoe-arched doorway with a studded door in a strong
@@ -1756,6 +1804,7 @@ const ADS = {
   jerusalem: ['FALAFEL', 'BOOKS & MAPS', 'SPICE HOUSE', 'OLD CITY TOURS'],
   mexico: ['TACOS', 'PAN DULCE', 'MERCADO', 'CAFÉ'],
   marrakech: ['TAPIS', 'ÉPICES', 'HAMMAM', 'ARGAN'],
+  delhi: ['CHAI', 'MITHAI', 'SAREES', 'BOOKS'],
 };
 
 export function makeBillboard(theme, w = 5, h = 2.6) {
@@ -2209,6 +2258,26 @@ function makeSouvenirStall() {
   return g;
 }
 
+// Delhi: a tea seller's cart, a brass kettle on a little stove, glasses
+// lined up, under a faded umbrella.
+function makeChaiStall() {
+  const g = new THREE.Group();
+  const wood = cached('mat:chaiWood', () => new THREE.MeshStandardMaterial({ color: 0x5a7a8a, roughness: 0.8 }));
+  const cart = new THREE.Mesh(boxGeo, wood);
+  cart.scale.set(0.9, 0.9, 1.5); cart.position.y = 0.75; cart.castShadow = true; g.add(cart);
+  const kettle = new THREE.Mesh(ballGeo, mats.gold);
+  kettle.scale.set(0.2, 0.18, 0.2); kettle.position.set(0, 1.4, 0.3); g.add(kettle);
+  for (let i = 0; i < 4; i++) {
+    const cup = new THREE.Mesh(cylGeo, cached('mat:chaiCup', () => new THREE.MeshStandardMaterial({ color: 0xe8c890, roughness: 0.4 })));
+    cup.scale.set(0.05, 0.1, 0.05); cup.position.set(-0.2 + i * 0.13, 1.25, -0.3); g.add(cup);
+  }
+  const pole = new THREE.Mesh(cylGeo, mats.black);
+  pole.scale.set(0.03, 1.6, 0.03); pole.position.set(0, 1.9, 0); g.add(pole);
+  const umb = new THREE.Mesh(coneGeo, cached('mat:chaiUmb', () => new THREE.MeshStandardMaterial({ color: 0xc8503a, roughness: 0.9 })));
+  umb.scale.set(1.0, 0.4, 1.0); umb.position.y = 2.8; g.add(umb);
+  return g;
+}
+
 // Marrakech: rugs hung to show on a wooden rail outside a shop. Built along
 // the street (the rugs face the road), so it needs no turning.
 const RUG_COLS = [['#b0302c', '#e8c070'], ['#2c5ca8', '#f2e8d6'], ['#d8a020', '#7a2a24'], ['#1f7a6a', '#f2d8a0'], ['#6a3a8a', '#e8a050']];
@@ -2393,6 +2462,7 @@ export function makeProp(kind, theme) {
     case 'cypress': return makeTree('cypress');
     case 'palm': return makeTree('palm');
     case 'rugs': return makeRugRack();
+    case 'chaistall': return makeChaiStall();
     case 'chestnut': return makeTree('chestnut');
     case 'planetree': return makeTree('plane');
     case 'phonebox': return makePhonebox();
@@ -2486,6 +2556,27 @@ export function makeStreetSpan(theme, width = 13) {
       hanger.position.set(hx, -0.25, 0);
       g.add(hanger);
     }
+    return g;
+  }
+  if (style === 'tangle') {
+    // Old Delhi: a sagging tangle of cables strung across the lane, a dozen
+    // of them at different sags, and a junction box hanging in the middle.
+    const cable = cached('mat:cable', () => new THREE.MeshStandardMaterial({ color: 0x1e1e22, roughness: 0.7 }));
+    for (let k = 0; k < 12; k++) {
+      const sag = 0.3 + (k % 5) * 0.22, dz = (k % 4 - 1.5) * 0.18;
+      for (let i = 0; i < 8; i++) {
+        const t0 = i / 8, t1 = (i + 1) / 8;
+        const y0 = -Math.sin(t0 * Math.PI) * sag, y1 = -Math.sin(t1 * Math.PI) * sag;
+        const seg = new THREE.Mesh(boxGeo, cable);
+        const len = Math.hypot(width / 8, y1 - y0);
+        seg.scale.set(len, 0.035, 0.035);
+        seg.position.set((t0 + t1 - 1) / 2 * width, (y0 + y1) / 2 - k * 0.04, dz);
+        seg.rotation.z = Math.atan2(y1 - y0, width / 8);
+        g.add(seg);
+      }
+    }
+    const box = new THREE.Mesh(boxGeo, cable);
+    box.scale.set(0.4, 0.5, 0.3); box.position.set(width * 0.12, -0.9, 0); g.add(box);
     return g;
   }
   if (style === 'slats') {
@@ -2594,6 +2685,8 @@ export function makeVehicle(theme) {
     }
     const sign = new THREE.Mesh(boxGeo, mats.glow);
     sign.scale.set(0.5, 0.16, 0.2); sign.position.set(0, 1.6, -0.1); g.add(sign);
+  } else if (kind === 'autorickshaw') {
+    return makeAutoRickshaw();
   } else if (kind === 'petittaxi') {
     // Marrakech's petit taxi: a small beige hatchback with a lit roof sign.
     // A car, low enough to jump.
@@ -2746,6 +2839,81 @@ export function makeVehicle(theme) {
     w.position.set(...p);
     g.add(w);
   }
+  return g;
+}
+
+// Delhi's auto-rickshaw: three wheels, a green body, a yellow canvas roof.
+// Low enough to jump, like a car. Built facing the player (front at +z);
+// `braking` adds the big red brake lights at the back, for the ones that
+// drive on ahead and then stop (src/run/mechanics.js), which are turned
+// round so the lights face the player.
+export function makeAutoRickshaw(braking = false) {
+  const g = new THREE.Group();
+  const green = cached('mat:autoGreen', () => new THREE.MeshStandardMaterial({ color: 0x2a9a4a, roughness: 0.4, metalness: 0.1 }));
+  const yellow = cached('mat:autoYellow', () => new THREE.MeshStandardMaterial({ color: 0xf2c418, roughness: 0.6 }));
+  const tyre = cached('mat:tyre', () => new THREE.MeshStandardMaterial({ color: 0x14141a, roughness: 0.8 }));
+  const body = new THREE.Mesh(boxGeo, green);
+  body.scale.set(1.4, 0.7, 2.4); body.position.set(0, 0.7, -0.2); body.castShadow = true; g.add(body);
+  const nose = new THREE.Mesh(boxGeo, green);
+  nose.scale.set(0.8, 0.9, 0.6); nose.position.set(0, 0.85, 1.2); g.add(nose);
+  const roof = new THREE.Mesh(boxGeo, yellow);
+  roof.scale.set(1.5, 0.12, 2.5); roof.position.set(0, 1.62, -0.15); g.add(roof);
+  for (const [x, z] of [[-0.68, 0.9], [0.68, 0.9], [-0.68, -1.3], [0.68, -1.3]]) {
+    const post = new THREE.Mesh(boxGeo, mats.black);
+    post.scale.set(0.05, 0.62, 0.05); post.position.set(x, 1.28, z); g.add(post);
+  }
+  const screen = new THREE.Mesh(boxGeo,
+    cached('mat:carGlass', () => new THREE.MeshStandardMaterial({ color: 0xa8d0ec, roughness: 0.12, metalness: 0.5 })));
+  screen.scale.set(1.2, 0.5, 0.05); screen.position.set(0, 1.3, 0.95); g.add(screen);
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), mats.glow);
+  lamp.position.set(0, 1.0, 1.52); g.add(lamp);
+  for (const [x, z] of [[0, 1.2], [-0.62, -0.9], [0.62, -0.9]]) {
+    const w = new THREE.Mesh(wheelGeo, tyre);
+    w.rotation.z = Math.PI / 2; w.scale.set(0.8, 0.8, 0.8); w.position.set(x, 0.3, z); g.add(w);
+  }
+  if (braking) {
+    // two shared materials, off and on, swapped per light: one material
+    // flashed in place would light every rickshaw on the street at once
+    const off = cached('mat:brakeOff', () => new THREE.MeshStandardMaterial({ color: 0x5a0a0a, roughness: 0.4 }));
+    const on = cached('mat:brakeOn', () => new THREE.MeshStandardMaterial({ color: 0xff3a3a, emissive: 0xff1a1a, emissiveIntensity: 3 }));
+    const lights = [];
+    for (const x of [-0.5, 0.5]) {
+      const l = new THREE.Mesh(boxGeo, off);
+      l.scale.set(0.34, 0.24, 0.08); l.position.set(x, 0.85, -1.44); g.add(l);
+      lights.push(l);
+    }
+    g.userData.brakeLights = lights;
+    g.userData.brakeMats = [off, on];
+  }
+  return g;
+}
+
+// Old Delhi's roll-under obstacle: not a signboard on a scaffold but a fat,
+// sagging bundle of cables slung low across one lane between two poles.
+// The same hitbox as every 'high' obstacle: the gap below is 1.3 m.
+export function makeWireTangle() {
+  const g = new THREE.Group();
+  const cable = cached('mat:cable', () => new THREE.MeshStandardMaterial({ color: 0x1e1e22, roughness: 0.7 }));
+  for (const x of [-1.0, 1.0]) {
+    const pole = new THREE.Mesh(cylGeo, cached('mat:wirePole', () => new THREE.MeshStandardMaterial({ color: 0x6a6a70, roughness: 0.6, metalness: 0.4 })));
+    pole.scale.set(0.08, 3.4, 0.08); pole.position.set(x, 1.7, 0); g.add(pole);
+  }
+  for (let k = 0; k < 9; k++) {
+    const sag = 0.1 + (k % 3) * 0.12;
+    for (let i = 0; i < 6; i++) {
+      const t0 = i / 6, t1 = (i + 1) / 6;
+      const y0 = 1.95 - Math.sin(t0 * Math.PI) * sag - (k % 3) * 0.12, y1 = 1.95 - Math.sin(t1 * Math.PI) * sag - (k % 3) * 0.12;
+      const seg = new THREE.Mesh(boxGeo, cable);
+      seg.scale.set(Math.hypot(2 / 6, y1 - y0), 0.05, 0.05);
+      seg.position.set(t0 + t1 - 1, (y0 + y1) / 2, ((k / 3) | 0) * 0.1 - 0.1);
+      seg.rotation.z = Math.atan2(y1 - y0, 2 / 6);
+      g.add(seg);
+    }
+  }
+  // the bundle's lowest strands, tied together with a bright tag so the
+  // height reads at speed
+  const tie = new THREE.Mesh(boxGeo, cached('mat:wireTag', () => new THREE.MeshStandardMaterial({ color: 0xf2c418, emissive: 0x6a5000, emissiveIntensity: 0.6 })));
+  tie.scale.set(1.4, 0.16, 0.2); tie.position.set(0, 1.5, 0); g.add(tie);
   return g;
 }
 
@@ -3342,6 +3510,7 @@ const SIL_TINT = {
   jerusalem: '#6a5a44',  // warm stone-gold: limestone hills at dusk
   mexico: '#5a3a52',     // plum dusk over the volcano-ringed valley
   marrakech: '#6a3c3a',  // red earth city under the blue-grey Atlas
+  delhi: '#6a4a3a',      // red sandstone and domes through the afternoon haze
 };
 const SIL_GAIN = 1.6;
 const SIL_MAX = 0.56;      // keep the far horizon airy, never a hard cutout
@@ -3503,6 +3672,27 @@ function skylineTexture(theme) {
         }
         x += bw + 1;
       }
+    } else if (theme.id === 'delhi') {
+      // Domes and minarets of the old city, chhatri pavilions on the
+      // rooftops, and a few taller blocks fading into the haze.
+      for (let x = 0, i = 0; x < 1600; i++) {
+        const bw = 30 + (i * 13) % 34, bh = 26 + (i * 17) % 40;
+        box(x, bw, bh, 0.2 + ((i * 5) % 3) * 0.02);
+        if (i % 4 === 1) {                                           // a chhatri
+          g.fillStyle = dark(0.26);
+          g.fillRect(x + bw / 2 - 8, GY - bh - 12, 16, 12);
+          g.beginPath(); g.arc(x + bw / 2, GY - bh - 12, 9, Math.PI, 0); g.fill();
+        }
+        x += bw;
+      }
+      for (const [cx, r] of [[520, 34], [600, 46], [680, 34]]) {   // a great mosque's three domes
+        g.fillStyle = dark(0.3);
+        g.fillRect(cx - r, GY - 90, r * 2, 26);
+        g.beginPath(); g.ellipse(cx, GY - 90, r, r * 1.1, 0, Math.PI, 0); g.fill();
+        g.fillRect(cx - 1.5, GY - 90 - r * 1.1 - 14, 3, 14);
+      }
+      for (const x of [470, 730]) { box(x, 10, 150, 0.32); box(x - 4, 18, 120, 0.32); }
+      for (const [x, h] of [[1100, 120], [1180, 96], [1300, 140], [200, 110]]) box(x, 46, h, 0.16);
     } else if (theme.id === 'marrakech') {
       // The High Atlas far off, then the flat-roofed medina with a minaret
       // here and there, and palms over the walls.
@@ -3661,6 +3851,46 @@ export function makeCameo(theme) {
       g.fillRect(cx + 50, GY - 196, 40, 50);                         // the tower
       g.fillStyle = light(0.2);
       for (let x = cx - 140; x < cx + 140; x += 16) g.fillRect(x, GY - 138, 7, 12);   // the gallery
+    } else if (key === 'lahori') {
+      // The Red Fort's Lahori Gate at the end of Chandni Chowk: the long
+      // battlemented wall, the gate with its two octagonal towers, and the
+      // row of little white chhatris along its top.
+      g.fillStyle = dark(0.3);
+      g.fillRect(cx - 470, GY - 110, 940, 110);
+      for (let x = cx - 470; x < cx + 470; x += 22) g.fillRect(x, GY - 122, 12, 12);
+      g.fillStyle = dark(0.36);
+      g.fillRect(cx - 120, GY - 220, 240, 220);
+      for (const x of [cx - 150, cx + 120]) {
+        g.fillRect(x, GY - 250, 30, 250);
+        g.beginPath(); g.arc(x + 15, GY - 250, 16, Math.PI, 0); g.fill();
+      }
+      g.fillStyle = light(0.5);
+      for (let k = 0; k < 7; k++) {
+        const x = cx - 96 + k * 32;
+        g.fillRect(x - 7, GY - 236, 14, 14);
+        g.beginPath(); g.arc(x, GY - 236, 8, Math.PI, 0); g.fill();
+      }
+      g.fillStyle = dark(0.5);
+      g.beginPath(); g.moveTo(cx - 40, GY); g.lineTo(cx - 40, GY - 100);
+      g.quadraticCurveTo(cx, GY - 160, cx + 40, GY - 100); g.lineTo(cx + 40, GY); g.fill();
+    } else if (key === 'indiagate') {
+      // India Gate at the far end of Kartavya Path: the great arch, its
+      // stepped attic and the shallow bowl on top, between rows of trees.
+      g.fillStyle = dark(0.24);
+      for (let x = cx - 480; x < cx + 480; x += 40) {
+        if (Math.abs(x - cx) < 160) continue;
+        g.beginPath(); g.arc(x, GY - 40, 26, 0, 7); g.fill();
+        g.fillRect(x - 3, GY - 40, 6, 40);
+      }
+      g.fillStyle = dark(0.36);
+      g.fillRect(cx - 90, GY - 250, 180, 250);
+      g.fillRect(cx - 98, GY - 262, 196, 14);
+      g.fillRect(cx - 70, GY - 290, 140, 28);
+      g.fillRect(cx - 50, GY - 306, 100, 16);
+      g.beginPath(); g.ellipse(cx, GY - 306, 34, 10, 0, Math.PI, 0); g.fill();
+      g.fillStyle = mixc(fogC, '#f4e0b0', 0.4);
+      g.beginPath(); g.moveTo(cx - 40, GY); g.lineTo(cx - 40, GY - 150);
+      g.arc(cx, GY - 150, 40, Math.PI, 0); g.lineTo(cx + 40, GY); g.fill();
     } else if (key === 'koutoubia') {
       // The Koutoubia minaret over the far side of Jemaa el-Fnaa: the square
       // shaft, its lantern tower, and the spire of three balls.
