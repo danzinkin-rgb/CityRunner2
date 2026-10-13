@@ -37,7 +37,7 @@
 
 ## Monuments
 
-No sourced heights, so each shows altitude: Samarkand stands 702 m above sea level (Wikipedia).
+No height graphic for any of the three: their facts carry the page.
 
 ### Ulugh Beg Observatory
 
@@ -88,4 +88,4 @@ All three are Timurid or later work of the 1400s to 1600s. Restorations of the R
 - [Ulugbek Observatory, Turkestan Travel](https://www.turkestantravel.com/en/sights/ulugbek-observatory/)
 - [Siyob Bazaar, Wikipedia](https://en.wikipedia.org/wiki/Siyob_Bazaar): largest bazaar, named after the Siab
 - [Bibi-Khanym Mosque, Wikipedia](https://en.wikipedia.org/wiki/Bibi-Khanym_Mosque): reconstruction from 1974 (why it was left out)
-- [Samarkand, Wikipedia](https://en.wikipedia.org/wiki/Samarkand): elevation 702 m, UNESCO 2001
+- [Samarkand, Wikipedia](https://en.wikipedia.org/wiki/Samarkand): UNESCO 2001

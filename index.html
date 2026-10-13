@@ -417,15 +417,18 @@
 
   /* scale — true to scale, so the reference looking tiny IS the point */
   .fv-scale{display:flex;align-items:flex-end;justify-content:center;gap:28px;height:100%;width:100%}
-  .fv-sbar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .fv-sbar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;width:94px}
+  /* The drawing area under the value and above the caption: both heights are
+     a share of this, so the two stay to scale whatever the labels take. */
+  .fv-sarea{flex:1 1 0;min-height:0;width:100%;display:flex;align-items:flex-end;justify-content:center}
   .fv-scol{width:36px;height:0;border-radius:6px 6px 0 0;
     background:linear-gradient(180deg,var(--fp-accent,#ffd166),rgba(255,209,102,.2));
     box-shadow:0 0 22px rgba(255,190,80,.3);transition:height .9s cubic-bezier(.2,.8,.3,1)}
-  .fv-sart{width:44px;height:0;min-height:9px;display:flex;align-items:flex-end;
+  .fv-sart{height:0;min-height:9px;display:flex;align-items:flex-end;justify-content:center;
     transition:height .9s cubic-bezier(.2,.8,.3,1)}
   /* The chart is the one part of the monument page with no card behind it, so
      its labels and the reference silhouette land directly on the 3D scene. */
-  .fv-sart svg{width:100%;height:100%;fill:rgba(255,255,255,.66);
+  .fv-sart svg{width:100%;height:100%;fill:#fff;opacity:.66;
     filter:drop-shadow(0 1px 5px rgba(0,0,0,.65))}
   .fv-sval{font-size:12px;font-weight:800;color:var(--fp-accent,#ffd166);margin-bottom:5px;
     text-shadow:0 1px 7px rgba(0,0,0,.85)}
@@ -436,7 +439,9 @@
   .fv-ahill .hill{fill:var(--fp-accent,#ffd166);opacity:.78}
   .fv-ahill .sea{fill:rgba(120,176,224,.7)}
   .fv-ahill .pin{fill:#fff}
-  .fv-scap{font-size:10px;letter-spacing:.4px;opacity:.82;margin-top:6px;text-align:center;max-width:94px;
+  /* A fixed two-line caption, so a long name cannot shorten its own bar and
+     the two heights stay true to each other. */
+  .fv-scap{font-size:10px;line-height:1.2;height:2.4em;letter-spacing:.4px;opacity:.82;margin-top:6px;text-align:center;max-width:94px;
     text-shadow:0 1px 7px rgba(0,0,0,.85)}
 
   @media (max-height:950px){

@@ -40,7 +40,7 @@ The number of hanok varies by source (about 600 to over 900), so the fact says "
 
 ## Monuments
 
-No sourced heights for the three buildings, so each shows altitude: Seoul stands 38 m above sea level (Wikipedia).
+No height graphic for any of the three: their facts carry the page.
 
 ### Heunginjimun Gate
 
@@ -88,4 +88,3 @@ All three monuments stand as rebuilt in 1867–1869 to the Joseon designs: long 
 - [A pavilion with a style all its own, Korea JoongAng Daily](https://www.koreajoongangdaily.com/lifestyle/treasure-a-pavilion-with-a-style-all-its-own/11565494): square and round pillars
 - [Geunjeongjeon, Korea JoongAng Daily](https://www.koreajoongangdaily.com/lifestyle/treasure-geunjeongjeon-diligent-politics-of-gyeongbokgung-palace/10035312): zodiac animals, rank stones
 - [Gyeongbokgung, The Korea Times](https://www.koreatimes.co.kr/amp/lifestyle/koreanheritage/20151004/gyeongbokgung-palace-main-palace-of-joseon-kingdom): 1395, rebuilt 1867
-- [Seoul, Wikipedia](https://en.wikipedia.org/wiki/Seoul): elevation 38 m

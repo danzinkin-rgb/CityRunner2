@@ -37,7 +37,7 @@
 
 ## Monuments
 
-### Turtle Tower (no sourced height: shows altitude, 10 m)
+### Turtle Tower (no height graphic)
 
 | Statistic | Fact |
 |---|---|
@@ -45,7 +45,7 @@
 | *(none)* | It is named for the golden turtle of the lake's legend. |
 | *(none)* | Visitors cannot go out to it: everyone sees it from the shore. |
 
-### Long Bien Bridge (scale: 43.5 m, compared with a bus)
+### Long Bien Bridge (no height graphic)
 
 | Statistic | Fact |
 |---|---|
@@ -55,7 +55,7 @@
 
 Length: sources range from 1,680 m to 2,500 m; 2,290 m (Wikipedia, VietnamNet) is the most common.
 
-### Temple of Literature (no sourced height: shows altitude, 10 m)
+### Temple of Literature (no height graphic)
 
 | Statistic | Fact |
 |---|---|
@@ -65,7 +65,6 @@ Length: sources range from 1,680 m to 2,500 m; 2,290 m (Wikipedia, VietnamNet) i
 
 ## To check before approval
 
-- Altitude 10 m: a 1988 survey gives Hanoi's urban core as 4 to 11 m above sea level. I chose 10; say if you would rather another figure.
 - "People step back into their doorways when a train goes by": from travel accounts.
 
 ## Copyright
@@ -84,4 +83,3 @@ The Turtle Tower (1886), Long Bien Bridge (1903) and the Temple of Literature (1
 - [Long Bien Bridge, VietnamNet](https://vietnamnet.vn/en/long-bien-bridge-the-iconic-french-construction-in-the-heart-of-hanoi-703663.html)
 - [Temple of Literature, Wikipedia](https://en.wikipedia.org/wiki/Temple_of_Literature,_Hanoi): 1070, Imperial Academy 1076, 82 stelae, Khue Van Cac 1805
 - [One Pillar Pagoda, Hanoi Times](https://hanoitimes.vn/one-pillar-the-temple-with-unique-architecture-800.html): 1955 rebuild (why it was left out)
-- [Hanoi elevation, 1988 survey (IRC WASH)](https://es.ircwash.org/sites/default/files/822-VNHA89-6330.pdf): 4.0 to 11.0 m above sea level

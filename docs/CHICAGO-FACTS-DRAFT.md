@@ -39,7 +39,7 @@
 
 ## Monuments
 
-### Chicago Water Tower (scale: 47 m, compared with a bus)
+### Chicago Water Tower (scale: 47 m, compared with the Arc de Triomphe)
 
 | Statistic | Fact |
 |---|---|
@@ -49,7 +49,7 @@
 
 "Only public building" is deliberate: a few other buildings survived, so "only building" would be wrong.
 
-### Buckingham Fountain (scale: 46 m, the height of its jet)
+### Buckingham Fountain (scale: 46 m, the height of its jet, compared with a bus)
 
 | Statistic | Fact |
 |---|---|
@@ -59,7 +59,7 @@
 
 The scale compares the jet's height (150 ft), not the fountain's.
 
-### Willis Tower (scale: 442 m, compared with a bus)
+### Willis Tower (scale: 442 m, compared with the Empire State Building)
 
 | Statistic | Fact |
 |---|---|

@@ -40,7 +40,7 @@
 
 ## Monuments
 
-None of the three has a sourced height, so each shows altitude: about 25 m above sea level for the city (WorldAtlas; it does not say where it measured). Say if you want me to look harder for real heights.
+No height graphic for any of the three: their facts carry the page.
 
 ### Waterfront Clock Tower
 
@@ -86,4 +86,3 @@ The Mandela speech is well known but is not in the sources below; to be checked.
 - [Castle of Good Hope, Britannica Kids](https://kids.britannica.com/students/article/Castle-of-Good-Hope/606896): the five bastions
 - [Cape Town City Hall, Wikipedia](https://en.wikipedia.org/wiki/Cape_Town_City_Hall): Reid and Green, cornerstone 1900, opened 1905, Bath stone
 - [Cape Town City Hall, Cape Argus](https://capeargus.co.za/news/2025-09-18-cape-town-city-hall-a-landmark-of-culture-and-history/): 39-bell carillon
-- [Where is Cape Town, WorldAtlas](https://worldatlas.com/af/za/wc/where-is-cape-town.html): 25 m above sea level

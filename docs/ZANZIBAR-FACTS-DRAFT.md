@@ -38,7 +38,7 @@
 
 ## Monuments
 
-No sourced heights, so each shows altitude. Stone Town is on the shore; I found no sourced figure and used 1 m. Say if you want me to look harder, or show something else.
+No height graphic for any of the three: their facts carry the page.
 
 ### The Old Fort
 

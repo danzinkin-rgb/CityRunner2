@@ -8,7 +8,7 @@ Same structure as every city: 3 streets × 3 facts, 3 monuments × 3 facts. A fa
 
 - Facts are architectural and historical: dates, sizes, materials, what a place was used for.
 - The Koutoubia is an active mosque. The facts describe the minaret as a building.
-- The Mellah is described as the old Jewish quarter, with its founding date and its community's long history. Its later emigration is left out as not needed for a children's game; say if you want it in.
+- The Mellah is described as the old Jewish quarter, with its founding date, its community's long history and, at Dan's request, its emigration after 1948.
 
 ## Streets
 
@@ -33,12 +33,12 @@ Same structure as every city: 3 streets × 3 facts, 3 monuments × 3 facts. A fa
 | Statistic | Fact |
 |---|---|
 | **1558**, founded | The Mellah was founded around 1558, beside the royal palace, as the Jewish quarter of the city. |
-| **400 years**, a community | For four centuries it was home to one of the largest Jewish communities in Morocco. |
+| **400 years**, a community | For four centuries it was home to one of the largest Jewish communities in Morocco. In the decades after 1948 most of its families emigrated, the greater part to Israel, others to France and Canada. |
 | *(none)* | The Lazama Synagogue, built around a tiled courtyard in the heart of the quarter, still stands and is open to visitors. |
 
 ## Monuments
 
-### Koutoubia Minaret (scale: 77 m, compared with a bus)
+### Koutoubia Minaret (scale: 77 m, compared with Big Ben)
 
 | Statistic | Fact |
 |---|---|
@@ -48,7 +48,7 @@ Same structure as every city: 3 streets × 3 facts, 3 monuments × 3 facts. A fa
 
 Height: 77 m includes the 8 m spire (Wikipedia). Some guides give 68–69 m, which is the tower without the spire. The fact says "with its spire" so both are consistent.
 
-### Bab Agnaou (no sourced height: shows altitude, 466 m)
+### Bab Agnaou (no height graphic)
 
 | Statistic | Fact |
 |---|---|
@@ -58,7 +58,7 @@ Height: 77 m includes the 8 m spire (Wikipedia). Some guides give 68–69 m, whi
 
 Date: Wikipedia gives 1188 or 1190; Archnet credits an earlier gate on the site to Abd al-Mu'min in 1147. "Around 1188" follows the better-supported account.
 
-### Ben Youssef Madrasa (no sourced height: shows altitude, 466 m)
+### Ben Youssef Madrasa (no height graphic)
 
 | Statistic | Fact |
 |---|---|
@@ -81,9 +81,8 @@ Students: Wikipedia says up to 800; History Hit says up to 900. The draft uses W
 - [Ben Youssef Madrasa, Wikipedia](https://en.wikipedia.org/wiki/Ben_Youssef_Madrasa): 130 rooms, up to 800 students, largest in Morocco
 - [Médersa Ben Youssef, official site](https://www.medersabenyoussef.ma/en/histoire/): built 1564–65 by Abdallah al-Ghalib
 - [Ben Youssef Madrasa, History Hit](https://www.historyhit.com/locations/ben-youssef-madrasa/): closed 1960, reopened 1982
-- [Mellah of Marrakesh, Wikipedia](https://en.wikipedia.org/wiki/Mellah_of_Marrakesh): founded 1558, one of the largest Jewish communities
+- [Mellah of Marrakesh, Wikipedia](https://en.wikipedia.org/wiki/Mellah_of_Marrakesh): founded 1558, one of the largest Jewish communities, emigration after 1948 (most to Israel, some to France and Montreal)
 - [Schmitt (2008), the UNESCO concept of safeguarding intangible cultural heritage](https://www.uni-heidelberg.de/md/hcch/ueber_uns/schmitt_2008__-_the_unesco_concept_of_safeguarding_intangible_cultural_heritage.pdf): Jemaa el-Fnaa among the first Masterpieces, 2001
 - [Morocco's last storytellers, Qantara](https://qantara.de/en/article/al-halqa-marrakesh-moroccos-last-storytellers): the halqa
 - [Marrakech, Britannica](https://www.britannica.com/place/Marrakech): medina a World Heritage Site since 1985
 - [Markets in Marrakech, Frommers](https://www.frommers.com/destinations/marrakech/things-to-do/markets/): Souk Semmarine's trellis roof, the dyers' souk
-- [Marrakesh, Wikipedia](https://en.wikipedia.org/wiki/Marrakesh): elevation 466 m

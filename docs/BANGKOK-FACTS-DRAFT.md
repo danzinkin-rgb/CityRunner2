@@ -38,7 +38,7 @@
 
 ## Monuments
 
-### Giant Swing (scale: 21.15 m, compared with a bus)
+### Giant Swing (scale: 21 m, compared with a person)
 
 | Statistic | Fact |
 |---|---|
@@ -48,17 +48,17 @@
 
 Date: most sources say 1784; one says 1786. The ceremony stopped after fatal accidents; the fact leaves out the cause.
 
-### Wat Arun (scale: 66.8 m, compared with a bus)
+### Wat Arun (scale: 82 m, compared with Big Ben)
 
 | Statistic | Fact |
 |---|---|
-| **67 m**, at least | Its central tower, the prang, is at least 67 metres tall. Sources differ, and some say as much as 86. |
+| **82 m**, the central spire | Its central tower, the prang, rises about 82 metres. |
 | **1851**, completed | The central prang was finished in 1851, after building began under King Rama II and went on under King Rama III. |
 | *(none)* | Its tiers are covered in broken porcelain and seashells. Some of the china came to Bangkok as ballast in ships from China. |
 
-**Your call:** the height has no single sourced figure (Wikipedia gives 66.8 to 86 m; travel guides often say 82 m). The draft uses the lowest sourced figure and says so. The alternative is to show altitude instead, which for Bangkok is about 1.5 m above sea level.
+82 m is Dan's figure. Wikipedia gives 66.8 to 86 m; travel guides often say 82 m.
 
-### Chakri Maha Prasat (no sourced height: shows altitude, 1.5 m)
+### Chakri Maha Prasat (no height graphic)
 
 | Statistic | Fact |
 |---|---|
@@ -66,7 +66,7 @@ Date: most sources say 1784; one says 1786. The ceremony stopped after fatal acc
 | *(none)* | Its body is built in a European style, but its three roofs are traditional Thai, each crowned with a tall spire. |
 | **1782**, palace founded | The Grand Palace was begun in 1782, the year Bangkok became the capital. |
 
-The altitude display will read 1.5 m, which is true but may look odd. Say if you would rather find a sourced height for the hall.
+No height or altitude: the page shows the three facts alone.
 
 ## To check before approval
 
@@ -88,4 +88,3 @@ All three are 18th and 19th-century buildings: no copyright question. The Giant 
 - [Khao San Road's evolution, CNN](https://edition.cnn.com/travel/article/bangkok-khao-san-road-evolution): the rice market
 - [Khao San Road history, The Thailand Life](https://www.thethailandlife.com/khao-san-road-history): about 410 m, milled rice, barges on the Chao Phraya
 - [Khlong, Wikipedia](https://en.wikipedia.org/wiki/Khlong): Venice of the East, 1,682 canals and 2,604 km (2019), many filled in
-- [Bangkok, Wikipedia](https://en.wikipedia.org/wiki/Bangkok): elevation 1.5 m

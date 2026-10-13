@@ -44,7 +44,7 @@ The lions are not modelled in the game (they are sculptures); the facts only men
 
 ## Monuments
 
-No sourced heights, so each shows altitude: Havana stands 59 m above sea level (Wikipedia).
+No height graphic for any of the three: their facts carry the page.
 
 ### Castillo de la Real Fuerza
 
@@ -84,7 +84,7 @@ All three monuments are Spanish colonial work of the 1500s to 1700s. The Prado's
 - [Malecón, Havana, Wikipedia](https://en.wikipedia.org/wiki/Malec%C3%B3n,_Havana): begun 1901
 - [El Malecón de La Habana, Cubanet](https://www.cubanet.org/el-malecon-de-la-habana-hito-constructivo-e-historico/): 7.3 km, seven stages, finished 1958
 - [Obispo Street, Wikipedia](https://en.wikipedia.org/wiki/Obispo_Street_(Havana)): 16th century, names, Pi Margall 1905 to 1936
-- [Havana, Wikipedia](https://en.wikipedia.org/wiki/Havana): elevation 59 m, UNESCO 1982
+- [Havana, Wikipedia](https://en.wikipedia.org/wiki/Havana): UNESCO 1982
 - [Paseo del Prado, Havana, Wikipedia](https://en.wikipedia.org/wiki/Paseo_del_Prado,_Havana): 1772, benches, lions
 - [An historic walk down Havana's Paseo del Prado, NYPL](https://live-legacy-admin.nypl.org/blog/2018/09/19/walk-historic-paseo-del-prado-havana-cuba): lions 1928, from cannons
 - [Castillo de la Real Fuerza, Wikipedia](https://en.wikipedia.org/wiki/Castillo_de_la_Real_Fuerza): 1577, the Giraldilla, the copy

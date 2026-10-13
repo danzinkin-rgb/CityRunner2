@@ -42,7 +42,7 @@ Width: most sources give 140 m; Guinness gives about 110 m and has questioned th
 
 ## Monuments
 
-### Casa Rosada (no sourced height: shows altitude, 25 m)
+### Casa Rosada (no height graphic)
 
 | Statistic | Fact |
 |---|---|
@@ -50,7 +50,7 @@ Width: most sources give 140 m; Guinness gives about 110 m and has questioned th
 | *(none)* | It is the office of the President of Argentina. |
 | *(none)* | Its balcony looks out over the Plaza de Mayo, the square at the heart of the city. |
 
-### Teatro Colón (no sourced height: shows altitude, 25 m)
+### Teatro Colón (no height graphic)
 
 | Statistic | Fact |
 |---|---|
@@ -58,7 +58,7 @@ Width: most sources give 140 m; Guinness gives about 110 m and has questioned th
 | *(none)* | It took nearly twenty years to build, and three architects worked on it in turn. |
 | *(none)* | Its sound is counted among the best of any opera house in the world. |
 
-### Palace of the Congress (scale: 80 m, compared with a bus)
+### Palace of the Congress (scale: 80 m, compared with the Pantheon, dome to dome)
 
 | Statistic | Fact |
 |---|---|
@@ -85,4 +85,3 @@ Argentina: life + 70. Casa Rosada: Francesco Tamburini (d. 1891), Carl Kihlberg 
 - [Henrik Åberg, Thomas Kellner](https://thomaskellner.com/info/architects/aberg-henrik.html): 1841–1922
 - [Teatro Colón, Wikipedia](https://en.wikipedia.org/wiki/Teatro_Col%C3%B3n): 1908, Aida, Tamburini, Meano, Dormal
 - [Palace of the Argentine National Congress, Wikipedia](https://en.wikipedia.org/wiki/Palace_of_the_Argentine_National_Congress): 80 m, 1906, finished 1946, Meano
-- [Buenos Aires, Wikipedia](https://en.wikipedia.org/wiki/Buenos_Aires): elevation 25 m

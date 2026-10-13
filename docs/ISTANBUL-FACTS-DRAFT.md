@@ -38,7 +38,7 @@
 
 ## Monuments
 
-### Galata Tower (scale: 66.9 m, compared with a bus)
+### Galata Tower (scale: 66.9 m, compared with the Colosseum)
 
 | Statistic | Fact |
 |---|---|
@@ -48,7 +48,7 @@
 
 Height: 66.9 m with the ornament on top, 62.6 m without; some sources say nearly 70 m.
 
-### Blue Mosque (no sourced height: shows altitude, 39 m)
+### Blue Mosque (no height graphic)
 
 | Statistic | Fact |
 |---|---|
@@ -56,9 +56,7 @@ Height: 66.9 m with the ornament on top, 62.6 m without; some sources say nearly
 | **6 minarets**, around it | It has six minarets, which was very unusual when it was built. |
 | **20,000 tiles**, inside | More than 20,000 hand-painted tiles from İznik line its walls inside, many of them blue: that is how it got its nickname. |
 
-Istanbul's altitude (39 m) is from WorldAtlas; other references give up to 100 m.
-
-### Hagia Sophia (scale: 55 m, compared with a bus)
+### Hagia Sophia (scale: 55 m, compared with the Pantheon, dome to dome)
 
 | Statistic | Fact |
 |---|---|
@@ -86,4 +84,3 @@ Hagia Sophia (537), the Blue Mosque (1609–16) and the Galata Tower (1348) are 
 - [Blue Mosque, Wikipedia](https://en.wikipedia.org/wiki/Blue_Mosque,_Istanbul): 1609–1616, six minarets, İznik tiles
 - [Hagia Sophia, ASCE](https://www.asce.org/about-civil-engineering/history-and-heritage/historic-landmarks/hagia-sophia): the dome
 - [Hagia Sophia, Columbia (Mapping Gothic)](https://mcid.mcah.columbia.edu/work/w0000519?page=%2C1): height 55 m
-- [Where is Istanbul, WorldAtlas](https://worldatlas.com/eu/tr/34/where-is-istanbul.html): 39 m

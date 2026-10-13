@@ -145,7 +145,7 @@ export const STREET_FACTS = {
     { street: 'The Mellah', tag: 'The old Jewish quarter',
       facts: [
         { big: '1558', label: 'founded', text: 'The Mellah was founded around 1558, beside the royal palace, as the Jewish quarter of the city.' },
-        { big: '400', unit: 'years', label: 'a community', text: 'For four centuries it was home to one of the largest Jewish communities in Morocco.' },
+        { big: '400', unit: 'years', label: 'a community', text: 'For four centuries it was home to one of the largest Jewish communities in Morocco. In the decades after 1948 most of its families emigrated, the greater part to Israel, others to France and Canada.' },
         { text: 'The Lazama Synagogue, built around a tiled courtyard in the heart of the quarter, still stands and is open to visitors.' },
       ] },
   ],
@@ -437,16 +437,19 @@ export const STREET_FACTS = {
   ],
 };
 
-// scale: real height in metres, for the comparison graphic.
-// compare: a familiar object to measure against.
+// scale: real height in metres, for the comparison graphic. Only where the
+// height is worth showing; a monument without one shows its facts alone.
+// compare: what to measure against: 'bus', 'person', or another monument
+// with a scale and a silhouette in src/factviz.js (bigben, eiffel, empire,
+// arc, pantheon, colosseum), so heights read against icons the player knows.
 export const MONUMENT_FACTS = {
-  empire: { scale: 381, compare: 'bus',
+  empire: { scale: 381, compare: 'eiffel',
     facts: [
       { big: '410', unit: 'days', label: 'to build', text: 'Raised in just 410 days during the Great Depression, opening in 1931.' },
       { big: '381', unit: 'm', label: 'to the roof', text: 'At 102 storeys it was the tallest building in the world for nearly forty years.' },
       { big: '25', unit: 'strikes', label: 'of lightning a year', text: 'The tower is struck by lightning around 25 times every year.' },
     ] },
-  chrysler: { scale: 319, compare: 'bus',
+  chrysler: { scale: 319, compare: 'empire',
     facts: [
       { big: '90', unit: 'minutes', label: 'to raise the spire', text: 'The 56m spire was assembled in secret inside the building, then raised in 90 minutes to snatch the height record.' },
       { big: '1930', label: 'completed', text: 'Its stainless steel crown is arranged in radiating sunburst arches.' },
@@ -458,13 +461,13 @@ export const MONUMENT_FACTS = {
       { big: '21', unit: 'elephants', label: 'proved it safe', text: 'In 1884 P.T. Barnum marched 21 elephants across to prove the bridge would hold.' },
       { text: 'It was the first suspension bridge anywhere to use steel wire cables.' },
     ] },
-  eiffel: { scale: 330, compare: 'bus',
+  eiffel: { scale: 330, compare: 'empire',
     facts: [
       { big: '2.5M', unit: 'rivets', label: 'hold it together', text: 'Its 18,038 iron pieces are joined by two and a half million rivets.' },
       { big: '15', unit: 'cm', label: 'taller in summer', text: 'Heat expands the iron — the tower grows measurably on a hot day.' },
       { text: 'Built for the 1889 World\'s Fair, and meant to be dismantled after twenty years.' },
     ] },
-  arc: { scale: 50, compare: 'bus',
+  arc: { scale: 50, compare: 'colosseum',
     facts: [
       { big: '660', unit: 'names', label: 'engraved on it', text: 'The names of 660 of Napoleon\'s generals are carved into its walls.' },
       { big: '30', unit: 'years', label: 'to complete', text: 'Ordered in 1806, it was only finished in 1836 — long after Napoleon\'s death.' },
@@ -482,19 +485,19 @@ export const MONUMENT_FACTS = {
       { big: '96', unit: 'm', label: 'tall', text: 'Completed in 1859, it leans very slightly — about a quarter of a degree.' },
       { text: 'The clock is fine-tuned by stacking old penny coins on its pendulum.' },
     ] },
-  towerbridge: { scale: 65, compare: 'bus',
+  towerbridge: { scale: 65, compare: 'bigben',
     facts: [
       { big: '800', unit: 'lifts', label: 'a year', text: 'The bascules still raise around 800 times a year to let ships pass.' },
       { big: '1894', label: 'opened', text: 'The original lifting machinery ran on steam-powered hydraulics.' },
       { text: 'Tourists routinely confuse it with London Bridge — the far plainer bridge next door.' },
     ] },
-  eye: { scale: 135, compare: 'bus',
+  eye: { scale: 135, compare: 'bigben',
     facts: [
       { big: '32', unit: 'capsules', label: 'one per borough', text: 'Numbered 1 to 33 — there is no capsule 13.' },
       { big: '0.9', unit: 'km/h', label: 'rotation speed', text: 'It turns so slowly that it usually never stops for passengers to board.' },
       { text: 'At 135m it was the tallest observation wheel in the world when it opened in 2000.' },
     ] },
-  colosseum: { scale: 48, compare: 'bus',
+  colosseum: { scale: 48, compare: 'arc',
     facts: [
       { big: '50k', unit: 'spectators', label: 'capacity', text: 'Completed in AD 80, it seated around fifty thousand people.' },
       { big: '80', unit: 'entrances', label: 'to clear the crowd', text: 'Eighty arched entrances let the whole arena empty in minutes.' },
@@ -506,19 +509,19 @@ export const MONUMENT_FACTS = {
       { big: '19', unit: 'BC', label: 'the aqueduct feeding it', text: 'The fountain still runs on the Aqua Virgo, built two thousand years ago.' },
       { text: 'One coin means you will return to Rome; two, romance; three, marriage.' },
     ] },
-  pantheon: { scale: 43, compare: 'bus',
+  pantheon: { scale: 43, compare: 'colosseum',
     facts: [
       { big: '1,900', unit: 'years', label: 'in continuous use', text: 'Rebuilt by Hadrian around AD 126 and never abandoned since.' },
       { big: '43', unit: 'm', label: 'unreinforced dome', text: 'Still the largest unreinforced concrete dome ever built, anywhere.' },
       { text: 'Its only light is the 8.2m oculus — and the floor has drains for the rain.' },
     ] },
-  ggbridge: { scale: 227, compare: 'bus',
+  ggbridge: { scale: 227, compare: 'eiffel',
     facts: [
       { big: '227', unit: 'm', label: 'tower height', text: 'Each of its two towers rises 227 m above the water.' },
       { big: '1937', label: 'opened', text: 'When it opened in 1937 it was the longest suspension bridge in the world.' },
       { text: 'Painters work on it all year round to protect the steel from the salty sea air. The colour is called International Orange.' },
     ] },
-  coit: { scale: 64, compare: 'bus',
+  coit: { scale: 64, compare: 'bigben',
     facts: [
       { big: '1933', label: 'completed', text: 'Coit Tower was finished in 1933, paid for with money left to the city by Lillie Hitchcock Coit.' },
       { big: '64', unit: 'm', label: 'tall', text: 'The tower is 64 m tall and stands on top of Telegraph Hill.' },
@@ -557,22 +560,20 @@ export const MONUMENT_FACTS = {
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
     ] },
   // Buenos Aires: DRAFT, awaiting Dan's sign-off (docs/BUENOS-AIRES-FACTS-DRAFT.md).
-  // altitude: Buenos Aires stands 25 m above sea level
-  // (en.wikipedia.org/wiki/Buenos_Aires). No sourced heights for the first two.
-  casarosada: { altitude: 25,
+  casarosada: {
     facts: [
       { big: '1898', label: 'completed', text: 'The palace took its present form in 1898, when two older buildings were joined by a great archway.' },
       { text: 'It is the office of the President of Argentina.' },
       { text: 'Its balcony looks out over the Plaza de Mayo, the square at the heart of the city.' },
     ] },
-  colon: { altitude: 25,
+  colon: {
     facts: [
       { big: '1908', label: 'opened', text: "The opera house opened on 25 May 1908, with Verdi's Aida." },
       { text: 'It took nearly twenty years to build, and three architects worked on it in turn.' },
       { text: 'Its sound is counted among the best of any opera house in the world.' },
     ] },
   // dome 80 m (en.wikipedia.org/wiki/Palace_of_the_Argentine_National_Congress)
-  congreso: { scale: 80, compare: 'bus',
+  congreso: { scale: 80, compare: 'pantheon',
     facts: [
       { big: '80', unit: 'm', label: 'to the dome', text: 'Its green copper dome rises 80 metres.' },
       { big: '1906', label: 'opened', text: 'The palace opened in 1906, although the work was not fully finished until 1946.' },
@@ -580,7 +581,7 @@ export const MONUMENT_FACTS = {
     ] },
   // Chicago: DRAFT, awaiting Dan's sign-off (docs/CHICAGO-FACTS-DRAFT.md).
   // 154 ft, 47 m (en.wikipedia.org/wiki/Chicago_Water_Tower)
-  watertower: { scale: 47, compare: 'bus',
+  watertower: { scale: 47, compare: 'arc',
     facts: [
       { big: '1869', label: 'built', text: 'The Water Tower was finished in 1869 to hide a tall iron pipe that helped pump water to the city.' },
       { big: '1871', label: 'the Great Fire', text: 'It was the only public building in the burned area to survive the Great Chicago Fire of 1871.' },
@@ -594,7 +595,7 @@ export const MONUMENT_FACTS = {
       { text: 'The water show runs for 20 minutes every hour, from spring to autumn.' },
     ] },
   // 442 m to the roof (en.wikipedia.org/wiki/Willis_Tower)
-  willis: { scale: 442, compare: 'bus',
+  willis: { scale: 442, compare: 'empire',
     facts: [
       { big: '442', unit: 'm', label: 'tall', text: 'The tower rises 442 metres to its roof, more with its antennas.' },
       { big: '1973', label: 'opened', text: 'When it opened in 1973 it was the tallest building in the world, and it held that title for nearly 25 years.' },
@@ -602,43 +603,39 @@ export const MONUMENT_FACTS = {
     ] },
   // Istanbul: DRAFT, awaiting Dan's sign-off (docs/ISTANBUL-FACTS-DRAFT.md).
   // 66.9 m to the tip of its cap (en.wikipedia.org/wiki/Galata_Tower)
-  galata: { scale: 66.9, compare: 'bus',
+  galata: { scale: 66.9, compare: 'colosseum',
     facts: [
       { big: '67', unit: 'm', label: 'to the tip', text: 'The tower stands about 67 metres to the tip of its cap.' },
       { big: '1348', label: 'built', text: 'Genoese merchants built it in 1348, and called it the Tower of Christ.' },
       { text: 'A storm blew its cap off in 1875. The pointed cap was put back when the tower was restored in the 1960s.' },
     ] },
-  // altitude: Istanbul stands about 39 m above sea level
-  // (worldatlas.com/eu/tr/34/where-is-istanbul.html). No sourced height.
-  bluemosque: { altitude: 39,
+  bluemosque: {
     facts: [
       { big: '1616', label: 'completed', text: 'Built from 1609 to 1616 for Sultan Ahmed I, it is still a working mosque.' },
       { big: '6', unit: 'minarets', label: 'around it', text: 'It has six minarets, which was very unusual when it was built.' },
       { big: '20,000', unit: 'tiles', label: 'inside', text: 'More than 20,000 hand-painted tiles from İznik line its walls inside, many of them blue: that is how it got its nickname.' },
     ] },
   // 55 m to the top of the dome (en.wikipedia.org/wiki/Hagia_Sophia)
-  hagiasophia: { scale: 55, compare: 'bus',
+  hagiasophia: { scale: 55, compare: 'pantheon',
     facts: [
       { big: '537', label: 'completed', text: 'It was completed in 537, after less than six years of building.' },
       { big: '55', unit: 'm', label: 'to the dome', text: 'Its great dome rises about 55 metres above the floor.' },
       { text: 'Built as a cathedral, it became a mosque in 1453, a museum in 1934, and a mosque again in 2020.' },
     ] },
   // Havana: DRAFT, awaiting Dan's sign-off (docs/HAVANA-FACTS-DRAFT.md).
-  // altitude: Havana stands 59 m above sea level (en.wikipedia.org/wiki/
-  // Havana). No sourced heights for the three.
-  realfuerza: { altitude: 59,
+  realfuerza: {
     facts: [
       { big: '1577', label: 'completed', text: 'Completed in 1577, it is one of the oldest stone forts in the Americas.' },
       { text: 'The bronze weathervane on its tower, La Giraldilla, was cast in the 1630s and has become a symbol of Havana.' },
       { text: 'The Giraldilla on the tower today is a copy; the original is kept safe inside.' },
     ] },
-  habanacathedral: { altitude: 59,
+  habanacathedral: {
     facts: [
       { big: '1777', label: 'completed', text: 'Begun by the Jesuits in 1748, it was finished in 1777.' },
       { text: 'Its two bell towers are different widths, so that rainwater could drain from the square beside it.' },
       { big: '1789', label: 'made a cathedral', text: 'It became Havana\'s cathedral in 1789.' },
     ] },
-  morro: { altitude: 59,
+  morro: {
     facts: [
       { big: '1589', label: 'begun', text: 'Work began in 1589, to a design by the Italian engineer Battista Antonelli.' },
       { text: 'In times of danger, an iron chain was stretched across the harbour mouth to the fort on the other side.' },
@@ -646,128 +643,116 @@ export const MONUMENT_FACTS = {
     ] },
   // Beijing: DRAFT, awaiting Dan's sign-off (docs/BEIJING-FACTS-DRAFT.md).
   // 46.7 m (en.wikipedia.org/wiki/Drum_Tower_and_Bell_Tower_of_Beijing)
-  drumtower: { scale: 46.7, compare: 'bus',
+  drumtower: { scale: 46.7, compare: 'arc',
     facts: [
       { big: '47', unit: 'm', label: 'tall', text: 'The Drum Tower stands about 47 metres tall.' },
       { big: '1272', label: 'first built', text: 'It was first built in 1272, and rebuilt on this spot in 1420.' },
       { text: 'Drums were beaten here to tell the city the time. It once held 25 drums; one great drum is left.' },
     ] },
   // 38 m (en.wikipedia.org/wiki/Temple_of_Heaven)
-  qiniandian: { scale: 38, compare: 'bus',
+  qiniandian: { scale: 38, compare: 'pantheon',
     facts: [
       { big: '38', unit: 'm', label: 'tall', text: 'The hall is round, built of wood, and 38 metres tall.' },
       { big: '1889', label: 'struck by lightning', text: 'First built in 1420, it burned after a lightning strike in 1889 and was rebuilt to the same design.' },
       { text: 'Emperors came here every year to pray for a good harvest.' },
     ] },
   // about 35 m with its marble terrace (en.wikipedia.org/wiki/Hall_of_Supreme_Harmony)
-  taihedian: { scale: 35, compare: 'bus',
+  taihedian: { scale: 35, compare: 'colosseum',
     facts: [
       { big: '35', unit: 'm', label: 'tall', text: 'With its marble terrace, the hall rises about 35 metres.' },
       { big: '1695', label: 'rebuilt', text: 'First built in the 1420s, the hall standing today was rebuilt in 1695.' },
       { text: 'It is one of the largest wooden buildings in China. Emperors held their grandest ceremonies here.' },
     ] },
   // Zanzibar: DRAFT, awaiting Dan's sign-off (docs/ZANZIBAR-FACTS-DRAFT.md).
-  // No sourced heights: altitude, Stone Town being on the shore, at sea
-  // level (1 m shown).
-  oldfort: { altitude: 1,
+  oldfort: {
     facts: [
       { big: '1699', label: 'built by', text: 'The fort was built by about 1699, after Oman took the island from Portugal, on the site of a Portuguese church.' },
       { text: 'It has served as a garrison, a prison and a railway terminus.' },
       { text: "Today it is a cultural centre, and home to the Zanzibar International Film Festival." },
     ] },
-  christchurch: { altitude: 1,
+  christchurch: {
     facts: [
       { big: '1873', label: 'slave market closed', text: 'The cathedral stands where the island\'s slave market was, closed in 1873. Its first stone was laid that Christmas.' },
       { text: 'Bishop Edward Steere, who campaigned against slavery, led the building, and designed its unusual barrel-vaulted roof.' },
       { text: 'Its altar is said to stand where the whipping post was, so that the place of suffering became a place of worship.' },
     ] },
-  wonders: { altitude: 1,
+  wonders: {
     facts: [
       { big: '1883', label: 'built', text: 'Sultan Barghash built it in 1883 as a palace for ceremonies.' },
       { text: 'It was the first building in Zanzibar with electricity, and the first in East Africa with a lift: that is how it got its name.' },
       { text: 'Part of it collapsed in 2020, and it is being restored.' },
     ] },
   // Samarkand: DRAFT, awaiting Dan's sign-off (docs/SAMARKAND-FACTS-DRAFT.md).
-  // altitude: Samarkand stands 702 m above sea level
-  // (en.wikipedia.org/wiki/Samarkand). No sourced heights for the three.
-  observatory: { altitude: 702,
+  observatory: {
     facts: [
       { big: '1420', label: 'founded', text: "Ulugh Beg, Timur's grandson and an astronomer, built his observatory here around 1420." },
       { big: '40', unit: 'm', label: 'sextant radius', text: 'Its great sextant, a curved track of marble set into the hill, had a radius of about 40 metres.' },
       { big: '1908', label: 'found again', text: 'The observatory was lost for centuries, until an archaeologist found its remains in 1908.' },
     ] },
-  gurlamir: { altitude: 702,
+  gurlamir: {
     facts: [
       { big: '1404', label: 'completed', text: 'The mausoleum was begun in 1403 and finished in 1404. Timur himself was later buried here.' },
       { text: "Its name means 'tomb of the king' in Persian." },
       { big: '64', unit: 'ribs', label: 'on its dome', text: 'Its turquoise melon dome is shaped with 64 ribs.' },
     ] },
-  registan: { altitude: 702,
+  registan: {
     facts: [
       { big: '1420', label: 'first madrasa', text: "Ulugh Beg's madrasa, on the left, was built from 1417 to 1420, with fifty rooms for its students." },
       { text: "Sher-Dor's gate shows two tigers with rising suns on their backs, rare in buildings of its kind for showing living creatures." },
       { big: '1660', label: 'Tilya-Kori finished', text: "Tilya-Kori, at the back, was built from 1646 to 1660. Its name means 'gilded'." },
     ] },
   // Seoul: DRAFT, awaiting Dan's sign-off (docs/SEOUL-FACTS-DRAFT.md).
-  // altitude: Seoul stands 38 m above sea level (en.wikipedia.org/wiki/Seoul).
-  // No sourced heights for the three buildings.
-  heunginjimun: { altitude: 38,
+  heunginjimun: {
     facts: [
       { big: '1869', label: 'rebuilt', text: 'First built in 1398, the gate that stands today was rebuilt in 1869.' },
       { text: "It is the only one of Seoul's great city gates guarded by an ongseong, a half-ring of wall built out in front of it." },
       { big: '1962', label: 'Treasure No. 1', text: 'In 1962 South Korea listed it as Treasure No. 1.' },
     ] },
-  gyeonghoeru: { altitude: 38,
+  gyeonghoeru: {
     facts: [
       { big: '48', unit: 'pillars', label: 'of stone', text: 'The pavilion stands on 48 stone pillars: square ones around the outside, round ones within.' },
       { big: '1867', label: 'rebuilt', text: 'First built in 1412, it burned in 1592, leaving only its stone base, and was rebuilt in 1867.' },
       { text: 'Kings held banquets here and welcomed foreign envoys, out on its island in the palace pond.' },
     ] },
-  geunjeongjeon: { altitude: 38,
+  geunjeongjeon: {
     facts: [
       { big: '1867', label: 'rebuilt', text: 'The throne hall was first built in 1395, burned in 1592 and was rebuilt in 1867.' },
       { text: 'Stone animals, among them the twelve animals of the zodiac, guard the balustrades of its terraces.' },
       { text: 'Rows of stone markers in the courtyard showed each official where to stand, by rank.' },
     ] },
   // Hanoi: DRAFT, awaiting Dan's sign-off (docs/HANOI-FACTS-DRAFT.md).
-  // altitude: Hanoi's urban core lies about 4 to 11 m above sea level (a 1988
-  // survey, ircwash.org); 10 m used. No sourced heights for the tower or the
-  // temple.
-  turtletower: { altitude: 10,
+  turtletower: {
     facts: [
       { big: '1886', label: 'built', text: 'The little tower was built on its island in the lake in 1886.' },
       { text: "It is named for the golden turtle of the lake's legend." },
       { text: 'Visitors cannot go out to it: everyone sees it from the shore.' },
     ] },
-  // 43.5 m (en.wikipedia.org/wiki/Long_Biên_Bridge)
-  longbien: { scale: 43.5, compare: 'bus',
+  longbien: {
     facts: [
       { big: '1903', label: 'opened', text: 'Designed by the Paris firm Daydé & Pillé, it opened in 1903 as the first steel bridge across the Red River.' },
       { big: '2,290', unit: 'm', label: 'long', text: 'It is 2,290 metres long and crosses the river on 19 spans.' },
       { text: 'It was first named after Paul Doumer, the French governor-general, and was renamed Long Bien after 1954.' },
     ] },
-  vanmieu: { altitude: 10,
+  vanmieu: {
     facts: [
       { big: '1070', label: 'founded', text: "The temple was founded in 1070, and in 1076 Vietnam's first national university opened beside it." },
       { big: '82', unit: 'tablets', label: 'on stone turtles', text: 'Eighty-two stone tablets, each carried on the back of a stone turtle, record the scholars who passed the royal exams.' },
       { big: '1805', label: 'the pavilion', text: 'Its Constellation of Literature Pavilion was built in 1805, and it has become a symbol of Hanoi.' },
     ] },
   // Cape Town: DRAFT, awaiting Dan's sign-off (docs/CAPE-TOWN-FACTS-DRAFT.md).
-  // No sourced heights: altitude, the city centre at about 25 m above sea
-  // level (worldatlas.com/af/za/wc/where-is-cape-town.html).
-  clocktower: { altitude: 25,
+  clocktower: {
     facts: [
       { big: '1882', label: 'built', text: "Finished in 1882, the tower was the harbour's first Port Captain's office." },
       { text: 'Upstairs, mirrors let the Port Captain watch the whole harbour. Downstairs, a tide gauge showed ships how high the water was.' },
       { text: 'When it was restored in the 1990s, layers of grey paint were stripped off to find its original red.' },
     ] },
-  goodhope: { altitude: 25,
+  goodhope: {
     facts: [
       { big: '1679', label: 'completed', text: 'Built between 1666 and 1679, it is the oldest colonial building in South Africa.' },
       { big: '5', unit: 'bastions', label: 'one at each point', text: "It is shaped like a five-pointed star, with a bastion at each point, named after the titles of the Dutch Prince of Orange." },
       { text: 'It replaced an earlier square fort built in 1652 by Jan van Riebeeck, who founded the settlement.' },
     ] },
-  cityhall: { altitude: 25,
+  cityhall: {
     facts: [
       { big: '1905', label: 'opened', text: 'Its cornerstone was laid in 1900, and the hall opened in 1905.' },
       { big: '39', unit: 'bells', label: 'in its tower', text: 'Its clock tower holds a carillon of 39 bells, one of the largest in South Africa.' },
@@ -775,46 +760,42 @@ export const MONUMENT_FACTS = {
     ] },
   // Bangkok: DRAFT, awaiting Dan's sign-off (docs/BANGKOK-FACTS-DRAFT.md).
   // 21.15 m (en.wikipedia.org/wiki/Giant_Swing)
-  giantswing: { scale: 21.15, compare: 'bus',
+  giantswing: { scale: 21.15, compare: 'person',
     facts: [
       { big: '21', unit: 'm', label: 'tall', text: 'The Giant Swing stands 21 metres tall, in front of the Devasathan shrine.' },
       { big: '1784', label: 'first built', text: 'It was first built in 1784. Its great teak pillars were replaced, to the same design, in 2007.' },
       { text: 'A swinging ceremony was once held here every year. It stopped in 1935.' },
     ] },
-  // Sources give 66.8 to 86 m for the central prang (en.wikipedia.org/
-  // wiki/Wat_Arun); the scale uses the lowest, and the fact says "at least".
-  watarun: { scale: 66.8, compare: 'bus',
+  // 82 m for the central prang: the figure Dan chose; sources give 66.8 to
+  // 86 m (en.wikipedia.org/wiki/Wat_Arun).
+  watarun: { scale: 82, compare: 'bigben',
     facts: [
-      { big: '67', unit: 'm', label: 'at least', text: 'Its central tower, the prang, is at least 67 metres tall. Sources differ, and some say as much as 86.' },
+      { big: '82', unit: 'm', label: 'the central spire', text: 'Its central tower, the prang, rises about 82 metres.' },
       { big: '1851', label: 'completed', text: 'The central prang was finished in 1851, after building began under King Rama II and went on under King Rama III.' },
       { text: 'Its tiers are covered in broken porcelain and seashells. Some of the china came to Bangkok as ballast in ships from China.' },
     ] },
-  // altitude: Bangkok stands about 1.5 m above sea level
-  // (en.wikipedia.org/wiki/Bangkok). No sourced height for the hall.
-  chakri: { altitude: 1.5,
+  chakri: {
     facts: [
       { big: '1882', label: 'completed', text: 'The throne hall was finished in 1882, a hundred years after the Grand Palace was founded.' },
       { text: 'Its body is built in a European style, but its three roofs are traditional Thai, each crowned with a tall spire.' },
       { big: '1782', label: 'palace founded', text: 'The Grand Palace was begun in 1782, the year Bangkok became the capital.' },
     ] },
   // Delhi: DRAFT, awaiting Dan's sign-off (docs/DELHI-FACTS-DRAFT.md).
-  // altitude: Delhi stands about 216 m above sea level
-  // (en.wikipedia.org/wiki/Delhi). No sourced height for the Lahori Gate.
-  lahori: { altitude: 216,
+  lahori: {
     facts: [
       { big: '1648', label: 'completed', text: "Emperor Shah Jahan's fort took about nine years to build, from 1639 to 1648." },
       { big: '2.4', unit: 'km', label: 'of walls', text: 'Its red sandstone walls run for about 2.4 kilometres, and give the Red Fort its name.' },
       { text: 'The main entrance, the Lahori Gate, is named after the city of Lahore, which it faces.' },
     ] },
   // 72.5 m (en.wikipedia.org/wiki/Qutb_Minar)
-  qutub: { scale: 72.5, compare: 'bus',
+  qutub: { scale: 72.5, compare: 'bigben',
     facts: [
       { big: '72.5', unit: 'm', label: 'tall', text: 'At 72.5 metres, it is the tallest minaret in the world built of brick.' },
       { big: '1199', label: 'begun', text: 'Qutb ud-Din Aibak began the tower in 1199, and his successor Iltutmish added three more storeys.' },
       { text: 'It narrows from 14.3 metres across at the base to just 2.7 metres at the top.' },
     ] },
   // 42 m (britannica.com/topic/India-Gate)
-  indiagate: { scale: 42, compare: 'bus',
+  indiagate: { scale: 42, compare: 'arc',
     facts: [
       { big: '42', unit: 'm', label: 'tall', text: 'India Gate stands 42 metres high at the eastern end of Kartavya Path.' },
       { big: '1931', label: 'unveiled', text: 'Designed by the architect Edwin Lutyens, it was begun in 1921 and unveiled in 1931.' },
@@ -822,34 +803,32 @@ export const MONUMENT_FACTS = {
     ] },
   // Marrakech: DRAFT, awaiting Dan's sign-off (docs/MARRAKECH-FACTS-DRAFT.md).
   // 77 m including the spire (en.wikipedia.org/wiki/Kutubiyya_Mosque).
-  koutoubia: { scale: 77, compare: 'bus',
+  koutoubia: { scale: 77, compare: 'bigben',
     facts: [
       { big: '77', unit: 'm', label: 'tall, with its spire', text: 'The minaret rises 77 metres, spire and all, and can be seen from almost anywhere in the old city.' },
       { big: '1195', label: 'finished around', text: 'It was completed around 1195 under Caliph Yaqub al-Mansur, and it has stood almost unchanged ever since.' },
       { text: "Its name means the booksellers' mosque: booksellers once kept their stalls all around it." },
     ] },
-  // altitude: Marrakech stands about 466 m above sea level
-  // (en.wikipedia.org/wiki/Marrakesh). No sourced height for the gate.
-  babagnaou: { altitude: 466,
+  babagnaou: {
     facts: [
       { big: '1188', label: 'built around', text: "Caliph Yaqub al-Mansur built the gate around 1188 as the grand entrance to his royal kasbah." },
       { text: "Most of the city's gates are rammed red earth, but Bab Agnaou is cut stone, carved with an inscription and flowers around its horseshoe arch." },
       { text: 'It once had two towers and a covered passage behind it. Those are gone, and the carved front is what still stands.' },
     ] },
-  benyoussef: { altitude: 466,
+  benyoussef: {
     facts: [
       { big: '1565', label: 'rebuilt', text: 'Sultan Abdallah al-Ghalib rebuilt the school in 1564 and 1565, on the site of a 14th-century one.' },
       { big: '130', unit: 'rooms', label: 'for students', text: 'Its 130 small rooms housed up to 800 students, making it the largest madrasa in Morocco.' },
       { text: 'It closed as a school in 1960 and opened to visitors in 1982. Its courtyard is covered in carved cedar, carved plaster and coloured tile.' },
     ] },
   // Mexico City: approved by Dan, 27 September 2026 (docs/cities/mexico-city.md §3).
-  templomayor: { scale: 45, compare: 'bus',
+  templomayor: { scale: 45, compare: 'colosseum',
     facts: [
       { big: '1325', label: 'construction began', text: 'Building started here soon after 1325, when the Mexica people founded their city on an island in a lake.' },
       { big: '7', unit: 'layers', label: 'built again and again', text: 'Each ruler expanded the temple by building a new layer over the old one — archaeologists found seven layers stacked inside.' },
       { text: 'It was rediscovered by accident in 1978, when electrical workers dug up a huge carved stone disc nearby.' },
     ] },
-  catedral: { scale: 67, compare: 'bus',
+  catedral: { scale: 67, compare: 'pantheon',
     facts: [
       { big: '250', unit: 'years', label: 'to build', text: 'Building went on for two and a half centuries, from 1573 to 1813, so it mixes styles from early Baroque to Neoclassical.' },
       { big: '25', unit: 'bells', label: 'in its towers', text: 'Twenty-five bells hang in the twin towers — the biggest alone weighs about as much as two elephants.' },

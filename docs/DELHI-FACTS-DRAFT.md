@@ -39,7 +39,7 @@
 
 ## Monuments
 
-### Red Fort, the Lahori Gate (no sourced height: shows altitude, 216 m)
+### Red Fort, the Lahori Gate (no height graphic)
 
 | Statistic | Fact |
 |---|---|
@@ -49,7 +49,7 @@
 
 Start date: sources give 1638 or 1639; "about nine years" covers both.
 
-### Qutub Minar (scale: 72.5 m, compared with a bus)
+### Qutub Minar (scale: 72.5 m, compared with Big Ben)
 
 | Statistic | Fact |
 |---|---|
@@ -59,7 +59,7 @@ Start date: sources give 1638 or 1639; "about nine years" covers both.
 
 Some sources start it in 1192 or 1193; 1199 is the most common date.
 
-### India Gate (scale: 42 m, compared with a bus)
+### India Gate (scale: 42 m, compared with the Arc de Triomphe)
 
 | Statistic | Fact |
 |---|---|
@@ -90,4 +90,3 @@ The Red Fort (1639–48) and the Qutub Minar (from 1199) are centuries old. Indi
 - [Connaught Place, Wikipedia](https://en.wikipedia.org/wiki/Connaught_Place,_New_Delhi): 1929–1933, the Duke of Connaught, Russell
 - [Robert Tor Russell, Wikipedia](https://en.wikipedia.org/wiki/Robert_Tor_Russell): modelled on the Royal Crescent, Bath
 - [Kartavya Path, Housing.com](https://housing.com/news/kartavya-path): renamed 2022, India Gate to Rashtrapati Bhavan
-- [Delhi, Wikipedia](https://en.wikipedia.org/wiki/Delhi): elevation 216 m
