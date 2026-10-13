@@ -127,7 +127,7 @@ export const STREET_FACTS = {
         { text: 'The gardens are built on chinampas — islands woven from lake mud and reeds — and farmers still grow flowers on them today.' },
       ] },
   ],
-  // Marrakech: DRAFT, awaiting Dan's sign-off (docs/MARRAKECH-FACTS-DRAFT.md,
+  // Marrakech: approved by Dan, 13 October 2026 (docs/MARRAKECH-FACTS-DRAFT.md,
   // sources listed there).
   marrakech: [
     { street: 'Jemaa el-Fnaa', tag: 'The square that never sleeps',
@@ -149,7 +149,7 @@ export const STREET_FACTS = {
         { text: 'The Lazama Synagogue, built around a tiled courtyard in the heart of the quarter, still stands and is open to visitors.' },
       ] },
   ],
-  // Delhi: DRAFT, awaiting Dan's sign-off (docs/DELHI-FACTS-DRAFT.md,
+  // Delhi: approved by Dan, 13 October 2026 (docs/DELHI-FACTS-DRAFT.md,
   // sources listed there).
   delhi: [
     { street: 'Chandni Chowk', tag: 'The moonlit square',
@@ -171,7 +171,7 @@ export const STREET_FACTS = {
         { text: 'Every year on 26 January, the Republic Day parade marches along it.' },
       ] },
   ],
-  // Bangkok: DRAFT, awaiting Dan's sign-off (docs/BANGKOK-FACTS-DRAFT.md,
+  // Bangkok: approved by Dan, 13 October 2026 (docs/BANGKOK-FACTS-DRAFT.md,
   // sources listed there).
   bangkok: [
     { street: 'Yaowarat Road', tag: "Bangkok's Chinatown",
@@ -193,7 +193,7 @@ export const STREET_FACTS = {
         { text: 'Many canals were filled in to make roads, but in places like Bang Luang, wooden houses still stand right on the water.' },
       ] },
   ],
-  // Cape Town: DRAFT, awaiting Dan's sign-off (docs/CAPE-TOWN-FACTS-DRAFT.md,
+  // Cape Town: approved by Dan, 13 October 2026 (docs/CAPE-TOWN-FACTS-DRAFT.md,
   // sources listed there).
   capetown: [
     { street: 'Bo-Kaap', tag: 'The painted hillside',
@@ -215,7 +215,7 @@ export const STREET_FACTS = {
         { text: 'It is still a working harbour, with fishing boats and tugs moored among the shops and restaurants.' },
       ] },
   ],
-  // Hanoi: DRAFT, awaiting Dan's sign-off (docs/HANOI-FACTS-DRAFT.md,
+  // Hanoi: approved by Dan, 13 October 2026 (docs/HANOI-FACTS-DRAFT.md,
   // sources listed there).
   hanoi: [
     { street: 'Hang Gai', tag: 'The silk street',
@@ -237,7 +237,7 @@ export const STREET_FACTS = {
         { text: "Before the legend, the lake was called Luc Thuy, 'green water'." },
       ] },
   ],
-  // Seoul: DRAFT, awaiting Dan's sign-off (docs/SEOUL-FACTS-DRAFT.md,
+  // Seoul: approved by Dan, 13 October 2026 (docs/SEOUL-FACTS-DRAFT.md,
   // sources listed there).
   seoul: [
     { street: 'Insadong', tag: 'Tea, paper and pottery',
@@ -259,7 +259,7 @@ export const STREET_FACTS = {
         { text: 'Every evening, street-food stalls set up down the middle of its lanes.' },
       ] },
   ],
-  // Samarkand: DRAFT, awaiting Dan's sign-off (docs/SAMARKAND-FACTS-DRAFT.md,
+  // Samarkand: approved by Dan, 13 October 2026 (docs/SAMARKAND-FACTS-DRAFT.md,
   // sources listed there).
   samarkand: [
     { street: 'Tashkent Street', tag: 'On the Silk Road',
@@ -281,7 +281,7 @@ export const STREET_FACTS = {
         { text: 'All three face the square, each behind a great tiled gate.' },
       ] },
   ],
-  // Zanzibar: DRAFT, awaiting Dan's sign-off (docs/ZANZIBAR-FACTS-DRAFT.md,
+  // Zanzibar: approved by Dan, 13 October 2026 (docs/ZANZIBAR-FACTS-DRAFT.md,
   // sources listed there).
   zanzibar: [
     { street: 'Kenyatta Road', tag: 'The carved doors',
@@ -303,7 +303,7 @@ export const STREET_FACTS = {
         { text: 'The old palaces of the sultans line the seafront here, looking out over the harbour.' },
       ] },
   ],
-  // Beijing: DRAFT, awaiting Dan's sign-off (docs/BEIJING-FACTS-DRAFT.md,
+  // Beijing: approved by Dan, 13 October 2026 (docs/BEIJING-FACTS-DRAFT.md,
   // sources listed there).
   beijing: [
     { street: 'Nanluoguxiang', tag: 'A hutong lane',
@@ -325,7 +325,7 @@ export const STREET_FACTS = {
         { text: 'Some of the oldest shops in Beijing stand here, known for roast duck, tea, silk, shoes and hats.' },
       ] },
   ],
-  // Havana: DRAFT, awaiting Dan's sign-off (docs/HAVANA-FACTS-DRAFT.md,
+  // Havana: approved by Dan, 13 October 2026 (docs/HAVANA-FACTS-DRAFT.md,
   // sources listed there).
   havana: [
     { street: 'Malecón', tag: 'The sea wall',
@@ -347,7 +347,7 @@ export const STREET_FACTS = {
         { text: 'The lions were cast in 1928 from the metal of old cannons.' },
       ] },
   ],
-  // Istanbul: DRAFT, awaiting Dan's sign-off (docs/ISTANBUL-FACTS-DRAFT.md,
+  // Istanbul: approved by Dan, 13 October 2026 (docs/ISTANBUL-FACTS-DRAFT.md,
   // sources listed there).
   istanbul: [
     { street: 'İstiklal Avenue', tag: 'The tram street',
@@ -369,7 +369,7 @@ export const STREET_FACTS = {
         { text: 'At its start stood the Milion, the marker from which distances across the empire were measured.' },
       ] },
   ],
-  // Chicago: DRAFT, awaiting Dan's sign-off (docs/CHICAGO-FACTS-DRAFT.md,
+  // Chicago: approved by Dan, 13 October 2026 (docs/CHICAGO-FACTS-DRAFT.md,
   // sources listed there).
   chicago: [
     { street: 'Michigan Avenue', tag: 'North of the river',
@@ -391,7 +391,7 @@ export const STREET_FACTS = {
         { text: "Most are bascule bridges, a design so common here that it is called the 'Chicago type'." },
       ] },
   ],
-  // Buenos Aires: DRAFT, awaiting Dan's sign-off (docs/BUENOS-AIRES-FACTS-DRAFT.md,
+  // Buenos Aires: approved by Dan, 13 October 2026 (docs/BUENOS-AIRES-FACTS-DRAFT.md,
   // sources listed there).
   buenosaires: [
     { street: 'Caminito', tag: 'A street museum',
@@ -561,7 +561,7 @@ export const MONUMENT_FACTS = {
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
     ] },
-  // Buenos Aires: DRAFT, awaiting Dan's sign-off (docs/BUENOS-AIRES-FACTS-DRAFT.md).
+  // Buenos Aires: approved by Dan, 13 October 2026 (docs/BUENOS-AIRES-FACTS-DRAFT.md).
   casarosada: {
     facts: [
       { big: '1898', label: 'completed', text: 'The palace took its present form in 1898, when two older buildings were joined by a great archway.' },
@@ -581,7 +581,7 @@ export const MONUMENT_FACTS = {
       { big: '1906', label: 'opened', text: 'The palace opened in 1906, although the work was not fully finished until 1946.' },
       { text: 'Its architect, Vittorio Meano, also worked on the Teatro Colón.' },
     ] },
-  // Chicago: DRAFT, awaiting Dan's sign-off (docs/CHICAGO-FACTS-DRAFT.md).
+  // Chicago: approved by Dan, 13 October 2026 (docs/CHICAGO-FACTS-DRAFT.md).
   // 154 ft, 47 m (en.wikipedia.org/wiki/Chicago_Water_Tower)
   watertower: { scale: 47, compare: 'willis', note: "Chicago's tallest building is over nine times taller.",
     facts: [
@@ -603,7 +603,7 @@ export const MONUMENT_FACTS = {
       { big: '1973', label: 'opened', text: 'When it opened in 1973 it was the tallest building in the world, and it held that title for nearly 25 years.' },
       { text: 'It is built as nine square tubes bundled together. They stop at different heights, so the tower steps back as it rises.' },
     ] },
-  // Istanbul: DRAFT, awaiting Dan's sign-off (docs/ISTANBUL-FACTS-DRAFT.md).
+  // Istanbul: approved by Dan, 13 October 2026 (docs/ISTANBUL-FACTS-DRAFT.md).
   // 66.9 m to the tip of its cap (en.wikipedia.org/wiki/Galata_Tower)
   galata: { scale: 66.9, compare: 'person',
     facts: [
@@ -624,7 +624,7 @@ export const MONUMENT_FACTS = {
       { big: '55', unit: 'm', label: 'to the dome', text: 'Its great dome rises about 55 metres above the floor.' },
       { text: 'Built as a cathedral, it became a mosque in 1453, a museum in 1934, and a mosque again in 2020.' },
     ] },
-  // Havana: DRAFT, awaiting Dan's sign-off (docs/HAVANA-FACTS-DRAFT.md).
+  // Havana: approved by Dan, 13 October 2026 (docs/HAVANA-FACTS-DRAFT.md).
   realfuerza: {
     facts: [
       { big: '1577', label: 'completed', text: 'Completed in 1577, it is one of the oldest stone forts in the Americas.' },
@@ -643,7 +643,7 @@ export const MONUMENT_FACTS = {
       { text: 'In times of danger, an iron chain was stretched across the harbour mouth to the fort on the other side.' },
       { text: 'The lighthouse on its point was added in the 1800s, and still guides ships into the harbour.' },
     ] },
-  // Beijing: DRAFT, awaiting Dan's sign-off (docs/BEIJING-FACTS-DRAFT.md).
+  // Beijing: approved by Dan, 13 October 2026 (docs/BEIJING-FACTS-DRAFT.md).
   // 46.7 m (en.wikipedia.org/wiki/Drum_Tower_and_Bell_Tower_of_Beijing)
   drumtower: { scale: 46.7, compare: 'bus',
     facts: [
@@ -665,7 +665,7 @@ export const MONUMENT_FACTS = {
       { big: '1695', label: 'rebuilt', text: 'First built in the 1420s, the hall standing today was rebuilt in 1695.' },
       { text: 'It is one of the largest wooden buildings in China. Emperors held their grandest ceremonies here.' },
     ] },
-  // Zanzibar: DRAFT, awaiting Dan's sign-off (docs/ZANZIBAR-FACTS-DRAFT.md).
+  // Zanzibar: approved by Dan, 13 October 2026 (docs/ZANZIBAR-FACTS-DRAFT.md).
   oldfort: {
     facts: [
       { big: '1699', label: 'built by', text: 'The fort was built by about 1699, after Oman took the island from Portugal, on the site of a Portuguese church.' },
@@ -684,7 +684,7 @@ export const MONUMENT_FACTS = {
       { text: 'It was the first building in Zanzibar with electricity, and the first in East Africa with a lift: that is how it got its name.' },
       { text: 'Part of it collapsed in 2020, and it is being restored.' },
     ] },
-  // Samarkand: DRAFT, awaiting Dan's sign-off (docs/SAMARKAND-FACTS-DRAFT.md).
+  // Samarkand: approved by Dan, 13 October 2026 (docs/SAMARKAND-FACTS-DRAFT.md).
   observatory: {
     facts: [
       { big: '1420', label: 'founded', text: "Ulugh Beg, Timur's grandson and an astronomer, built his observatory here around 1420." },
@@ -703,7 +703,7 @@ export const MONUMENT_FACTS = {
       { text: "Sher-Dor's gate shows two tigers with rising suns on their backs, rare in buildings of its kind for showing living creatures." },
       { big: '1660', label: 'Tilya-Kori finished', text: "Tilya-Kori, at the back, was built from 1646 to 1660. Its name means 'gilded'." },
     ] },
-  // Seoul: DRAFT, awaiting Dan's sign-off (docs/SEOUL-FACTS-DRAFT.md).
+  // Seoul: approved by Dan, 13 October 2026 (docs/SEOUL-FACTS-DRAFT.md).
   heunginjimun: {
     facts: [
       { big: '1869', label: 'rebuilt', text: 'First built in 1398, the gate that stands today was rebuilt in 1869.' },
@@ -722,7 +722,7 @@ export const MONUMENT_FACTS = {
       { text: 'Stone animals, among them the twelve animals of the zodiac, guard the balustrades of its terraces.' },
       { text: 'Rows of stone markers in the courtyard showed each official where to stand, by rank.' },
     ] },
-  // Hanoi: DRAFT, awaiting Dan's sign-off (docs/HANOI-FACTS-DRAFT.md).
+  // Hanoi: approved by Dan, 13 October 2026 (docs/HANOI-FACTS-DRAFT.md).
   turtletower: {
     facts: [
       { big: '1886', label: 'built', text: 'The little tower was built on its island in the lake in 1886.' },
@@ -741,7 +741,7 @@ export const MONUMENT_FACTS = {
       { big: '82', unit: 'tablets', label: 'on stone turtles', text: 'Eighty-two stone tablets, each carried on the back of a stone turtle, record the scholars who passed the royal exams.' },
       { big: '1805', label: 'the pavilion', text: 'Its Constellation of Literature Pavilion was built in 1805, and it has become a symbol of Hanoi.' },
     ] },
-  // Cape Town: DRAFT, awaiting Dan's sign-off (docs/CAPE-TOWN-FACTS-DRAFT.md).
+  // Cape Town: approved by Dan, 13 October 2026 (docs/CAPE-TOWN-FACTS-DRAFT.md).
   clocktower: {
     facts: [
       { big: '1882', label: 'built', text: "Finished in 1882, the tower was the harbour's first Port Captain's office." },
@@ -760,7 +760,7 @@ export const MONUMENT_FACTS = {
       { big: '39', unit: 'bells', label: 'in its tower', text: 'Its clock tower holds a carillon of 39 bells, one of the largest in South Africa.' },
       { text: 'On 11 February 1990, Nelson Mandela gave his first speech after his release from prison from its balcony.' },
     ] },
-  // Bangkok: DRAFT, awaiting Dan's sign-off (docs/BANGKOK-FACTS-DRAFT.md).
+  // Bangkok: approved by Dan, 13 October 2026 (docs/BANGKOK-FACTS-DRAFT.md).
   // 21.15 m (en.wikipedia.org/wiki/Giant_Swing)
   giantswing: { scale: 21.15, compare: 'person',
     facts: [
@@ -782,7 +782,7 @@ export const MONUMENT_FACTS = {
       { text: 'Its body is built in a European style, but its three roofs are traditional Thai, each crowned with a tall spire.' },
       { big: '1782', label: 'palace founded', text: 'The Grand Palace was begun in 1782, the year Bangkok became the capital.' },
     ] },
-  // Delhi: DRAFT, awaiting Dan's sign-off (docs/DELHI-FACTS-DRAFT.md).
+  // Delhi: approved by Dan, 13 October 2026 (docs/DELHI-FACTS-DRAFT.md).
   lahori: {
     facts: [
       { big: '1648', label: 'completed', text: "Emperor Shah Jahan's fort took about nine years to build, from 1639 to 1648." },
@@ -803,7 +803,7 @@ export const MONUMENT_FACTS = {
       { big: '1931', label: 'unveiled', text: 'Designed by the architect Edwin Lutyens, it was begun in 1921 and unveiled in 1931.' },
       { text: 'It is a war memorial: the names of more than 13,000 soldiers of the Indian Army who died are carved into its stone.' },
     ] },
-  // Marrakech: DRAFT, awaiting Dan's sign-off (docs/MARRAKECH-FACTS-DRAFT.md).
+  // Marrakech: approved by Dan, 13 October 2026 (docs/MARRAKECH-FACTS-DRAFT.md).
   // 77 m including the spire (en.wikipedia.org/wiki/Kutubiyya_Mosque).
   koutoubia: { scale: 77, compare: 'bus',
     facts: [

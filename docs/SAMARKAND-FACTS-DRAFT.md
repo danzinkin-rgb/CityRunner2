@@ -1,6 +1,6 @@
 # Samarkand: facts for review
 
-**DRAFT. Nothing here ships until Dan has approved it.** The facts are in `src/facts.js` already, marked DRAFT, so the city can be played and tested; the city is in the release queue and no player sees it.
+**Approved by Dan, 13 October 2026**, including the points under "To check before approval" below, which he checked and accepted. The facts are in `src/facts.js`; the city is in the release queue and no player sees it until it is released.
 
 3 streets × 3 facts, 3 monuments × 3 facts.
 
