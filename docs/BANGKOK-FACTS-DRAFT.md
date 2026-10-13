@@ -48,7 +48,7 @@
 
 Date: most sources say 1784; one says 1786. The ceremony stopped after fatal accidents; the fact leaves out the cause.
 
-### Wat Arun (scale: 82 m, compared with Big Ben)
+### Wat Arun (scale: 82 m, compared with a bus)
 
 | Statistic | Fact |
 |---|---|

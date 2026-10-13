@@ -58,7 +58,7 @@ Width: most sources give 140 m; Guinness gives about 110 m and has questioned th
 | *(none)* | It took nearly twenty years to build, and three architects worked on it in turn. |
 | *(none)* | Its sound is counted among the best of any opera house in the world. |
 
-### Palace of the Congress (scale: 80 m, compared with the Pantheon, dome to dome)
+### Palace of the Congress (scale: 80 m, compared with Big Ben; note: "Both crown a parliament.")
 
 | Statistic | Fact |
 |---|---|

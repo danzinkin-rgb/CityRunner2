@@ -296,27 +296,26 @@ const SILHOUETTES = {
      + 'M20 96a9 9 0 0 1 18 0zM62 96a9 9 0 0 1 18 0z'] },
   person: { w: 44, d: ['M22 8a11 11 0 1 1 0 22 11 11 0 0 1 0-22zM6 36h32c4 0 6 3 6 7v26h-9v27H9V69H0V43c0-4 2-7 6-7z'] },
   bigben: { w: 26, d: ['M5 100V34H3V20h3L13 0l7 20h3v14h-2v66z', 'M13 23a4 4 0 1 0 0 8 4 4 0 0 0 0-8z'] },
-  eiffel: { w: 64, d: ['M2 100C15 72 25 42 29 8L31 0h2l2 8c4 34 14 64 27 92H48c-3-10-9-17-16-17s-13 7-16 17z'] },
-  empire: { w: 30, d: ['M0 100V58h3V38h4V22h4V12h3V3h1V0h0.2V3h1v9h3v10h4v16h4v20h3v42z'] },
   arc: { w: 90, d: ['M0 100V0h90v100H61V60a16 16 0 0 0-32 0v40z'] },
   pantheon: { w: 104, d: ['M14 100V48a38 38 0 0 1 76 0v52z', 'M0 100V56h54v44z', 'M0 57L27 42l27 15z'] },
-  colosseum: { w: 96, d: [(() => {
-    // three tiers of arches and a solid attic, as one even-odd shape
-    let d = 'M0 100V4h96v96z';
-    for (const [top, h] of [[70, 26], [46, 20], [24, 18]]) {
-      for (let x = 4; x < 92; x += 11.5) d += `M${x} ${top + h}V${top + 4}a3.5 3.5 0 0 1 7 0V${top + h}z`;
-    }
-    return d;
-  })()] },
+  empire: { w: 30, d: ['M0 100V58h3V38h4V22h4V12h3V3h1V0h0.2V3h1v9h3v10h4v16h4v20h3v42z'] },
+  willis: { w: 40, d: ['M0 100V36h10V18h10V0h10V24h10v76z'] },
+  koutoubia: { w: 24, d: ['M2 100V22h20v78z', 'M7 22V8h10v14z', 'M11.4 8V0h1.2v8z'] },
+  templomayor: { w: 120, d: ['M0 100V86h8V72h8V58h8V44h8V32h56V44h8V58h8V72h8V86h8v14z',
+    'M36 32V12h18v20zM66 32V12h18v20z', 'M34 13L45 4l11 9zM64 13L75 4l11 9z'] },
+  liberty: { w: 44, d: ['M4 100V88h4V55h28v33h4v12z', 'M14 55l3-30c0-4 2-6 4-6s4 2 5 4l1-15h3l-1 18c0 2 1 4 1 6l-2 23z',
+    'M21 9a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9z', 'M27 0h4v4h-4z'] },
 };
 
-// The reference is either a familiar object or another city's monument the
-// player may already have built, so a height lands as "taller than Big Ben".
-// A monument's height comes from its own MONUMENT_FACTS entry, so the two
+// The reference is a familiar object, or a monument with a real link to this
+// one (the `note` on its MONUMENT_FACTS entry says what the link is). A
+// monument's height comes from its own MONUMENT_FACTS entry, so the two
 // graphics can never disagree.
 const OBJECTS = {
   bus: { h: 4.4, name: 'double-decker bus' },
   person: { h: 1.7, name: 'person' },
+  // ground to the tip of the torch, 305 ft 1 in (nps.gov/stli, statue statistics)
+  liberty: { h: 93, name: 'Statue of Liberty' },
 };
 
 function refFor(compare) {
@@ -339,7 +338,7 @@ function silhouette(key) {
  * fills the slot. A monument with no `scale` and no `altitude` shows nothing:
  * its facts carry the page.
  */
-export function paintScale(container, metres, compare, name, reduced = false, altitude = 0) {
+export function paintScale(container, metres, compare, name, reduced = false, altitude = 0, note = '') {
   container.innerHTML = '';
   if (!metres) {
     // No sourced height for the building itself (the Tower of David, the
@@ -367,6 +366,7 @@ export function paintScale(container, metres, compare, name, reduced = false, al
   holder.style.aspectRatio = `${SILHOUETTES[ref.art].w} / 100`;
   holder.appendChild(silhouette(ref.art));
   el('div', 'fv-scap', caps).textContent = ref.name;
+  if (note) el('div', 'fv-snote', wrap).textContent = note;
 
   const grow = () => { col.style.height = `${monPct}%`; holder.style.height = `${refPct}%`; };
   if (reduced) grow(); else requestAnimationFrame(grow);

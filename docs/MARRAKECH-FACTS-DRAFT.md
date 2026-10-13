@@ -38,7 +38,7 @@ Same structure as every city: 3 streets × 3 facts, 3 monuments × 3 facts. A fa
 
 ## Monuments
 
-### Koutoubia Minaret (scale: 77 m, compared with Big Ben)
+### Koutoubia Minaret (scale: 77 m, compared with a bus)
 
 | Statistic | Fact |
 |---|---|

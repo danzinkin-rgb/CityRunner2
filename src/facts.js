@@ -439,17 +439,19 @@ export const STREET_FACTS = {
 
 // scale: real height in metres, for the comparison graphic. Only where the
 // height is worth showing; a monument without one shows its facts alone.
-// compare: what to measure against: 'bus', 'person', or another monument
-// with a scale and a silhouette in src/factviz.js (bigben, eiffel, empire,
-// arc, pantheon, colosseum), so heights read against icons the player knows.
+// compare: what to measure against: 'bus', 'person', 'liberty', or another
+// monument with a scale and a silhouette in src/factviz.js. Pick a reference
+// for a striking gap in height, or for a real link between the two; a link
+// goes in `note`, one short line shown under the graphic. Two buildings of
+// about the same height with nothing in common tell the player nothing.
 export const MONUMENT_FACTS = {
-  empire: { scale: 381, compare: 'eiffel',
+  empire: { scale: 381, compare: 'liberty',
     facts: [
       { big: '410', unit: 'days', label: 'to build', text: 'Raised in just 410 days during the Great Depression, opening in 1931.' },
       { big: '381', unit: 'm', label: 'to the roof', text: 'At 102 storeys it was the tallest building in the world for nearly forty years.' },
       { big: '25', unit: 'strikes', label: 'of lightning a year', text: 'The tower is struck by lightning around 25 times every year.' },
     ] },
-  chrysler: { scale: 319, compare: 'empire',
+  chrysler: { scale: 319, compare: 'empire', note: 'The Empire State took its record in 1931.',
     facts: [
       { big: '90', unit: 'minutes', label: 'to raise the spire', text: 'The 56m spire was assembled in secret inside the building, then raised in 90 minutes to snatch the height record.' },
       { big: '1930', label: 'completed', text: 'Its stainless steel crown is arranged in radiating sunburst arches.' },
@@ -461,13 +463,13 @@ export const MONUMENT_FACTS = {
       { big: '21', unit: 'elephants', label: 'proved it safe', text: 'In 1884 P.T. Barnum marched 21 elephants across to prove the bridge would hold.' },
       { text: 'It was the first suspension bridge anywhere to use steel wire cables.' },
     ] },
-  eiffel: { scale: 330, compare: 'empire',
+  eiffel: { scale: 330, compare: 'liberty', note: "Eiffel also built the Statue of Liberty's iron frame.",
     facts: [
       { big: '2.5M', unit: 'rivets', label: 'hold it together', text: 'Its 18,038 iron pieces are joined by two and a half million rivets.' },
       { big: '15', unit: 'cm', label: 'taller in summer', text: 'Heat expands the iron — the tower grows measurably on a hot day.' },
       { text: 'Built for the 1889 World\'s Fair, and meant to be dismantled after twenty years.' },
     ] },
-  arc: { scale: 50, compare: 'colosseum',
+  arc: { scale: 50, compare: 'bus',
     facts: [
       { big: '660', unit: 'names', label: 'engraved on it', text: 'The names of 660 of Napoleon\'s generals are carved into its walls.' },
       { big: '30', unit: 'years', label: 'to complete', text: 'Ordered in 1806, it was only finished in 1836 — long after Napoleon\'s death.' },
@@ -485,19 +487,19 @@ export const MONUMENT_FACTS = {
       { big: '96', unit: 'm', label: 'tall', text: 'Completed in 1859, it leans very slightly — about a quarter of a degree.' },
       { text: 'The clock is fine-tuned by stacking old penny coins on its pendulum.' },
     ] },
-  towerbridge: { scale: 65, compare: 'bigben',
+  towerbridge: { scale: 65, compare: 'bus',
     facts: [
       { big: '800', unit: 'lifts', label: 'a year', text: 'The bascules still raise around 800 times a year to let ships pass.' },
       { big: '1894', label: 'opened', text: 'The original lifting machinery ran on steam-powered hydraulics.' },
       { text: 'Tourists routinely confuse it with London Bridge — the far plainer bridge next door.' },
     ] },
-  eye: { scale: 135, compare: 'bigben',
+  eye: { scale: 135, compare: 'bigben', note: 'They face each other across the Thames.',
     facts: [
       { big: '32', unit: 'capsules', label: 'one per borough', text: 'Numbered 1 to 33 — there is no capsule 13.' },
       { big: '0.9', unit: 'km/h', label: 'rotation speed', text: 'It turns so slowly that it usually never stops for passengers to board.' },
       { text: 'At 135m it was the tallest observation wheel in the world when it opened in 2000.' },
     ] },
-  colosseum: { scale: 48, compare: 'arc',
+  colosseum: { scale: 48, compare: 'person',
     facts: [
       { big: '50k', unit: 'spectators', label: 'capacity', text: 'Completed in AD 80, it seated around fifty thousand people.' },
       { big: '80', unit: 'entrances', label: 'to clear the crowd', text: 'Eighty arched entrances let the whole arena empty in minutes.' },
@@ -509,19 +511,19 @@ export const MONUMENT_FACTS = {
       { big: '19', unit: 'BC', label: 'the aqueduct feeding it', text: 'The fountain still runs on the Aqua Virgo, built two thousand years ago.' },
       { text: 'One coin means you will return to Rome; two, romance; three, marriage.' },
     ] },
-  pantheon: { scale: 43, compare: 'colosseum',
+  pantheon: { scale: 43, compare: 'person',
     facts: [
       { big: '1,900', unit: 'years', label: 'in continuous use', text: 'Rebuilt by Hadrian around AD 126 and never abandoned since.' },
       { big: '43', unit: 'm', label: 'unreinforced dome', text: 'Still the largest unreinforced concrete dome ever built, anywhere.' },
       { text: 'Its only light is the 8.2m oculus — and the floor has drains for the rain.' },
     ] },
-  ggbridge: { scale: 227, compare: 'eiffel',
+  ggbridge: { scale: 227, compare: 'bigben',
     facts: [
       { big: '227', unit: 'm', label: 'tower height', text: 'Each of its two towers rises 227 m above the water.' },
       { big: '1937', label: 'opened', text: 'When it opened in 1937 it was the longest suspension bridge in the world.' },
       { text: 'Painters work on it all year round to protect the steel from the salty sea air. The colour is called International Orange.' },
     ] },
-  coit: { scale: 64, compare: 'bigben',
+  coit: { scale: 64, compare: 'bus',
     facts: [
       { big: '1933', label: 'completed', text: 'Coit Tower was finished in 1933, paid for with money left to the city by Lillie Hitchcock Coit.' },
       { big: '64', unit: 'm', label: 'tall', text: 'The tower is 64 m tall and stands on top of Telegraph Hill.' },
@@ -573,7 +575,7 @@ export const MONUMENT_FACTS = {
       { text: 'Its sound is counted among the best of any opera house in the world.' },
     ] },
   // dome 80 m (en.wikipedia.org/wiki/Palace_of_the_Argentine_National_Congress)
-  congreso: { scale: 80, compare: 'pantheon',
+  congreso: { scale: 80, compare: 'bigben', note: 'Both crown a parliament.',
     facts: [
       { big: '80', unit: 'm', label: 'to the dome', text: 'Its green copper dome rises 80 metres.' },
       { big: '1906', label: 'opened', text: 'The palace opened in 1906, although the work was not fully finished until 1946.' },
@@ -581,21 +583,21 @@ export const MONUMENT_FACTS = {
     ] },
   // Chicago: DRAFT, awaiting Dan's sign-off (docs/CHICAGO-FACTS-DRAFT.md).
   // 154 ft, 47 m (en.wikipedia.org/wiki/Chicago_Water_Tower)
-  watertower: { scale: 47, compare: 'arc',
+  watertower: { scale: 47, compare: 'willis', note: "Chicago's tallest building is over nine times taller.",
     facts: [
       { big: '1869', label: 'built', text: 'The Water Tower was finished in 1869 to hide a tall iron pipe that helped pump water to the city.' },
       { big: '1871', label: 'the Great Fire', text: 'It was the only public building in the burned area to survive the Great Chicago Fire of 1871.' },
       { big: '47', unit: 'm', label: 'tall', text: 'It stands 47 metres tall, built of yellow limestone.' },
     ] },
   // the centre jet reaches 150 ft, about 46 m (chicagoparkdistrict.com)
-  buckingham: { scale: 46, compare: 'bus',
+  buckingham: { scale: 46, compare: 'person',
     facts: [
       { big: '1927', label: 'opened', text: 'Buckingham Fountain opened in 1927, one of the largest fountains in the world.' },
       { big: '46', unit: 'm', label: 'the centre jet', text: 'In its big display, the centre jet shoots water 46 metres into the air.' },
       { text: 'The water show runs for 20 minutes every hour, from spring to autumn.' },
     ] },
   // 442 m to the roof (en.wikipedia.org/wiki/Willis_Tower)
-  willis: { scale: 442, compare: 'empire',
+  willis: { scale: 442, compare: 'empire', note: "Each was the world's tallest building in its day.",
     facts: [
       { big: '442', unit: 'm', label: 'tall', text: 'The tower rises 442 metres to its roof, more with its antennas.' },
       { big: '1973', label: 'opened', text: 'When it opened in 1973 it was the tallest building in the world, and it held that title for nearly 25 years.' },
@@ -603,7 +605,7 @@ export const MONUMENT_FACTS = {
     ] },
   // Istanbul: DRAFT, awaiting Dan's sign-off (docs/ISTANBUL-FACTS-DRAFT.md).
   // 66.9 m to the tip of its cap (en.wikipedia.org/wiki/Galata_Tower)
-  galata: { scale: 66.9, compare: 'colosseum',
+  galata: { scale: 66.9, compare: 'person',
     facts: [
       { big: '67', unit: 'm', label: 'to the tip', text: 'The tower stands about 67 metres to the tip of its cap.' },
       { big: '1348', label: 'built', text: 'Genoese merchants built it in 1348, and called it the Tower of Christ.' },
@@ -616,7 +618,7 @@ export const MONUMENT_FACTS = {
       { big: '20,000', unit: 'tiles', label: 'inside', text: 'More than 20,000 hand-painted tiles from İznik line its walls inside, many of them blue: that is how it got its nickname.' },
     ] },
   // 55 m to the top of the dome (en.wikipedia.org/wiki/Hagia_Sophia)
-  hagiasophia: { scale: 55, compare: 'pantheon',
+  hagiasophia: { scale: 55, compare: 'pantheon', note: 'Two great domes, four centuries apart.',
     facts: [
       { big: '537', label: 'completed', text: 'It was completed in 537, after less than six years of building.' },
       { big: '55', unit: 'm', label: 'to the dome', text: 'Its great dome rises about 55 metres above the floor.' },
@@ -643,21 +645,21 @@ export const MONUMENT_FACTS = {
     ] },
   // Beijing: DRAFT, awaiting Dan's sign-off (docs/BEIJING-FACTS-DRAFT.md).
   // 46.7 m (en.wikipedia.org/wiki/Drum_Tower_and_Bell_Tower_of_Beijing)
-  drumtower: { scale: 46.7, compare: 'arc',
+  drumtower: { scale: 46.7, compare: 'bus',
     facts: [
       { big: '47', unit: 'm', label: 'tall', text: 'The Drum Tower stands about 47 metres tall.' },
       { big: '1272', label: 'first built', text: 'It was first built in 1272, and rebuilt on this spot in 1420.' },
       { text: 'Drums were beaten here to tell the city the time. It once held 25 drums; one great drum is left.' },
     ] },
   // 38 m (en.wikipedia.org/wiki/Temple_of_Heaven)
-  qiniandian: { scale: 38, compare: 'pantheon',
+  qiniandian: { scale: 38, compare: 'person',
     facts: [
       { big: '38', unit: 'm', label: 'tall', text: 'The hall is round, built of wood, and 38 metres tall.' },
       { big: '1889', label: 'struck by lightning', text: 'First built in 1420, it burned after a lightning strike in 1889 and was rebuilt to the same design.' },
       { text: 'Emperors came here every year to pray for a good harvest.' },
     ] },
   // about 35 m with its marble terrace (en.wikipedia.org/wiki/Hall_of_Supreme_Harmony)
-  taihedian: { scale: 35, compare: 'colosseum',
+  taihedian: { scale: 35, compare: 'bus',
     facts: [
       { big: '35', unit: 'm', label: 'tall', text: 'With its marble terrace, the hall rises about 35 metres.' },
       { big: '1695', label: 'rebuilt', text: 'First built in the 1420s, the hall standing today was rebuilt in 1695.' },
@@ -768,7 +770,7 @@ export const MONUMENT_FACTS = {
     ] },
   // 82 m for the central prang: the figure Dan chose; sources give 66.8 to
   // 86 m (en.wikipedia.org/wiki/Wat_Arun).
-  watarun: { scale: 82, compare: 'bigben',
+  watarun: { scale: 82, compare: 'bus',
     facts: [
       { big: '82', unit: 'm', label: 'the central spire', text: 'Its central tower, the prang, rises about 82 metres.' },
       { big: '1851', label: 'completed', text: 'The central prang was finished in 1851, after building began under King Rama II and went on under King Rama III.' },
@@ -788,14 +790,14 @@ export const MONUMENT_FACTS = {
       { text: 'The main entrance, the Lahori Gate, is named after the city of Lahore, which it faces.' },
     ] },
   // 72.5 m (en.wikipedia.org/wiki/Qutb_Minar)
-  qutub: { scale: 72.5, compare: 'bigben',
+  qutub: { scale: 72.5, compare: 'koutoubia', note: 'Two great minarets of the 1190s.',
     facts: [
       { big: '72.5', unit: 'm', label: 'tall', text: 'At 72.5 metres, it is the tallest minaret in the world built of brick.' },
       { big: '1199', label: 'begun', text: 'Qutb ud-Din Aibak began the tower in 1199, and his successor Iltutmish added three more storeys.' },
       { text: 'It narrows from 14.3 metres across at the base to just 2.7 metres at the top.' },
     ] },
   // 42 m (britannica.com/topic/India-Gate)
-  indiagate: { scale: 42, compare: 'arc',
+  indiagate: { scale: 42, compare: 'arc', note: 'Both are memorial arches for soldiers.',
     facts: [
       { big: '42', unit: 'm', label: 'tall', text: 'India Gate stands 42 metres high at the eastern end of Kartavya Path.' },
       { big: '1931', label: 'unveiled', text: 'Designed by the architect Edwin Lutyens, it was begun in 1921 and unveiled in 1931.' },
@@ -803,7 +805,7 @@ export const MONUMENT_FACTS = {
     ] },
   // Marrakech: DRAFT, awaiting Dan's sign-off (docs/MARRAKECH-FACTS-DRAFT.md).
   // 77 m including the spire (en.wikipedia.org/wiki/Kutubiyya_Mosque).
-  koutoubia: { scale: 77, compare: 'bigben',
+  koutoubia: { scale: 77, compare: 'bus',
     facts: [
       { big: '77', unit: 'm', label: 'tall, with its spire', text: 'The minaret rises 77 metres, spire and all, and can be seen from almost anywhere in the old city.' },
       { big: '1195', label: 'finished around', text: 'It was completed around 1195 under Caliph Yaqub al-Mansur, and it has stood almost unchanged ever since.' },
@@ -822,13 +824,13 @@ export const MONUMENT_FACTS = {
       { text: 'It closed as a school in 1960 and opened to visitors in 1982. Its courtyard is covered in carved cedar, carved plaster and coloured tile.' },
     ] },
   // Mexico City: approved by Dan, 27 September 2026 (docs/cities/mexico-city.md §3).
-  templomayor: { scale: 45, compare: 'colosseum',
+  templomayor: { scale: 45, compare: 'person',
     facts: [
       { big: '1325', label: 'construction began', text: 'Building started here soon after 1325, when the Mexica people founded their city on an island in a lake.' },
       { big: '7', unit: 'layers', label: 'built again and again', text: 'Each ruler expanded the temple by building a new layer over the old one — archaeologists found seven layers stacked inside.' },
       { text: 'It was rediscovered by accident in 1978, when electrical workers dug up a huge carved stone disc nearby.' },
     ] },
-  catedral: { scale: 67, compare: 'pantheon',
+  catedral: { scale: 67, compare: 'templomayor', note: 'It stands beside the ruins of the Templo Mayor.',
     facts: [
       { big: '250', unit: 'years', label: 'to build', text: 'Building went on for two and a half centuries, from 1573 to 1813, so it mixes styles from early Baroque to Neoclassical.' },
       { big: '25', unit: 'bells', label: 'in its towers', text: 'Twenty-five bells hang in the twin towers — the biggest alone weighs about as much as two elephants.' },

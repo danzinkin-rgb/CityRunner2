@@ -715,7 +715,7 @@ function finishPuzzle(won) {
       applyCityPalette();
       const md = MONUMENT_FACTS[lm];
       paintFacts($('pw-facts'), md?.facts || [], 'm:' + lm);
-      paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm], !!save.reducedMotion, md?.altitude);
+      paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm], !!save.reducedMotion, md?.altitude, md?.note);
       showScreen('pwin');
       state = 'pwin';
     }, 4300);
@@ -1625,7 +1625,7 @@ if (DEBUG_HOOKS && q.get('ui')) {
     applyCityPalette();
     const md = MONUMENT_FACTS[lm];
     paintFacts($('pw-facts'), md?.facts || [], 'm:' + lm);
-    paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm], !!save.reducedMotion, md?.altitude);
+    paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm], !!save.reducedMotion, md?.altitude, md?.note);
     showScreen('pwin'); state = 'pwin';
   } else if (which === 'paused') {
     showScreen('paused'); state = 'paused';

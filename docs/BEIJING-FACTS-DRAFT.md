@@ -39,7 +39,7 @@
 
 ## Monuments
 
-### Drum Tower (scale: 46.7 m, compared with the Arc de Triomphe)
+### Drum Tower (scale: 46.7 m, compared with a bus)
 
 | Statistic | Fact |
 |---|---|
@@ -47,7 +47,7 @@
 | **1272**, first built | It was first built in 1272, and rebuilt on this spot in 1420. |
 | *(none)* | Drums were beaten here to tell the city the time. It once held 25 drums; one great drum is left. |
 
-### Hall of Prayer for Good Harvests (scale: 38 m, compared with the Pantheon)
+### Hall of Prayer for Good Harvests (scale: 38 m, compared with a person)
 
 | Statistic | Fact |
 |---|---|
@@ -55,7 +55,7 @@
 | **1889**, struck by lightning | First built in 1420, it burned after a lightning strike in 1889 and was rebuilt to the same design. |
 | *(none)* | Emperors came here every year to pray for a good harvest. |
 
-### Hall of Supreme Harmony (scale: 35 m, compared with the Colosseum)
+### Hall of Supreme Harmony (scale: 35 m, compared with a bus)
 
 | Statistic | Fact |
 |---|---|

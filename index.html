@@ -424,6 +424,8 @@
   .fv-scalewrap > .fv-scale{flex:1 1 0;min-height:0;height:auto}
   .fv-scaps{display:flex;justify-content:center;gap:28px}
   .fv-scaps > .fv-scap{width:94px}
+  .fv-snote{font-size:10px;line-height:1.25;font-style:italic;opacity:.78;text-align:center;margin-top:3px;
+    text-shadow:0 1px 7px rgba(0,0,0,.85)}
   .fv-sarea{flex:1 1 0;min-height:0;width:100%;display:flex;align-items:flex-end;justify-content:center}
   .fv-scol{width:36px;height:0;border-radius:6px 6px 0 0;
     background:linear-gradient(180deg,var(--fp-accent,#ffd166),rgba(255,209,102,.2));
@@ -765,7 +767,9 @@
     .fp-big{font-size:23px}
     .fp-text{font-size:12.5px;line-height:1.4}
     .fp-stat{flex-basis:72px}
-    .fp-scale{height:84px;margin:0}
+    /* grows with the screen: the comparisons need height to read, and short
+       phones keep the old 84px */
+    .fp-scale{height:clamp(84px,calc(17vh - 12px),128px);margin:0}
     .fp-tag{font-size:12.5px;margin:4px 0 0}
     .fv{padding:13px 13px 11px;border-radius:17px}
     .fv-num{font-size:clamp(32px,10.5vw,46px)}

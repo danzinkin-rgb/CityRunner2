@@ -39,7 +39,7 @@
 
 ## Monuments
 
-### Chicago Water Tower (scale: 47 m, compared with the Arc de Triomphe)
+### Chicago Water Tower (scale: 47 m, compared with the Willis Tower; note: "Chicago's tallest building is over nine times taller.")
 
 | Statistic | Fact |
 |---|---|
@@ -49,7 +49,7 @@
 
 "Only public building" is deliberate: a few other buildings survived, so "only building" would be wrong.
 
-### Buckingham Fountain (scale: 46 m, the height of its jet, compared with a bus)
+### Buckingham Fountain (scale: 46 m, the height of its jet, compared with a person)
 
 | Statistic | Fact |
 |---|---|
@@ -59,7 +59,7 @@
 
 The scale compares the jet's height (150 ft), not the fountain's.
 
-### Willis Tower (scale: 442 m, compared with the Empire State Building)
+### Willis Tower (scale: 442 m, compared with the Empire State Building; note: "Each was the world's tallest building in its day." Empire State 1931 to 1970, Willis 1973 to 1998)
 
 | Statistic | Fact |
 |---|---|

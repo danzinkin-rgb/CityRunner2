@@ -49,7 +49,7 @@
 
 Start date: sources give 1638 or 1639; "about nine years" covers both.
 
-### Qutub Minar (scale: 72.5 m, compared with Big Ben)
+### Qutub Minar (scale: 72.5 m, compared with the Koutoubia Minaret; note: "Two great minarets of the 1190s." Koutoubia finished around 1195, Qutub begun 1199)
 
 | Statistic | Fact |
 |---|---|
@@ -59,7 +59,7 @@ Start date: sources give 1638 or 1639; "about nine years" covers both.
 
 Some sources start it in 1192 or 1193; 1199 is the most common date.
 
-### India Gate (scale: 42 m, compared with the Arc de Triomphe)
+### India Gate (scale: 42 m, compared with the Arc de Triomphe; note: "Both are memorial arches for soldiers.")
 
 | Statistic | Fact |
 |---|---|

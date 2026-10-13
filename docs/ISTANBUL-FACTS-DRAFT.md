@@ -38,7 +38,7 @@
 
 ## Monuments
 
-### Galata Tower (scale: 66.9 m, compared with the Colosseum)
+### Galata Tower (scale: 66.9 m, compared with a person)
 
 | Statistic | Fact |
 |---|---|
@@ -56,7 +56,7 @@ Height: 66.9 m with the ornament on top, 62.6 m without; some sources say nearly
 | **6 minarets**, around it | It has six minarets, which was very unusual when it was built. |
 | **20,000 tiles**, inside | More than 20,000 hand-painted tiles from İznik line its walls inside, many of them blue: that is how it got its nickname. |
 
-### Hagia Sophia (scale: 55 m, compared with the Pantheon, dome to dome)
+### Hagia Sophia (scale: 55 m, compared with the Pantheon; note: "Two great domes, four centuries apart." Pantheon about 126, Hagia Sophia 537)
 
 | Statistic | Fact |
 |---|---|
