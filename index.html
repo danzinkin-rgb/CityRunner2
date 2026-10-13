@@ -418,8 +418,12 @@
   /* scale — true to scale, so the reference looking tiny IS the point */
   .fv-scale{display:flex;align-items:flex-end;justify-content:center;gap:28px;height:100%;width:100%}
   .fv-sbar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;width:94px}
-  /* The drawing area under the value and above the caption: both heights are
-     a share of this, so the two stay to scale whatever the labels take. */
+  /* The captions sit in their own row under both drawings, so a three-line
+     name takes the same height off both and the two stay to scale. */
+  .fv-scalewrap{display:flex;flex-direction:column;height:100%;width:100%}
+  .fv-scalewrap > .fv-scale{flex:1 1 0;min-height:0;height:auto}
+  .fv-scaps{display:flex;justify-content:center;gap:28px}
+  .fv-scaps > .fv-scap{width:94px}
   .fv-sarea{flex:1 1 0;min-height:0;width:100%;display:flex;align-items:flex-end;justify-content:center}
   .fv-scol{width:36px;height:0;border-radius:6px 6px 0 0;
     background:linear-gradient(180deg,var(--fp-accent,#ffd166),rgba(255,209,102,.2));
@@ -439,9 +443,7 @@
   .fv-ahill .hill{fill:var(--fp-accent,#ffd166);opacity:.78}
   .fv-ahill .sea{fill:rgba(120,176,224,.7)}
   .fv-ahill .pin{fill:#fff}
-  /* A fixed two-line caption, so a long name cannot shorten its own bar and
-     the two heights stay true to each other. */
-  .fv-scap{font-size:10px;line-height:1.2;height:2.4em;letter-spacing:.4px;opacity:.82;margin-top:6px;text-align:center;max-width:94px;
+  .fv-scap{font-size:10px;line-height:1.2;letter-spacing:.4px;opacity:.82;margin-top:6px;text-align:center;max-width:94px;
     text-shadow:0 1px 7px rgba(0,0,0,.85)}
 
   @media (max-height:950px){

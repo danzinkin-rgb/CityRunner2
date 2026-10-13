@@ -352,19 +352,21 @@ export function paintScale(container, metres, compare, name, reduced = false, al
   const monPct = (metres / top) * 100;
   const refPct = Math.max(3, (ref.h / top) * 100);
 
-  const row = el('div', 'fv-scale', container);
+  const wrap = el('div', 'fv-scalewrap', container);
+  const row = el('div', 'fv-scale', wrap);
+  const caps = el('div', 'fv-scaps', wrap);
 
   const tall = el('div', 'fv-sbar', row);
   el('div', 'fv-sval', tall).textContent = `${metres} m`;
   const col = el('div', 'fv-scol', el('div', 'fv-sarea', tall));
-  el('div', 'fv-scap', tall).textContent = name;
+  el('div', 'fv-scap', caps).textContent = name;
 
   const small = el('div', 'fv-sbar ref', row);
   el('div', 'fv-sval', small).textContent = `${ref.h} m`;
   const holder = el('div', 'fv-sart', el('div', 'fv-sarea', small));
   holder.style.aspectRatio = `${SILHOUETTES[ref.art].w} / 100`;
   holder.appendChild(silhouette(ref.art));
-  el('div', 'fv-scap', small).textContent = ref.name;
+  el('div', 'fv-scap', caps).textContent = ref.name;
 
   const grow = () => { col.style.height = `${monPct}%`; holder.style.height = `${refPct}%`; };
   if (reduced) grow(); else requestAnimationFrame(grow);
