@@ -10,7 +10,7 @@ name: Tests
 
 on:
   push:
-    branches: [mexico]
+    branches: [mexico, ci-baseline]
   workflow_dispatch:
 
 jobs:

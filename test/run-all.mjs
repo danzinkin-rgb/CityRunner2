@@ -91,7 +91,9 @@ for (const f of failed) {
   // and its API without downloading the log.
   if (process.env.GITHUB_ACTIONS) {
     const all = f.out.trim().split('\n');
-    const lines = all.filter((l) => /^x |^✗|Error/.test(l.trim())).slice(0, 20);
+    // each failing line, and the indented detail lines under it
+    const lines = all.filter((l, i) => /^x |^✗|Error/.test(l.trim())
+      || (/^\s/.test(l) && all.slice(Math.max(0, i - 4), i).some((p) => /^x |^✗/.test(p.trim())))).slice(0, 30);
     console.log(`::error title=${f.file} failed::${(lines.length ? lines : all.slice(-15)).join('%0A')}`);
   }
 }
