@@ -38,8 +38,16 @@ async function street(city, level) {
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto(`${BASE}/?view=run&city=${city}&level=${level}&seed=7&god=1`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__cr?.track, null, { timeout: 20000 });
-  await page.waitForTimeout(6000);   // several chunks in, past a few obstacle rows
-  const painted = await page.evaluate(() => window.__painted);
+  // 600 m in, past many obstacle rows: driven in code rather than waited
+  // for, so a slow machine (software WebGL on a CI runner) sees the same
+  // stretch of street as a fast one. A street whose only text is on its
+  // overhead signs can paint nothing in its opening chunks.
+  const painted = await page.evaluate(() => {
+    const t = window.__cr.track;
+    const away = { hitbox: () => ({ x: 999, y0: 50, y1: 51, r: 0.4 }) };
+    for (let i = 0; i < 2000 && t.distance < Math.min(600, t.goal - 10); i++) t.update(0.05, 30, away, () => {}, () => {});
+    return window.__painted;
+  });
   await ctx.close();
   return { painted, errors };
 }
