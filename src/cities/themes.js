@@ -14,8 +14,8 @@
 // players are CITIES in src/cities/offered.js; read that for anything a
 // player sees.
 // Regions, for selling cities in regional packs. Every city names one in
-// `region`. Packs are not built yet: this is the grouping Dan chose on
-// 12 October 2026, so the data is ready when the purchase model is decided.
+// `region`. The grouping Dan chose on 12 October 2026; each region's pack
+// (REGION_PACKS in src/core/entitlements.js) unlocks every city that names it.
 export const REGIONS = {
   'north-america': 'North America',
   'latin-america': 'Latin America',

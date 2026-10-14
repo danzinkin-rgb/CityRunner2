@@ -147,6 +147,34 @@ Open `src/core/iap.js`. The function `loadStore()` contains a commented block ma
 | **Description** | `Unlock Rome and every city added in future, plus every new monument. One payment, kept forever.` |
 | **Tax Category** | App Store Software (default) |
 
+### 5.2a Region packs (October 2026)
+
+One per region, **£2.99**, created only once the region has a released paid
+city (a purchase that unlocks nothing is a likely rejection). For the 1.2.0
+release that is **Europe** (Rome) and **North America** (San Francisco).
+Each pack covers every city in its region, including ones added later: the
+code checks the region, not a list (`REGION_PACKS` in
+`src/core/entitlements.js`).
+
+| Field | Europe | North America |
+|---|---|---|
+| **Type** | Non-Consumable | Non-Consumable |
+| **Reference Name** | `Europe Pack` | `North America Pack` |
+| **Product ID** | `uk.co.zinkin.cityrunner.pack.europe` | `uk.co.zinkin.cityrunner.pack.northamerica` |
+| **Price** | £2.99 (UK base, auto-generate the rest) | £2.99 |
+| **Display Name** | `Europe Pack` | `North America Pack` |
+| **Description** | `Unlock Rome and every European city added in future, with all their monuments. One payment, kept forever.` | `Unlock San Francisco and every North American city added in future, with all their monuments. One payment, kept forever.` |
+| **Review screenshot** | the paywall showing both offers (`?ui=paywall` at 1290×2796, or the simulator) | same |
+| **Review notes** | `One-time non-consumable. Unlocks the paid cities in one region (currently Rome) and any added to that region later. New York, Paris and London remain free. Restore Purchases is in Settings and on the purchase screen.` | as Europe, with San Francisco |
+
+Later packs, each when its region's first paid city is released (ids are
+already in the code, so no app change is needed beyond the release):
+`pack.mideastafrica` (Jerusalem), `pack.latinamerica` (Mexico City),
+`pack.asia` (Delhi).
+
+The **Founder** product description still reads correctly. Its price stays
+£1.99. `All Cities Unlock` (5.2) is not offered any more; leave it unavailable.
+
 ### 5.3 Pricing
 
 Apple replaced the old numbered tiers with 900 price points and per-storefront control. Set **United Kingdom as the base region at £1.99**, then let Apple auto-generate the other 174 storefronts — it will pick $1.99 for the US, which is exactly what you asked for. Review the auto-generated table before saving; you can override any individual country.
@@ -165,18 +193,23 @@ Apple replaced the old numbered tiers with 900 price points and per-storefront c
 
 ---
 
-## 6. Closing the founder window (in ~3 months)
+## 6. Closing the Founder offer (after about 250 sales)
 
-Do this from App Store Connect, with no app update:
+Founder is for the first ~250 buyers. The app does not count them and never
+mentions a limit: it has no server and sends no purchase data anywhere, and
+"only N left" is exactly the scarcity language §3 rules out. So the limit is
+kept by hand:
 
-1. **Founder** → set availability off / remove from sale
-2. **All Cities Unlock** → make available at your chosen price
+1. Watch the Founder count: `node marketing/weekly-report.mjs --founder`
+   prints the units sold since launch, from Apple's sales reports.
+2. At about 250, App Store Connect → In-App Purchases → **Founder** → remove
+   from sale. No app update, no review.
 
-The app switches itself. `OFFER_ORDER` in `src/core/iap.js` asks for Founder first and falls through to the standing unlock when Founder is no longer purchasable.
+The app switches itself: `getOffers()` in `src/core/iap.js` offers Founder
+only while the store returns it as purchasable, so from then on the paywall
+shows just the region pack for the city tapped.
 
 **Existing founders are unaffected** — their purchase is already recorded against their Apple Account, Restore still returns it, and `isFounder()` shows them "Founder — thank you" in Settings instead of any price. Removing a non-consumable from sale never revokes it from people who bought it.
-
-**Set a calendar reminder now.** Nothing in the code will remind you, by design.
 
 ---
 

@@ -399,6 +399,43 @@ const browser = await webkit.launch();
   await ctx.close();
 }
 
+// ------------------------------------------------- native, owning a REGION PACK
+// Region packs (October 2026): a pack opens every city in its region and
+// nothing else. Seeded with the Europe pack only: Rome and Istanbul (Europe)
+// must open, San Francisco and Jerusalem must not, and owning a pack is not
+// owning everything.
+{
+  const packMatch = entSrc.match(/europe:\s*'([^']+)'/);
+  const ctx = await browser.newContext();
+  await ctx.addInitScript((pack) => {
+    window.Capacitor = { isNativePlatform: () => true };
+    localStorage.setItem('cityrunner2.ent', JSON.stringify([pack]));
+  }, packMatch && packMatch[1]);
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await page.goto(MENU, { waitUntil: 'load' });
+  await page.waitForTimeout(900);
+  const r = await page.evaluate(async () => {
+    const m = await import('/src/core/entitlements.js');
+    const ids = ['rome', 'istanbul', 'sf', 'jerusalem', 'paris'];
+    return {
+      entitled: Object.fromEntries(ids.map((id) => [id, m.isCityEntitled(id)])),
+      full: m.hasFullAccess(),
+      everyCityHasAPack: (await import('/src/cities/themes.js')).ALL_CITIES
+        .filter((c) => m.isPaidCity(c.id)).every((c) => !!m.packForCity(c.id)),
+    };
+  });
+  check(!!packMatch, 'entitlements.js names a Europe pack');
+  check(r.entitled.rome && r.entitled.istanbul, 'native/pack: the Europe pack opens Rome and Istanbul', JSON.stringify(r.entitled));
+  check(!r.entitled.sf && !r.entitled.jerusalem, 'native/pack: it does not open San Francisco or Jerusalem', JSON.stringify(r.entitled));
+  check(r.entitled.paris, 'native/pack: free cities stay free');
+  check(!r.full, 'native/pack: owning a pack is not owning everything');
+  check(r.everyCityHasAPack, 'every paid city belongs to a region with a pack');
+  check(!errors.length, 'native/pack: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
 await browser.close();
 
 console.log(`\n${failures ? `x ${failures} entitlement check(s) failed` : 'ok entitlements — all checks passed'}`);

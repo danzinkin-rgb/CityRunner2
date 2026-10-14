@@ -11,14 +11,15 @@ import { startSession, submit, top as topScores, personalBest, currentSession } 
 import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset, DAILY } from './core/rng.js';
 import { initNative, onAppPause, hapticLight, hapticMedium, hapticHeavy, hapticSuccess } from './core/native.js';
 import { reportRun } from './core/gamecenter.js';
-import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild } from './core/entitlements.js';
-import { initIAP, getOffer, purchase, restore, onEntitlementGranted } from './core/iap.js';
+import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild, ownsCity, regionOf } from './core/entitlements.js';
+import { REGIONS } from './cities/themes.js';
+import { initIAP, getOffers, purchase, restore, onEntitlementGranted } from './core/iap.js';
 import { STORAGE } from './core/storage-keys.js';
 import { DEBUG_HOOKS, TESTER } from './core/debug.js';
 import { loadGhost, saveGhostIfBest, GhostRecorder, GhostRunner } from './run/ghost.js';
 import { HAZARD_RATE } from './run/hazards.js';
 
-export const VERSION = '1.1.1';
+export const VERSION = '1.2.0';
 import { Player, DEFAULT_STYLE } from './run/player.js';
 import { releaseStreetCaches } from './cities/builders.js';
 import { Track } from './run/track.js';
@@ -298,7 +299,7 @@ function buildCitySelect() {
       cityIdx = i; level = Math.min(3, (save.stars[c.id] || 0) + 1);
       startRun();
     };
-    else if (purchasable) el.onclick = () => openPaywall();
+    else if (purchasable) el.onclick = () => openPaywall('menu', c.id);
     wrap.appendChild(el);
   });
   const stats = document.getElementById('menu-stats');
@@ -331,7 +332,7 @@ function startRun() {
   // any city (see finishPuzzle), and no way to carry on past it (NEXT LEVEL is
   // hidden after a daily). One run a day in a locked city is a taster, and it
   // ends there.
-  if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall(); return; }
+  if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall('menu', city().id); return; }
   // Racing your best: a street you have finished before replays the course
   // of your best run on it, with that run beside you as a ghost. Never on the
   // daily (one course for everyone, and not yours to replay).
@@ -649,7 +650,7 @@ function startPuzzle() {
   // parameter reaches this directly. The normal path (the BUILD button after a
   // run) is already entitled, so this only ever fires on a debug URL — but a
   // debug URL that survives into a shipped build is a one-tap bypass.
-  if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall(); return; }
+  if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall('menu', city().id); return; }
   stopMusic();
   hideGoal();
   doFade(() => {
@@ -975,60 +976,93 @@ let paywallFrom = 'menu';
  */
 function showPaywallOwned(message) {
   $('btn-paywall-buy').style.display = 'none';
+  $('btn-paywall-pack').style.display = 'none';
   $('btn-paywall-restore').style.display = 'none';
   $('btn-paywall-close').textContent = 'CONTINUE';
   $('paywall-status').textContent = message;
 }
 
-async function openPaywall(from) {
+// The city whose card opened the paywall (null from Settings or the Shop):
+// its region's pack is the one offered beside "everything".
+let paywallCity = null;
+// The paid cities in a region the player can see now, for the pack's line.
+const regionCityNames = (region) => CITIES
+  .filter((c) => c.region === region && isPaidCity(c.id)).map((c) => titleCase(c.name));
+const titleCase = (s) => s.toLowerCase().replace(/(^|[\s-])\S/g, (m) => m.toUpperCase());
+
+async function openPaywall(from, cityId = null) {
   paywallFrom = from === 'settings' || from === 'shop' ? from : 'menu';
-  const buy = $('btn-paywall-buy');
+  paywallCity = cityId;
+  const buy = $('btn-paywall-buy'), pack = $('btn-paywall-pack');
   const status = $('paywall-status');
   status.textContent = '';
   $('pw-price').textContent = '';
+  $('pw-pack-price').textContent = '';
   $('btn-paywall-restore').style.display = '';
   $('btn-paywall-close').textContent = 'NOT NOW';
   // Hidden rather than disabled-looking until we know there is something to
   // sell. A buy button that is visible before the price loads invites a tap
   // that cannot work.
   buy.style.display = 'none';
+  pack.style.display = 'none';
+  $('pw-pack-row').style.display = 'none';
+  $('pw-all-row').style.display = 'none';
   openOverlay('paywall');
 
   if (hasFullAccess()) {
     showPaywallOwned('You already own everything.');
     return;
   }
+  if (cityId && ownsCity(cityId)) {
+    showPaywallOwned('You already own this city.');
+    return;
+  }
 
-  const offer = await getOffer();
-  if (!offer) {
+  const { everything, pack: packOffer } = await getOffers(cityId);
+  if (!everything && !packOffer) {
     // Normal on the web build, and on a device that cannot reach the store.
     // Say so plainly and leave Restore reachable — a player who already paid
     // must not be stuck behind a broken shop.
+    // From Settings or the Shop there is no city, so once FOUNDER is gone
+    // there is no single pack to show: the locked city's own card is the
+    // way in.
     status.textContent = isFreeBuild()
       ? 'Everything is already unlocked in the browser version.'
-      : 'The store is not reachable right now. Please try again later.';
+      : cityId ? 'The store is not reachable right now. Please try again later.'
+        : 'Tap a locked city on the menu to see its region pack.';
     return;
   }
-  $('pw-price').textContent = offer.price;
-  $('pw-buy-label').textContent = 'UNLOCK';
-  buy.style.display = '';
+  if (everything) {
+    $('pw-all-row').style.display = '';
+    $('pw-price').textContent = everything.price;
+    buy.style.display = '';
+  }
+  if (packOffer) {
+    const region = regionOf(cityId);
+    const names = regionCityNames(region);
+    $('pw-pack-text').innerHTML = `<b>${REGIONS[region]} pack</b>: ${names.join(', ')}, and every ${REGIONS[region]} city added later`;
+    $('pw-pack-label').textContent = `${REGIONS[region].toUpperCase()} PACK`;
+    $('pw-pack-price').textContent = packOffer.price;
+    $('pw-pack-row').style.display = '';
+    pack.style.display = '';
+  }
 }
-
 $('btn-paywall-close').onclick = () => {
   if (paywallFrom === 'settings') { renderSettings(); openOverlay('settings'); return; }
   if (paywallFrom === 'shop') { renderShop(); openOverlay('shop'); return; }
   closeOverlay();
 };
 
-$('btn-paywall-buy').onclick = async () => {
+async function buyOffer(kind) {
   const status = $('paywall-status');
-  const buy = $('btn-paywall-buy');
-  const offer = await getOffer();
+  const btn = kind === 'pack' ? $('btn-paywall-pack') : $('btn-paywall-buy');
+  const offers = await getOffers(paywallCity);
+  const offer = offers[kind];
   if (!offer) return;
-  buy.disabled = true;
+  btn.disabled = true;
   status.textContent = 'Opening the App Store…';
   const ok = await purchase(offer.productId);
-  buy.disabled = false;
+  btn.disabled = false;
   if (!ok) {
     // Covers the player simply cancelling Apple's sheet, which is not a
     // failure and must not be reported as one.
@@ -1037,14 +1071,22 @@ $('btn-paywall-buy').onclick = async () => {
   }
   // The entitlement itself is granted by the store's verified handler, not
   // here — including for an Ask to Buy approval that lands much later.
-  if (hasFullAccess()) {
+  if (paywallSatisfied()) {
     hapticSuccess();
     buildCitySelect();
-    showPaywallOwned('Thank you. Everything is unlocked.');
+    showPaywallOwned(thanks());
   } else {
     status.textContent = 'Waiting for confirmation. This can take a moment.';
   }
-};
+}
+$('btn-paywall-buy').onclick = () => buyOffer('everything');
+$('btn-paywall-pack').onclick = () => buyOffer('pack');
+
+// The paywall's job is done when the player owns everything, or the city
+// that opened it.
+const paywallSatisfied = () => hasFullAccess() || (!!paywallCity && ownsCity(paywallCity));
+const thanks = () => (hasFullAccess() ? 'Thank you. Everything is unlocked.'
+  : `Thank you. ${REGIONS[regionOf(paywallCity)]} is unlocked.`);
 
 // A purchase can verify after purchase() has already resolved — often
 // seconds later while "Waiting for confirmation" is still on screen, and for
@@ -1053,9 +1095,9 @@ $('btn-paywall-buy').onclick = async () => {
 onEntitlementGranted(() => {
   buildCitySelect();
   const paywallOpen = $('screen-paywall').classList.contains('on');
-  if (paywallOpen && hasFullAccess()) {
+  if (paywallOpen && paywallSatisfied()) {
     hapticSuccess();
-    showPaywallOwned('Thank you. Everything is unlocked.');
+    showPaywallOwned(thanks());
   }
   if ($('screen-settings').classList.contains('on')) renderPurchaseRows();
   if ($('screen-shop').classList.contains('on')) renderShopPurchaseRow();
@@ -1065,13 +1107,11 @@ onEntitlementGranted(() => {
 async function doRestore(statusEl) {
   statusEl.textContent = 'Checking with the App Store…';
   const found = await restore();
-  if (hasFullAccess()) {
-    buildCitySelect();
-    if (statusEl.id === 'paywall-status') {
-      showPaywallOwned('Restored. Everything is unlocked.');
-    } else {
-      statusEl.textContent = 'Restored. Everything is unlocked.';
-    }
+  if (found.length) buildCitySelect();
+  if (hasFullAccess() || (statusEl.id === 'paywall-status' && paywallSatisfied())) {
+    const msg = hasFullAccess() ? 'Restored. Everything is unlocked.' : `Restored. ${REGIONS[regionOf(paywallCity)]} is unlocked.`;
+    if (statusEl.id === 'paywall-status') showPaywallOwned(msg);
+    else statusEl.textContent = msg;
   } else {
     statusEl.textContent = found.length
       ? 'Restored.'
@@ -1190,10 +1230,10 @@ function setPurchaseRowState(label, view) {
     label.textContent = 'Founder — thank you';
     view.style.display = 'none';
   } else if (hasFullAccess()) {
-    label.textContent = 'Full city set — unlocked';
+    label.textContent = 'All cities — unlocked';
     view.style.display = 'none';
   } else {
-    label.textContent = 'Full city set';
+    label.textContent = 'More cities';
     view.style.display = '';
     view.textContent = 'view';
   }
@@ -1638,9 +1678,15 @@ if (DEBUG_HOOKS && q.get('ui')) {
     // answer in a browser. Stand in a representative one so the layout can
     // be reviewed at every viewport — this branch is debug-only and never
     // runs in the app.
+    // Both offers, the tallest the screen gets, so the fit suites measure it.
     $('pw-price').textContent = q.get('price') || '£1.99';
-    $('pw-buy-label').textContent = 'UNLOCK';
     $('btn-paywall-buy').style.display = '';
+    $('pw-all-row').style.display = '';
+    $('pw-pack-text').innerHTML = '<b>Europe pack</b>: Rome, Istanbul, and every Europe city added later';
+    $('pw-pack-label').textContent = 'EUROPE PACK';
+    $('pw-pack-price').textContent = q.get('packprice') || '£2.99';
+    $('pw-pack-row').style.display = '';
+    $('btn-paywall-pack').style.display = '';
     $('paywall-status').textContent = '';
     showScreen('paywall'); state = 'ui-paywall';
   }

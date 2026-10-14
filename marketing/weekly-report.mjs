@@ -4,6 +4,8 @@
  *
  *   node marketing/weekly-report.mjs            last 7 full days vs the 7 before
  *   node marketing/weekly-report.mjs --out DIR  also save DIR/YYYY-MM-DD.md
+ *   node marketing/weekly-report.mjs --founder  Founder units sold since launch, and stop
+ *     (Founder is for the first ~250 buyers; docs/FREEMIUM-IAP.md §6)
  *
  * Needs the API key described in marketing/asc.mjs, and the vendor number for
  * the sales figures: ASC_VENDOR_NUMBER, or "vendorNumber" in
@@ -42,6 +44,26 @@ const FIRST_DOWNLOAD = new Set(['1', '1F', '1T', 'F1', '1E', '1EP', '1EU']);
 const REDOWNLOAD = new Set(['3', '3F', '3T', 'F3']);
 const isIap = (t) => t.startsWith('IA') || t === 'FI1';
 
+// In-app purchase rows carry the product id in "SKU".
+const FOUNDER = 'uk.co.zinkin.cityrunner.founder';
+const isPack = (sku) => /\.pack\./.test(sku || '');
+
+async function salesRows(date, frequency = 'DAILY') {
+  const q = new URLSearchParams({
+    'filter[frequency]': frequency, 'filter[reportType]': 'SALES', 'filter[reportSubType]': 'SUMMARY',
+    // Apple versions each report type separately: daily is 1_1, monthly 1_0.
+    'filter[vendorNumber]': VENDOR, 'filter[reportDate]': date, 'filter[version]': frequency === 'DAILY' ? '1_1' : '1_0',
+  });
+  try {
+    const tsv = gunzipSync(await asc(`/v1/salesReports?${q}`, { raw: true })).toString('utf8').trim().split('\n');
+    const cols = tsv[0].split('\t');
+    return tsv.slice(1).map((l) => Object.fromEntries(l.split('\t').map((v, i) => [cols[i], v])));
+  } catch (err) {
+    if (err.status === 404) return [];              // no sales in that period
+    throw err;
+  }
+}
+
 async function salesFor(date) {
   const q = new URLSearchParams({
     'filter[frequency]': 'DAILY', 'filter[reportType]': 'SALES', 'filter[reportSubType]': 'SUMMARY',
@@ -56,7 +78,7 @@ async function salesFor(date) {
     if (err.status === 404) rows = [];              // no sales that day
     else throw err;
   }
-  const out = { downloads: 0, redownloads: 0, iap: 0, proceeds: {}, countries: {} };
+  const out = { downloads: 0, redownloads: 0, iap: 0, founder: 0, packs: 0, proceeds: {}, countries: {} };
   // The report covers every app on the account. That is only this one today;
   // a second app would need filtering here (in-app purchase rows carry the
   // app's SKU in "Parent Identifier", not its Apple ID).
@@ -67,7 +89,11 @@ async function salesFor(date) {
       out.downloads += units;
       out.countries[r['Country Code']] = (out.countries[r['Country Code']] || 0) + units;
     } else if (REDOWNLOAD.has(t)) out.redownloads += units;
-    else if (isIap(t)) out.iap += units;
+    else if (isIap(t)) {
+      out.iap += units;
+      if (r.SKU === FOUNDER) out.founder += units;
+      else if (isPack(r.SKU)) out.packs += units;
+    }
     const cur = r['Currency of Proceeds'];
     const p = units * (+r['Developer Proceeds'] || 0);
     if (p) out.proceeds[cur] = (out.proceeds[cur] || 0) + p;
@@ -76,14 +102,32 @@ async function salesFor(date) {
 }
 
 async function week(dates) {
-  const sum = { downloads: 0, redownloads: 0, iap: 0, proceeds: {}, countries: {} };
+  const sum = { downloads: 0, redownloads: 0, iap: 0, founder: 0, packs: 0, proceeds: {}, countries: {} };
   for (const d of dates) {
     const s = await salesFor(d);
     sum.downloads += s.downloads; sum.redownloads += s.redownloads; sum.iap += s.iap;
+    sum.founder += s.founder; sum.packs += s.packs;
     for (const [k, v] of Object.entries(s.proceeds)) sum.proceeds[k] = (sum.proceeds[k] || 0) + v;
     for (const [k, v] of Object.entries(s.countries)) sum.countries[k] = (sum.countries[k] || 0) + v;
   }
   return sum;
+}
+
+// --founder: units sold since launch (September 2026), from monthly reports
+// for each finished month and daily reports for this month so far.
+if (process.argv.includes('--founder')) {
+  if (!VENDOR) { console.log('No vendor number configured; see the header.'); process.exit(1); }
+  let total = 0;
+  const now = new Date();
+  for (let y = 2026, m = 9; y < now.getUTCFullYear() || (y === now.getUTCFullYear() && m < now.getUTCMonth() + 1); m === 12 ? (y++, m = 1) : m++) {
+    for (const r of await salesRows(`${y}-${String(m).padStart(2, '0')}`, 'MONTHLY')) if (r.SKU === FOUNDER) total += +r.Units || 0;
+  }
+  for (let d = 1; d < now.getUTCDate(); d++) {
+    const date = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    for (const r of await salesRows(date)) if (r.SKU === FOUNDER) total += +r.Units || 0;
+  }
+  console.log(`Founder units sold since launch: ${total}${total >= 240 ? '  (close to 250: remove Founder from sale, docs/FREEMIUM-IAP.md §6)' : ''}`);
+  process.exit(0);
 }
 
 const money = (p) => Object.entries(p).map(([c, v]) => `${v.toFixed(2)} ${c}`).join(', ') || '0';
@@ -99,7 +143,8 @@ if (!VENDOR) {
     lines.push('| | This week | Last week | Change |', '|---|---|---|---|',
       `| First-time downloads | ${a.downloads} | ${b.downloads} | ${change(a.downloads, b.downloads)} |`,
       `| Re-downloads | ${a.redownloads} | ${b.redownloads} | ${change(a.redownloads, b.redownloads)} |`,
-      `| Founder purchases | ${a.iap} | ${b.iap} | ${change(a.iap, b.iap)} |`,
+      `| Founder purchases | ${a.founder} | ${b.founder} | ${change(a.founder, b.founder)} |`,
+      `| Region packs | ${a.packs} | ${b.packs} | ${change(a.packs, b.packs)} |`,
       `| Proceeds | ${money(a.proceeds)} | ${money(b.proceeds)} | |`, '');
     const top = Object.entries(a.countries).sort((x, y) => y[1] - x[1]).slice(0, 5);
     if (top.length) lines.push(`Downloads by country this week: ${top.map(([c, n]) => `${c} ${n}`).join(', ')}.`, '');

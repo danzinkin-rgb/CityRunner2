@@ -1108,8 +1108,8 @@
     <div class="row"><span id="set-name" class="muted">—</span>
       <button class="linkbtn" id="set-reroll" aria-label="Get a new nickname">new nickname</button></div>
     <h3 id="set-purchase-head">Purchases</h3>
-    <div class="row"><span id="set-purchase-label">Full city set</span>
-      <button class="linkbtn" id="set-purchase" aria-label="View full city set purchase">view</button></div>
+    <div class="row"><span id="set-purchase-label">More cities</span>
+      <button class="linkbtn" id="set-purchase" aria-label="View city purchases">view</button></div>
     <div class="row"><span>Bought on another device?</span>
       <button class="linkbtn" id="set-restore" aria-label="Restore purchases">Restore</button></div>
     <div class="row muted" id="set-restore-status" style="font-size:12px"></div>
@@ -1140,22 +1140,26 @@
     * the price is written by StoreKit at runtime, localised by Apple. There
       is no hardcoded "1.99" in this file on purpose
 
-  #pw-price is the offer price; #pw-offer-name is the product title. Both stay
-  empty until the store answers, and if it never answers the screen is never
-  shown at all (see getOffer() in src/core/iap.js).
+  #pw-price and #pw-pack-price are the two offers' prices (everything, and
+  the tapped city's region pack). They stay empty, and their buttons hidden,
+  until the store answers (see getOffers() in src/core/iap.js).
 -->
 <div id="screen-paywall" class="screen">
-  <div class="title" style="font-size:clamp(24px,6.4vmin,42px)">THE FULL CITY SET</div>
+  <div class="title" style="font-size:clamp(24px,6.4vmin,42px)">MORE CITIES</div>
   <div class="sheet">
-    <div class="row"><span id="paywall-lede">Unlock every city and every monument.</span></div>
+    <div class="row"><span id="paywall-lede">Unlock more cities and their monuments.</span></div>
     <hr>
-    <div class="row"><span>Rome, San Francisco, and every city added later</span><span class="muted">included</span></div>
-    <div class="row"><span>New monuments in cities you already have</span><span class="muted">included</span></div>
+    <!-- Shown only when the store sells them: "everything" (the Founder
+         unlock while it is on sale) and the tapped city's region pack. No
+         counts, no deadlines: see docs/FREEMIUM-IAP.md §3. -->
+    <div class="row" id="pw-all-row" style="display:none"><span><b>Everything</b>: every city and monument, including every city added later</span></div>
+    <div class="row" id="pw-pack-row" style="display:none"><span id="pw-pack-text"></span></div>
     <div class="row"><span>One payment, kept forever</span><span class="muted">no subscription</span></div>
     <hr>
     <div class="row muted" style="font-size:12px"><span>New York, Paris and London stay free, always.</span></div>
   </div>
-  <button class="btn" id="btn-paywall-buy"><span id="pw-buy-label">UNLOCK</span> <span id="pw-price"></span></button>
+  <button class="btn" id="btn-paywall-buy" style="display:none"><span id="pw-buy-label">UNLOCK EVERYTHING</span> <span id="pw-price"></span></button>
+  <button class="btn" id="btn-paywall-pack" style="display:none"><span id="pw-pack-label">REGION PACK</span> <span id="pw-pack-price"></span></button>
   <button class="btn" id="btn-paywall-close">NOT NOW</button>
   <button class="linkbtn" id="btn-paywall-restore">Restore purchases</button>
   <div class="muted" id="paywall-status" style="font-size:12px;margin-top:8px;min-height:16px"></div>
@@ -1172,8 +1176,8 @@
        purchase required knowing to look in Settings first. -->
   <div class="sheet" id="shop-purchase-sheet" style="display:none;padding:12px 22px;margin:0 0 4px">
     <div class="row" style="padding:0">
-      <span id="shop-purchase-label">Full city set</span>
-      <button class="linkbtn" id="shop-purchase" aria-label="View full city set purchase">view</button>
+      <span id="shop-purchase-label">More cities</span>
+      <button class="linkbtn" id="shop-purchase" aria-label="View city purchases">view</button>
     </div>
   </div>
   <div class="sheet wide">

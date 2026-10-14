@@ -81,7 +81,17 @@ Kyoto is parked (`docs/CITY-ROADMAP.md`).
 
 ## Next release: what is waiting
 
-Since 1.1.1:
+1.2.0, build 13 (planned 15 October 2026). Since 1.1.1:
+
+- Region packs at £2.99 (Dan, 14 October 2026): each unlocks every city in
+  its region, including ones added later. Founder stays at £1.99 and unlocks
+  everything, for the first ~250 buyers; the app never says so, and Founder
+  is removed from sale by hand when `weekly-report.mjs --founder` nears 250
+  (docs/FREEMIUM-IAP.md §6). The paywall offers both: everything, and the
+  tapped city's pack. Packs needed in App Store Connect for this release:
+  Europe and North America (§5.2a). New York, Paris and London unchanged.
+- Thirteen more cities finished and queued (hidden from players), with
+  their facts approved: see the queue above.
 
 - Monument pieces on the run are always placed in a lane that can be
   collected without hitting anything (player feedback). This changes the
