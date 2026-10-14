@@ -151,7 +151,11 @@ Open `src/core/iap.js`. The function `loadStore()` contains a commented block ma
 
 One per region, about three cities each, **£0.99** (Dan, 14 October 2026), created only once the region has a released paid
 city (a purchase that unlocks nothing is a likely rejection). For the 1.2.0
-release that is **Europe** (Rome) and **North America** (San Francisco).
+release that is **Europe** (Rome), **North America** (San Francisco) and
+**Middle East and Africa** (Jerusalem, released in 1.2.0): product id
+`uk.co.zinkin.cityrunner.pack.mideastafrica`, display name `Middle East & Africa Pack`,
+description `Unlock Jerusalem and every city in the Middle East and Africa
+added in future, with all their monuments. One payment, kept forever.`
 Each pack covers every city in its region, including ones added later: the
 code checks the region, not a list (`REGION_PACKS` in
 `src/core/entitlements.js`).
@@ -169,7 +173,7 @@ code checks the region, not a list (`REGION_PACKS` in
 
 Later packs, each when its region's first paid city is released (ids are
 already in the code, so no app change is needed beyond the release):
-`pack.mideastafrica` (Jerusalem), `pack.latinamerica` (Mexico City),
+`pack.latinamerica` (Mexico City),
 `pack.southasia` (Delhi, Bangkok, Samarkand) and `pack.eastasia` (Beijing, Seoul,
 Hanoi). Asia was split in two on 14 October 2026 to keep packs about equal.
 

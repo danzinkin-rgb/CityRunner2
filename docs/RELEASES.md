@@ -56,7 +56,6 @@ as they merge, and a city when it is released.
 
 | Order | City | Region | Status | Game Center items to create |
 |---|---|---|---|---|
-| 1 | Jerusalem | Middle East and Africa | Built; facts approved | `…leaderboard.jerusalem`, `…achievement.city.jerusalem` |
 | 2 | Mexico City | Latin America | Built; facts approved | `…leaderboard.mexico`, `…achievement.city.mexico` |
 | 3 | Marrakech | Middle East and Africa | Built; facts approved (`docs/MARRAKECH-FACTS-DRAFT.md`) | `…leaderboard.marrakech`, `…achievement.city.marrakech` |
 | 4 | Delhi | South and Central Asia | Built; facts approved (`docs/DELHI-FACTS-DRAFT.md`) | `…leaderboard.delhi`, `…achievement.city.delhi` |
@@ -90,7 +89,11 @@ Kyoto is parked (`docs/CITY-ROADMAP.md`).
   is removed from sale by hand when `weekly-report.mjs --founder` nears 250
   (docs/FREEMIUM-IAP.md §6). The paywall offers both: everything, and the
   tapped city's pack. Packs needed in App Store Connect for this release:
-  Europe and North America (§5.2a). New York, Paris and London unchanged.
+  Europe, North America, and Middle East and Africa (§5.2a). New York,
+  Paris and London unchanged.
+- Jerusalem released (Dan, 14 October 2026): paid, in the Middle East and
+  Africa pack and the Founder unlock. Needs `…leaderboard.jerusalem` and
+  `…achievement.city.jerusalem` in Game Center.
 - Thirteen more cities finished and queued (hidden from players), with
   their facts approved: see the queue above.
 
