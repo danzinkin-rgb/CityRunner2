@@ -59,14 +59,14 @@ as they merge, and a city when it is released.
 | 1 | Jerusalem | Middle East and Africa | Built; facts approved | `…leaderboard.jerusalem`, `…achievement.city.jerusalem` |
 | 2 | Mexico City | Latin America | Built; facts approved | `…leaderboard.mexico`, `…achievement.city.mexico` |
 | 3 | Marrakech | Middle East and Africa | Built; facts approved (`docs/MARRAKECH-FACTS-DRAFT.md`) | `…leaderboard.marrakech`, `…achievement.city.marrakech` |
-| 4 | Delhi | Asia | Built; facts approved (`docs/DELHI-FACTS-DRAFT.md`) | `…leaderboard.delhi`, `…achievement.city.delhi` |
-| 5 | Bangkok | Asia | Built; facts approved (`docs/BANGKOK-FACTS-DRAFT.md`) | `…leaderboard.bangkok`, `…achievement.city.bangkok` |
+| 4 | Delhi | South and Central Asia | Built; facts approved (`docs/DELHI-FACTS-DRAFT.md`) | `…leaderboard.delhi`, `…achievement.city.delhi` |
+| 5 | Bangkok | South and Central Asia | Built; facts approved (`docs/BANGKOK-FACTS-DRAFT.md`) | `…leaderboard.bangkok`, `…achievement.city.bangkok` |
 | 6 | Cape Town | Middle East and Africa | Built; facts approved (`docs/CAPE-TOWN-FACTS-DRAFT.md`) | `…leaderboard.capetown`, `…achievement.city.capetown` |
-| 7 | Hanoi | Asia | Built; facts approved (`docs/HANOI-FACTS-DRAFT.md`) | `…leaderboard.hanoi`, `…achievement.city.hanoi` |
-| 8 | Seoul | Asia | Built; facts approved (`docs/SEOUL-FACTS-DRAFT.md`) | `…leaderboard.seoul`, `…achievement.city.seoul` |
+| 7 | Hanoi | East Asia | Built; facts approved (`docs/HANOI-FACTS-DRAFT.md`) | `…leaderboard.hanoi`, `…achievement.city.hanoi` |
+| 8 | Seoul | East Asia | Built; facts approved (`docs/SEOUL-FACTS-DRAFT.md`) | `…leaderboard.seoul`, `…achievement.city.seoul` |
 | 9 | Zanzibar | Middle East and Africa | Built; facts approved (`docs/ZANZIBAR-FACTS-DRAFT.md`) | `…leaderboard.zanzibar`, `…achievement.city.zanzibar` |
-| 10 | Samarkand | Asia | Built; facts approved (`docs/SAMARKAND-FACTS-DRAFT.md`) | `…leaderboard.samarkand`, `…achievement.city.samarkand` |
-| 11 | Beijing | Asia | Built; facts approved (`docs/BEIJING-FACTS-DRAFT.md`) | `…leaderboard.beijing`, `…achievement.city.beijing` |
+| 10 | Samarkand | South and Central Asia | Built; facts approved (`docs/SAMARKAND-FACTS-DRAFT.md`) | `…leaderboard.samarkand`, `…achievement.city.samarkand` |
+| 11 | Beijing | East Asia | Built; facts approved (`docs/BEIJING-FACTS-DRAFT.md`) | `…leaderboard.beijing`, `…achievement.city.beijing` |
 | 12 | Havana | Latin America | Built; facts approved (`docs/HAVANA-FACTS-DRAFT.md`) | `…leaderboard.havana`, `…achievement.city.havana` |
 | 13 | Istanbul | Europe | Built; facts approved (`docs/ISTANBUL-FACTS-DRAFT.md`) | `…leaderboard.istanbul`, `…achievement.city.istanbul` |
 | 14 | Chicago | North America | Built; facts approved (`docs/CHICAGO-FACTS-DRAFT.md`) | `…leaderboard.chicago`, `…achievement.city.chicago` |
@@ -83,8 +83,9 @@ Kyoto is parked (`docs/CITY-ROADMAP.md`).
 
 1.2.0, build 13 (planned 15 October 2026). Since 1.1.1:
 
-- Region packs at £2.99 (Dan, 14 October 2026): each unlocks every city in
-  its region, including ones added later. Founder stays at £1.99 and unlocks
+- Region packs at £0.99 (Dan, 14 October 2026), about three cities each:
+  each unlocks every city in its region, including ones added later. Six
+  regions (Asia split into East Asia and South and Central Asia). Founder stays at £1.99 and unlocks
   everything, for the first ~250 buyers; the app never says so, and Founder
   is removed from sale by hand when `weekly-report.mjs --founder` nears 250
   (docs/FREEMIUM-IAP.md §6). The paywall offers both: everything, and the

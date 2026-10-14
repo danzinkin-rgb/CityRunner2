@@ -87,6 +87,13 @@ const results = [
 const failed = results.filter((r) => r.code !== 0);
 for (const f of failed) {
   console.log(`\n==== ${f.file} (exit ${f.code}) ====\n${f.out.trim()}`);
+  // On GitHub Actions, also as an annotation: readable from the run's page
+  // and its API without downloading the log.
+  if (process.env.GITHUB_ACTIONS) {
+    const all = f.out.trim().split('\n');
+    const lines = all.filter((l) => /^x |^✗|Error/.test(l.trim())).slice(0, 20);
+    console.log(`::error title=${f.file} failed::${(lines.length ? lines : all.slice(-15)).join('%0A')}`);
+  }
 }
 const mins = ((Date.now() - t0) / 60000).toFixed(1);
 console.log(`\n${failed.length ? `x ${failed.length} of ${results.length} gates failed` : `ok all ${results.length} gates passed`} in ${mins} min`);

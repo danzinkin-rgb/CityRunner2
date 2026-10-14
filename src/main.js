@@ -1684,7 +1684,7 @@ if (DEBUG_HOOKS && q.get('ui')) {
     $('pw-all-row').style.display = '';
     $('pw-pack-text').innerHTML = '<b>Europe pack</b>: Rome, Istanbul, and every Europe city added later';
     $('pw-pack-label').textContent = 'EUROPE PACK';
-    $('pw-pack-price').textContent = q.get('packprice') || '£2.99';
+    $('pw-pack-price').textContent = q.get('packprice') || '£0.99';
     $('pw-pack-row').style.display = '';
     $('btn-paywall-pack').style.display = '';
     $('paywall-status').textContent = '';

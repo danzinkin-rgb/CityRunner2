@@ -21,7 +21,12 @@ export const REGIONS = {
   'latin-america': 'Latin America',
   europe: 'Europe',
   'mideast-africa': 'Middle East and Africa',
-  asia: 'Asia',
+  // Asia was one region until 14 October 2026; split so each pack holds
+  // about three cities. (Hanoi and Bangkok are strictly Southeast Asia: the
+  // names here are display text and can change; the ids cannot, once a
+  // pack is on sale.)
+  'east-asia': 'East Asia',
+  'south-asia': 'South and Central Asia',
 };
 
 export const ALL_CITIES = [
@@ -461,7 +466,7 @@ export const ALL_CITIES = [
     ],
   },
   {
-    id: 'delhi', name: 'DELHI', flag: '🇮🇳', region: 'asia',
+    id: 'delhi', name: 'DELHI', flag: '🇮🇳', region: 'south-asia',
     streets: ['Chandni Chowk', 'Connaught Place', 'Kartavya Path'],
     // A warm, hazy afternoon: pale sky, a dusty gold horizon, the light
     // softened by the haze. Red sandstone, marigold, white marble.
@@ -514,7 +519,7 @@ export const ALL_CITIES = [
     ],
   },
   {
-    id: 'bangkok', name: 'BANGKOK', flag: '🇹🇭', region: 'asia',
+    id: 'bangkok', name: 'BANGKOK', flag: '🇹🇭', region: 'south-asia',
     streets: ['Yaowarat Road', 'Khao San Road', 'Khlong Bang Luang'],
     // Humid late afternoon: a clear blue top over a warm peach haze. The
     // colour is in the signs, the temple roofs and the tuk-tuks.
@@ -619,7 +624,7 @@ export const ALL_CITIES = [
     ],
   },
   {
-    id: 'hanoi', name: 'HANOI', flag: '🇻🇳', region: 'asia',
+    id: 'hanoi', name: 'HANOI', flag: '🇻🇳', region: 'east-asia',
     streets: ['Hang Gai', 'Train Street', 'Hoan Kiem Lake'],
     // A soft, humid afternoon: milky blue sky, warm haze. Mustard-yellow
     // plaster, green shutters, red lanterns, the lake's green water.
@@ -670,7 +675,7 @@ export const ALL_CITIES = [
     ],
   },
   {
-    id: 'seoul', name: 'SEOUL', flag: '🇰🇷', region: 'asia',
+    id: 'seoul', name: 'SEOUL', flag: '🇰🇷', region: 'east-asia',
     streets: ['Insadong', 'Bukchon Hanok Village', 'Myeongdong'],
     // A crisp autumn day: deep clear blue, golden light, the mountains that
     // ring the city on the horizon. Grey tile roofs, white walls, dark
@@ -726,7 +731,7 @@ export const ALL_CITIES = [
     ],
   },
   {
-    id: 'samarkand', name: 'SAMARKAND', flag: '🇺🇿', region: 'asia',
+    id: 'samarkand', name: 'SAMARKAND', flag: '🇺🇿', region: 'south-asia',
     streets: ['Tashkent Street', 'Siab Bazaar', 'Registan Square'],
     // Dry, bright desert light: a hard blue sky fading to pale dust at the
     // horizon. Sand-coloured brick everywhere, and on it the turquoise and
@@ -827,7 +832,7 @@ export const ALL_CITIES = [
     ],
   },
   {
-    id: 'beijing', name: 'BEIJING', flag: '🇨🇳', region: 'asia',
+    id: 'beijing', name: 'BEIJING', flag: '🇨🇳', region: 'east-asia',
     streets: ['Nanluoguxiang', 'Wangfujing', 'Qianmen Street'],
     // A clear autumn afternoon in the north: a pale cold blue sky, low gold
     // sun. Grey hutong brick, red doors and lanterns, yellow glazed roofs.

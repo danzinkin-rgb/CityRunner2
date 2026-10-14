@@ -34,7 +34,8 @@
  *             honour it (see GRANTS_EVERYTHING below — FOUNDER is deliberately
  *             not expressed as a list of city ids, because a list could not
  *             cover a city nobody has designed yet).
- *   REGION PACKS — £2.99/$2.99 each, one per region (themes.js `region`):
+ *   REGION PACKS — £0.99/$0.99 each, one per region (themes.js `region`),
+ *             about three cities each:
  *             every city in that region, including ones added later. On sale
  *             alongside FOUNDER, and the only way in once FOUNDER is gone.
  *   UNLOCK  — the original "everything" product, kept so that anyone who
@@ -133,7 +134,8 @@ export const REGION_PACKS = {
   'north-america': 'uk.co.zinkin.cityrunner.pack.northamerica',
   'latin-america': 'uk.co.zinkin.cityrunner.pack.latinamerica',
   'mideast-africa': 'uk.co.zinkin.cityrunner.pack.mideastafrica',
-  asia: 'uk.co.zinkin.cityrunner.pack.asia',
+  'east-asia': 'uk.co.zinkin.cityrunner.pack.eastasia',
+  'south-asia': 'uk.co.zinkin.cityrunner.pack.southasia',
 };
 
 /** Every product the store is asked about, for registering and restoring. */

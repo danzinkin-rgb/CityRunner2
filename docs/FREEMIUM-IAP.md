@@ -149,7 +149,7 @@ Open `src/core/iap.js`. The function `loadStore()` contains a commented block ma
 
 ### 5.2a Region packs (October 2026)
 
-One per region, **£2.99**, created only once the region has a released paid
+One per region, about three cities each, **£0.99** (Dan, 14 October 2026), created only once the region has a released paid
 city (a purchase that unlocks nothing is a likely rejection). For the 1.2.0
 release that is **Europe** (Rome) and **North America** (San Francisco).
 Each pack covers every city in its region, including ones added later: the
@@ -161,7 +161,7 @@ code checks the region, not a list (`REGION_PACKS` in
 | **Type** | Non-Consumable | Non-Consumable |
 | **Reference Name** | `Europe Pack` | `North America Pack` |
 | **Product ID** | `uk.co.zinkin.cityrunner.pack.europe` | `uk.co.zinkin.cityrunner.pack.northamerica` |
-| **Price** | £2.99 (UK base, auto-generate the rest) | £2.99 |
+| **Price** | £0.99 (UK base, auto-generate the rest) | £0.99 |
 | **Display Name** | `Europe Pack` | `North America Pack` |
 | **Description** | `Unlock Rome and every European city added in future, with all their monuments. One payment, kept forever.` | `Unlock San Francisco and every North American city added in future, with all their monuments. One payment, kept forever.` |
 | **Review screenshot** | the paywall showing both offers (`?ui=paywall` at 1290×2796, or the simulator) | same |
@@ -170,7 +170,8 @@ code checks the region, not a list (`REGION_PACKS` in
 Later packs, each when its region's first paid city is released (ids are
 already in the code, so no app change is needed beyond the release):
 `pack.mideastafrica` (Jerusalem), `pack.latinamerica` (Mexico City),
-`pack.asia` (Delhi).
+`pack.southasia` (Delhi, Bangkok, Samarkand) and `pack.eastasia` (Beijing, Seoul,
+Hanoi). Asia was split in two on 14 October 2026 to keep packs about equal.
 
 The **Founder** product description still reads correctly. Its price stays
 £1.99. `All Cities Unlock` (5.2) is not offered any more; leave it unavailable.
