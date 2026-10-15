@@ -5,9 +5,13 @@ How CityRunner ships. Agreed with Dan, 2 October 2026.
 ## The rule
 
 - **Fixes and improvements** go out in whatever release comes next.
-- **New cities go out one at a time.** A finished city waits in the release
-  queue until its release, so cities can be built ahead and released on a
-  steady rhythm (weekly or monthly).
+- **Every finished city is released, into its region's pack** (Dan, 15
+  October 2026; until then cities went out one at a time). Every city feeds
+  the daily challenge. Founder opens everything; otherwise each region's
+  pack opens its cities. Paid cities open in a chain within their region:
+  the first plays once owned, each later one after a street in the one
+  before it. New York, Paris and London stay free with their own chain.
+- The release queue (`RELEASE_QUEUE`) remains for a city still being built.
 
 ## How it works in the code
 
@@ -30,9 +34,9 @@ as they merge, and a city when it is released.
 
 ## Releasing
 
-1. **Decide what ships.** Everything in `main`, plus at most one city from the
-   front of the queue.
-2. **Release the city** (if any): remove it from `RELEASE_QUEUE`.
+1. **Decide what ships.** Everything in `main`, including every finished
+   city.
+2. **Release the cities** (if any): remove them from `RELEASE_QUEUE`.
 3. **Version**: bump `VERSION` in `src/main.js`, `version` in `package.json`,
    and `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in
    `ios/App/App.xcodeproj/project.pbxproj`. A city release is a minor
@@ -62,22 +66,7 @@ as they merge, and a city when it is released.
 
 ## Queue
 
-| Order | City | Region | Status | Game Center items to create |
-|---|---|---|---|---|
-| 2 | Mexico City | Latin America | Built; facts approved | `…leaderboard.mexico`, `…achievement.city.mexico` |
-| 3 | Marrakech | Middle East and Africa | Built; facts approved (`docs/MARRAKECH-FACTS-DRAFT.md`) | `…leaderboard.marrakech`, `…achievement.city.marrakech` |
-| 4 | Delhi | South and Central Asia | Built; facts approved (`docs/DELHI-FACTS-DRAFT.md`) | `…leaderboard.delhi`, `…achievement.city.delhi` |
-| 5 | Bangkok | South and Central Asia | Built; facts approved (`docs/BANGKOK-FACTS-DRAFT.md`) | `…leaderboard.bangkok`, `…achievement.city.bangkok` |
-| 6 | Cape Town | Middle East and Africa | Built; facts approved (`docs/CAPE-TOWN-FACTS-DRAFT.md`) | `…leaderboard.capetown`, `…achievement.city.capetown` |
-| 7 | Hanoi | East Asia | Built; facts approved (`docs/HANOI-FACTS-DRAFT.md`) | `…leaderboard.hanoi`, `…achievement.city.hanoi` |
-| 8 | Seoul | East Asia | Built; facts approved (`docs/SEOUL-FACTS-DRAFT.md`) | `…leaderboard.seoul`, `…achievement.city.seoul` |
-| 9 | Zanzibar | Middle East and Africa | Built; facts approved (`docs/ZANZIBAR-FACTS-DRAFT.md`) | `…leaderboard.zanzibar`, `…achievement.city.zanzibar` |
-| 10 | Samarkand | South and Central Asia | Built; facts approved (`docs/SAMARKAND-FACTS-DRAFT.md`) | `…leaderboard.samarkand`, `…achievement.city.samarkand` |
-| 11 | Beijing | East Asia | Built; facts approved (`docs/BEIJING-FACTS-DRAFT.md`) | `…leaderboard.beijing`, `…achievement.city.beijing` |
-| 12 | Havana | Latin America | Built; facts approved (`docs/HAVANA-FACTS-DRAFT.md`) | `…leaderboard.havana`, `…achievement.city.havana` |
-| 13 | Istanbul | Europe | Built; facts approved (`docs/ISTANBUL-FACTS-DRAFT.md`) | `…leaderboard.istanbul`, `…achievement.city.istanbul` |
-| 14 | Chicago | North America | Built; facts approved (`docs/CHICAGO-FACTS-DRAFT.md`) | `…leaderboard.chicago`, `…achievement.city.chicago` |
-| 15 | Buenos Aires | Latin America | Built; facts approved (`docs/BUENOS-AIRES-FACTS-DRAFT.md`) | `…leaderboard.buenosaires`, `…achievement.city.buenosaires` |
+Empty since 1.2.0, which released every finished city.
 
 `…` is `uk.co.zinkin.cityrunner`. Each city's own move (the "Rome Vespa" of
 that city) is listed in `docs/CITY-ROADMAP.md`. Every city after Mexico
@@ -96,20 +85,23 @@ Kyoto is parked (`docs/CITY-ROADMAP.md`).
   everything, for the first ~250 buyers; the app never says so, and Founder
   is removed from sale by hand when `weekly-report.mjs --founder` nears 250
   (docs/FREEMIUM-IAP.md §6). The paywall offers both: everything, and the
-  tapped city's pack. Packs needed in App Store Connect for this release:
-  Europe, North America, and Middle East and Africa (§5.2a). New York,
+  tapped city's pack. All six packs are needed in App Store Connect (§5.2a). New York,
   Paris and London unchanged.
 - Game Center (Dan, 15 October 2026): the "Overall" leaderboard is renamed
   "Lifetime points" in App Store Connect (it always summed every run), and
   a new "Best run" leaderboard, `…leaderboard.bestrun`, takes the highest
   single run on any street (not the daily). Create it as a Classic
   leaderboard, High Score, Best Score, Integer, and add it to the version.
-- Jerusalem released (Dan, 14 October 2026): paid, in the Middle East and
-  Africa pack and the Founder unlock. Needs `…leaderboard.jerusalem` and
-  `…achievement.city.jerusalem` in Game Center.
-- Thirteen more cities finished and queued (hidden from players), with
-  their facts approved: see the queue above.
-
+- Every city released (Dan, 15 October 2026): Jerusalem, Mexico City,
+  Marrakech, Delhi, Bangkok, Cape Town, Hanoi, Seoul, Samarkand, Zanzibar,
+  Beijing, Havana, Istanbul, Chicago and Buenos Aires join the five, twenty
+  in all, each paid and in its region's pack. All six packs are needed in
+  App Store Connect, and for each new city `…leaderboard.<id>` and
+  `…achievement.city.<id>` (0 points). The daily is version 3 and draws
+  from all twenty: `…leaderboard.daily.v3` (Recurring, like daily.v2).
+  `marketing/asc-setup.mjs` creates whatever of this is missing (all of it
+  existed by 15 October 2026); an App Manager API key cannot set IAP prices,
+  so prices were set on the web page.
 - Monument pieces on the run are always placed in a lane that can be
   collected without hitting anything (player feedback). This changes the
   courses, so `COURSE_VERSION` is 2 and saved ghosts from earlier versions

@@ -92,4 +92,7 @@ export function pick(arr) { return arr[Math.floor(current() * arr.length) | 0]; 
 // or scoring, means a new version: bump it, and create the matching
 // `...leaderboard.daily.v<N>` in App Store Connect before release.
 // test/determinism.mjs fails if the pool changes without a new version.
-export const DAILY = { version: 2, cities: ['nyc', 'paris', 'london', 'rome', 'sf'] };
+// v3 (1.2.0): every city, now all are released (Dan: the daily draws from
+// every city, paid or not), and 1.2.0 also changed the courses (monument
+// pieces placed in a clear lane, moving hazards, harder puzzles).
+export const DAILY = { version: 3, cities: ['nyc', 'paris', 'london', 'rome', 'sf', 'jerusalem', 'mexico', 'marrakech', 'delhi', 'bangkok', 'capetown', 'hanoi', 'seoul', 'samarkand', 'zanzibar', 'beijing', 'havana', 'istanbul', 'chicago', 'buenosaires'] };
