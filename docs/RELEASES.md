@@ -42,8 +42,16 @@ as they merge, and a city when it is released.
    Game Center leaderboard (`uk.co.zinkin.cityrunner.leaderboard.<id>`) and
    achievement (`...achievement.city.<id>`) and add both for review; add it
    to the description; add its screenshots if it should be in them. It is
-   paid (not in `FREE_CITIES`), so the Founder and unlock purchases already
-   cover it.
+   paid (not in `FREE_CITIES`), so the Founder purchase and its region's pack
+   cover it; the region's pack must exist in App Store Connect.
+   **City achievements are worth 0 points** (Dan, 15 October 2026). Game
+   Center allows 1,000 points per game and the first ten live achievements
+   used 950; a live achievement's points can never change. App Store Connect
+   accepts 0, and players still get the badge and message. The 50 points
+   left are kept for milestones that do not depend on the city count
+   (for example "master 10 cities"). Copy San Francisco's settings (not
+   hidden, not repeatable; earned and pre-earned text "Earn(ed) all 3 stars
+   in <city>.") and a 1024x1024 badge in the same style.
 5. **Daily challenge**: a new city stays out of the daily until a release
    chooses to add it, which needs a new `DAILY.version` and a matching daily
    leaderboard (see `src/core/rng.js`).
