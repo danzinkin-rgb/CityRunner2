@@ -1093,8 +1093,61 @@ export const ALL_CITIES = [
       },
     ],
   },
+  {
+    id: 'venice', name: 'VENICE', flag: '🇮🇹', region: 'europe',
+    streets: ['Strada Nova', 'Zattere', 'Riva degli Schiavoni'],
+    // A clear spring morning on the lagoon: pale blue sky, a soft sea haze,
+    // warm light on rose and ochre plaster and white Istrian stone. No cars
+    // anywhere: the streets are stone, and the roads are water.
+    sky: { top: '#4a7ac8', mid: '#9cc0e4', horizon: '#f4e4cc', glow: '#ffd8a8' },
+    fog: 0xe6dccc, fogDensity: 0.0095,
+    sun: { color: 0xfff0d8, intensity: 2.4, pos: [50, 60, -45] },
+    hemi: { sky: 0xd8e4f0, ground: 0x7a6e60, intensity: 1.1 },
+    fill: { color: 0xfff0e0, intensity: 1.0 },
+    roadStyle: 'travertine', road: '#8c8680', lane: '#8c8680', sidewalk: '#b8b0a4',
+    palette: ['#d89a7a', '#e8c48a', '#c8705a', '#e4b49a', '#d8a868', '#b8604a'],
+    trim: '#f2ece0', roof: '#a8543a',
+    windowLit: '#ffd898', windowDay: '#8ab0c8', accent: '#2a6a5a',
+    storefront: ['#2a5a4a', '#7a2a2a', '#2a4a6a', '#5a3a2a', '#3a3a40'],
+    facade: 'venetian', hBase: 12, hVar: 8,
+    props: ['lamp', 'wellhead'],
+    // A porter's trolley stacked with parcels: goods go round Venice on
+    // these. Low enough to jump.
+    vehicle: 'carrello',
+    parked: 'carrello',
+    // Gondolas glide across the side canals (src/run/mechanics.js); on the
+    // Riva, the tide comes up over the quay.
+    mechanic: 'gondola',
+    landmarks: ['rialto', 'salute', 'dogespalace'],
+    levels: [
+      { // Strada Nova: the broad shopping street of Cannaregio, cut through
+        // in the 1870s, washing hung out across the side lanes
+        key: 'stradanova',
+        setback: 4.6, secondRow: 0.5,
+        props: ['lamp', 'wellhead'],
+        span: 'laundry', spanFreq: 0.5, spanY: 7.2,
+        ads: ['MASKS', 'GLASS', 'GELATO', 'BOOKS', 'BAKERY'],
+        lit: 0.14,
+      },
+      { // Zattere: the long sunny quay on the Giudecca Canal, gondolas tied
+        // up along it, the Giudecca's houses across the water
+        key: 'zattere', canal: true,
+        setback: 4.6, secondRow: 0.4,
+        props: ['lamp', 'wellhead'],
+        ads: ['GELATO', 'CAFFÈ', 'GALLERY', 'BOATS'],
+        lit: 0.14,
+      },
+      { // Riva degli Schiavoni: the grand quay on the lagoon towards San
+        // Marco, where the tide comes up highest
+        key: 'riva', canal: true, lagoon: true, mechanic: 'flood',
+        setback: 5.2, hBase: 14, hVar: 8, secondRow: 0.3,
+        props: ['lamp'],
+        ads: ['HOTEL', 'MASKS', 'LACE', 'GLASS'],
+        cameo: 'campanilecameo', lit: 0.16,
+      },
+    ],
+  },
 ];
-
 export const LANDMARK_NAMES = {
   empire: 'Empire State Building', chrysler: 'Chrysler Building', brooklyn: 'Brooklyn Bridge',
   eiffel: 'Eiffel Tower', arc: 'Arc de Triomphe', louvre: 'Louvre Pyramid',
@@ -1117,6 +1170,7 @@ export const LANDMARK_NAMES = {
   galata: 'Galata Tower', bluemosque: 'Blue Mosque', hagiasophia: 'Hagia Sophia',
   watertower: 'Chicago Water Tower', buckingham: 'Buckingham Fountain', willis: 'Willis Tower',
   casarosada: 'Casa Rosada', colon: 'Teatro Colón', congreso: 'Palace of the Congress',
+  rialto: 'Rialto Bridge', salute: 'Santa Maria della Salute', dogespalace: "Doge's Palace",
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

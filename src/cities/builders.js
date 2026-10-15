@@ -128,6 +128,25 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
           g.fill();
         }
       }
+      // Venice: lime plaster in rose and ochre, faded by the salt air, and
+      // here and there fallen away to show the brick underneath
+      if (theme.id === 'venice') {
+        for (let i = 0; i < 50; i++) {
+          const t = Math.random();
+          g.fillStyle = t < 0.5 ? `rgba(80,40,30,${t * 0.1})` : `rgba(255,240,220,${(t - 0.5) * 0.12})`;
+          g.fillRect(Math.random() * W, Math.random() * H, 20 + Math.random() * 50, 10 + Math.random() * 30);
+        }
+        for (let i = 0; i < 3; i++) {
+          if (Math.random() < 0.4) continue;
+          const px = Math.random() * (W - 60), py = Math.random() * (H - 80), pw = 30 + Math.random() * 40, ph = 18 + Math.random() * 30;
+          for (let by = 0; by < ph; by += 6) {
+            for (let bx = ((by / 6) % 2) * 6; bx < pw; bx += 12) {
+              g.fillStyle = `rgba(${150 + Math.random() * 40 | 0},70,50,.7)`;
+              g.fillRect(px + bx, py + by, 11, 5);
+            }
+          }
+        }
+      }
       // rusticated stone joints for stone styles
       if (style === 'flagship' || style === 'arcade' || style === 'hotel' || style === 'baroque' || style === 'deptstore' || style === 'beauxarts') {
         g.fillStyle = 'rgba(0,0,0,.07)';
@@ -171,6 +190,40 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
             g.fillStyle = '#f4f0e4'; g.fillRect(x - 3, y - 3, w + 6, h + 6);
             g.fillStyle = Math.random() < (theme.lit ?? 0.16) ? theme.windowLit : pickR(['#2a6a4a', '#2a3a6a', '#6a2a2a']);
             g.fillRect(x, y, w, h);
+            continue;
+          }
+          if (style === 'venetian') {
+            // Venice: pointed Gothic windows framed in white Istrian stone.
+            // On the main floor (the piano nobile) four of them join into one
+            // window with a little balcony; elsewhere they stand singly, some
+            // behind green shutters.
+            const arch = (x, y, w, h) => {
+              g.beginPath(); g.moveTo(x, y + h); g.lineTo(x, y + w * 0.55);
+              g.quadraticCurveTo(x, y + w * 0.1, x + w / 2, y);
+              g.quadraticCurveTo(x + w, y + w * 0.1, x + w, y + w * 0.55);
+              g.lineTo(x + w, y + h); g.closePath(); g.fill();
+            };
+            if (f === Math.min(1, floors - 1) && floors > 1) {
+              if (cIdx === 0) {
+                const x0 = W * 0.2, x1 = W * 0.8, n = 4, y = rowY + wh * 0.12, h = wh * 0.72, bw = (x1 - x0) / n;
+                g.fillStyle = theme.trim; g.fillRect(x0 - 6, y + bw * 0.3, x1 - x0 + 12, h - bw * 0.3 + 6);
+                for (let k = 0; k < n; k++) { g.fillStyle = theme.trim; arch(x0 + k * bw - 1, y - 4, bw + 2, h + 4); }
+                for (let k = 0; k < n; k++) {
+                  g.fillStyle = Math.random() < (theme.lit ?? 0.16) ? theme.windowLit : '#2a3440';
+                  arch(x0 + k * bw + 3, y, bw - 6, h);
+                }
+                g.fillStyle = theme.trim; g.fillRect(x0 - 10, y + h + 1, x1 - x0 + 20, 5);
+                for (let bx = x0 - 8; bx < x1 + 10; bx += 6) g.fillRect(bx, y + h - 10, 2.5, 12);
+              }
+              continue;
+            }
+            if ((cIdx + f) % 3 === 2) continue;
+            const x = cIdx * ww + ww * 0.28, y = rowY + wh * 0.16, w = ww * 0.44, h = wh * 0.68;
+            g.fillStyle = theme.trim; arch(x - 4, y - 5, w + 8, h + 9);
+            const shut = Math.random() < 0.45;
+            g.fillStyle = shut ? '#3a6a4a' : Math.random() < (theme.lit ?? 0.16) ? theme.windowLit : '#2a3440';
+            arch(x, y, w, h);
+            if (shut) { g.fillStyle = 'rgba(0,0,0,.25)'; for (let ly = y + w * 0.5; ly < y + h; ly += 4) g.fillRect(x, ly, w, 1); }
             continue;
           }
           if (style === 'colonial') {
@@ -1490,6 +1543,30 @@ export function makeBuilding(theme, w, h, d, rng = Math.random, side = 0) {
     const ridge = new THREE.Mesh(boxGeo, cached('mat:hanokRidge', () => new THREE.MeshStandardMaterial({ color: 0xe8e4dc, roughness: 0.8 })));
     ridge.scale.set(0.3, 0.25, d * 0.5); ridge.position.y = h + 2.0; group.add(ridge);
   }
+  // Venice: the funnel-shaped chimneys (camini a imbuto) on the roofs, and
+  // on some houses an altana, a wooden roof terrace on posts. Cosmetic.
+  if (theme.facade === 'venetian') {
+    const brick = cached('mat:vChimney', () => new THREE.MeshStandardMaterial({ color: 0xb8664a, roughness: 0.85 }));
+    const n = 1 + ((Math.random() * 3) | 0);
+    for (let i = 0; i < n; i++) {
+      const x = (Math.random() - 0.5) * (w - 1.6), z = (Math.random() - 0.5) * (d - 1.6);
+      const stack = new THREE.Mesh(boxGeo, brick);
+      stack.scale.set(0.45, 1.5, 0.45); stack.position.set(x, h + 0.75, z); group.add(stack);
+      const funnel = new THREE.Mesh(cached('geo:vFunnel', () => new THREE.CylinderGeometry(0.55, 0.2, 0.9, 10)), brick);
+      funnel.position.set(x, h + 1.95, z); group.add(funnel);
+    }
+    if (Math.random() < 0.3) {
+      const wood = cached('mat:altana', () => new THREE.MeshStandardMaterial({ color: 0x7a5a3a, roughness: 0.9 }));
+      const deck = new THREE.Mesh(boxGeo, wood);
+      deck.scale.set(2.6, 0.12, 2.6); deck.position.set(0, h + 1.6, 0); group.add(deck);
+      for (const sx of [-1.2, 1.2]) for (const sz of [-1.2, 1.2]) {
+        const post = new THREE.Mesh(boxGeo, wood);
+        post.scale.set(0.1, 2.4, 0.1); post.position.set(sx, h + 1.2, sz); group.add(post);
+      }
+      const rail = new THREE.Mesh(boxGeo, wood);
+      rail.scale.set(2.6, 0.08, 0.08); rail.position.set(0, h + 2.5, 1.25); group.add(rail);
+    }
+  }
   // Long Street: a first-floor balcony with an iron-lace railing, carried
   // on slim columns at the pavement edge, the length of the house front.
   if (theme.facade === 'veranda' && side !== 0) {
@@ -2211,6 +2288,7 @@ function adWords(theme, fallback) {
 }
 
 const ADS = {
+  venice: ['MASKS', 'GLASS', 'GELATO', 'BOOKS'],
   nyc: ['BROADWAY', 'LIVE!', 'CITY RUN', '42nd ST', 'NEON', 'PIZZA', 'JAZZ CLUB'],
   paris: ['CAFÉ', 'MODE', 'PARFUM', 'BISTRO'],
   london: ['WEST END', 'TEA & CO', 'THE TUBE', 'OXFORD ST'],
@@ -2808,6 +2886,8 @@ const BEETLE_COLORS = [0xf2c4d0, 0xa8d8e8, 0xf6e6a8, 0xc4e8c4, 0xe8d0f0, 0xf4f2e
 
 export function makeParkedCar(theme) {
   if (theme.parked === 'vespa') return makeParkedVespa();
+  // Venice has no cars: porters' trolleys wait at the side instead
+  if (theme.parked === 'carrello') return makeCarrello();
   const beetle = theme.parked === 'beetle';
   const g = new THREE.Group();
   const col = beetle
@@ -2943,6 +3023,7 @@ export function makeProp(kind, theme) {
     case 'phonebox': return makePhonebox();
     case 'postbox': return makePostbox();
     case 'hydrant': return makeHydrant();
+    case 'wellhead': return makeWellhead();
     case 'column': return makeColumn();
     case 'billboard': { const b = makeBillboard(theme); b.position.y = 5 + Math.random() * 3; return b; }
     case 'awning': return makeAwning(theme);
@@ -3067,6 +3148,20 @@ export function makeStreetSpan(theme, width = 13) {
     box.scale.set(0.4, 0.5, 0.3); box.position.set(width * 0.12, -0.9, 0); g.add(box);
     return g;
   }
+  if (style === 'laundry') {
+    // Venice: washing hung out on a line between the houses
+    const cols = [0xf4f4f0, 0x3a6ac8, 0xe8b040, 0xd84a4a, 0xf4f4f0, 0x6ab07a];
+    for (let i = 0; i < 16; i++) {
+      if (Math.random() < 0.3) continue;
+      const t = (i + 0.5) / 16;
+      const cloth = new THREE.Mesh(boxGeo, cached(`mat:laundry:${i % 6}`, () => new THREE.MeshStandardMaterial({ color: cols[i % 6], roughness: 0.95 })));
+      const tall = 0.3 + Math.random() * 0.35;
+      cloth.scale.set(0.3 + Math.random() * 0.25, tall, 0.03);
+      cloth.position.set((t - 0.5) * width, -tall / 2 - Math.sin(t * Math.PI) * 0.25, 0);
+      g.add(cloth);
+    }
+    return g;
+  }
   if (style === 'slats') {
     // Marrakech's souks: a panel of reed slats laid across the lane on a
     // couple of beams, throwing stripes of light down onto the street.
@@ -3173,6 +3268,8 @@ export function makeVehicle(theme) {
     }
     const sign = new THREE.Mesh(boxGeo, mats.glow);
     sign.scale.set(0.5, 0.16, 0.2); sign.position.set(0, 1.6, -0.1); g.add(sign);
+  } else if (kind === 'carrello') {
+    return makeCarrello();
   } else if (kind === 'colectivo') {
     // Buenos Aires' colectivo: a single-deck city bus in two bright colours,
     // the front painted with fileteado, the city's swirling scroll-work. A
@@ -3940,6 +4037,35 @@ export function makeCanalSide(theme, len) {
     const post = new THREE.Mesh(cylGeo, plank);
     post.scale.set(0.1, 1.4, 0.1); post.position.set(-0.3, -0.1, -z); g.add(post);
   }
+  if (theme.id === 'venice') {
+    // Venice: the quay's white stone edge, striped mooring poles, gondolas
+    // tied up along it, and the wide water beyond. On the Zattere the far
+    // bank is the Giudecca's row of houses; on the Riva it is open lagoon.
+    water.scale.set(80, 0.1, len); water.position.set(-40, 0.02, -len / 2);
+    water.material = cached('mat:lagoon', () => new THREE.MeshStandardMaterial({ color: 0x3a7a80, roughness: 0.16, metalness: 0.35 }));
+    const stone = cached('mat:istrian', () => new THREE.MeshStandardMaterial({ color: 0xf0ece2, roughness: 0.7 }));
+    const edge = new THREE.Mesh(boxGeo, stone);
+    edge.scale.set(0.5, 0.36, len); edge.position.set(-0.25, 0.12, -len / 2); g.add(edge);
+    for (let z = 3, k = 0; z < len - 2; z += 6 + Math.random() * 3, k++) {
+      const pole = makeMooringPole(k);
+      pole.position.set(-2.8, -0.3, -z); g.add(pole);
+      if (Math.random() < 0.6) {
+        const boat = makeGondola(false);
+        boat.rotation.y = Math.PI / 2; boat.position.set(-1.6, -0.1, -z - 2.4); g.add(boat);
+      }
+    }
+    if (!theme.lagoon) {
+      for (let z = 0; z < len; z += 9 + Math.random() * 4) {
+        const col = theme.palette[(Math.random() * theme.palette.length) | 0];
+        const house = new THREE.Mesh(boxGeo, cached(`mat:giudecca:${col}`, () => new THREE.MeshStandardMaterial({ color: col, roughness: 0.9 })));
+        const hh = 7 + Math.random() * 5;
+        house.scale.set(6, hh, 8.5); house.position.set(-46, hh / 2, -z - 4); g.add(house);
+        const roof = new THREE.Mesh(boxGeo, cached('mat:giudeccaRoof', () => new THREE.MeshStandardMaterial({ color: 0xa8543a, roughness: 0.9 })));
+        roof.scale.set(6.4, 0.5, 8.9); roof.position.set(-46, hh + 0.25, -z - 4); g.add(roof);
+      }
+    }
+    return g;
+  }
   if (theme.seawall) {
     // Havana's Malecón: a low stone sea wall along the pavement's edge, the
     // open sea beyond it out to the horizon
@@ -4072,6 +4198,164 @@ export function makeWireTangle() {
 // is a wall to dodge (src/run/mechanics.js), so it stands tall: the load
 // and the porter both reach well above jump height. Built facing +x, the
 // porter behind on the -x side.
+// ---------- Venice ----------
+
+// A gondola: long, black, its bow and stern sweeping up, the steel ferro on
+// the bow, a red seat, and the gondolier standing at the stern with his oar.
+// Its long axis lies along x, the way it crosses the road in a side canal;
+// rotate it a quarter turn to moor it along a quay. Generic: no club or
+// company markings.
+export function makeGondola(withGondolier = true) {
+  const g = new THREE.Group();
+  const black = cached('mat:gondola', () => new THREE.MeshStandardMaterial({ color: 0x14141a, roughness: 0.35, metalness: 0.2 }));
+  const hull = new THREE.Mesh(boxGeo, black);
+  hull.scale.set(3.6, 0.42, 0.95); hull.position.y = 0.3; hull.castShadow = true; g.add(hull);
+  for (const sx of [-1, 1]) {
+    const end = new THREE.Mesh(boxGeo, black);
+    end.scale.set(0.9, 0.22, 0.5); end.position.set(sx * 2.05, 0.62, 0); end.rotation.z = sx * 0.55; g.add(end);
+  }
+  const ferro = new THREE.Mesh(boxGeo, cached('mat:ferro', () => new THREE.MeshStandardMaterial({ color: 0xd8dce0, roughness: 0.25, metalness: 0.8 })));
+  ferro.scale.set(0.12, 0.75, 0.06); ferro.position.set(2.42, 1.05, 0); ferro.rotation.z = -0.2; g.add(ferro);
+  for (let k = 0; k < 3; k++) {
+    const tooth = new THREE.Mesh(boxGeo, ferro.material);
+    tooth.scale.set(0.22, 0.04, 0.05); tooth.position.set(2.5, 0.8 + k * 0.14, 0); g.add(tooth);
+  }
+  const seat = new THREE.Mesh(boxGeo, cached('mat:gondolaSeat', () => new THREE.MeshStandardMaterial({ color: 0xa8202a, roughness: 0.8 })));
+  seat.scale.set(0.9, 0.22, 0.75); seat.position.set(0.3, 0.6, 0); g.add(seat);
+  if (withGondolier) {
+    const white = cached('mat:gondShirt', () => new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.8 }));
+    const blue = cached('mat:gondStripe', () => new THREE.MeshStandardMaterial({ color: 0x1a2a6a, roughness: 0.8 }));
+    const legs = new THREE.Mesh(boxGeo, cached('mat:gondTrousers', () => new THREE.MeshStandardMaterial({ color: 0x1a1a22, roughness: 0.9 })));
+    legs.scale.set(0.3, 0.8, 0.3); legs.position.set(-1.4, 0.92, 0); g.add(legs);
+    for (let k = 0; k < 4; k++) {           // the striped shirt
+      const band = new THREE.Mesh(boxGeo, k % 2 ? blue : white);
+      band.scale.set(0.38, 0.17, 0.36); band.position.set(-1.4, 1.42 + k * 0.17, 0); g.add(band);
+    }
+    const head = new THREE.Mesh(ballGeo, cached('mat:skin', () => new THREE.MeshStandardMaterial({ color: 0xd8a888, roughness: 0.8 })));
+    head.scale.setScalar(0.17); head.position.set(-1.4, 2.25, 0); g.add(head);
+    const brim = new THREE.Mesh(cylGeo, cached('mat:straw', () => new THREE.MeshStandardMaterial({ color: 0xe8d088, roughness: 0.9 })));
+    brim.scale.set(0.3, 0.03, 0.3); brim.position.set(-1.4, 2.38, 0); g.add(brim);
+    const crown = new THREE.Mesh(cylGeo, brim.material);
+    crown.scale.set(0.17, 0.12, 0.17); crown.position.set(-1.4, 2.45, 0); g.add(crown);
+    const ribbon = new THREE.Mesh(cylGeo, blue);
+    ribbon.scale.set(0.175, 0.04, 0.175); ribbon.position.set(-1.4, 2.42, 0); g.add(ribbon);
+    const oar = new THREE.Mesh(cylGeo, cached('mat:oar', () => new THREE.MeshStandardMaterial({ color: 0x9a7448, roughness: 0.8 })));
+    oar.scale.set(0.04, 3.0, 0.04); oar.position.set(-1.1, 1.0, 0.45); oar.rotation.set(0.35, 0, 0.45); g.add(oar);
+  }
+  return g;
+}
+
+// A mooring pole (palina), painted in bands, with a gilded knob on top.
+function makeMooringPole(band = 0) {
+  const g = new THREE.Group();
+  const cols = [[0x1a3a8a, 0xf2f2f2], [0xa82a2a, 0xf2f2f2], [0x2a6a4a, 0xe8c040]][band % 3];
+  for (let k = 0; k < 6; k++) {
+    const seg = new THREE.Mesh(cylGeo, cached(`mat:palina:${cols[k % 2]}`, () =>
+      new THREE.MeshStandardMaterial({ color: cols[k % 2], roughness: 0.6 })));
+    seg.scale.set(0.11, 0.5, 0.11); seg.position.y = 0.25 + k * 0.5; g.add(seg);
+  }
+  const knob = new THREE.Mesh(ballGeo, cached('mat:palinaGold', () => new THREE.MeshStandardMaterial({ color: 0xd8b04a, roughness: 0.3, metalness: 0.7 })));
+  knob.scale.setScalar(0.16); knob.position.y = 3.1; g.add(knob);
+  return g;
+}
+
+// A side canal (rio) crossing the street: water right across the road and
+// both pavements, edged in white Istrian stone, a striped mooring pole at
+// each side. Sits in the middle lane; the road is 8.6 m wide.
+export function makeRio() {
+  const g = new THREE.Group();
+  const water = cached('mat:rio', () => new THREE.MeshStandardMaterial({ color: 0x3a7a78, roughness: 0.15, metalness: 0.35 }));
+  const road = new THREE.Mesh(boxGeo, water);
+  road.scale.set(8.6, 0.06, 2.2); road.position.y = 0.02; g.add(road);
+  for (const sx of [-1, 1]) {
+    const pave = new THREE.Mesh(boxGeo, water);
+    pave.scale.set(8, 0.06, 2.2); pave.position.set(sx * 8.3, 0.31, 0); g.add(pave);
+    const pole = makeMooringPole(sx > 0 ? 0 : 1);
+    pole.position.set(sx * 5.4, 0.3, -0.9); g.add(pole);
+  }
+  const stone = cached('mat:istrian', () => new THREE.MeshStandardMaterial({ color: 0xf0ece2, roughness: 0.7 }));
+  for (const sz of [-1, 1]) {
+    const edge = new THREE.Mesh(boxGeo, stone);
+    edge.scale.set(24, 0.1, 0.3); edge.position.set(0, 0.05, sz * 1.2); g.add(edge);
+  }
+  return g;
+}
+
+// Acqua alta: a 5 m stretch of one lane under the tide, which rises as you
+// come (userData.water is scaled from flat to full). `boards` lays the
+// raised wooden walkway (passerella) instead, in the lane that stays dry.
+export function makeFloodLane(boards = false) {
+  const g = new THREE.Group();
+  if (boards) {
+    const wood = cached('mat:passerella', () => new THREE.MeshStandardMaterial({ color: 0x8a6a48, roughness: 0.9 }));
+    const deck = new THREE.Mesh(boxGeo, wood);
+    deck.scale.set(1.5, 0.08, 4.9); deck.position.y = 0.14; g.add(deck);
+    for (const sx of [-0.65, 0.65]) for (const sz of [-2, 2]) {
+      const leg = new THREE.Mesh(boxGeo, wood);
+      leg.scale.set(0.08, 0.12, 0.08); leg.position.set(sx, 0.05, sz); g.add(leg);
+    }
+    return g;
+  }
+  const water = new THREE.Mesh(boxGeo, cached('mat:tide', () =>
+    new THREE.MeshStandardMaterial({ color: 0x4a8a8a, roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.85 })));
+  water.scale.set(2.4, 0.3, 5.0); water.position.y = 0.15; g.add(water);
+  const shine = new THREE.Mesh(boxGeo, cached('mat:tideShine', () =>
+    new THREE.MeshStandardMaterial({ color: 0xc8e8e8, roughness: 0.1, transparent: true, opacity: 0.5 })));
+  shine.scale.set(0.9, 0.02, 1.6); shine.position.set(-0.4, 0.31, 0.8); g.add(shine);
+  const tide = new THREE.Group();
+  tide.add(water, shine);
+  tide.scale.y = 0.01;
+  g.add(tide);
+  g.userData.water = tide;
+  return g;
+}
+
+// A wellhead (vera da pozzo): the carved stone drum over a cistern that
+// stands in every Venetian square, with an iron frame for the bucket.
+function makeWellhead() {
+  const g = new THREE.Group();
+  const stone = cached('mat:istrian', () => new THREE.MeshStandardMaterial({ color: 0xf0ece2, roughness: 0.7 }));
+  const drum = new THREE.Mesh(cached('geo:wellDrum', () => new THREE.CylinderGeometry(0.62, 0.55, 0.9, 8)), stone);
+  drum.position.y = 0.45; drum.castShadow = true; g.add(drum);
+  const lip = new THREE.Mesh(cached('geo:wellLip', () => new THREE.CylinderGeometry(0.7, 0.7, 0.12, 8)), stone);
+  lip.position.y = 0.95; g.add(lip);
+  const step = new THREE.Mesh(cached('geo:wellStep', () => new THREE.CylinderGeometry(0.95, 0.95, 0.14, 8)), stone);
+  step.position.y = 0.07; g.add(step);
+  const iron = cached('mat:wellIron', () => new THREE.MeshStandardMaterial({ color: 0x2a2a2e, roughness: 0.5, metalness: 0.5 }));
+  for (const sx of [-0.55, 0.55]) {
+    const post = new THREE.Mesh(boxGeo, iron);
+    post.scale.set(0.05, 1.0, 0.05); post.position.set(sx, 1.5, 0); g.add(post);
+  }
+  const bar = new THREE.Mesh(boxGeo, iron);
+  bar.scale.set(1.15, 0.05, 0.05); bar.position.y = 2.0; g.add(bar);
+  return g;
+}
+
+// A porter's trolley (carrello), parked with its load of parcels: Venice has
+// no cars, and goods go round on these. Low enough to jump, its load under
+// its 1.6 m hitbox.
+function makeCarrello() {
+  const g = new THREE.Group();
+  const iron = cached('mat:carrello', () => new THREE.MeshStandardMaterial({ color: 0x3a4a5a, roughness: 0.5, metalness: 0.5 }));
+  const tyre = cached('mat:tyre', () => new THREE.MeshStandardMaterial({ color: 0x14141a, roughness: 0.8 }));
+  const plate = new THREE.Mesh(boxGeo, iron);
+  plate.scale.set(1.0, 0.06, 1.3); plate.position.y = 0.3; g.add(plate);
+  for (const sx of [-0.5, 0.5]) {
+    const w = new THREE.Mesh(cached('geo:carrelloWheel', () => new THREE.CylinderGeometry(0.2, 0.2, 0.08, 14)), tyre);
+    w.rotation.z = Math.PI / 2; w.position.set(sx, 0.2, -0.5); g.add(w);
+    const rail = new THREE.Mesh(boxGeo, iron);
+    rail.scale.set(0.05, 1.5, 0.05); rail.position.set(sx, 1.05, -0.62); rail.rotation.x = -0.12; g.add(rail);
+  }
+  const card = [0xc8a070, 0xb88a58, 0xd8b888];
+  const stack = [[-0.2, 0.52, 0.5], [0.22, 0.52, 0.42], [-0.16, 0.9, 0.46], [0.2, 0.9, 0.4], [0.02, 1.27, 0.5]];
+  stack.forEach(([x, y, sw], i) => {
+    const box = new THREE.Mesh(boxGeo, cached(`mat:parcel:${i % 3}`, () => new THREE.MeshStandardMaterial({ color: card[i % 3], roughness: 0.95 })));
+    box.scale.set(sw, 0.36, 0.55); box.position.set(x, y, (i % 3 - 1) * 0.08);
+    box.castShadow = true; g.add(box);
+  });
+  return g;
+}
+
 export function makeHandcart() {
   const g = new THREE.Group();
   const wood = cached('mat:cartWood', () => new THREE.MeshStandardMaterial({ color: 0x7a5232, roughness: 0.9 }));
@@ -4652,6 +4936,7 @@ export function makeSquareStalls(theme, n = 3) {
 // haze; SIL_TINT gives each city its own silhouette hue and SIL_GAIN lifts the
 // contrast far enough to actually be legible through the fog.
 const SIL_TINT = {
+  venice: '#6a5a58',     // warm rose-grey: roofs and campanili in the lagoon haze
   nyc: '#243052',        // cool slate against the warm horizon
   paris: '#5a6486',      // soft blue-grey slate roofs
   london: '#33455e',     // sooty blue-grey
@@ -4848,6 +5133,21 @@ function skylineTexture(theme) {
         }
         x += bw + 2;
       }
+    } else if (theme.id === 'venice') {
+      // A low line of tiled roofs with funnel chimneys, broken by campanili
+      // with pointed tops and the odd dome. (The Campanile of San Marco is a
+      // cameo on the Riva; these are generic.)
+      for (let x = 0, i = 0; x < 1600; i++) {
+        const bw = 36 + (i * 11) % 24, bh = 30 + (i * 7) % 18;
+        box(x, bw, bh, 0.16);
+        if (i % 3 === 1) { box(x + bw * 0.3, 4, bh + 10, 0.18); g.fillStyle = dark(0.18); g.fillRect(x + bw * 0.3 - 3, GY - bh - 14, 10, 4); }
+        x += bw;
+      }
+      for (const x of [220, 760, 1300]) {
+        box(x, 18, 140, 0.24);
+        g.fillStyle = dark(0.24); g.beginPath(); g.moveTo(x - 2, GY - 140); g.lineTo(x + 9, GY - 172); g.lineTo(x + 20, GY - 140); g.fill();
+      }
+      for (const x of [480, 1050]) { g.fillStyle = dark(0.22); g.beginPath(); g.ellipse(x, GY - 60, 34, 34, 0, Math.PI, 0); g.fill(); box(x - 34, 68, 60, 0.22); }
     } else if (theme.id === 'chicago') {
       // A wall of towers of every height, a few very tall with antennas.
       for (let x = 0, i = 0; x < 1600; i++) {
@@ -5236,6 +5536,23 @@ export function makeCameo(theme) {
       g.fillRect(cx - 20, GY - 360, 60, 60);
       g.fillRect(cx - 20, GY - 400, 40, 40);
       g.fillRect(cx - 12, GY - 470, 4, 70); g.fillRect(cx + 10, GY - 460, 4, 60);
+    } else if (key === 'campanilecameo') {
+      // San Marco at the end of the Riva: the Campanile's brick shaft, its
+      // open belfry and green pyramid, the domes of the basilica beside it
+      // and the long front of the Doge's Palace before them.
+      g.fillStyle = dark(0.24);
+      g.fillRect(cx - 380, GY - 110, 300, 110);
+      for (const [ox, r] of [[-330, 34], [-250, 44], [-170, 34]]) { g.beginPath(); g.ellipse(cx + ox, GY - 110, r, r * 1.1, 0, Math.PI, 0); g.fill(); }
+      g.fillStyle = dark(0.32);
+      g.fillRect(cx - 34, GY - 300, 68, 300);
+      g.fillStyle = light(0.25);
+      for (let x = cx - 26; x < cx + 26; x += 13) g.fillRect(x, GY - 300 + 4, 7, 26);
+      g.fillStyle = dark(0.36);
+      g.fillRect(cx - 38, GY - 340, 76, 40);
+      g.beginPath(); g.moveTo(cx - 38, GY - 340); g.lineTo(cx, GY - 440); g.lineTo(cx + 38, GY - 340); g.fill();
+      g.fillRect(cx - 1.5, GY - 460, 3, 20);
+      g.fillStyle = dark(0.2);
+      g.fillRect(cx + 60, GY - 120, 380, 120);
     } else if (key === 'galatacameo') {
       // The Galata Tower at the far end of İstiklal, over the rooftops:
       // the round stone shaft, its gallery and the tall conical cap.

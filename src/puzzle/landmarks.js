@@ -1984,6 +1984,101 @@ const defs = {
     B([0, 20.3, -0.5], [1.2, 1.6, 1.2], '#d4cec2', 'cyl', { tex: 'arch', tx: { n: 6 } }),    // the lantern
     B([0, 21.8, -0.5], [0.3, 1.4, 0.3], '#d8b04a', 'cyl', { metal: 1 }),
   ],
+  // Venice. The Rialto Bridge (1588-1591, Antonio da Ponte): one stone arch
+  // over the Grand Canal, two rows of shops climbing each ramp, and the
+  // arched portico at the top.
+  rialto: [
+    B([0, 0.15, 0], [30, 0.3, 12], '#3a7a78', 'box', { wet: 1, em: '#4a8a88', emI: 0.15 }),   // the Grand Canal
+    B([-13, 0.8, 0], [4, 1.0, 12], '#c8c0b0', 'box', { tex: 'stone' }),                     // the quays
+    B([13, 0.8, 0], [4, 1.0, 12], '#c8c0b0', 'box', { tex: 'stone' }),
+    B([0, 2.6, 0], [24, 4.4, 8], '#ece6d8', 'extrude', {                                   // the single arch
+      outline: [[-0.5, -0.5], [-0.36, -0.5], [-0.28, -0.2], [-0.15, -0.02], [0, 0.04], [0.15, -0.02],
+        [0.28, -0.2], [0.36, -0.5], [0.5, -0.5], [0.5, -0.12], [0.25, 0.3], [0, 0.5], [-0.25, 0.3], [-0.5, -0.12]],
+    }),
+    ...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => B([sx * 6.2, 5.0, sz * 2.4], [8.2, 2.2, 2.2], '#f0eadc', 'box', {   // the shops
+      tex: 'arch', tx: { n: 6 }, rotZ: -sx * 0.21,
+      adorn: [B([0, 1.0, 0], [8.4, 0.24, 2.4], '#a8543a')],
+    }))),
+    B([0, 6.7, 0], [3.4, 3.0, 7.0], '#f2ecde', 'box', {                                     // the portico at the top
+      tex: 'arch', tx: { n: 1 },
+      adorn: [B([0, 1.9, 0], [3.8, 0.8, 7.2], '#e8e0d0', 'prism')],
+    }),
+    ...[-1, 1].flatMap((sx) => [B([sx * 6.0, 4.5, 3.9], [11, 0.5, 0.3], '#e8e2d4', 'box', { rotZ: -sx * 0.21, sortY: 4.9 }),   // balustrades
+      B([sx * 6.0, 4.5, -3.9], [11, 0.5, 0.3], '#e8e2d4', 'box', { rotZ: -sx * 0.21, sortY: 4.9 })]),
+  ],
+  // Santa Maria della Salute (1631-1687, Baldassare Longhena): the octagonal
+  // church at the mouth of the Grand Canal, its great dome on a ring of
+  // scroll buttresses, a smaller dome and two bell towers behind.
+  salute: [
+    B([0, 0.15, 0], [32, 0.3, 30], '#3a7a78', 'box', { wet: 1, em: '#4a8a88', emI: 0.15 }),   // the water
+    B([0, 0.55, -2], [24, 0.5, 26], '#d8d2c6', 'box', { tex: 'stone' }),                    // the quay
+    B([0, 1.1, 0], [19, 0.6, 18.6], '#ece6da', 'tier', { sides: 8 }),                        // the platform
+    B([0, 1.0, 10.4], [9, 0.8, 3], '#e8e2d6', 'box', { tex: 'stone' }),                       // the steps up from the water
+    B([0, 4.6, 0], [15.6, 6.4, 15.6], '#f0ead8', 'tier', { sides: 8, tex: 'arch', tx: { n: 8 } }),   // the octagon
+    B([0, 5.2, 7.6], [6.4, 7.6, 1.4], '#f4eede', 'box', {                                   // the front, a triumphal arch
+      tex: 'arch', tx: { n: 1 },
+      adorn: [B([0, 4.4, 0], [6.8, 1.4, 1.6], '#ece6d6', 'prism')],
+    }),
+    ...[[-1, 0], [1, 0]].map(([sx]) => B([sx * 7.0, 4.0, 4.0], [3.4, 5.0, 2.6], '#ece6d6', 'box', {   // side chapels
+      tex: 'arch', tx: { n: 1 }, rotY: sx * Math.PI / 4,
+      adorn: [B([0, 3.0, 0], [3.6, 1.0, 2.8], '#e4ded0', 'prism')],
+    })),
+    B([0, 9.4, 0], [11.4, 3.0, 11.4], '#f2ecdc', 'cyl', {                                   // the drum, its scrolls
+      tex: 'arch', tx: { n: 16 },
+      adorn: Array.from({ length: 8 }, (_, i) => {
+        const a = (i / 8) * Math.PI * 2;
+        return B([Math.cos(a) * 5.1, -0.4, Math.sin(a) * 5.1], [1.4, 2.2, 1.0], '#e8e2d2', 'sphere', { rotY: -a });
+      }),
+    }),
+    B([0, 13.6, 0], [11.6, 5.6, 11.6], '#aeb4ba', 'lathe', {                                // the great dome, in lead
+      metal: 1,
+      profile: [[1, 0], [0.98, 0.2], [0.9, 0.42], [0.72, 0.66], [0.46, 0.86], [0.18, 1]],
+    }),
+    B([0, 17.6, 0], [2.4, 2.4, 2.4], '#f2ecdc', 'cyl', {                                    // the lantern
+      tex: 'arch', tx: { n: 6 },
+      adorn: [B([0, 1.6, 0], [1.4, 1.0, 1.4], '#aeb4ba', 'dome', { metal: 1 })],
+    }),
+    B([0, 6.2, -9.6], [9, 7.6, 6], '#ece6d6', 'box', { tex: 'win', tx: { cols: 3, rows: 2 } }),   // the chancel behind
+    B([0, 11.2, -9.6], [6.4, 3.6, 6.4], '#aeb4ba', 'dome', { metal: 1 }),                    // its smaller dome
+    ...[-1, 1].map((sx) => B([sx * 5.4, 8.0, -12.0], [1.8, 11, 1.8], '#ece6d6', 'box', {     // two bell towers
+      tex: 'arch', tx: { n: 2 },
+      adorn: [B([0, 5.9, 0], [1.6, 1.4, 1.6], '#aeb4ba', 'dome', { metal: 1 })],
+    })),
+  ],
+  // The Doge's Palace (mostly 1340-1440): an open arcade on the ground, a
+  // loggia of Gothic tracery above it, and above that a high wall of pink and
+  // white brick in a diamond pattern with a few great windows; the
+  // waterfront and Piazzetta fronts, the Bridge of Sighs (about 1600) on the
+  // canal beside it, and the two columns of the Piazzetta.
+  dogespalace: [
+    B([0, 0.15, -2], [40, 0.3, 34], '#cac4b8', 'box', { tex: 'stone' }),                    // the Molo and Piazzetta
+    B([0, 0.1, 14], [40, 0.2, 4], '#3a7a78', 'box', { wet: 1, em: '#4a8a88', emI: 0.15 }),   // the lagoon's edge
+    ...[-9.4, 0, 9.4].flatMap((x) => [
+      B([x, 2.6, 2], [9.4, 4.6, 8], '#f0ece2', 'box', { tex: 'arch', tx: { n: 3 } }),       // the ground-floor arcade
+      B([x, 6.7, 2], [9.4, 3.6, 8], '#f2eee4', 'box', { tex: 'gothic' }),                   // the loggia above
+      B([x, 11.7, 2], [9.4, 6.4, 8], '#e8b0a8', 'box', { tex: 'lozenge', tx: { n: 2 } }),   // the pink and white wall
+    ]),
+    ...[-13, -5].flatMap((z) => [
+      B([-10, 2.6, z], [8, 4.6, 8], '#f0ece2', 'box', { tex: 'arch', tx: { n: 3 }, rotY: Math.PI / 2 }),   // the Piazzetta wing
+      B([-10, 6.7, z], [8, 3.6, 8], '#f2eee4', 'box', { tex: 'gothic', rotY: Math.PI / 2 }),
+      B([-10, 11.7, z], [8, 6.4, 8], '#e8b0a8', 'box', { tex: 'lozenge', tx: { n: 2 }, rotY: Math.PI / 2 }),
+    ]),
+    B([0, 11.6, 6.4], [3.2, 5.6, 0.8], '#f4f0e6', 'box', { tex: 'gothic', sortY: 11.8 }),    // the great balcony window
+    B([2, 15.3, 2], [28.6, 1.0, 8.2], '#9aa0a6', 'box', {                                   // roof, and its cresting
+      metal: 1,
+      adorn: Array.from({ length: 14 }, (_, i) => B([-13.4 + i * 2.06, 0.3, 3.9], [0.5, 0.4, 0.3], '#f4f0e6')),
+    }),
+    B([-10, 15.3, -9], [8.2, 1.0, 16.2], '#9aa0a6', 'box', {
+      metal: 1,
+      adorn: Array.from({ length: 8 }, (_, i) => B([-3.9, 0.3, -7.2 + i * 2.06], [0.3, 0.4, 0.5], '#f4f0e6')),
+    }),
+    B([15.6, 0.12, 0], [3, 0.24, 28], '#3a7a78', 'box', { wet: 1, em: '#4a8a88', emI: 0.15 }),   // the canal beside it
+    B([15.6, 7.4, -1], [3.4, 2.6, 2.2], '#f2eee4', 'box', { tex: 'arch', tx: { n: 1 } }),    // the Bridge of Sighs
+    ...[-1, 1].map((s) => B([-17 + s * 3.2, 5.6, 9.5], [1.0, 11.2, 1.0], '#e8e2d6', 'cyl', {   // the Piazzetta's columns
+      adorn: [B([0, 5.9, 0], [1.4, 0.6, 1.4], '#e0d8c8', 'box'),
+        B([0, 6.8, 0], [1.2, 1.2, 1.2], s < 0 ? '#5a6a5a' : '#e8e2d6', 'statue', { figs: 1 })],
+    })),
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }

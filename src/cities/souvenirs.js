@@ -152,6 +152,33 @@ export function makeCollectible(theme) {
     straw.position.set(0.06, 0.32, 0); straw.rotation.z = -0.3; g.add(straw);
     const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.06, 16), silver);
     foot.position.y = -0.26; g.add(foot);
+  } else if (theme.id === 'venice') {
+    // A carnival mask: a gold half-mask with two eye holes, a red band
+    // across the brow and a white feather on one side.
+    const out = new THREE.Shape();
+    out.moveTo(-0.34, 0.02);
+    out.quadraticCurveTo(-0.34, 0.2, -0.14, 0.19);
+    out.quadraticCurveTo(-0.04, 0.18, 0, 0.13);
+    out.quadraticCurveTo(0.04, 0.18, 0.14, 0.19);
+    out.quadraticCurveTo(0.34, 0.2, 0.34, 0.02);
+    out.quadraticCurveTo(0.3, -0.15, 0.12, -0.14);
+    out.quadraticCurveTo(0.04, -0.12, 0, -0.04);
+    out.quadraticCurveTo(-0.04, -0.12, -0.12, -0.14);
+    out.quadraticCurveTo(-0.3, -0.15, -0.34, 0.02);
+    for (const sx of [-1, 1]) {
+      const eye = new THREE.Path();
+      eye.absellipse(sx * 0.15, 0.03, 0.075, 0.045, 0, Math.PI * 2, sx > 0, 0);
+      out.holes.push(eye);
+    }
+    const gold = new THREE.MeshStandardMaterial({ color: 0xe8c050, roughness: 0.3, metalness: 0.7, emissive: 0x4a3008, emissiveIntensity: 0.35 });
+    const face = new THREE.Mesh(new THREE.ExtrudeGeometry(out, { depth: 0.02, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.008, bevelSegments: 2 }), gold);
+    face.position.z = -0.01; g.add(face);
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.035, 0.03),
+      new THREE.MeshStandardMaterial({ color: 0xb8202a, roughness: 0.5, emissive: 0x3a0808, emissiveIntensity: 0.3 }));
+    band.position.set(0, 0.13, 0.025); band.scale.set(1, 0.8, 1); g.add(band);
+    const plume = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8),
+      new THREE.MeshStandardMaterial({ color: 0xf4f0e8, roughness: 0.9, emissive: 0x404040, emissiveIntensity: 0.3 }));
+    plume.scale.set(0.05, 0.24, 0.015); plume.position.set(0.32, 0.32, 0); plume.rotation.z = -0.5; g.add(plume);
   } else if (theme.id === 'chicago') {
     // A slice of deep-dish pizza: a tall golden crust round a thick layer
     // of cheese and red tomato on top, flecked with herbs.

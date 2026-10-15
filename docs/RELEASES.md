@@ -57,19 +57,20 @@ as they merge, and a city when it is released.
 | Order | City | Region | Status | Game Center items to create |
 |---|---|---|---|---|
 | 2 | Mexico City | Latin America | Built; facts approved | `…leaderboard.mexico`, `…achievement.city.mexico` |
-| 3 | Marrakech | Middle East and Africa | Built; facts approved (`docs/MARRAKECH-FACTS-DRAFT.md`) | `…leaderboard.marrakech`, `…achievement.city.marrakech` |
-| 4 | Delhi | South and Central Asia | Built; facts approved (`docs/DELHI-FACTS-DRAFT.md`) | `…leaderboard.delhi`, `…achievement.city.delhi` |
-| 5 | Bangkok | South and Central Asia | Built; facts approved (`docs/BANGKOK-FACTS-DRAFT.md`) | `…leaderboard.bangkok`, `…achievement.city.bangkok` |
-| 6 | Cape Town | Middle East and Africa | Built; facts approved (`docs/CAPE-TOWN-FACTS-DRAFT.md`) | `…leaderboard.capetown`, `…achievement.city.capetown` |
-| 7 | Hanoi | East Asia | Built; facts approved (`docs/HANOI-FACTS-DRAFT.md`) | `…leaderboard.hanoi`, `…achievement.city.hanoi` |
-| 8 | Seoul | East Asia | Built; facts approved (`docs/SEOUL-FACTS-DRAFT.md`) | `…leaderboard.seoul`, `…achievement.city.seoul` |
-| 9 | Zanzibar | Middle East and Africa | Built; facts approved (`docs/ZANZIBAR-FACTS-DRAFT.md`) | `…leaderboard.zanzibar`, `…achievement.city.zanzibar` |
-| 10 | Samarkand | South and Central Asia | Built; facts approved (`docs/SAMARKAND-FACTS-DRAFT.md`) | `…leaderboard.samarkand`, `…achievement.city.samarkand` |
-| 11 | Beijing | East Asia | Built; facts approved (`docs/BEIJING-FACTS-DRAFT.md`) | `…leaderboard.beijing`, `…achievement.city.beijing` |
-| 12 | Havana | Latin America | Built; facts approved (`docs/HAVANA-FACTS-DRAFT.md`) | `…leaderboard.havana`, `…achievement.city.havana` |
-| 13 | Istanbul | Europe | Built; facts approved (`docs/ISTANBUL-FACTS-DRAFT.md`) | `…leaderboard.istanbul`, `…achievement.city.istanbul` |
-| 14 | Chicago | North America | Built; facts approved (`docs/CHICAGO-FACTS-DRAFT.md`) | `…leaderboard.chicago`, `…achievement.city.chicago` |
-| 15 | Buenos Aires | Latin America | Built; facts approved (`docs/BUENOS-AIRES-FACTS-DRAFT.md`) | `…leaderboard.buenosaires`, `…achievement.city.buenosaires` |
+| 3 | Venice | Europe | Built; facts DRAFT (`docs/VENICE-FACTS-DRAFT.md`) | `…leaderboard.venice`, `…achievement.city.venice` |
+| 4 | Marrakech | Middle East and Africa | Built; facts approved (`docs/MARRAKECH-FACTS-DRAFT.md`) | `…leaderboard.marrakech`, `…achievement.city.marrakech` |
+| 5 | Delhi | South and Central Asia | Built; facts approved (`docs/DELHI-FACTS-DRAFT.md`) | `…leaderboard.delhi`, `…achievement.city.delhi` |
+| 6 | Bangkok | South and Central Asia | Built; facts approved (`docs/BANGKOK-FACTS-DRAFT.md`) | `…leaderboard.bangkok`, `…achievement.city.bangkok` |
+| 7 | Cape Town | Middle East and Africa | Built; facts approved (`docs/CAPE-TOWN-FACTS-DRAFT.md`) | `…leaderboard.capetown`, `…achievement.city.capetown` |
+| 8 | Hanoi | East Asia | Built; facts approved (`docs/HANOI-FACTS-DRAFT.md`) | `…leaderboard.hanoi`, `…achievement.city.hanoi` |
+| 9 | Seoul | East Asia | Built; facts approved (`docs/SEOUL-FACTS-DRAFT.md`) | `…leaderboard.seoul`, `…achievement.city.seoul` |
+| 10 | Zanzibar | Middle East and Africa | Built; facts approved (`docs/ZANZIBAR-FACTS-DRAFT.md`) | `…leaderboard.zanzibar`, `…achievement.city.zanzibar` |
+| 11 | Samarkand | South and Central Asia | Built; facts approved (`docs/SAMARKAND-FACTS-DRAFT.md`) | `…leaderboard.samarkand`, `…achievement.city.samarkand` |
+| 12 | Beijing | East Asia | Built; facts approved (`docs/BEIJING-FACTS-DRAFT.md`) | `…leaderboard.beijing`, `…achievement.city.beijing` |
+| 13 | Havana | Latin America | Built; facts approved (`docs/HAVANA-FACTS-DRAFT.md`) | `…leaderboard.havana`, `…achievement.city.havana` |
+| 14 | Istanbul | Europe | Built; facts approved (`docs/ISTANBUL-FACTS-DRAFT.md`) | `…leaderboard.istanbul`, `…achievement.city.istanbul` |
+| 15 | Chicago | North America | Built; facts approved (`docs/CHICAGO-FACTS-DRAFT.md`) | `…leaderboard.chicago`, `…achievement.city.chicago` |
+| 16 | Buenos Aires | Latin America | Built; facts approved (`docs/BUENOS-AIRES-FACTS-DRAFT.md`) | `…leaderboard.buenosaires`, `…achievement.city.buenosaires` |
 
 `…` is `uk.co.zinkin.cityrunner`. Each city's own move (the "Rome Vespa" of
 that city) is listed in `docs/CITY-ROADMAP.md`. Every city after Mexico

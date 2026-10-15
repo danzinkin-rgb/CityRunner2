@@ -51,7 +51,7 @@ const SNAP = () => {
   const obs = tr.obstacles.map((o) => ({
     row: rowKey(o), lane: o.lane, kind: o.kind, mech: !!o.mech, cross: o.cross ?? 0,
     from: o.uFrom ?? null, to: o.uTo ?? null,
-    y1: o.y1, gate: o.gate || '',
+    y1: o.y1, gate: o.gate || '', at: tr.laneAtArrival(o), boat: !!o.boat, front: !!o.front,
     z: o.chunk.position.z + o.localZ,
   }));
   const coins = tr.coins.map((c) => ({ chunk: tr.chunks.indexOf(c.chunk), x: c.mesh.position.x, z: c.mesh.position.z,
@@ -699,6 +699,90 @@ async function watch(page, ms, shotName) {
   check(buses.every((b) => b.lane !== 1 && b.y1 === 3.2), 'a bus pulls into an outer lane, and is a wall');
   check(buses.every((b) => !snap.obs.some((o) => o.row === b.row && o.lane === 1)), 'the middle lane stays free beside a bus pulling out');
   check(!errors.length, 'Buenos Aires: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
+// ------------------------------------------------------------ Venice
+// Gondolas in the side canals (GD_* in mechanics.js):
+//   - a canal is low water (0.8 m) in all three lanes, and a gondola that is
+//     a wall in two neighbouring lanes, the middle one and an outer one,
+//     alone in its row, with no souvenirs
+//   - at arrival the gondola is exactly over its two lanes
+//   - nothing to roll under 16 m before it or 18 m after it
+//   - the same seed deals the same canals
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337]) {
+    ({ page, ctx, errors } = await open('venice', 2, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.some((o) => o.boat)) break;
+    await ctx.close();
+  }
+  const boats = snap.obs.filter((o) => o.boat);
+  check(boats.length > 0, 'Venice deals gondolas in the canals', `${boats.length}, seed ${SEED}`);
+  let bad = 0, rollBad = 0;
+  for (const b of boats) {
+    const inRow = snap.obs.filter((o) => o.row === b.row);
+    const water = inRow.filter((o) => o.kind === 'low');
+    const walls = inRow.filter((o) => o.kind === 'full');
+    const wallLanes = walls.map((o) => o.at).sort();
+    if (inRow.some((o) => !o.mech) || water.length !== 3 || water.some((o) => o.y1 !== 0.8)
+      || new Set(water.map((o) => o.lane)).size !== 3 || walls.length !== 2
+      || !(wallLanes.join() === '0,1' || wallLanes.join() === '1,2')) bad++;
+    const [ch, lz] = b.row.split(':').map(Number);
+    if (snap.coins.some((c) => c.chunk === ch && Math.abs(c.z - lz) < 3)) bad++;
+    if (snap.obs.some((o) => o.kind === 'high' && o.z > b.z - 18 && o.z < b.z + 16)) rollBad++;
+  }
+  check(bad === 0, 'a canal is water in every lane and a gondola walling two neighbouring lanes, alone, no souvenirs', `${bad} bad`);
+  check(rollBad === 0, 'nothing to roll under just before or after a canal', `${rollBad} bad`);
+  const offBy = await page.evaluate(() => {
+    let worst = 0;
+    const L = [-2.4, 0, 2.4];
+    for (const o of window.__cr.track.obstacles.filter((x) => x.boat)) {
+      o.mech.move(o, 0);
+      worst = Math.max(worst, Math.abs(o.x - L[o.lane]), Math.abs(o.pair.x - L[o.pair.lane]));
+    }
+    return worst;
+  });
+  check(offBy < 0.01, 'a gondola is exactly over its two lanes as you reach it', `off by ${offBy.toFixed(3)} m`);
+  const again = await open('venice', 2, SEED);
+  const snap2 = await again.page.evaluate(SNAP);
+  const key = (sn) => JSON.stringify(sn.obs.filter((o) => o.mech).map((o) => [o.row, o.lane, o.kind, o.at]));
+  check(key(snap) === key(snap2), 'the same seed deals the same canals');
+  await again.ctx.close();
+  check(!errors.length, 'Zattere: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
+// Acqua alta on the Riva (FL_* in mechanics.js):
+//   - two lanes flooded (walls) for 15 m, the third dry
+//   - the dry lane has nothing in it from 18 m before the water to 14 m
+//     past it, and no souvenirs lie in the water
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337]) {
+    ({ page, ctx, errors } = await open('venice', 3, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.some((o) => o.mech)) break;
+    await ctx.close();
+  }
+  const fronts = snap.obs.filter((o) => o.mech && o.front);
+  check(fronts.length > 0, 'Venice floods the Riva', `${fronts.length / 2} floods, seed ${SEED}`);
+  let bad = 0, dryBad = 0, wetCoins = 0;
+  for (const f of new Set(fronts.map((o) => o.row))) {
+    const parts = snap.obs.filter((o) => o.mech && Math.abs(o.z - snap.obs.find((x) => x.row === f && x.front).z) < 16);
+    const lanes = new Set(parts.map((o) => o.lane));
+    if (parts.length !== 6 || lanes.size !== 2 || parts.some((o) => o.kind !== 'full')) { bad++; continue; }
+    const dry = [0, 1, 2].find((l) => !lanes.has(l));
+    const zs = parts.map((o) => o.z), top = Math.max(...zs) + 2.5, end = Math.min(...zs) - 2.5;
+    if (snap.obs.some((o) => !o.mech && o.at === dry && o.z < top + 18 && o.z > end - 14)) dryBad++;
+    if (snap.obs.some((o) => !o.mech && o.z < top && o.z > end)) dryBad++;
+    wetCoins += snap.coins.filter((c) => Math.abs(c.x - [-2.4, 0, 2.4][dry]) > 0.1 && c.wz < top && c.wz > end).length;
+  }
+  check(bad === 0, 'a flood is two lanes of water, 15 m long, the third lane dry', `${bad} bad`);
+  check(dryBad === 0, 'the dry lane is clear from 18 m before the water to 14 m after it, and nothing else stands beside it', `${dryBad} bad`);
+  check(wetCoins === 0, 'no souvenirs in the water', `${wetCoins}`);
+  check(!errors.length, 'Riva: no page errors', errors[0] || '');
   await ctx.close();
 }
 

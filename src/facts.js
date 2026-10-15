@@ -391,6 +391,28 @@ export const STREET_FACTS = {
         { text: "Most are bascule bridges, a design so common here that it is called the 'Chicago type'." },
       ] },
   ],
+  // Venice: DRAFT, awaiting Dan's sign-off (docs/VENICE-FACTS-DRAFT.md,
+  // sources listed there).
+  venice: [
+    { street: 'Strada Nova', tag: 'The new street',
+      facts: [
+        { big: '1871', label: 'opened', text: 'The Strada Nova, the "new street", opened in 1871, cut through old houses to make one walk from the Rialto to the railway station.' },
+        { big: '472', unit: 'bridges', label: 'in the city', text: 'Venice is built on 126 islands, joined by 472 bridges.' },
+        { text: "There are no cars in the old city. Goods go round on porters' trolleys, and by boat." },
+      ] },
+    { street: 'Zattere', tag: 'The long quay',
+      facts: [
+        { big: '1', unit: 'km', label: 'of quay', text: 'The Zattere runs for about a kilometre along the Giudecca Canal, to the point where it meets the basin of San Marco.' },
+        { text: 'Its name means rafts: salt, timber and coal were once floated down the canal on rafts and landed here.' },
+        { big: '400', unit: 'gondolas', label: 'today', text: 'In the 1500s Venice had about 10,000 gondolas and boats like them. Today there are about 400 gondolas.' },
+      ] },
+    { street: 'Riva degli Schiavoni', tag: 'The waterfront',
+      facts: [
+        { text: 'It is named after the merchants of Dalmatia, then called Schiavonia, who landed their cargo here from across the Adriatic.' },
+        { big: '194', unit: 'cm', label: 'highest tide', text: 'At high tide, the acqua alta, the lagoon floods the lowest streets. The highest on record, 194 cm, came on 4 November 1966.' },
+        { big: '2020', label: 'flood gates', text: 'Since 2020, gates on the seabed at the mouths of the lagoon can rise to hold back the highest tides.' },
+      ] },
+  ],
   // Buenos Aires: approved by Dan, 13 October 2026 (docs/BUENOS-AIRES-FACTS-DRAFT.md,
   // sources listed there).
   buenosaires: [
@@ -560,6 +582,26 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // Venice: DRAFT, awaiting Dan's sign-off (docs/VENICE-FACTS-DRAFT.md).
+  // No height graphics: none of the three has a height worth showing.
+  rialto: {
+    facts: [
+      { big: '1591', label: 'completed', text: 'The stone bridge was built from 1588 to 1591, to a design by Antonio da Ponte.' },
+      { text: 'It replaced a wooden bridge and kept its shape: one arch, with rows of shops along it.' },
+      { text: 'It is the oldest of the four bridges across the Grand Canal.' },
+    ] },
+  salute: {
+    facts: [
+      { big: '1631', label: 'begun', text: 'Venice vowed to build it in 1630, in thanks for the end of a terrible plague. Work began in 1631.' },
+      { big: '56', unit: 'years', label: 'to build', text: 'It was finished in 1687. Its architect, Baldassare Longhena, died five years before.' },
+      { text: 'Every year on 21 November a bridge on floats is laid across the Grand Canal, so people can walk to it.' },
+    ] },
+  dogespalace: {
+    facts: [
+      { big: '1340', label: 'rebuilt', text: 'A palace stood here from the 800s. The building you see was begun in 1340 and added to over the next two centuries.' },
+      { text: "It was the home of the Doge, Venice's ruler, and the seat of its government. It has been a museum since 1923." },
+      { big: '1600', label: 'Bridge of Sighs', text: "The enclosed Bridge of Sighs, built around 1600, led from the palace's courtrooms to the prison. Lord Byron gave it its English name." },
     ] },
   // Buenos Aires: approved by Dan, 13 October 2026 (docs/BUENOS-AIRES-FACTS-DRAFT.md).
   casarosada: {

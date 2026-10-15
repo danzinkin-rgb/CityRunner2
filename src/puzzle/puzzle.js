@@ -31,6 +31,7 @@ const CITY_OF = {
   galata: 'istanbul', bluemosque: 'istanbul', hagiasophia: 'istanbul',
   watertower: 'chicago', buckingham: 'chicago', willis: 'chicago',
   casarosada: 'buenosaires', colon: 'buenosaires', congreso: 'buenosaires',
+  rialto: 'venice', salute: 'venice', dogespalace: 'venice',
 };
 // Plaza floors deliberately contrast their monuments. Every landmark in the
 // game is a warm stone/limestone/bronze hero, and every city theme lights the
@@ -62,6 +63,7 @@ const PLAZA = {
   istanbul: { stone: '#606878', dark: '#485060', trim: '#8e98aa', ground: '#2e323e', sky: '#32466c' },
   chicago: { stone: '#626a7a', dark: '#4a5262', trim: '#909aac', ground: '#2e3240', sky: '#30466e' },
   buenosaires: { stone: '#5e6878', dark: '#465060', trim: '#8c98aa', ground: '#2c323e', sky: '#32486e' },
+  venice: { stone: '#5a6676', dark: '#44505e', trim: '#8a96a8', ground: '#2a3240', sky: '#30486c' },
 };
 
 // Painted-panorama palette. Near layer is the darker, more saturated band the
@@ -87,6 +89,7 @@ const SKYPAL = {
   istanbul: { near: '#4a4256', far: '#76708a', trim: '#5a5266', roof: '#3a3644', win: '255,214,150', accent: '#c8202a' },
   chicago: { near: '#2e3646', far: '#5a6476', trim: '#3e4658', roof: '#22262e', win: '255,218,160', accent: '#2a5ab0' },
   buenosaires: { near: '#44465a', far: '#727488', trim: '#54566a', roof: '#33343f', win: '255,216,160', accent: '#8a6ad8' },
+  venice: { near: '#4e4450', far: '#7c7080', trim: '#5e5262', roof: '#3e3438', win: '255,216,160', accent: '#2a8a88' },
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 
@@ -348,6 +351,31 @@ function makeBlockTexture(def) {
       g.fillStyle = shade(c, -0.35); g.fillRect(0, S * 0.46, S, 6);   // a band of carved script
       g.fillStyle = shade(c, 0.25);
       for (let x = 4; x < S; x += 9) g.fillRect(x, S * 0.47, 4, 3);
+      return;
+    }
+    if (tex === 'lozenge') {
+      // The Doge's Palace's upper wall: pink and white brick laid in a
+      // diamond pattern, with tx.n great pointed windows across it.
+      baseFill(g, S, c);
+      const cw = S / 8, ch = cw * 1.4;
+      g.strokeStyle = shade(c, 0.32); g.lineWidth = 3;
+      for (let j = -1; j < S / ch + 1; j++) for (let i = -1; i <= 8; i++) {
+        const cx = (i + (j % 2 ? 0.5 : 0)) * cw + cw / 2, cy = j * ch + ch / 2;
+        g.beginPath(); g.moveTo(cx, cy - ch / 2); g.lineTo(cx + cw / 2, cy); g.lineTo(cx, cy + ch / 2); g.lineTo(cx - cw / 2, cy);
+        g.closePath(); g.stroke();
+      }
+      const n = tx.n || 2, ww = S / n;
+      for (let i = 0; i < n; i++) {
+        const x = i * ww + ww * 0.32, w = ww * 0.36, y = S * 0.3, h = S * 0.42;
+        g.fillStyle = '#f4f0e6';
+        g.beginPath(); g.moveTo(x - 6, y + h + 6); g.lineTo(x - 6, y + w * 0.5);
+        g.quadraticCurveTo(x - 6, y - 4, x + w / 2, y - 12); g.quadraticCurveTo(x + w + 6, y - 4, x + w + 6, y + w * 0.5);
+        g.lineTo(x + w + 6, y + h + 6); g.closePath(); g.fill();
+        g.fillStyle = '#3a4048';
+        g.beginPath(); g.moveTo(x, y + h); g.lineTo(x, y + w * 0.5);
+        g.quadraticCurveTo(x, y + 2, x + w / 2, y - 6); g.quadraticCurveTo(x + w, y + 2, x + w, y + w * 0.5);
+        g.lineTo(x + w, y + h); g.closePath(); g.fill();
+      }
       return;
     }
     if (tex === 'sebka') {

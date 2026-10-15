@@ -51,7 +51,7 @@ const COUNTABLE = new Set([
   'days', 'stalls', 'traders', 'fountains', 'steps', 'columns', 'statues',
   'rooms', 'windows', 'arches', 'bells', 'seats', 'gates', 'stalls',
   'tiles', 'tablets', 'streets', 'ribs', 'pillars', 'minarets', 'houses',
-  'bridges', 'bastions', 'communities', 'layers', 'sides', 'bends',
+  'bridges', 'bastions', 'communities', 'layers', 'sides', 'bends', 'gondolas', 'islands',
 ]);
 
 const PEOPLE_UNITS = new Set(['people', 'visitors', 'spectators']);

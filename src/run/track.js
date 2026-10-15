@@ -577,7 +577,7 @@ export class Track {
           // vehicle, so no other city's seeded stream moves.
           const tall = isBus || isCable || isCityBus;
           y0 = 0; y1 = tall ? 3.2 : 1.6;
-          halfLen = tall ? 2.6 : t.vehicle === 'vespa' || t.vehicle === 'motorbike' ? 1.1 : 2.1;
+          halfLen = tall ? 2.6 : t.vehicle === 'vespa' || t.vehicle === 'motorbike' || t.vehicle === 'carrello' ? 1.1 : 2.1;
           if (mesh.userData.asCab) mesh.scale.set(0.82, 0.5, 0.86);
         } else if (kind === 'low') {
           mesh = new THREE.Group();

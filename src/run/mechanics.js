@@ -21,11 +21,12 @@
 //   move    called every frame for each obstacle it owns; `ahead` is metres
 //           from the player to the obstacle, positive while it is in front
 // test/city-mechanics.mjs checks each move's rules against real courses.
+import * as THREE from '../../vendor/three.module.js';
 import { LANES } from './player.js';
 import {
   makeHandcart, makeAutoRickshaw, makeTukTuk, makeGustDust, makeMotorbike, makeTrainCar,
   makeCrowd, makeCrossing, makeArchBay, makeJutHouse, makeTricycle, makeWave, makeVehicle, makePullBlinker,
-  makeTramCar, makeBridgeLeaf,
+  makeTramCar, makeBridgeLeaf, makeGondola, makeRio, makeFloodLane,
 } from '../cities/builders.js';
 
 // A move that takes a lane for a stretch (Hanoi's train, Zanzibar's narrow
@@ -688,7 +689,188 @@ const BRIDGE = {
   },
 };
 
+// A move that fills every lane of a row (Venice's canals and floods) must
+// keep clear of monument pieces. track.js deals a piece to the slot between
+// rows nearest its spot, which can be most of a row away, and then picks it
+// a lane clear of the rows within half a row either side; a row with every
+// lane taken leaves it no such lane. So this works out the slot each piece
+// will take, or has taken, and reports whether that check would see a row
+// spanning zRow to zRow + span in this chunk. Same rows and slots as
+// track.js's populateObstacles; it draws nothing from the seeded stream.
+function pieceNear(track, chunk, zRow, chunkLen, span = 0) {
+  const step = 12 / ([0.55, 0.8, 1.05][track.level - 1] ?? 0.8);
+  const reach = step / 2 + 1 + 1.5;          // the piece's check, plus a margin for the row's own length
+  const rows = [];
+  for (let zr = 8; zr < chunkLen - 4; zr += step) rows.push(zr);
+  const mids = [];
+  for (let r = 0; r + 1 < rows.length; r++) mids.push((rows[r] + rows[r + 1]) / 2);
+  if (rows.length) mids.push((8 + rows[rows.length - 1] - chunkLen) / 2);
+  const slots = mids.filter((m) => m > 1 && m < chunkLen - 1);
+  const near = (z) => z > zRow - reach && z < zRow + span + reach;   // z: metres into this chunk
+  const spawned = track.pieces.some((pc) => near(chunk.position.z - (pc.chunk.position.z + pc.mesh.position.z)));
+  if (spawned) return true;
+  return track.pieceDist.some((d, k) => {
+    if (track.pieceSpawned[k]) return false;
+    const zp = d + chunk.position.z;           // its spot, in metres into this chunk
+    const c = Math.floor(zp / chunkLen), local = zp - c * chunkLen;
+    if (!slots.length) return near(zp);
+    const slot = slots.reduce((a, b) => (Math.abs(b - local) < Math.abs(a - local) ? b : a));
+    return near(slot + c * chunkLen);
+  });
+}
+
+// ---- Venice: gondolas in the side canals ------------------------------------
+// A side canal (rio) crosses the street: a jump in every lane. A gondola is
+// gliding along it, across the road, and a gondola is long: when you reach
+// the canal it blocks two lanes, the middle one and an outer one. Watch which
+// way it is going and jump in the outer lane it will have left, or the one
+// it has not reached yet. Its centre moves GD_RATE metres sideways for every
+// metre you close, and is exactly between its two lanes as you arrive.
+// Fairness:
+//   - the water is low (0.8 m) in every lane, so a jump clears it; the
+//     gondola is a wall (3.2 m) in its two lanes only, so one outer lane is
+//     always open with nothing in it but the water
+//   - the open lane is one the row before left free, when it left one
+//   - nothing to roll under in the 16 m before the canal (no canal is
+//     placed there) or the 18 m after it (cleared), as with Chicago's bridge
+//   - a canal has its row to itself, no souvenirs, and is never where a
+//     monument piece's lane check would see it (pieceNear)
+const GONDOLA_CHANCE = [0.1, 0.16, 0.16];   // share of rows, by street
+const GD_RATE = 0.14, GD_OUT = 6.6, GD_WARN = 60;
+const GD_CLEAR_BEFORE = 16, GD_CLEAR_AFTER = 18;
+const GONDOLA = {
+  hint: "A gondola is crossing: jump where it won't be!",
+  row({ level, rand, addObstacle, usedLanes, prev, zRow, chunkLen, track, chunk }) {
+    if (rand() >= GONDOLA_CHANCE[level - 1]) return null;
+    if (pieceNear(track, chunk, zRow, chunkLen)) return null;
+    const here = chunk.position.z - zRow;
+    const rollBefore = track.obstacles.some((o) => o.kind === 'high'
+      && o.chunk.position.z + o.localZ > here && o.chunk.position.z + o.localZ < here + GD_CLEAR_BEFORE);
+    if (rollBefore) return null;
+    for (let l = 0; l <= 2; l++) {
+      const r = addObstacle(l, 'low', { mesh: l === 1 ? makeRio() : new THREE.Group(), y0: 0, y1: 0.8, halfLen: 1.1 });
+      r.mech = GONDOLA;
+    }
+    const head = addObstacle(1, 'full', { mesh: makeGondola(), y0: 0, y1: 3.2, halfLen: 0.6 });
+    head.mech = GONDOLA;
+    head.boat = true;
+    head.pair = addObstacle(1, 'full', { mesh: new THREE.Group(), y0: 0, y1: 3.2, halfLen: 0.6 });
+    head.pair.mech = GONDOLA;
+    head.prevUsed = prev ? prev.used : new Set();
+    for (let l = 0; l <= 2; l++) usedLanes.add(l);
+    track.gondolaHold = { chunk, zRow };
+    return head;
+  },
+  settle(rec, { rand, randInt }) {
+    let open = [0, 2].filter((l) => !rec.prevUsed.has(l));
+    if (!open.length) open = [0, 2];
+    const free = open[randInt(open.length)];
+    const [a, b] = free === 0 ? [1, 2] : [0, 1];
+    rec.lane = a; rec.pair.lane = b;
+    rec.centre = (LANES[a] + LANES[b]) / 2;
+    rec.dir = rand() < 0.5 ? -1 : 1;              // +1: gliding to the right
+    rec.mesh.rotation.y = rec.dir > 0 ? 0 : Math.PI;
+    GONDOLA.move(rec, 200);
+  },
+  // the rows just past a canal: nothing to roll under
+  after({ track, chunk, zRow }) {
+    const h = track.gondolaHold;
+    if (!h || h.chunk !== chunk || zRow <= h.zRow || zRow > h.zRow + GD_CLEAR_AFTER) return;
+    for (const o of track.obstacles.filter((x) => x.chunk === chunk && Math.abs(x.localZ + zRow) < 0.01 && x.kind === 'high')) {
+      chunk.remove(o.mesh); track.obstacles = track.obstacles.filter((x) => x !== o);
+    }
+  },
+  move(o, ahead) {
+    if (!o.boat) return false;
+    const c = Math.max(-GD_OUT, Math.min(GD_OUT, o.centre - o.dir * Math.max(0, ahead) * GD_RATE));
+    o.mesh.position.x = c;
+    o.x = c + (LANES[o.lane] - o.centre);
+    o.pair.x = c + (LANES[o.pair.lane] - o.centre);
+    return ahead <= GD_WARN && ahead > 0;
+  },
+};
+
+// ---- Venice: acqua alta on the Riva ------------------------------------------
+// At high tide the lagoon comes up over the quay. Ahead, two lanes are going
+// under water for FL_PARTS * FL_LEN (15) metres, and the third has the
+// wooden walkway (passerella) laid along it: get onto the boards and stay on
+// them. The water starts to rise FL_WARN out and is up by FL_SET.
+// Fairness:
+//   - the flooded lanes are walls for the whole stretch from the start, so
+//     no hitbox appears late; only the water's height is animated
+//   - the dry lane is clear of everything for FL_CLEAR_BEFORE (18 m) before
+//     the flood (or there is no flood), all the way along it, and FL_TAIL
+//     (14 m) past its end, into the next chunk if need be
+//   - rows alongside the flood are emptied, and no souvenirs lie in the water
+//   - never where a monument piece's lane check would see the water
+//     (pieceNear): it could be dealt to a lane about to flood
+const FLOOD_CHANCE = [0.1, 0.12, 0.14];      // share of rows, by street
+const FL_PARTS = 3, FL_LEN = 5, FL_WARN = 70, FL_SET = 34;
+const FL_TAIL = 14, FL_CLEAR_BEFORE = 18;
+const FLOOD = {
+  hint: 'Acqua alta! The tide is coming up: get onto the boards!',
+  row({ level, rand, randInt, addObstacle, zRow, chunkLen, track, chunk }) {
+    const span = FL_PARTS * FL_LEN;
+    if (zRow + span > chunkLen - 1) return null;     // the water fits its chunk
+    if (rand() >= FLOOD_CHANCE[level - 1]) return null;
+    if (pieceNear(track, chunk, zRow, chunkLen, span)) return null;
+    const dry = randInt(3);
+    const here = chunk.position.z - zRow;
+    const blocked = track.obstacles.some((o) => track.laneAtArrival(o) === dry
+      && o.chunk.position.z + o.localZ > here && o.chunk.position.z + o.localZ < here + FL_CLEAR_BEFORE);
+    if (blocked) return null;
+    let head = null;
+    for (let k = 0; k < FL_PARTS; k++) {
+      for (const l of [0, 1, 2].filter((x) => x !== dry)) {
+        const mesh = makeFloodLane();
+        if (!head) {
+          // the walkway rides on the first flooded lane's water, shifted
+          // across to the dry lane
+          for (let j = 0; j < FL_PARTS; j++) {
+            const boards = makeFloodLane(true);
+            boards.position.set(LANES[dry] - LANES[l], 0, -j * FL_LEN);
+            mesh.add(boards);
+          }
+        }
+        const r = addObstacle(l, 'full', { mesh, y0: 0, y1: 3.2, halfLen: FL_LEN / 2, dz: FL_LEN / 2 + k * FL_LEN });
+        r.mech = FLOOD;
+        r.front = k === 0;
+        if (!head) head = r;
+      }
+    }
+    // held by world position, so the run-off past the end reaches into the
+    // next chunk's rows
+    track.floodHold = { from: here, to: here - span, dry };
+    return head;
+  },
+  settle() {},
+  after({ track, chunk, zRow }) {
+    const h = track.floodHold;
+    if (!h) return;
+    const w = chunk.position.z - zRow;
+    if (w < h.from && w >= h.to - FL_TAIL) {
+      const inRow = (o) => o.chunk === chunk && Math.abs(o.localZ + zRow) < 0.01 && !o.mech;
+      for (const o of track.obstacles.filter((x) => inRow(x) && (w >= h.to || track.laneAtArrival(x) === h.dry))) {
+        chunk.remove(o.mesh); track.obstacles = track.obstacles.filter((x) => x !== o);
+      }
+    }
+    track.coins = track.coins.filter((c) => {
+      const cz = c.chunk.position.z + c.mesh.position.z;
+      const wet = Math.abs(c.mesh.position.x - LANES[h.dry]) > 0.1 && cz < h.from + 0.1 && cz > h.to - 0.1;
+      if (wet) c.chunk.remove(c.mesh);
+      return !wet;
+    });
+  },
+  move(o, ahead) {
+    const rise = Math.max(0, Math.min(1, (FL_WARN - ahead) / (FL_WARN - FL_SET)));
+    o.mesh.userData.water.scale.y = Math.max(0.01, rise);
+    return o.front && ahead <= FL_WARN && ahead > 0;
+  },
+};
+
 export const MECHANICS = {
+  gondola: GONDOLA,
+  flood: FLOOD,
   bridge: BRIDGE,
   tram: TRAM,
   waves: WAVES,

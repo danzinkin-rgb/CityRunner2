@@ -151,18 +151,46 @@ puzzle tuning.
 
 ---
 
+## Venice (15 October 2026)
+
+Packs went on sale by region on 14 October, and Dan wanted them roughly
+equal, so Europe and North America each needed one more paid city. Of the
+candidates (Lisbon, Venice, Amsterdam; Quebec City, New Orleans,
+Washington), Dan chose Venice first, for the water. North America is still
+open.
+
+- **Streets:** Strada Nova (the 1871 street from the Rialto to the
+  station, washing hung across), the Zattere (the quay on the Giudecca
+  Canal, gondolas moored along it), the Riva degli Schiavoni (the lagoon
+  front, the Campanile at the end).
+- **Monuments:** Rialto Bridge (13 pieces), Santa Maria della Salute (15),
+  Doge's Palace with the Bridge of Sighs and the Piazzetta's columns (24).
+  All long out of copyright.
+- **No cars.** The obstacle that stands in a lane is a porter's trolley of
+  parcels, jumpable; trolleys also stand along the sides in place of
+  parked cars.
+- **Moves:** on the first two streets a gondola crosses in a side canal.
+  The canal is a jump in every lane, and the gondola, being long, walls
+  off the middle lane and one outer lane when you get there: jump in the
+  lane it will have left. On the Riva, acqua alta: two lanes flood for
+  15 m and a wooden walkway runs along the third. test/city-mechanics.mjs
+  gates both.
+- **Souvenir:** a carnival mask.
+- Queued second, behind Mexico City.
+
+---
+
 ## Balance check
 
 | Region | Cities |
 |---|---|
 | North America | New York, San Francisco, Chicago |
 | Latin America | Mexico City, Havana, Buenos Aires |
-| Europe | Paris, London, Rome, Istanbul |
+| Europe | Paris, London, Rome, Istanbul, Venice |
 | Middle East and Africa | Jerusalem, Marrakech, Cape Town, Zanzibar |
 | Asia | Delhi, Bangkok, Hanoi, Seoul, Samarkand, Beijing *(Kyoto parked)* |
 
-That makes **20 cities, 60 streets, 60 monuments**, with Europe at 20% of
-the roster and Asia, Africa and the Middle East together at 50%.
+With Venice that makes **21 cities, 63 streets, 63 monuments**.
 
 ---
 
