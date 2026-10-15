@@ -1,6 +1,6 @@
 # Venice: facts for review
 
-**DRAFT. Nothing here ships until Dan has approved it.** The facts are in `src/facts.js` already, marked DRAFT, so the city can be played and tested; the city is in the release queue and no player sees it.
+**Approved by Dan, 15 October 2026.** The facts are in `src/facts.js`; the city is in the release queue and no player sees it until it is released.
 
 3 streets × 3 facts, 3 monuments × 3 facts.
 
@@ -65,7 +65,7 @@ The name: Italian Wikipedia gives the rafts as the more reliable of two explanat
 | *(none)* | It was the home of the Doge, Venice's ruler, and the seat of its government. It has been a museum since 1923. |
 | **1600**, Bridge of Sighs | The enclosed Bridge of Sighs, built around 1600, led from the palace's courtrooms to the prison. Lord Byron gave it its English name. |
 
-## To check before approval
+## Points that were open at approval
 
 - "No cars in the old city; goods go round on porters' trolleys and by boat": well known, not in the sources below.
 - "Gates at the mouths of the lagoon": the MOSE source names the Lido inlet; the barrier closes all three inlets (Lido, Malamocco, Chioggia), which the fact does not count.

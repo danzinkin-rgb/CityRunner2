@@ -100,7 +100,7 @@ check('daily picks a valid city and street',
 // 5. the daily is versioned. Each version's city pool is recorded here; a
 // changed pool under an old version number would put players on different
 // app versions on different courses, posting to one leaderboard.
-const KNOWN_DAILY = { 2: 'nyc,paris,london,rome,sf' };
+const KNOWN_DAILY = { 2: 'nyc,paris,london,rome,sf', 3: 'nyc,paris,london,rome,sf,jerusalem,mexico,marrakech,delhi,bangkok,capetown,hanoi,seoul,samarkand,zanzibar,beijing,havana,istanbul,chicago,buenosaires' };
 const dv = await page.evaluate(async () => {
   const { DAILY } = await import('/src/core/rng.js');
   const { LEADERBOARDS } = await import('/src/core/gamecenter.js');

@@ -233,6 +233,28 @@ function startDaily() {
 }
 
 // ---------- menu ----------
+// ---------- progression: which city opens which ----------
+// Dan, 15 October 2026, with every city released into region packs: the free
+// cities form one chain (a street in each opens the next), and the paid cities
+// form a chain within their region. A region's first paid city is always on
+// offer and plays as soon as it is owned; each later one opens after a street
+// in the one before it in that region. A single chain across twenty cities
+// would have made someone who bought the East Asia pack play fifteen others
+// first.
+function chainPrev(cityId) {
+  const i = CITIES.findIndex((c) => c.id === cityId);
+  if (i < 0) return null;
+  const c = CITIES[i];
+  const paid = isPaidCity(c.id);
+  for (let j = i - 1; j >= 0; j--) {
+    const p = CITIES[j];
+    if (paid ? isPaidCity(p.id) && p.region === c.region : !isPaidCity(p.id)) return p.id;
+  }
+  return null;
+}
+const chainNext = (cityId) => CITIES.find((c) => chainPrev(c.id) === cityId)?.id || null;
+const isEarned = (cityId) => { const p = chainPrev(cityId); return !p || (save.stars[p] || 0) >= 1; };
+
 function buildCitySelect() {
   const wrap = $('city-select');
   // This clears the placeholder cards the HTML ships with as well as any
@@ -251,7 +273,7 @@ function buildCitySelect() {
     // unearned city is dimmed, an earned-but-unbought one is bright
     // merchandise, and anything unbought carries a padlock and opens the
     // paywall -- from the first launch, so the offer is never hidden.
-    const earned = i === 0 || (save.stars[CITIES[i - 1].id] || 0) >= 1;
+    const earned = isEarned(c.id);
     const owned = isCityEntitled(c.id);
     const sellable = earned && !owned;
     // Bought but not yet reached. The two gates are independent, so this
@@ -271,7 +293,7 @@ function buildCitySelect() {
     // is told Rome is "unlocked", which is not what that word means to them.
     // (It also made the menu two lines taller on a 320x568 screen and pushed
     // Settings below the fold -- test/menu-fit.mjs caught that.)
-    const gated = !isFreeBuild() && isPaidCity(c.id) && owned && !earned && i > 0;
+    const gated = !isFreeBuild() && isPaidCity(c.id) && owned && !earned;
     // The padlock marks "this is purchasable content", so it shows from the
     // very first launch rather than only once the city has been earned. !owned
     // already means exactly that: isCityEntitled() is true for every free city
@@ -292,7 +314,7 @@ function buildCitySelect() {
         <span class="thumb-flag">${flagFix[c.id] || c.flag}</span>${purchasable ? '<span class="padlock">🔒</span>' : ''}</div>
       <div class="name">${c.name}</div>
       ${gated
-        ? `<div class="gate">Unlocked — finish a street in ${CITIES[i - 1].name} to reach it</div>`
+        ? `<div class="gate">Unlocked — finish a street in ${CITIES.find((x) => x.id === chainPrev(c.id))?.name} to reach it</div>`
         : `<div class="stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>`}`;
     if (earned && owned) el.onclick = () => {
       dailyMode = false; runSeed = null;
@@ -1398,8 +1420,11 @@ $('btn-next').onclick = () => {
   // Belt and braces: the button is hidden after a daily (finishPuzzle), but a
   // next level is never a daily, whatever route reached this handler.
   dailyMode = false; runSeed = null;
+  // after a city's last street, the next city in its chain (see chainPrev),
+  // not the next in the list, which may be another region's
+  const next = level === 3 ? chainNext(city().id) : null;
   if (level < 3) level++;
-  else if (cityIdx < CITIES.length - 1) { cityIdx++; level = 1; }
+  else if (next) { cityIdx = CITIES.findIndex((c) => c.id === next); level = 1; }
   else { doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; }); return; }
   startRun();
 };

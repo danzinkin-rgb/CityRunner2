@@ -171,11 +171,11 @@ code checks the region, not a list (`REGION_PACKS` in
 | **Review screenshot** | the paywall showing both offers (`?ui=paywall` at 1290×2796, or the simulator) | same |
 | **Review notes** | `One-time non-consumable. Unlocks the paid cities in one region (currently Rome) and any added to that region later. New York, Paris and London remain free. Restore Purchases is in Settings and on the purchase screen.` | as Europe, with San Francisco |
 
-Later packs, each when its region's first paid city is released (ids are
-already in the code, so no app change is needed beyond the release):
-`pack.latinamerica` (Mexico City),
-`pack.southasia` (Delhi, Bangkok, Samarkand) and `pack.eastasia` (Beijing, Seoul,
-Hanoi). Asia was split in two on 14 October 2026 to keep packs about equal.
+Since every city was released in 1.2.0 (Dan, 15 October 2026), all six packs
+are needed for that release: also `pack.latinamerica` (Mexico City, Havana,
+Buenos Aires), `pack.southasia` (Delhi, Bangkok, Samarkand) and
+`pack.eastasia` (Beijing, Seoul, Hanoi). Asia was split in two on 14 October
+2026 to keep packs about equal.
 
 The **Founder** product description still reads correctly. Its price stays
 £1.99. `All Cities Unlock` (5.2) is not offered any more; leave it unavailable.

@@ -391,7 +391,7 @@ export const STREET_FACTS = {
         { text: "Most are bascule bridges, a design so common here that it is called the 'Chicago type'." },
       ] },
   ],
-  // Venice: DRAFT, awaiting Dan's sign-off (docs/VENICE-FACTS-DRAFT.md,
+  // Venice: approved by Dan, 15 October 2026 (docs/VENICE-FACTS-DRAFT.md,
   // sources listed there).
   venice: [
     { street: 'Strada Nova', tag: 'The new street',
@@ -583,7 +583,7 @@ export const MONUMENT_FACTS = {
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
     ] },
-  // Venice: DRAFT, awaiting Dan's sign-off (docs/VENICE-FACTS-DRAFT.md).
+  // Venice: approved by Dan, 15 October 2026 (docs/VENICE-FACTS-DRAFT.md).
   // No height graphics: none of the three has a height worth showing.
   rialto: {
     facts: [
