@@ -720,26 +720,34 @@ function pieceNear(track, chunk, zRow, chunkLen, span = 0) {
 }
 
 // ---- Venice: gondolas in the side canals ------------------------------------
-// A side canal (rio) crosses the street: a jump in every lane. A gondola is
-// gliding along it, across the road, and a gondola is long: when you reach
-// the canal it blocks two lanes, the middle one and an outer one. Watch which
-// way it is going and jump in the outer lane it will have left, or the one
-// it has not reached yet. Its centre moves GD_RATE metres sideways for every
-// metre you close, and is exactly between its two lanes as you arrive.
+// A side canal (rio) crosses the street: a jump in every lane. A gondola
+// glides along it, across the road, and a gondola is long: it comes to rest
+// over two lanes, the middle one and an outer one. Get into the other outer
+// lane and jump the canal there. It slides in from the side it ends up
+// blocking, GD_RATE metres sideways for every metre you close, so it never
+// crosses the free lane, and it is in place, over its two lanes, GD_SET
+// metres out.
+//
+// Dan, 15 October 2026: he could not get past one. It used to come from
+// either side, and coming from the far side its hull covered the free lane
+// until about 7 m out, a third of a second at speed: the way through looked
+// shut until too late.
 // Fairness:
 //   - the water is low (0.8 m) in every lane, so a jump clears it; the
 //     gondola is a wall (3.2 m) in its two lanes only, so one outer lane is
 //     always open with nothing in it but the water
+//   - the gondola never crosses the open lane, and is still from GD_SET
+//     (12 m) out
 //   - the open lane is one the row before left free, when it left one
 //   - nothing to roll under in the 16 m before the canal (no canal is
 //     placed there) or the 18 m after it (cleared), as with Chicago's bridge
 //   - a canal has its row to itself, no souvenirs, and is never where a
 //     monument piece's lane check would see it (pieceNear)
 const GONDOLA_CHANCE = [0.1, 0.16, 0.16];   // share of rows, by street
-const GD_RATE = 0.14, GD_OUT = 6.6, GD_WARN = 60;
+const GD_RATE = 0.16, GD_OUT = 6.6, GD_WARN = 60, GD_SET = 12;
 const GD_CLEAR_BEFORE = 16, GD_CLEAR_AFTER = 18;
 const GONDOLA = {
-  hint: "A gondola is crossing: jump where it won't be!",
+  hint: 'Gondola! Take the clear lane and jump the canal.',
   row({ level, rand, addObstacle, usedLanes, prev, zRow, chunkLen, track, chunk }) {
     if (rand() >= GONDOLA_CHANCE[level - 1]) return null;
     if (pieceNear(track, chunk, zRow, chunkLen)) return null;
@@ -761,14 +769,14 @@ const GONDOLA = {
     track.gondolaHold = { chunk, zRow };
     return head;
   },
-  settle(rec, { rand, randInt }) {
+  settle(rec, { randInt }) {
     let open = [0, 2].filter((l) => !rec.prevUsed.has(l));
     if (!open.length) open = [0, 2];
     const free = open[randInt(open.length)];
     const [a, b] = free === 0 ? [1, 2] : [0, 1];
     rec.lane = a; rec.pair.lane = b;
     rec.centre = (LANES[a] + LANES[b]) / 2;
-    rec.dir = rand() < 0.5 ? -1 : 1;              // +1: gliding to the right
+    rec.dir = free === 0 ? -1 : 1;                // in from the side it blocks: +1 glides right
     rec.mesh.rotation.y = rec.dir > 0 ? 0 : Math.PI;
     GONDOLA.move(rec, 200);
   },
@@ -782,7 +790,7 @@ const GONDOLA = {
   },
   move(o, ahead) {
     if (!o.boat) return false;
-    const c = Math.max(-GD_OUT, Math.min(GD_OUT, o.centre - o.dir * Math.max(0, ahead) * GD_RATE));
+    const c = Math.max(-GD_OUT, Math.min(GD_OUT, o.centre - o.dir * Math.max(0, ahead - GD_SET) * GD_RATE));
     o.mesh.position.x = c;
     o.x = c + (LANES[o.lane] - o.centre);
     o.pair.x = c + (LANES[o.pair.lane] - o.centre);

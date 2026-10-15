@@ -4264,7 +4264,7 @@ function makeMooringPole(band = 0) {
 // each side. Sits in the middle lane; the road is 8.6 m wide.
 export function makeRio() {
   const g = new THREE.Group();
-  const water = cached('mat:rio', () => new THREE.MeshStandardMaterial({ color: 0x3a7a78, roughness: 0.15, metalness: 0.35 }));
+  const water = cached('mat:rio', () => new THREE.MeshStandardMaterial({ color: 0x1e6a74, roughness: 0.12, metalness: 0.3, emissive: 0x0a3a40, emissiveIntensity: 0.4 }));
   const road = new THREE.Mesh(boxGeo, water);
   road.scale.set(8.6, 0.06, 2.2); road.position.y = 0.02; g.add(road);
   for (const sx of [-1, 1]) {
@@ -4276,7 +4276,7 @@ export function makeRio() {
   const stone = cached('mat:istrian', () => new THREE.MeshStandardMaterial({ color: 0xf0ece2, roughness: 0.7 }));
   for (const sz of [-1, 1]) {
     const edge = new THREE.Mesh(boxGeo, stone);
-    edge.scale.set(24, 0.1, 0.3); edge.position.set(0, 0.05, sz * 1.2); g.add(edge);
+    edge.scale.set(24, 0.2, 0.4); edge.position.set(0, 0.1, sz * 1.25); g.add(edge);
   }
   return g;
 }

@@ -745,6 +745,25 @@ async function watch(page, ms, shotName) {
     return worst;
   });
   check(offBy < 0.01, 'a gondola is exactly over its two lanes as you reach it', `off by ${offBy.toFixed(3)} m`);
+  // Dan could not get past one: coming from the far side, the hull covered
+  // the free lane until about 7 m out. It must never cover it, and must be
+  // still for the last 12 m.
+  const glide = await page.evaluate(() => {
+    const L = [-2.4, 0, 2.4];
+    let nearest = Infinity, drift = 0;
+    for (const o of window.__cr.track.obstacles.filter((x) => x.boat)) {
+      const free = [0, 1, 2].find((l) => l !== o.lane && l !== o.pair.lane);
+      for (let a = 80; a >= 0; a -= 0.5) {
+        o.mech.move(o, a);
+        nearest = Math.min(nearest, Math.abs(o.mesh.position.x - L[free]));
+      }
+      o.mech.move(o, 12); const at12 = o.mesh.position.x;
+      o.mech.move(o, 0); drift = Math.max(drift, Math.abs(o.mesh.position.x - at12));
+    }
+    return { nearest, drift };
+  });
+  check(glide.nearest >= 3.5, 'a gondola never crosses the clear lane', `its centre comes within ${glide.nearest.toFixed(2)} m of it`);
+  check(glide.drift < 0.01, 'a gondola is still for the last 12 m', `moves ${glide.drift.toFixed(2)} m`);
   const again = await open('venice', 2, SEED);
   const snap2 = await again.page.evaluate(SNAP);
   const key = (sn) => JSON.stringify(sn.obs.filter((o) => o.mech).map((o) => [o.row, o.lane, o.kind, o.at]));
