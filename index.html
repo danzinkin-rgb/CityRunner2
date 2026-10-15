@@ -330,6 +330,13 @@
   .city-card .thumb{width:100%;height:86px;border-radius:12px;background-size:135%;background-position:center 32%;
     position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 4px 12px rgba(0,0,0,.35)}
   .city-card .thumb-flag{position:absolute;right:5px;bottom:3px;font-size:17px;filter:drop-shadow(0 1px 2px #000)}
+  /* Cities are grouped by region pack: each group starts a new column, and
+     its first card carries the group's name over the thumbnail, so the
+     grouping costs no height (test/menu-fit.mjs). */
+  .city-card.group-start{grid-row-start:1}
+  .city-card .region-tag{position:absolute;left:5px;top:4px;max-width:calc(100% - 10px);
+    font-size:9px;font-weight:700;letter-spacing:.02em;line-height:1.5;padding:0 4px;border-radius:6px;
+    background:rgba(0,0,0,.6);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* One line, always. A name that wraps makes its card taller, and because
      the picker is a two-row grid that taller card stretches every other
      card in its row — and the placeholder cards, which cannot know the
@@ -986,7 +993,11 @@
        right height and wraps the same way before main.js has run. buildCitySelect()
        opens with wrap.innerHTML = '', so these are cleared by the code that
        replaces them and need no dismissal of their own.
-       KEEP THE COUNT IN STEP WITH CITIES — test/boot.mjs fails if it drifts. -->
+       KEEP THE COUNT IN STEP WITH CITIES — test/boot.mjs fails if it drifts.
+       The menu groups cities by region pack, each group starting a new
+       column, so the placeholders that start a group carry .group-start:
+       free 3, Europe 2, North America 2, Middle East and Africa 4, Latin
+       America 3, South and Central Asia 3, East Asia 3. -->
   <!-- data-xscroll marks this as a horizontal scroller: its cards may sit
        outside the viewport on purpose, and test/ios-ui.mjs skips its
        children in the overflow-x audit for that reason. -->
@@ -994,21 +1005,21 @@
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel group-start" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel group-start" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel group-start" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel group-start" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel group-start" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
-    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
-    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
-    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
-    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
-    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
-    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
-    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
-    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel group-start" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
   </div>
@@ -1226,7 +1237,8 @@
 </div>
 
 <div id="screen-over" class="screen">
-  <div class="label">Run over</div>
+  <div class="label" id="over-title">Run over</div>
+  <div class="continue-note" id="over-note"></div>
   <div class="big-num" id="over-score">0</div>
   <div class="label" style="margin:10px 0 30px"><span id="over-coins">0</span> souvenirs collected</div>
   <button class="btn" id="btn-retry">RUN AGAIN</button>

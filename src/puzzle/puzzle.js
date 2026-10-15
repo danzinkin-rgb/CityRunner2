@@ -1764,8 +1764,12 @@ function vExtent(d) {
 // where they blended into its outlines and a monument with nothing yet built
 // looked almost finished. Parked small, big pieces sit round the plaza like
 // every other monument's, and grow into place as they fly home.
+// parkK shrinks every parked piece on a crowded build, so thirty-odd pieces
+// can lie round the plaza without stacking; set per puzzle (only one exists
+// at a time) from the number of loose pieces.
+let parkK = 1;
 function parkScale(d) {
-  return Math.min(1, Math.max(0.4, 5.5 / Math.max(...effSize(d))));
+  return Math.min(1, Math.max(0.4, 5.5 / Math.max(...effSize(d)))) * parkK;
 }
 
 // Can this piece look wrong when turned a quarter? Round and square-plan
@@ -2028,6 +2032,8 @@ export class Puzzle {
     // best, so how a piece looked parked said nothing about how it would fit
     // — device feedback: "aligned but dont fit", "not aligned but do fit".)
     const landYaw = (d, order) => (d.rotY || 0) + (turnsOf.get(order) || 0) * Math.PI / 2;
+    const looseN = this.blocks.length - preplaced;
+    parkK = looseN > 16 ? Math.max(0.7, Math.sqrt(16 / looseN)) : 1;
     const SCATTER_R = 13.2;                       // hard radial cap (<14)
     const XBUD = 11.0;                            // budget for |x| + half the piece's screen width
     let xExt = 0, zExt = 0;
@@ -2065,6 +2071,38 @@ export class Puzzle {
       .filter((x) => x.order >= preplaced)
       .sort((a, b) => bulkOf(b.e.def) - bulkOf(a.e.def));
     const layout = new Map();
+    // No two parked pieces on top of each other (device feedback, 15 October
+    // 2026: on the bigger builds three or four pieces lay stacked in one spot,
+    // because the frame limits below pull many of them to the same place).
+    // A piece keeps its slot if that is clear; otherwise it takes the nearest
+    // clear spot that still meets every limit, or failing that the least
+    // crowded one. Deterministic, like the rest of the layout.
+    const parked = [];
+    const settle = (a0, r0, sw, rr, oversized) => {
+      const ok = (a, r) => {
+        const x = Math.cos(a) * r, z = Math.sin(a) * r, off = Math.atan2(z, Math.abs(x));
+        if (oversized) return r <= SCATTER_R + 0.6 && z < 0 && Math.abs(x) + sw / 2 <= XBUD + 1;
+        return r <= SCATTER_R && r >= clearAt(off, sw) - 0.01 && Math.abs(x) + sw / 2 <= XBUD + 0.01
+          && z <= 9.4 - sw * 0.3 && off >= -1.46;
+      };
+      const crowd = (a, r) => {
+        const x = Math.cos(a) * r, z = Math.sin(a) * r;
+        let c = 0;
+        for (const p of parked) { const d = Math.hypot(x - p.x, z - p.z), need = rr + p.rr + 0.3; if (d < need) c += need - d; }
+        return c;
+      };
+      let best = { a: a0, r: r0, c: crowd(a0, r0) };
+      search: for (let k = 1; best.c > 0 && k <= 24; k++) {
+        for (const sgn of [1, -1]) for (const dr of [0, 0.9, -0.9, 1.8]) {
+          const a = a0 + sgn * k * 0.07, r = r0 + dr;
+          if (!ok(a, r)) continue;
+          const c = crowd(a, r);
+          if (c < best.c) { best = { a, r, c }; if (!c) break search; }
+        }
+      }
+      parked.push({ x: Math.cos(best.a) * best.r, z: Math.sin(best.a) * best.r, rr });
+      return best;
+    };
     let back = 0, tallN = 0;
     loose.forEach((x, k) => {
       const side = k % 2 ? 1 : -1;
@@ -2085,7 +2123,9 @@ export class Puzzle {
       if (Math.min(w, dp) > 8 || Math.max(w, dp) > 15 || hh > 9) {
         const yaw = landYaw(x.e.def, x.order);
         const a = -Math.PI / 2 + (back % 2 ? 0.36 : -0.36) + (Math.floor(back / 2) % 2 ? 0.13 : -0.13);
-        layout.set(x.order, { a, r: 10.8 + (back % 3) * 0.9, yaw });
+        const swb = Math.abs(Math.cos(yaw)) * w + Math.abs(Math.sin(yaw)) * dp;
+        const at = settle(a, 10.8 + (back % 3) * 0.9, swb, 0.42 * Math.hypot(w, dp), true);
+        layout.set(x.order, { a: at.a, r: at.r, yaw });
         back++;
         return;
       }
@@ -2116,7 +2156,8 @@ export class Puzzle {
       // and never let a big piece camp in the player's lap
       if (Math.sin(off) * r > 9.4 - sw * 0.3) off = -off;
       const a = side > 0 ? off : Math.PI - off;
-      layout.set(x.order, { a, r, yaw });
+      const at = settle(a, r, sw, 0.42 * Math.hypot(w, dp), false);
+      layout.set(x.order, { a: at.a, r: at.r, yaw });
     });
 
     this.items = this.blocks.map((entry, order) => {
@@ -2440,6 +2481,13 @@ export class Puzzle {
   }
 
   missingLeft() { return this.items.filter((it) => it.missing).length; }
+  // True when nothing can be placed until a missed piece arrives: every piece
+  // left in the current course is still on its way.
+  waitingOnMissing() {
+    const lo = this.currentLayer();
+    const left = this.items.filter((it) => it.layer === lo && !it.placed && !this.flying.includes(it));
+    return left.length > 0 && left.every((it) => it.missing || it.dropping);
+  }
   nextDeliveryIn() { return Math.max(0, this.deliverAt); }
 
   // A missed piece arrives: dropped onto its parking spot from above.
