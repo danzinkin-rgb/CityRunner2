@@ -37,7 +37,7 @@ async function street(city, level) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto(`${BASE}/?view=run&city=${city}&level=${level}&seed=7&god=1`, { waitUntil: 'load' });
-  await page.waitForFunction(() => window.__cr?.track, null, { timeout: 20000 });
+  await page.waitForFunction(() => window.__cr?.track, null, { timeout: 60000 });   // a busy machine builds a street slowly
   // 600 m in, past many obstacle rows: driven in code rather than waited
   // for, so a slow machine (software WebGL on a CI runner) sees the same
   // stretch of street as a fast one. A street whose only text is on its
@@ -55,9 +55,9 @@ async function street(city, level) {
 const cities = ['nyc', 'paris', 'london', 'rome', 'sf', 'jerusalem', 'mexico', 'marrakech', 'delhi', 'bangkok', 'capetown', 'hanoi', 'seoul', 'samarkand', 'zanzibar', 'beijing', 'havana', 'istanbul', 'chicago', 'buenosaires', 'venice'];
 const jobs = [];
 for (const c of cities) for (const lv of [1, 2, 3]) jobs.push([c, lv]);
-// a few at a time: every page runs WebGL
-for (let i = 0; i < jobs.length; i += 5) {
-  const batch = await Promise.all(jobs.slice(i, i + 5).map(([c, lv]) => street(c, lv).then((r) => ({ c, lv, ...r }))));
+// two at a time: every page runs WebGL, at up to 2.5 GB each
+for (let i = 0; i < jobs.length; i += 2) {
+  const batch = await Promise.all(jobs.slice(i, i + 2).map(([c, lv]) => street(c, lv).then((r) => ({ c, lv, ...r }))));
   for (const { c, lv, painted, errors } of batch) {
     const bad = [...new Set(painted.filter((t) => BAD.test(t)))];
     check(painted.length > 0 && bad.length === 0, `${c} street ${lv}: painted text is all real words`,
