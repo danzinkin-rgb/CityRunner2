@@ -1040,8 +1040,10 @@ async function openPaywall(from, cityId = null) {
   if (packOffer) {
     const region = regionOf(cityId);
     const names = regionCityNames(region);
-    $('pw-pack-text').innerHTML = `<b>${REGIONS[region]} pack</b>: ${names.join(', ')}, and every ${REGIONS[region]} city added later`;
-    $('pw-pack-label').textContent = `${REGIONS[region].toUpperCase()} PACK`;
+    $('pw-pack-text').innerHTML = `<b>${REGIONS[region]} pack</b>: ${names.join(', ')}, and every city added to the region later`;
+    // The line above names the region; on the button the longest name
+    // (Middle East and Africa) would not fit a 375px screen.
+    $('pw-pack-label').textContent = 'REGION PACK';
     $('pw-pack-price').textContent = packOffer.price;
     $('pw-pack-row').style.display = '';
     pack.style.display = '';
@@ -1606,6 +1608,8 @@ if (DEBUG_HOOKS && q.get('view')) {
     // memory probes: GPU resource counts, and a way to change street
     // in-session (a page reload would reset memory and hide a leak)
     get gpu() { return { ...renderer.info.memory, programs: renderer.info.programs?.length }; },
+    // the last frame's draw calls and triangles, for performance probes
+    get render() { return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }; },
     go(cityId, lv, asPuzzle = false) {
       const ci = CITIES.findIndex((c) => c.id === cityId);
       if (ci < 0) return;
@@ -1682,8 +1686,8 @@ if (DEBUG_HOOKS && q.get('ui')) {
     $('pw-price').textContent = q.get('price') || '£1.99';
     $('btn-paywall-buy').style.display = '';
     $('pw-all-row').style.display = '';
-    $('pw-pack-text').innerHTML = '<b>Europe pack</b>: Rome, Istanbul, and every Europe city added later';
-    $('pw-pack-label').textContent = 'EUROPE PACK';
+    $('pw-pack-text').innerHTML = '<b>Europe pack</b>: Rome, and every city added to the region later';
+    $('pw-pack-label').textContent = 'REGION PACK';
     $('pw-pack-price').textContent = q.get('packprice') || '£0.99';
     $('pw-pack-row').style.display = '';
     $('btn-paywall-pack').style.display = '';

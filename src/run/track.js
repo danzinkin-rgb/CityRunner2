@@ -982,6 +982,13 @@ export class Track {
       this.backdrop = null;
     }
     this.accentMat.dispose();
+    // The souvenir model's geometry is shared by every souvenir on the street,
+    // so it is in SHARED_GEO and chunk recycling keeps it. It goes with the
+    // street. It used to be kept for good: by the time disposeAll() freed the
+    // scene, this group (and every souvenir in it) had already left it, so
+    // each street left its souvenir model on the GPU, and in SHARED_GEO.
+    this.souvenirProto.traverse((n) => { if (n.geometry) SHARED_GEO.delete(n.geometry); });
+    disposeTree(this.souvenirProto);
     SHARED_GEO.delete(this.roadGeo); SHARED_GEO.delete(this.sidewalkGeo);
     this.roadGeo.dispose(); this.sidewalkGeo.dispose();
     this.roadMat.dispose(); this.sidewalkMat.dispose();

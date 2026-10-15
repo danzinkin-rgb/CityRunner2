@@ -38,10 +38,18 @@ page.on('pageerror', (e) => errors.push(String(e)));
 await page.goto(`${BASE}/?view=run&city=${CITIES[0]}&level=1&god=1`, { waitUntil: 'load' });
 await page.waitForFunction(() => window.__cr?.track, null, { timeout: 20000 });
 
+const geoCounts = [];
+const drawPeak = {};
 const visit = async (c, l, asPuzzle = false) => {
   await page.evaluate(([c, l, p]) => window.__cr.go(c, l, p), [c, l, asPuzzle]);
   await page.waitForTimeout(1800);
-  return page.evaluate(() => window.__cr.gpu.textures);
+  const g = await page.evaluate(() => window.__cr.gpu);
+  geoCounts.push(g.geometries);
+  if (!asPuzzle) {
+    const calls = await page.evaluate(() => window.__cr.render.calls);
+    if (calls > (drawPeak.calls || 0)) Object.assign(drawPeak, { calls, where: `${c} ${l}` });
+  }
+  return g.textures;
 };
 
 // every city's first street and its monument, then every city again
@@ -59,9 +67,11 @@ counts.push(again);
 // visit instead missed it: that count is taken before the textures every
 // street shares exist, so the check passed or failed by chance.
 const revisits = [again];
+const geoAt = [geoCounts[geoCounts.length - 1]];
 for (const lv of [3, 1]) {
   for (const c of CITIES) { counts.push(await visit(c, lv)); counts.push(await visit(c, lv, true)); }
   revisits.push(await visit(CITIES[0], 1));
+  geoAt.push(geoCounts[geoCounts.length - 1]);
 }
 counts.push(...revisits);
 
@@ -69,6 +79,13 @@ const peak = Math.max(...counts);
 check(peak < 300, 'GPU textures stay bounded across a session', `peak ${peak} over ${counts.length} streets/puzzles`);
 check(revisits[2] <= revisits[0] + 8, 'revisiting a street does not add up, lap after lap',
   `first ${first}, revisits ${revisits.join(' → ')}`);
+// Geometries too (October 2026): each street left its souvenir model's
+// geometry behind, about 180 a lap of every city, while textures held flat.
+check(geoAt[2] <= geoAt[0] + 30, 'geometries do not add up lap after lap either', `revisits ${geoAt.join(' → ')}`);
+// Draw calls per frame on a street. Souvenirs built from many parts (the
+// marigold's 150 petals) made Mexico City draw 11,000 times a frame against
+// under 2,000 elsewhere, and run at a third of the frame rate (October 2026).
+check(drawPeak.calls < 3500, 'no street draws more than 3,500 times a frame (busiest today: New York street 2, about 2,850)', `peak ${drawPeak.calls} on ${drawPeak.where}`);
 check(!errors.length, 'no page errors', errors[0] || '');
 
 await browser.close();

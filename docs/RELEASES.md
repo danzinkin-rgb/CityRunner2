@@ -91,6 +91,11 @@ Kyoto is parked (`docs/CITY-ROADMAP.md`).
   tapped city's pack. Packs needed in App Store Connect for this release:
   Europe, North America, and Middle East and Africa (§5.2a). New York,
   Paris and London unchanged.
+- Game Center (Dan, 15 October 2026): the "Overall" leaderboard is renamed
+  "Lifetime points" in App Store Connect (it always summed every run), and
+  a new "Best run" leaderboard, `…leaderboard.bestrun`, takes the highest
+  single run on any street (not the daily). Create it as a Classic
+  leaderboard, High Score, Best Score, Integer, and add it to the version.
 - Jerusalem released (Dan, 14 October 2026): paid, in the Middle East and
   Africa pack and the Founder unlock. Needs `…leaderboard.jerusalem` and
   `…achievement.city.jerusalem` in Game Center.

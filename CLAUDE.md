@@ -30,7 +30,7 @@ Named shortcuts exist for a few: `test:ios`, `test:fit`, `test:determinism`, `te
 
 Any suite accepts a base URL to run against something else: `node test/ios-ui.mjs http://host:1234`.
 
-Two files in `test/` are **probes, not gates**, and are deliberately excluded from `npm test`: `test/difficulty.mjs` prints a table and asserts nothing, and `test/contact-sheet.mjs` (`npm run review`) renders every fact page for proofreading. `test/menu-budget.mjs` is likewise diagnostic — it prints the menu's per-child height budget so breakpoints get chosen by measurement. `npm run shots:store` generates App Store screenshots.
+Two files in `test/` are **probes, not gates**, and are deliberately excluded from `npm test`: `test/difficulty.mjs` prints a table and asserts nothing, and `test/contact-sheet.mjs` (`npm run review`) renders every fact page for proofreading. `test/soak.mjs` (`node test/soak.mjs 30`) plays streets and monuments back to back in real time and prints GPU and page counts per street, to catch slow leaks. `test/menu-budget.mjs` is likewise diagnostic — it prints the menu's per-child height budget so breakpoints get chosen by measurement. `npm run shots:store` generates App Store screenshots.
 
 ## The dual-deployment split — read before touching the build
 

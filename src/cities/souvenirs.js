@@ -533,5 +533,52 @@ export function makeCollectible(theme) {
     g.add(laurel);
   }
   g.traverse((n) => { if (n.isMesh) n.castShadow = true; });
-  return g;
+  return mergeByMaterial(g);
+}
+
+// Bake a model into one mesh per material. A souvenir is drawn 40 to 60
+// times at once along the street, so every part is a draw call each time:
+// the marigold's 150 petals and the pomegranate's seeds made Mexico City and
+// Jerusalem draw 9,000 to 11,000 times a frame, against under 2,000 for any
+// other city (measured October 2026). Merged, it looks the same and draws a
+// handful of times. The parts are never drawn, so they hold no GPU memory.
+function mergeByMaterial(root) {
+  root.updateMatrixWorld(true);
+  const toRoot = new THREE.Matrix4().copy(root.matrixWorld).invert();
+  const groups = new Map();   // material -> geometries in root space
+  const keep = [];            // meshes that cannot be merged (several materials)
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    if (Array.isArray(o.material)) { keep.push(o); return; }
+    const geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(toRoot, o.matrixWorld));
+    if (!groups.has(o.material)) groups.set(o.material, []);
+    groups.get(o.material).push(geo);
+  });
+  const out = new THREE.Group();
+  out.position.copy(root.position);
+  out.quaternion.copy(root.quaternion);
+  out.scale.copy(root.scale);
+  for (const [material, geos] of groups) {
+    const withUv = geos.every((gg) => gg.attributes.uv);
+    const merged = new THREE.BufferGeometry();
+    for (const name of withUv ? ['position', 'normal', 'uv'] : ['position', 'normal']) {
+      const size = geos[0].attributes[name].itemSize;
+      const total = geos.reduce((n, gg) => n + gg.attributes[name].count * size, 0);
+      const arr = new Float32Array(total);
+      let off = 0;
+      for (const gg of geos) { arr.set(gg.attributes[name].array, off); off += gg.attributes[name].array.length; }
+      merged.setAttribute(name, new THREE.BufferAttribute(arr, size));
+    }
+    const mesh = new THREE.Mesh(merged, material);
+    mesh.castShadow = true;
+    out.add(mesh);
+  }
+  for (const o of keep) {
+    o.updateMatrixWorld(true);
+    const m = new THREE.Matrix4().multiplyMatrices(toRoot, o.matrixWorld);
+    m.decompose(o.position, o.quaternion, o.scale);
+    out.add(o);
+  }
+  return out;
 }
