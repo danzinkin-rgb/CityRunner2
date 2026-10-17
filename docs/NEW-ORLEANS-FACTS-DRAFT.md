@@ -1,6 +1,6 @@
 # New Orleans: facts for review
 
-**DRAFT. Nothing here ships until Dan has approved it.** The facts are in `src/facts.js` already, marked DRAFT, so the city can be played and tested; the city is in the release queue and no player sees it.
+**Approved by Dan, 17 October 2026**, including the point under "To check before approval" below. The facts are in `src/facts.js`; the city is in the release queue and no player sees it until it is released.
 
 3 streets × 3 facts, 3 monuments × 3 facts.
 
@@ -67,7 +67,7 @@ The source says the initials are in the first-floor balustrade; the fact says "t
 
 Wikipedia says the oldest "alongside the Royal Presidio Chapel in Monterey", so the fact says "among the oldest".
 
-## To check before approval
+## Points that were open at approval
 
 - "They face each other across Jackson Square": the two buildings stand on opposite sides of the square; the source says matching and one block long but not "facing".
 

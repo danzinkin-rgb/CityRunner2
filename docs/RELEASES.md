@@ -71,7 +71,7 @@ Every city finished before 1.2.0 was released in it. Waiting now:
 | Order | City | Region | Status | Game Center items to create |
 |---|---|---|---|---|
 | 1 | Venice | Europe | Built; facts approved by Dan, 15 October 2026 (`docs/VENICE-FACTS-DRAFT.md`) | `…leaderboard.venice`, `…achievement.city.venice` |
-| 2 | New Orleans | North America | Built; facts DRAFT (`docs/NEW-ORLEANS-FACTS-DRAFT.md`) | `…leaderboard.neworleans`, `…achievement.city.neworleans` |
+| 2 | New Orleans | North America | Built; facts approved by Dan, 17 October 2026 (`docs/NEW-ORLEANS-FACTS-DRAFT.md`) | `…leaderboard.neworleans`, `…achievement.city.neworleans` |
 
 `…` is `uk.co.zinkin.cityrunner`. Each city's own move (the "Rome Vespa" of
 that city) is listed in `docs/CITY-ROADMAP.md`. Every city after Mexico
