@@ -143,8 +143,12 @@ SHARED_GEO.add(PIECE_RING_GEO); SHARED_GEO.add(PIECE_BEAM_GEO);
 //   'full' — vehicle, must change lane
 //   'coin' — collectible
 export class Track {
-  constructor(scene, theme, level, seed, pieceDefs = [], startSpeed = 0, hazardRate = 0) {
+  constructor(scene, theme, level, seed, pieceDefs = [], startSpeed = 0, hazardRate = 0, gamer = false) {
     this.scene = scene;
+    // Gamer mode: some city moves are harder (see PULLOUT in mechanics.js).
+    // Newbie and the daily draw exactly as before, so their courses are
+    // unchanged; a course is reproduced by its seed and mode.
+    this.gamer = gamer;
     // The run's opening speed (it differs by game mode), so the souvenir arcs
     // in the chunks built before the first update() are spaced for it.
     this.speed = startSpeed;

@@ -236,11 +236,13 @@ function startDaily() {
 // ---------- progression: which city opens which ----------
 // Dan, 15 October 2026, with every city released into region packs: the free
 // cities form one chain (a street in each opens the next), and the paid cities
-// form a chain within their region. A region's first paid city is always on
-// offer and plays as soon as it is owned; each later one opens after a street
-// in the one before it in that region. A single chain across twenty cities
-// would have made someone who bought the East Asia pack play fifteen others
-// first.
+// form a chain within their region. A region's first paid city opens after a
+// street in the last free city (London), as Rome always did; each later one
+// after a street in the one before it in that region. A single chain across
+// twenty cities would have made someone who bought the East Asia pack play
+// fifteen others first. Without the London step, all six region openers
+// were bright "buy" cards from the first launch (Dan, 15 October 2026), an
+// offer pushed at a player three cities away from it (docs/PROPOSALS.md 4).
 function chainPrev(cityId) {
   const i = CITIES.findIndex((c) => c.id === cityId);
   if (i < 0) return null;
@@ -250,7 +252,7 @@ function chainPrev(cityId) {
     const p = CITIES[j];
     if (paid ? isPaidCity(p.id) && p.region === c.region : !isPaidCity(p.id)) return p.id;
   }
-  return null;
+  return paid ? CITIES.filter((p) => !isPaidCity(p.id)).pop()?.id || null : null;
 }
 const chainNext = (cityId) => CITIES.find((c) => chainPrev(c.id) === cityId)?.id || null;
 const isEarned = (cityId) => { const p = chainPrev(cityId); return !p || (save.stars[p] || 0) >= 1; };
@@ -263,7 +265,17 @@ function buildCitySelect() {
   wrap.innerHTML = '';
   wrap.removeAttribute('aria-busy');
   const flagFix = { london: '💂' };   // 🇬🇧 renders as plain "GB" on Windows
-  CITIES.forEach((c, i) => {
+  // Shown grouped: the free cities, then each region's pack (Dan, 15 October
+  // 2026). Each group starts a new column and its first card names it. Only
+  // the order on screen changes: CITIES keeps its order, which the chains,
+  // NEXT LEVEL and saved indexes are built on.
+  const regionOrder = [];
+  for (const c of CITIES) if (isPaidCity(c.id) && !regionOrder.includes(c.region)) regionOrder.push(c.region);
+  const groups = [['FREE', CITIES.filter((c) => !isPaidCity(c.id))],
+    ...regionOrder.map((r) => [REGIONS[r].replace(' and ', ' & ').toUpperCase(), CITIES.filter((c) => isPaidCity(c.id) && c.region === r)])];
+  const shown = groups.flatMap(([label, list]) => list.map((c, k) => [c, k === 0 ? label : null]));
+  shown.forEach(([c, groupLabel]) => {
+    const i = CITIES.indexOf(c);
     const stars = save.stars[c.id] || 0;
     // Two independent gates. `earned` is the game's own pacing; `owned` is
     // whether it has been paid for (always true on the web build). A card is
@@ -309,9 +321,9 @@ function buildCitySelect() {
     const purchasable = !owned;
     const el = document.createElement('div');
     el.className = 'city-card' + (gated ? ' gated' : !earned ? ' locked' : sellable ? ' paid' : '')
-      + (purchasable && !earned ? ' buyable' : '');
+      + (purchasable && !earned ? ' buyable' : '') + (groupLabel ? ' group-start' : '');
     el.innerHTML = `<div class="thumb" style="background-image:url(assets/thumbs/${c.id}.png)">
-        <span class="thumb-flag">${flagFix[c.id] || c.flag}</span>${purchasable ? '<span class="padlock">🔒</span>' : ''}</div>
+        ${groupLabel ? `<span class="region-tag">${groupLabel}</span>` : ''}<span class="thumb-flag">${flagFix[c.id] || c.flag}</span>${purchasable ? '<span class="padlock">🔒</span>' : ''}</div>
       <div class="name">${c.name}</div>
       ${gated
         ? `<div class="gate">Unlocked — finish a street in ${CITIES.find((x) => x.id === chainPrev(c.id))?.name} to reach it</div>`
@@ -367,7 +379,7 @@ function startRun() {
     dressScene(scene, city());
     player = new Player(scene, characterById(save.equipped).style);
     const pieceDefs = looseDefs(city().landmarks[level - 1], level, tapsHere(), rules.name === 'gamer');
-    track = new Track(scene, city(), level, runSeed, pieceDefs, rules.start[level - 1], HAZARD_RATE[rules.name][level - 1]);
+    track = new Track(scene, city(), level, runSeed, pieceDefs, rules.start[level - 1], HAZARD_RATE[rules.name][level - 1], rules.name === 'gamer');
     ghostRec = new GhostRecorder(track.seed);
     player.onAction = (a) => ghostRec.move(track.distance, a);
     ghost = best && best.seed === track.seed
@@ -540,6 +552,8 @@ function settleRun() {
 
 function endRun() {
   settleRun();
+  $('over-title').textContent = 'Run over';
+  $('over-note').textContent = '';
   $('over-score').textContent = Math.round(score);
   $('over-coins').textContent = coins;
   showScreen('over');
@@ -745,10 +759,21 @@ function finishPuzzle(won) {
     state = 'pwin-wait';
   } else {
     settleRun();            // the run still counts even if the puzzle timed out
-    $('over-score').textContent = Math.round(score);
-    $('over-coins').textContent = coins;
-    showScreen('over');
-    state = 'over';
+    // Say why it ended (device feedback, 15 October 2026: the clock ran out
+    // and the game cut straight to RUN AGAIN with no word of what happened).
+    // The half-built monument stays on screen under "TIME'S UP" for a moment.
+    const placed = puzzle.placedCount, total = puzzle.items.length;
+    hint("TIME'S UP");
+    state = 'pfail-wait';
+    setTimeout(() => {
+      if (state !== 'pfail-wait') return;
+      $('over-title').textContent = 'Out of time';
+      $('over-note').textContent = `${LANDMARK_NAMES[lm]}: ${placed} of ${total} pieces placed. Run the street again to rebuild it.`;
+      $('over-score').textContent = Math.round(score);
+      $('over-coins').textContent = coins;
+      showScreen('over');
+      state = 'over';
+    }, 1800);
   }
 }
 
@@ -766,7 +791,12 @@ function syncFetchButton() {
   const show = n > 0 && coins + save.coins >= price;
   // What is happening, in words: "2 missing pieces on the way · next in 3s".
   // First device feedback was that nothing said pieces were coming at all.
-  const dt = n ? `${n} missing piece${n > 1 ? 's' : ''} on the way · next in ${Math.ceil(puzzle.nextDeliveryIn())}s` : '';
+  // And when the next course is held up by one of them, say so: with nothing
+  // placeable, the pieces left on the ground simply refused to fit (device
+  // feedback, 15 October 2026, the Casa Rosada's windows).
+  const secs = n ? Math.ceil(puzzle.nextDeliveryIn()) : 0;
+  const dt = !n ? '' : `${n} missing piece${n > 1 ? 's' : ''} on the way · next in ${secs}s`
+    + (puzzle.waitingOnMissing() ? '. Nothing else fits until it lands.' : '');
   if (dt !== deliverText) {
     deliverText = dt;
     $('hud-deliver').textContent = dt;

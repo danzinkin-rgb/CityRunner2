@@ -816,8 +816,11 @@ const defs = {
       adorn: [B([0, 0.85, 0], [top + 0.2, 0.5, top + 0.2], ['#a2947e', '#a69884', '#aa9c88', '#aea08c'][i], 'box', { tex: 'stone', tx: { cols: 8, rows: 1 } })],
     })),
     B([0, 8.05, -0.3], [6.4, 0.5, 6.0], '#a4987e', 'box', { tex: 'stone', tx: { cols: 6, rows: 1 } }),   // summit platform
-    // the double staircase: two flights side by side, each a stepped profile
-    ...[[-1.3, '#3a6a9a'], [1.3, '#b0402a']].map(([x, col]) => B([x, 4.0, 5.2], [2.4, 7.6, 4.2], col, 'extrude', {
+    // the double staircase: two flights side by side, each a stepped profile.
+    // The extrusion depth is each flight's width once turned: 4.2 made the two
+    // overlap by 1.6 m, and the blue and red fought over the same faces
+    // (device feedback, 15 October 2026: the colours flickered).
+    ...[[-1.3, '#3a6a9a'], [1.3, '#b0402a']].map(([x, col]) => B([x, 4.0, 5.2], [2.4, 7.6, 2.5], col, 'extrude', {
       rotY: -Math.PI / 2,
       outline: (() => {
         const pts = [[0.5, -0.5]];
@@ -1717,7 +1720,10 @@ const defs = {
 
   // Havana Cathedral: a curving Baroque front of coral stone between two
   // bell towers of different widths, three doorways, and the dome behind.
-  // Street 2: about eighteen pieces.
+  // Street 2: about eighteen pieces. Each part has its own tone (device
+  // feedback, 15 October 2026: in one sandy colour throughout, nobody could
+  // tell which piece went where): the front pale, the towers a warmer coral
+  // getting lighter up each stage, the nave grey stone under a tiled roof.
   habanacathedral: [
     B([0, 0.2, 0], [22, 0.4, 20], '#a89c84', 'box', { tex: 'stone' }),
     B([0, 0.55, 5.2], [11, 0.3, 2.0], '#c0b49c', 'box', { tex: 'stone' }),                   // the steps
@@ -1731,15 +1737,15 @@ const defs = {
     }),
     B([0, 4.4, 4.25], [8.6, 0.4, 0.2], '#c8bc9c', 'box', { sortY: 6.9 }),                     // the cornice between storeys
     ...[[-1, 3.2], [1, 2.6]].flatMap(([sx, w]) => [
-      B([sx * (4.5 + w / 2), 3.4, 3.0], [w, 6.4, w], '#d0c4a4', 'box', { tex: 'stone' }),
-      B([sx * (4.5 + w / 2), 7.8, 3.0], [w * 0.9, 2.4, w * 0.9], '#d4c8a8', 'box', { tex: 'arch', tx: { n: 1 } }),
-      B([sx * (4.5 + w / 2), 9.6, 3.0], [w * 0.8, 1.2, w * 0.8], '#d8ccac', 'box', { tex: 'arch', tx: { n: 1 } }),
-      B([sx * (4.5 + w / 2), 10.7, 3.0], [w * 0.7, 1.0, w * 0.7], '#c0b090', 'pyramid'),
+      B([sx * (4.5 + w / 2), 3.4, 3.0], [w, 6.4, w], '#c49a78', 'box', { tex: 'stone' }),
+      B([sx * (4.5 + w / 2), 7.8, 3.0], [w * 0.9, 2.4, w * 0.9], '#d2ae8a', 'box', { tex: 'arch', tx: { n: 1 } }),
+      B([sx * (4.5 + w / 2), 9.6, 3.0], [w * 0.8, 1.2, w * 0.8], '#e0c4a2', 'box', { tex: 'arch', tx: { n: 1 } }),
+      B([sx * (4.5 + w / 2), 10.7, 3.0], [w * 0.7, 1.0, w * 0.7], '#8a6a52', 'pyramid'),
     ]),
-    B([0, 3.4, -2.5], [9, 6.4, 11], '#cfc2a2', 'box', { tex: 'stone' }),                     // the nave
-    B([0, 7.0, -2.5], [9.4, 0.8, 11.4], '#a89a7a', 'prism'),
-    B([0, 7.8, -5.0], [3.6, 1.6, 3.6], '#d0c4a4', 'cyl'),                                   // the dome
-    B([0, 8.6, -5.0], [3.8, 2.6, 3.8], '#c8bca0', 'dome'),
+    B([0, 3.4, -2.5], [9, 6.4, 11], '#a8a294', 'box', { tex: 'stone' }),                     // the nave
+    B([0, 7.0, -2.5], [9.4, 0.8, 11.4], '#a0583a', 'prism'),                                // its tiled roof
+    B([0, 7.8, -5.0], [3.6, 1.6, 3.6], '#e8e0cc', 'cyl'),                                   // the dome
+    B([0, 8.6, -5.0], [3.8, 2.6, 3.8], '#7a8a8e', 'dome'),
   ],
 
   // Morro Castle: the fortress on its rock at the harbour mouth, walls

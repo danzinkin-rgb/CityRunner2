@@ -31,7 +31,7 @@ console.log(`released [${RELEASED.join(', ')}]  queued [${QUEUE.join(', ')}]`);
 check(QUEUE.every((c) => ALL.includes(c)), 'every queued city exists in themes.js', QUEUE.join(', '));
 check(new Set(QUEUE).size === QUEUE.length, 'no city is queued twice');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const placeholders = (html.match(/class="city-card skel"/g) || []).length;
+const placeholders = (html.match(/class="city-card skel[ "]/g) || []).length;   // some also carry group-start
 check(placeholders === RELEASED.length, 'index.html has one menu placeholder per released city',
   `${placeholders} placeholders, ${RELEASED.length} released`);
 
@@ -52,7 +52,8 @@ const nameOf = (id) => themes.match(new RegExp(`id: '${id}', name: '([^']+)'`))[
 
 // a player: the plain page (the store build is checked in release-build.mjs)
 const player = await cardsAt(`${BASE}/`);
-check(JSON.stringify(player.names) === JSON.stringify(RELEASED.map(nameOf)), 'a player sees exactly the released cities',
+// compared as sets: the menu shows them grouped by region pack, not in list order
+check(JSON.stringify([...player.names].sort()) === JSON.stringify(RELEASED.map(nameOf).sort()), 'a player sees exactly the released cities',
   player.names.join(', '));
 check(!player.errors.length, 'player: no page errors', player.errors[0] || '');
 check(player.souvenirs === RELEASED.length, 'the souvenir list names only released cities',

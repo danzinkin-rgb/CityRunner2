@@ -438,10 +438,12 @@ const browser = await webkit.launch();
 
 // ---------------------------------------------------- native, REGION CHAINS
 // With every city released (October 2026), paid cities open in a chain within
-// their region: the region's first paid city plays as soon as it is owned,
-// each later one after a street in the one before it IN THAT REGION. Founder
-// owned and no stars: Rome and Delhi (first in their regions) play; Istanbul
-// waits on Rome and Chicago on San Francisco; a star in Rome opens Istanbul.
+// their region: the region's first paid city opens after a street in London
+// (the last free city), each later one after a street in the one before it IN
+// THAT REGION. Founder owned and no stars: Rome and Delhi wait on London;
+// with a star in London they play, Istanbul waits on Rome and Chicago on San
+// Francisco; a star in Rome opens Istanbul. Until 15 October 2026 a region's
+// first city needed nothing, so six bright "buy" cards met a new player.
 {
   const ctx = await browser.newContext();
   await ctx.addInitScript((founder) => {
@@ -460,9 +462,19 @@ const browser = await webkit.launch();
   ])));
   await page.goto(MENU, { waitUntil: 'load' });
   await page.waitForTimeout(900);
+  const z = await cards();
+  check(z.ROME?.gated && /LONDON/i.test(z.ROME.note), 'chains: Rome, first paid city in Europe, waits on a street in London', JSON.stringify(z.ROME));
+  check(z.DELHI?.gated && /LONDON/i.test(z.DELHI.note), 'chains: Delhi, first in South and Central Asia, waits on London too', JSON.stringify(z.DELHI));
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('cityrunner2'));
+    s.stars.london = 1;
+    localStorage.setItem('cityrunner2', JSON.stringify(s));
+  });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(900);
   const a = await cards();
-  check(a.ROME && !a.ROME.gated && !a.ROME.locked, 'chains: Rome, first paid city in Europe, plays once owned', JSON.stringify(a.ROME));
-  check(a.DELHI && !a.DELHI.gated && !a.DELHI.locked, 'chains: Delhi, first in South and Central Asia, plays once owned', JSON.stringify(a.DELHI));
+  check(a.ROME && !a.ROME.gated && !a.ROME.locked, 'chains: a street in London opens Rome', JSON.stringify(a.ROME));
+  check(a.DELHI && !a.DELHI.gated && !a.DELHI.locked, 'chains: and Delhi, first in South and Central Asia', JSON.stringify(a.DELHI));
   check(a.ISTANBUL?.gated && /ROME/i.test(a.ISTANBUL.note), 'chains: Istanbul waits on a street in Rome, not the city before it in the list', JSON.stringify(a.ISTANBUL));
   check(a.CHICAGO?.gated && /SAN FRANCISCO/i.test(a.CHICAGO.note), 'chains: Chicago waits on San Francisco', JSON.stringify(a.CHICAGO));
   await page.evaluate(() => {

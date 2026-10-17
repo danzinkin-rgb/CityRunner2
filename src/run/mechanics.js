@@ -601,32 +601,42 @@ const WAVES = {
 //     obstacle in the far lane, leaving the middle lane free
 //   - no souvenirs in the lane it pulls into
 //   - it is in its lane PO_END (18 m) out
+// Gamer mode (device feedback, 15 October 2026: "they appear in a lane that
+// would never be where I am"): half of them pull right across into the
+// middle lane, where most players run, and later, settling 12 m out. The
+// lane they pull out from is then the free one. A jump-over obstacle may
+// still take the far lane on later streets, so a lane is always clear.
 const PULL_CHANCE = [0.14, 0.18, 0.22];      // share of rows, by street
 const PO_SIGNAL = 46, PO_START = 32, PO_END = 18, PARKED_X = 5.3;
+const PO_GAMER = { start: 26, end: 12 };
 const PULLOUT = {
   hint: 'Indicator flashing at the kerb: it is about to pull out!',
   row({ level, rand, addObstacle, usedLanes, track }) {
     if (rand() >= PULL_CHANCE[level - 1]) return null;
-    const lane = rand() < 0.5 ? 0 : 2;
+    const kerb = rand() < 0.5 ? 0 : 2;
+    const deep = track.gamer && rand() < 0.5;     // Gamer only: drawn only there
+    const lane = deep ? 1 : kerb;
     const theme = track.theme;
     const mesh = makeVehicle(theme);
     const tall = theme.vehicle === 'colectivo';
     const r = addObstacle(lane, 'full', { mesh, y0: 0, y1: tall ? 3.2 : 1.6, halfLen: tall ? 2.6 : 2.1 });
     r.mech = PULLOUT;
-    r.side = lane === 0 ? -1 : 1;
-    if (level >= 2 && rand() < 0.5) addObstacle(2 - lane, 'low');
+    r.side = kerb === 0 ? -1 : 1;
+    r.po = track.gamer ? PO_GAMER : { start: PO_START, end: PO_END };
+    if (level >= 2 && rand() < 0.5) addObstacle(2 - kerb, 'low');
     r.blink = makePullBlinker(mesh, r.side);
     PULLOUT.move(r, 200);
     return r;
   },
   settle() {},
   move(o, ahead) {
-    const t = Math.max(0, Math.min(1, (PO_START - ahead) / (PO_START - PO_END)));
+    const { start, end } = o.po || { start: PO_START, end: PO_END };
+    const t = Math.max(0, Math.min(1, (start - ahead) / (start - end)));
     const k = t * t * (3 - 2 * t);
     o.x = o.side * PARKED_X + (LANES[o.lane] - o.side * PARKED_X) * k;
     o.mesh.position.x = o.x;
     o.mesh.rotation.y = -o.side * 0.35 * Math.sin(Math.PI * t);
-    const flashing = ahead <= PO_SIGNAL && ahead > PO_END;
+    const flashing = ahead <= PO_SIGNAL && ahead > end;
     o.blink.visible = flashing && Math.floor(ahead / 2.2) % 2 === 0;
     return flashing;
   },
