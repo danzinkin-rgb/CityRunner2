@@ -21,7 +21,7 @@ import { HAZARD_RATE } from './run/hazards.js';
 
 export const VERSION = '1.2.0';
 import { Player, DEFAULT_STYLE } from './run/player.js';
-import { releaseStreetCaches } from './cities/builders.js';
+import { releaseStreetCaches, makeSplash } from './cities/builders.js';
 import { Track } from './run/track.js';
 import { Puzzle, looseDefs, releasePuzzleTextures } from './puzzle/puzzle.js';
 import { CHARACTERS, characterById } from './run/characters.js';
@@ -131,6 +131,13 @@ let cityIdx = 0, level = 1;
 let scene = null, player = null, track = null, puzzle = null;
 let speed = 0, coins = 0, score = 0, puzzleBonus = 0;
 let shake = 0;
+// Falling into water (Venice's canals and floods) splashes instead of the
+// bump: the effect, and how long it has run.
+let splash = null, splashT = 0, splashDeep = false;
+function clearSplash() {
+  if (splash) { scene?.remove(splash); splash = null; }
+  if (player) player.group.visible = true;
+}
 
 const city = () => CITIES[cityIdx];
 
@@ -409,7 +416,7 @@ function startRun() {
         suitcase: 'A runaway suitcase! Jump over it.' }[kind]);
     };
     speed = rules.start[level - 1];
-    coins = 0; score = 0; shake = 0;
+    coins = 0; score = 0; shake = 0; splash = null;
     continuesUsed = 0;
     camera.position.set(0, 5.2, 8.5);
     $('hud-city').textContent = (dailyMode ? 'DAILY · ' : '')
@@ -482,12 +489,20 @@ function hint(text) {
 const CONTINUE_PRICES = [150, 300, 600];
 let continuesUsed = 0;
 
-function crash() {
+function crash(o) {
   if (GOD || testerInvincible) return;
-  sfx.crash();
+  if (o?.water) {
+    sfx.splash();
+    splash = makeSplash(); splashT = 0; splashDeep = o.water === 'deep';
+    splash.position.set(player.x, 0, player.group.position.z);
+    scene.add(splash);
+    shake = 0.3;
+  } else {
+    sfx.crash();
+    shake = 0.7;
+  }
   hapticHeavy();
   stopMusic();
-  shake = 0.7;
   state = 'dead';
   const price = CONTINUE_PRICES[continuesUsed];
   const offerContinue = !dailyMode && price !== undefined;
@@ -517,6 +532,7 @@ function acceptContinue() {
   continuesUsed++;
   shake = 0;
   track.clearNearPlayer();
+  clearSplash();
   player.vy = 0; player.y = 0; player.grounded = true; player.rolling = 0;
   state = 'run';
   showScreen(null);
@@ -551,6 +567,7 @@ function settleRun() {
 }
 
 function endRun() {
+  clearSplash();
   settleRun();
   $('over-title').textContent = 'Run over';
   $('over-note').textContent = '';
@@ -1495,7 +1512,7 @@ function frame() {
       addScore(speed * dt * 2);
       track.update(dt, speed, player,
         () => { coins++; sfx.coin(); hapticLight(); addScore(25); },
-        () => crash());
+        (o) => crash(o));
       player.update(dt, speed);
       ghostRec?.sample(track.distance, score);
       if (ghost && save.raceBest !== false) {
@@ -1506,6 +1523,14 @@ function frame() {
         el.className = gap >= 0 ? 'ahead' : 'behind';
       }
       if (track.done()) showStreetFacts();
+    }
+    // falling in: the runner sinks, the spray rises and settles
+    if (splash) {
+      splashT += dt;
+      splash.userData.update(splashT);
+      // a canal takes you under; a flooded street only to the waist
+      player.group.position.y = -Math.min(splashDeep ? 1.6 : 0.8, splashT * 3);
+      if (splashDeep && splashT > 0.6) player.group.visible = false;
     }
     // camera follow + speed shake
     const targetFov = 62 + Math.min(14, (speed - 14) * 0.5);

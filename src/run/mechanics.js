@@ -768,6 +768,7 @@ const GONDOLA = {
     for (let l = 0; l <= 2; l++) {
       const r = addObstacle(l, 'low', { mesh: l === 1 ? makeRio() : new THREE.Group(), y0: 0, y1: 0.8, halfLen: 1.1 });
       r.mech = GONDOLA;
+      r.water = 'deep';             // falling in splashes (main.js crash)
     }
     const head = addObstacle(1, 'full', { mesh: makeGondola(), y0: 0, y1: 3.2, halfLen: 0.6 });
     head.mech = GONDOLA;
@@ -851,6 +852,7 @@ const FLOOD = {
           }
         }
         const r = addObstacle(l, 'full', { mesh, y0: 0, y1: 3.2, halfLen: FL_LEN / 2, dz: FL_LEN / 2 + k * FL_LEN });
+        r.water = 'flood';          // knee-deep: you wade in, not under
         r.mech = FLOOD;
         r.front = k === 0;
         if (!head) head = r;

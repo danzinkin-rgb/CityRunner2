@@ -155,6 +155,11 @@ export const sfx = {
   // moving hazards' warnings (src/run/hazards.js)
   whistle() { [0, 0.11, 0.22].forEach((t) => tone(2600, 0.08, 'square', 0.12, t, 180)); },
   flap() { [0, 0.07, 0.14, 0.21].forEach((t) => tone(140, 0.05, 'triangle', 0.18, t, 60)); },
+  // falling into Venice's water: a plunge, then the spray
+  splash() {
+    tone(420, 0.28, 'sine', 0.35, 0, -320);
+    [0.04, 0.09, 0.15, 0.22].forEach((t, i) => tone(1400 + i * 260, 0.07, 'triangle', 0.1, t, -600));
+  },
   rumble() { tone(90, 0.5, 'sawtooth', 0.12, 0, -30); tone(130, 0.5, 'sawtooth', 0.08, 0.05, -40); },
 };
 

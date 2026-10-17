@@ -939,7 +939,7 @@ export class Track {
       const zw = (o.halfLen || 0.35) * 0.55 + 0.3;
       if (wz > -zw && wz < zw && Math.abs((o.x ?? LANES[o.lane]) - hb.x) < 1.15) {
         const overlap = hb.y0 < o.y1 && hb.y1 > o.y0;
-        if (overlap) { onHit(); return; }
+        if (overlap) { onHit(o); return; }
       }
     }
   }

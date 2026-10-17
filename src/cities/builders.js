@@ -4356,6 +4356,40 @@ function makeCarrello() {
   return g;
 }
 
+// A splash, for falling into the water (main.js crash): droplets thrown up
+// and out, and a ring spreading on the surface. userData.update(t) poses it
+// t seconds in; it is done by about a second. Shared geometry and cached
+// materials, so removing it from the scene is all the clean-up it needs.
+export function makeSplash() {
+  const g = new THREE.Group();
+  const drop = cached('mat:splashDrop', () => new THREE.MeshStandardMaterial({ color: 0xe8f6f8, roughness: 0.2, transparent: true, opacity: 0.9, emissive: 0x6ab0b8, emissiveIntensity: 0.3 }));
+  const drops = [];
+  for (let i = 0; i < 16; i++) {
+    const m = new THREE.Mesh(ballGeo, drop);
+    const a = (i / 16) * Math.PI * 2;
+    const out = 1.2 + (i % 3) * 0.6;
+    m.userData.v = [Math.cos(a) * out, 5 + (i % 4) * 1.4, Math.sin(a) * out * 0.6];
+    m.scale.setScalar(0.09 + (i % 3) * 0.04);
+    g.add(m); drops.push(m);
+  }
+  const ring = new THREE.Mesh(cached('geo:splashRing', () => new THREE.TorusGeometry(1, 0.05, 6, 28)),
+    cached('mat:splashRing', () => new THREE.MeshStandardMaterial({ color: 0xf2fafa, roughness: 0.3, transparent: true, opacity: 0.8 })));
+  ring.rotation.x = Math.PI / 2; ring.position.y = 0.15; g.add(ring);
+  g.userData.update = (t) => {
+    for (const m of drops) {
+      const [vx, vy, vz] = m.userData.v;
+      m.position.set(vx * t, Math.max(0, vy * t - 16 * t * t) + 0.2, vz * t);
+      m.visible = t < 0.9;
+    }
+    const r = 0.5 + Math.min(1, t * 1.6) * 1.1;
+    ring.scale.set(r, r, 1);           // spreads, the band staying thin
+    ring.material.opacity = Math.max(0, 0.8 * (1 - t));
+    ring.visible = t < 1.0;
+  };
+  g.userData.update(0);
+  return g;
+}
+
 export function makeHandcart() {
   const g = new THREE.Group();
   const wood = cached('mat:cartWood', () => new THREE.MeshStandardMaterial({ color: 0x7a5232, roughness: 0.9 }));
