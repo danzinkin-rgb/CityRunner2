@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-An endless runner through twenty world cities (New York, Paris and London free; the rest sold in region packs), built on Three.js. Each city has three streets; each street ends in a 60-second monument-rebuilding puzzle. All geometry, textures and audio are generated procedurally at runtime. The only image files are small PNGs for the menus and HUD (`assets/thumbs`, `monuments`, `souvenirs`, `characters`), rendered from the game itself by `test/capture-city-assets.mjs`. It runs as a web page and, via Capacitor, as an iOS app.
+An endless runner through twenty-two world cities (New York, Paris and London free; the rest sold in region packs), built on Three.js. Each city has three streets; each street ends in a 60-second monument-rebuilding puzzle. All geometry, textures and audio are generated procedurally at runtime. The only image files are small PNGs for the menus and HUD (`assets/thumbs`, `monuments`, `souvenirs`, `characters`), rendered from the game itself by `test/capture-city-assets.mjs`. It runs as a web page and, via Capacitor, as an iOS app.
 
 ## Commands
 

@@ -66,12 +66,7 @@ as they merge, and a city when it is released.
 
 ## Queue
 
-Every city finished before 1.2.0 was released in it. Waiting now:
-
-| Order | City | Region | Status | Game Center items to create |
-|---|---|---|---|---|
-| 1 | Venice | Europe | Built; facts approved by Dan, 15 October 2026 (`docs/VENICE-FACTS-DRAFT.md`) | `…leaderboard.venice`, `…achievement.city.venice` |
-| 2 | New Orleans | North America | Built; facts approved by Dan, 17 October 2026 (`docs/NEW-ORLEANS-FACTS-DRAFT.md`) | `…leaderboard.neworleans`, `…achievement.city.neworleans` |
+Empty: 1.2.0 released every finished city, Venice and New Orleans included.
 
 `…` is `uk.co.zinkin.cityrunner`. Each city's own move (the "Rome Vespa" of
 that city) is listed in `docs/CITY-ROADMAP.md`. Every city after Mexico
@@ -82,7 +77,7 @@ Kyoto is parked (`docs/CITY-ROADMAP.md`).
 
 ## Next release: what is waiting
 
-1.2.0, build 13 (planned 15 October 2026). Since 1.1.1:
+1.2.0, build 14 (planned 17 October 2026). Since 1.1.1:
 
 - Region packs at £0.99 (Dan, 14 October 2026), about three cities each:
   each unlocks every city in its region, including ones added later. Six
@@ -104,6 +99,9 @@ Kyoto is parked (`docs/CITY-ROADMAP.md`).
   App Store Connect, and for each new city `…leaderboard.<id>` and
   `…achievement.city.<id>` (0 points). The daily is version 3 and draws
   from all twenty: `…leaderboard.daily.v3` (Recurring, like daily.v2).
+  Venice (Europe) and New Orleans (North America) joined on 17 October,
+  before 1.2.0 was submitted: twenty-two cities, and daily v3 draws from
+  all twenty-two (v3 had not shipped, so its pool could still change).
   `marketing/asc-setup.mjs` creates whatever of this is missing (all of it
   existed by 15 October 2026); an App Manager API key cannot set IAP prices,
   so prices were set on the web page.
