@@ -10,7 +10,9 @@ How CityRunner ships. Agreed with Dan, 2 October 2026.
   the daily challenge. Founder opens everything; otherwise each region's
   pack opens its cities. Paid cities open in a chain within their region:
   the first plays once owned, each later one after a street in the one
-  before it. New York, Paris and London stay free with their own chain.
+  before it. New York, Paris, London and Jerusalem stay free with their own
+  chain (Jerusalem since 17 October 2026); London is the gate for the paid
+  regions.
 - The release queue (`RELEASE_QUEUE`) remains for a city still being built.
 
 ## How it works in the code

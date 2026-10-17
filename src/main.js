@@ -244,7 +244,7 @@ function startDaily() {
 // Dan, 15 October 2026, with every city released into region packs: the free
 // cities form one chain (a street in each opens the next), and the paid cities
 // form a chain within their region. A region's first paid city opens after a
-// street in the last free city (London), as Rome always did; each later one
+// street in London, as Rome always did; each later one
 // after a street in the one before it in that region. A single chain across
 // twenty cities would have made someone who bought the East Asia pack play
 // fifteen others first. Without the London step, all six region openers
@@ -259,9 +259,20 @@ function chainPrev(cityId) {
     const p = CITIES[j];
     if (paid ? isPaidCity(p.id) && p.region === c.region : !isPaidCity(p.id)) return p.id;
   }
-  return paid ? CITIES.filter((p) => !isPaidCity(p.id)).pop()?.id || null : null;
+  return paid && CITIES.some((p) => p.id === PAID_GATE) ? PAID_GATE : null;
 }
-const chainNext = (cityId) => CITIES.find((c) => chainPrev(c.id) === cityId)?.id || null;
+// The city a region's first paid city waits on. London, not "the last free
+// city": Jerusalem became free after it (17 October 2026) and was not to
+// become a fourth step in front of every paid city.
+const PAID_GATE = 'london';
+// Where NEXT LEVEL goes from a city's last street. Several cities can open
+// from London (Jerusalem and every paid region's first city), so a free one
+// comes first: a player who has bought nothing is sent on to Jerusalem, not
+// to a paywall.
+const chainNext = (cityId) => {
+  const next = CITIES.filter((c) => chainPrev(c.id) === cityId);
+  return (next.find((c) => !isPaidCity(c.id)) || next[0])?.id || null;
+};
 const isEarned = (cityId) => { const p = chainPrev(cityId); return !p || (save.stars[p] || 0) >= 1; };
 
 function buildCitySelect() {

@@ -50,12 +50,12 @@ for (const c of released) if (!FREE.includes(c.id)) (paidByRegion[c.region] ||= 
 const PACK_COPY = {
   europe: ['Europe Pack', 'Unlock Rome and every new city in Europe.'],
   'north-america': ['North America Pack', 'San Francisco and every new North American city.'],
-  'mideast-africa': ['Middle East & Africa Pack', 'Jerusalem and every new Middle East or Africa city.'],
+  'mideast-africa': ['Middle East & Africa Pack', 'Marrakech, Cape Town and Zanzibar, plus new cities.'],
   'latin-america': ['Latin America Pack', 'Mexico City, Havana and Buenos Aires, plus new cities.'],
   'east-asia': ['East Asia Pack', 'Beijing, Seoul and Hanoi, plus every new city there.'],
   'south-asia': ['South & Central Asia Pack', 'Delhi, Bangkok and Samarkand, plus new cities there.'],
 };
-const reviewNote = (region) => `One-time non-consumable purchase. It unlocks the paid cities in one region (${REGIONS[region]}): currently ${paidByRegion[region].join(', ')}, and any city added to that region later. New York, Paris and London remain free. A Founder unlock (already approved) unlocks everything. Restore Purchases is in Settings and on the purchase screen. No account or login is needed.`;
+const reviewNote = (region) => `One-time non-consumable purchase. It unlocks the paid cities in one region (${REGIONS[region]}): currently ${paidByRegion[region].join(', ')}, and any city added to that region later. ${FREE.map((id) => title(ALL_CITIES.find((c) => c.id === id).name)).join(', ').replace(/, ([^,]*)$/, ' and $1')} remain free. A Founder unlock (already approved) unlocks everything. Restore Purchases is in Settings and on the purchase screen. No account or login is needed.`;
 
 // ---- what App Store Connect has ------------------------------------------------
 const gc = (await asc(`/v1/apps/${APP}/gameCenterDetail`)).data.id;
@@ -149,6 +149,12 @@ for (const [region, pid] of Object.entries(PACKS)) {
     if (existing.attributes.reviewNote !== reviewNote(region)) todo.push([`update review notes of ${pid}`, () =>
       asc(`/v2/inAppPurchases/${existing.id}`, { method: 'PATCH', body: { data: { type: 'inAppPurchases', id: existing.id, attributes: { reviewNote: reviewNote(region) } } } })]);
     if (existing.attributes.state === 'MISSING_METADATA') todo.push([`finish ${pid}`, () => finishPack(existing.id, region, pid)]);
+    // The store description names the pack's cities, so it is kept in step
+    // too (Jerusalem left the Middle East & Africa pack when it became free).
+    const [displayName, description] = PACK_COPY[region];
+    const l10n = (await asc(`/v2/inAppPurchases/${existing.id}/inAppPurchaseLocalizations`)).data.find((l) => l.attributes.locale === 'en-GB');
+    if (l10n && (l10n.attributes.description !== description || l10n.attributes.name !== displayName)) todo.push([`update store description of ${pid}`, () =>
+      asc(`/v1/inAppPurchaseLocalizations/${l10n.id}`, { method: 'PATCH', body: { data: { type: 'inAppPurchaseLocalizations', id: l10n.id, attributes: { name: displayName, description } } } })]);
     continue;
   }
   todo.push([`pack ${pid} at £0.99`, async () => {

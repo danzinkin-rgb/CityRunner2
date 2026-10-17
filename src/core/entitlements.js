@@ -88,7 +88,11 @@ import { ALL_CITIES } from '../cities/themes.js';
  * its monuments are the largest puzzles in the game (25 pieces), which makes
  * it the most substantial thing GBP 1.99 can buy.
  */
-export const FREE_CITIES = ['nyc', 'paris', 'london'];
+// Jerusalem joined them on 17 October 2026 (Dan), before 1.2.0 shipped, so
+// nobody had paid for it. It opens after a street in London, like the paid
+// regions' first cities; London stays the gate for those (see chainPrev in
+// src/main.js), so a fourth free city adds no step in front of the paid ones.
+export const FREE_CITIES = ['nyc', 'paris', 'london', 'jerusalem'];
 
 /**
  * Free monuments per free city. Cities ship with exactly three today, so this

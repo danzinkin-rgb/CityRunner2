@@ -150,12 +150,12 @@ Open `src/core/iap.js`. The function `loadStore()` contains a commented block ma
 ### 5.2a Region packs (October 2026)
 
 One per region, about three cities each, **£0.99** (Dan, 14 October 2026), created only once the region has a released paid
-city (a purchase that unlocks nothing is a likely rejection). For the 1.2.0
-release that is **Europe** (Rome), **North America** (San Francisco) and
-**Middle East and Africa** (Jerusalem, released in 1.2.0): product id
-`uk.co.zinkin.cityrunner.pack.mideastafrica`, display name `Middle East & Africa Pack`,
-description `Unlock Jerusalem and every city in the Middle East and Africa
-added in future, with all their monuments. One payment, kept forever.`
+city (a purchase that unlocks nothing is a likely rejection). 1.2.0
+released every city, so all six exist; `marketing/asc-setup.mjs` keeps
+their store descriptions and review notes in step with the cities in each.
+Jerusalem became free on 17 October 2026, before 1.2.0 shipped, so the
+**Middle East and Africa** pack (`uk.co.zinkin.cityrunner.pack.mideastafrica`)
+holds Marrakech, Cape Town and Zanzibar.
 Each pack covers every city in its region, including ones added later: the
 code checks the region, not a list (`REGION_PACKS` in
 `src/core/entitlements.js`).
