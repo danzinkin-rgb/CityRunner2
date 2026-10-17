@@ -178,19 +178,38 @@ open.
 - **Souvenir:** a carnival mask.
 - Queued second, behind Mexico City.
 
+## New Orleans (17 October 2026)
+
+Dan's pick for the second North America city.
+
+- **Streets:** Royal Street (pastel Creole houses under cast-iron
+  galleries), St. Charles Avenue (the parade route, big houses under live
+  oaks hung with moss), Decatur Street (beside the Mississippi, the red
+  Riverfront streetcar, St. Louis Cathedral at the end).
+- **Monuments:** the Cabildo (13 pieces), the Pontalba Buildings (17),
+  St. Louis Cathedral (21).
+- **Moves:** Mardi Gras floats on the first two streets: two floats nose
+  to tail come up one lane, riders throwing beads that land as souvenirs
+  in the lane beside them, which is kept clear. On Decatur Street, the
+  streetcar down the middle (the rail move Hanoi and Istanbul share).
+  test/city-mechanics.mjs gates both.
+- **Left out:** Bourbon Street, the Andrew Jackson statue, any krewe's
+  float design.
+- **Souvenir:** Mardi Gras beads. Traffic: ordinary cars.
+
 ---
 
 ## Balance check
 
 | Region | Cities |
 |---|---|
-| North America | New York, San Francisco, Chicago |
+| North America | New York, San Francisco, Chicago, New Orleans |
 | Latin America | Mexico City, Havana, Buenos Aires |
 | Europe | Paris, London, Rome, Istanbul, Venice |
 | Middle East and Africa | Jerusalem, Marrakech, Cape Town, Zanzibar |
 | Asia | Delhi, Bangkok, Hanoi, Seoul, Samarkand, Beijing *(Kyoto parked)* |
 
-With Venice that makes **21 cities, 63 streets, 63 monuments**.
+With Venice and New Orleans that makes **22 cities, 66 streets, 66 monuments**.
 
 ---
 

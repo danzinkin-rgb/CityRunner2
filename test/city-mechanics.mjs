@@ -805,6 +805,56 @@ async function watch(page, ms, shotName) {
   await ctx.close();
 }
 
+// ------------------------------------------------------------ New Orleans
+// Mardi Gras floats (PA_* in mechanics.js):
+//   - two floats nose to tail in one lane, walls
+//   - beads (souvenirs) in a neighbouring lane alongside them, never in the
+//     float lane
+//   - every row beside the floats and 14 m past them has nothing in the
+//     float lane or the bead lane
+// The riverfront streetcar: one car, in the middle lane.
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337]) {
+    ({ page, ctx, errors } = await open('neworleans', 2, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.some((o) => o.mech)) break;
+    await ctx.close();
+  }
+  const fronts = snap.obs.filter((o) => o.mech && o.front);
+  check(fronts.length > 0, 'New Orleans deals parades', `${fronts.length}, seed ${SEED}`);
+  let bad = 0, lanesBad = 0, beadsBad = 0;
+  for (const f of fronts) {
+    const floats = snap.obs.filter((o) => o.mech && o.lane === f.lane && o.z <= f.z + 0.1 && o.z > f.z - 12);
+    if (floats.length !== 2 || floats.some((o) => o.kind !== 'full' || o.y1 !== 3.2)) bad++;
+    const end = Math.min(...floats.map((o) => o.z)) - 3;
+    const beads = snap.coins.filter((c) => c.wz <= f.z && c.wz > end && Math.abs(c.x - LANES[f.lane]) > 0.1);
+    const beadLane = beads.length ? LANES.findIndex((x) => Math.abs(x - beads[0].x) < 0.1) : -1;
+    if (beads.length < 7 || Math.abs(beadLane - f.lane) !== 1) beadsBad++;
+    if (snap.coins.some((c) => Math.abs(c.x - LANES[f.lane]) < 0.1 && c.wz <= f.z && c.wz > end - 14)) beadsBad++;
+    if (snap.obs.some((o) => !o.mech && (o.at === f.lane || o.at === beadLane) && o.z < f.z && o.z > end - 14)) lanesBad++;
+  }
+  check(bad === 0, 'a parade is two floats in one lane, walls', `${bad} bad`);
+  check(beadsBad === 0, 'beads land in a lane next to the floats, never in front of them', `${beadsBad} bad`);
+  check(lanesBad === 0, 'the float lane and the bead lane stay clear beside the parade and past it', `${lanesBad} bad`);
+  check(!errors.length, 'St. Charles Avenue: no page errors', errors[0] || '');
+  await ctx.close();
+}
+{
+  let snap, page, ctx, errors, SEED;
+  for (SEED of [7, 4242, 99, 1234, 31337]) {
+    ({ page, ctx, errors } = await open('neworleans', 3, SEED));
+    snap = await page.evaluate(SNAP);
+    if (snap.obs.some((o) => o.mech)) break;
+    await ctx.close();
+  }
+  const cars = snap.obs.filter((o) => o.mech);
+  check(cars.length > 0, 'Decatur Street deals streetcars', `${cars.length}, seed ${SEED}`);
+  check(cars.every((o) => o.lane === 1 && o.kind === 'full'), 'a streetcar runs in the middle lane, and is a wall');
+  check(!errors.length, 'Decatur Street: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
 // ------------------------------------------------------- no stray moves
 for (const city of ['nyc', 'rome', 'sf', 'jerusalem', 'mexico']) {
   const { page, ctx } = await open(city, 3, 4242);

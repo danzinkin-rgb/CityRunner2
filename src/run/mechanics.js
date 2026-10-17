@@ -26,7 +26,7 @@ import { LANES } from './player.js';
 import {
   makeHandcart, makeAutoRickshaw, makeTukTuk, makeGustDust, makeMotorbike, makeTrainCar,
   makeCrowd, makeCrossing, makeArchBay, makeJutHouse, makeTricycle, makeWave, makeVehicle, makePullBlinker,
-  makeTramCar, makeBridgeLeaf, makeGondola, makeRio, makeFloodLane,
+  makeTramCar, makeBridgeLeaf, makeGondola, makeRio, makeFloodLane, makeFloat,
 } from '../cities/builders.js';
 
 // A move that takes a lane for a stretch (Hanoi's train, Zanzibar's narrow
@@ -888,7 +888,74 @@ const FLOOD = {
   },
 };
 
+// ---- New Orleans: Mardi Gras floats -------------------------------------------
+// A parade comes up the street towards you: two floats nose to tail in one
+// lane, rolling slowly your way, their riders throwing beads. The floats are
+// a wall. The beads land as souvenirs in a lane beside them, and that lane
+// is kept clear of everything, so running alongside to catch them is safe.
+// Fairness:
+//   - the floats fit inside their chunk, so they are never cut off early
+//   - every row beside them, and up to HOLD_TAIL metres past the last, has
+//     nothing in the float lane or the bead lane, and no souvenirs in the
+//     float lane
+//   - they move only on screen: they come at you a little faster than the
+//     street, at most PA_RUSH_MAX (8 m) further off than their hitbox, and
+//     are where their hitbox is as you reach them
+const PARADE_CHANCE = [0.1, 0.14, 0.16];      // share of rows, by street
+const PA_CARS = 2, PA_LEN = 5.6, PA_RUSH = 0.12, PA_RUSH_MAX = 8, PA_WARN = 70;
+const PARADE = {
+  hint: 'Parade! Dodge the floats and catch the beads.',
+  row({ level, rand, randInt, addObstacle, usedLanes, zRow, chunkLen, track, chunk }) {
+    const span = PA_CARS * PA_LEN;
+    if (zRow + span > chunkLen - 2) return null;
+    if (rand() >= PARADE_CHANCE[level - 1]) return null;
+    const lane = randInt(3);
+    const beads = lane === 1 ? (rand() < 0.5 ? 0 : 2) : 1;
+    let head = null;
+    for (let k = 0; k < PA_CARS; k++) {
+      const r = addObstacle(lane, 'full', { mesh: makeFloat(k === 0), y0: 0, y1: 3.2, halfLen: 2.5, dz: k * PA_LEN });
+      r.mech = PARADE;
+      r.front = k === 0;
+      if (!head) head = r;
+    }
+    usedLanes.add(beads);                      // the row's own souvenir line goes elsewhere
+    // the throws: beads in a loose arc along the floats, at catching height
+    for (let i = 0; i < 7; i++) {
+      const bead = track.souvenirProto.clone();
+      bead.position.set(LANES[beads], 1.2 + Math.sin(i * 1.1) * 0.35 + 0.35, -zRow - 0.6 - i * (span / 7));
+      chunk.add(bead);
+      track.coins.push({ mesh: bead, chunk, taken: false });
+    }
+    track.laneHold = { chunk, from: zRow, to: zRow + span, lane, also: beads };
+    return head;
+  },
+  settle() {},
+  after(ctx) {
+    clearHeldLane(ctx);
+    // and keep the bead lane clear too
+    const { track, chunk, zRow } = ctx;
+    const h = track.laneHold;
+    if (!h || h.also === undefined || h.chunk !== chunk || zRow <= h.from || zRow > h.to + HOLD_TAIL) return;
+    for (const o of track.obstacles.filter((x) => x.chunk === chunk && Math.abs(x.localZ + zRow) < 0.01 && !x.mech
+      && track.laneAtArrival(x) === h.also)) {
+      chunk.remove(o.mesh); track.obstacles = track.obstacles.filter((x) => x !== o);
+    }
+  },
+  move(o, ahead) {
+    o.mesh.position.z = o.localZ - Math.min(PA_RUSH_MAX, Math.max(0, ahead) * PA_RUSH);
+    return o.front && ahead <= PA_WARN && ahead > 0;
+  },
+};
+// New Orleans' riverfront: the red streetcar down the middle of the street,
+// one car long.
+const STREETCAR = railMove({
+  lane: 1, cars: 1, carLen: 6.5, chance: [0.12, 0.16, 0.2], maker: (front) => makeTramCar(front),
+  hint: 'Streetcar coming down the middle! Keep off the rails.',
+});
+
 export const MECHANICS = {
+  parade: PARADE,
+  streetcar: STREETCAR,
   gondola: GONDOLA,
   flood: FLOOD,
   bridge: BRIDGE,

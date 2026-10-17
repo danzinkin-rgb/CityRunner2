@@ -32,6 +32,7 @@ const CITY_OF = {
   watertower: 'chicago', buckingham: 'chicago', willis: 'chicago',
   casarosada: 'buenosaires', colon: 'buenosaires', congreso: 'buenosaires',
   rialto: 'venice', salute: 'venice', dogespalace: 'venice',
+  cabildo: 'neworleans', pontalba: 'neworleans', stlouis: 'neworleans',
 };
 // Plaza floors deliberately contrast their monuments. Every landmark in the
 // game is a warm stone/limestone/bronze hero, and every city theme lights the
@@ -64,6 +65,7 @@ const PLAZA = {
   chicago: { stone: '#626a7a', dark: '#4a5262', trim: '#909aac', ground: '#2e3240', sky: '#30466e' },
   buenosaires: { stone: '#5e6878', dark: '#465060', trim: '#8c98aa', ground: '#2c323e', sky: '#32486e' },
   venice: { stone: '#5a6676', dark: '#44505e', trim: '#8a96a8', ground: '#2a3240', sky: '#30486c' },
+  neworleans: { stone: '#5c6676', dark: '#46505e', trim: '#8c96a8', ground: '#2c3240', sky: '#32466c' },
 };
 
 // Painted-panorama palette. Near layer is the darker, more saturated band the
@@ -90,6 +92,7 @@ const SKYPAL = {
   chicago: { near: '#2e3646', far: '#5a6476', trim: '#3e4658', roof: '#22262e', win: '255,218,160', accent: '#2a5ab0' },
   buenosaires: { near: '#44465a', far: '#727488', trim: '#54566a', roof: '#33343f', win: '255,216,160', accent: '#8a6ad8' },
   venice: { near: '#4e4450', far: '#7c7080', trim: '#5e5262', roof: '#3e3438', win: '255,216,160', accent: '#2a8a88' },
+  neworleans: { near: '#46404e', far: '#746c7e', trim: '#56505e', roof: '#36323a', win: '255,214,150', accent: '#6a2a9a' },
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 

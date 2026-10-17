@@ -13,5 +13,6 @@
 //
 // In release order: the first entry is the next city to ship.
 // Since 1.2.0 (Dan, 15 October 2026) every city finished by then is
-// released, each into its region pack. Venice was built after that.
-export const RELEASE_QUEUE = ['venice'];
+// released, each into its region pack. Venice and New Orleans were built
+// after that.
+export const RELEASE_QUEUE = ['venice', 'neworleans'];

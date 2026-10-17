@@ -179,6 +179,20 @@ export function makeCollectible(theme) {
     const plume = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8),
       new THREE.MeshStandardMaterial({ color: 0xf4f0e8, roughness: 0.9, emissive: 0x404040, emissiveIntensity: 0.3 }));
     plume.scale.set(0.05, 0.24, 0.015); plume.position.set(0.32, 0.32, 0); plume.rotation.z = -0.5; g.add(plume);
+  } else if (theme.id === 'neworleans') {
+    // A string of Mardi Gras beads in purple, green and gold, hanging in a
+    // loop, with a gold medallion at the bottom.
+    const cols = [0x7a2aaa, 0x2aa84a, 0xf0c030];
+    for (let i = 0; i < 22; i++) {
+      const a = (i / 22) * Math.PI * 2;
+      const bead = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8),
+        new THREE.MeshStandardMaterial({ color: cols[i % 3], roughness: 0.2, metalness: 0.6, emissive: cols[i % 3], emissiveIntensity: 0.25 }));
+      bead.position.set(Math.sin(a) * 0.22, Math.cos(a) * 0.3, 0);
+      g.add(bead);
+    }
+    const medal = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.03, 18),
+      new THREE.MeshStandardMaterial({ color: 0xf0c030, roughness: 0.25, metalness: 0.8, emissive: 0x4a3008, emissiveIntensity: 0.4 }));
+    medal.rotation.x = Math.PI / 2; medal.position.y = -0.4; g.add(medal);
   } else if (theme.id === 'chicago') {
     // A slice of deep-dish pizza: a tall golden crust round a thick layer
     // of cheese and red tomato on top, flecked with herbs.

@@ -1147,8 +1147,60 @@ export const ALL_CITIES = [
       },
     ],
   },
-];
-export const LANDMARK_NAMES = {
+  {
+    id: 'neworleans', name: 'NEW ORLEANS', flag: '🎺', region: 'north-america',
+    streets: ['Royal Street', 'St. Charles Avenue', 'Decatur Street'],
+    // A warm, humid spring afternoon: a soft blue sky, golden light, pastel
+    // Creole houses under galleries of black cast-iron lace.
+    sky: { top: '#3a72c4', mid: '#8ab8e0', horizon: '#f4e2c4', glow: '#ffd09a' },
+    fog: 0xe8dcc4, fogDensity: 0.009,
+    sun: { color: 0xfff0d0, intensity: 2.5, pos: [50, 62, -40] },
+    hemi: { sky: 0xd8e4f0, ground: 0x6a6450, intensity: 1.1 },
+    fill: { color: 0xfff0dc, intensity: 1.0 },
+    road: '#5a5856', lane: '#e8e2d0', sidewalk: '#b4ac9c',
+    palette: ['#e8c0a8', '#a8c8b0', '#e8d898', '#c8a0b8', '#a0b8d0', '#e8b088'],
+    trim: '#f4f0e6', roof: '#5a4a44',
+    windowLit: '#ffd898', windowDay: '#8ab0c8', accent: '#6a2a9a',
+    storefront: ['#2a5a3a', '#6a2a9a', '#8a2a2a', '#2a3a5a', '#3a3a3a'],
+    facade: 'colonial', gallery: true, hBase: 10, hVar: 6,
+    props: ['lamp', 'tree'],
+    span: 'mardigras', spanFreq: 0.45,
+    // Ordinary cars, in every colour.
+    vehicle: 'sedan',
+    // Mardi Gras floats come up the street (src/run/mechanics.js); by the
+    // river, the red streetcar.
+    mechanic: 'parade',
+    landmarks: ['cabildo', 'pontalba', 'stlouis'],
+    levels: [
+      { // Royal Street: the French Quarter's street of antique shops and
+        // galleries, pastel houses under iron-lace balconies
+        key: 'royal',
+        setback: 4.4, secondRow: 0.4,
+        props: ['lamp', 'flowerbed'],
+        ads: ['ANTIQUES', 'GALLERY', 'PRALINES', 'JAZZ'],
+        lit: 0.16,
+      },
+      { // St. Charles Avenue: the parade route, big houses set back under
+        // live oaks hung with moss
+        key: 'stcharles', facade: 'georgian', gallery: false, treeline: 'liveoak',
+        setback: 8.4, hBase: 11, hVar: 6, secondRow: 0.2,
+        palette: ['#f2ece0', '#e8e0cc', '#d8e0e4', '#f0e4d4', '#e4ead8'],
+        props: ['lamp'],
+        ads: ['PARADE', 'KING CAKE', 'BEADS'],
+        lit: 0.14,
+      },
+      { // Decatur Street: along the river past the French Market to Jackson
+        // Square, the red streetcar running down the middle
+        key: 'decatur', canal: true, river: true, mechanic: 'streetcar',
+        roadStyle: 'streetcar', road: '#585c60', lane: '#e8d840',
+        setback: 4.6, secondRow: 0.3,
+        props: ['lamp'],
+        ads: ['BEIGNETS', 'MARKET', 'JAZZ', 'RIVERBOAT'],
+        cameo: 'cathedralcameo', lit: 0.16,
+      },
+    ],
+  },
+];export const LANDMARK_NAMES = {
   empire: 'Empire State Building', chrysler: 'Chrysler Building', brooklyn: 'Brooklyn Bridge',
   eiffel: 'Eiffel Tower', arc: 'Arc de Triomphe', louvre: 'Louvre Pyramid',
   bigben: 'Big Ben', towerbridge: 'Tower Bridge', eye: 'London Eye',
@@ -1171,6 +1223,7 @@ export const LANDMARK_NAMES = {
   watertower: 'Chicago Water Tower', buckingham: 'Buckingham Fountain', willis: 'Willis Tower',
   casarosada: 'Casa Rosada', colon: 'Teatro Colón', congreso: 'Palace of the Congress',
   rialto: 'Rialto Bridge', salute: 'Santa Maria della Salute', dogespalace: "Doge's Palace",
+  cabildo: 'The Cabildo', pontalba: 'Pontalba Buildings', stlouis: 'St. Louis Cathedral',
 };
 
 // Merge a street's overrides over its city base. `streetKey` uniquely tags

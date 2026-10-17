@@ -2085,6 +2085,63 @@ const defs = {
         B([0, 6.8, 0], [1.2, 1.2, 1.2], s < 0 ? '#5a6a5a' : '#e8e2d6', 'statue', { figs: 1 })],
     })),
   ],
+  // New Orleans. The Cabildo (1795-1799): Spanish arches below, a French
+  // mansard roof with dormers above (added 1847), a pediment and cupola.
+  cabildo: [
+    B([0, 0.15, 0], [28, 0.3, 18], '#c8c0b0', 'box', { tex: 'stone' }),                    // Jackson Square's flagstones
+    ...[-7, 0, 7].map((x) => B([x, 2.4, 0], [7, 4.2, 9], '#ece4d4', 'box', { tex: 'arch', tx: { n: 3 } })),   // the arcade
+    ...[-7, 0, 7].map((x) => B([x, 6.2, 0], [7, 3.4, 9], '#f0e8d8', 'box', { tex: 'arch', tx: { n: 3 } })),   // the upper floor
+    B([0, 8.2, 0], [21.4, 0.6, 9.4], '#e0d8c8', 'box', { sortY: 8.3 }),                    // cornice and balustrade
+    ...[-7, 0, 7].map((x) => B([x, 9.8, 0], [7, 2.6, 8.6], '#5a5e66', 'box', {             // the mansard
+      adorn: [-2, 0, 2].map((dx) => B([dx, 0.2, 4.2], [1.0, 1.4, 0.4], '#f0e8d8', 'box', { tex: 'win', tx: { cols: 1, rows: 1 } })),
+    })),
+    B([0, 9.1, 4.9], [6, 1.8, 0.8], '#ece4d4', 'prism'),                                    // the pediment
+    B([0, 11.9, 0], [1.8, 1.6, 1.8], '#f0e8d8', 'cyl', {                                   // the cupola
+      tex: 'arch', tx: { n: 6 },
+      adorn: [B([0, 1.2, 0], [1.6, 0.9, 1.6], '#5a5e66', 'dome', { metal: 1 })],
+    }),
+  ],
+  // The Pontalba Buildings (1849-1851): a long red-brick row of four
+  // storeys, shops below, two tiers of cast-iron galleries along the front,
+  // facing the garden of Jackson Square.
+  pontalba: [
+    B([0, 0.15, 3], [44, 0.3, 24], '#c0b8a8', 'box', { tex: 'stone' }),
+    B([0, 0.4, 11], [24, 0.3, 8], '#5a8a4a', 'box'),                                        // the square's garden
+    B([0, 1.2, 7.2], [24, 1.2, 0.2], '#2a2e2a', 'box', { tex: 'lattice', metal: 1 }),       // its iron fence
+    ...[-1, 1].map((sx) => B([sx * 7, 0.6, 11], [1.2, 1.2, 1.2], '#6a5038', 'cyl', {         // two old trees
+      adorn: [B([0, 3.4, 0], [4.4, 3.0, 4.4], '#3a6a2a', 'sphere')],
+    })),
+    ...[-15, -5, 5, 15].flatMap((x) => [
+      B([x, 6.2, 0], [10, 12, 8], '#a8503a', 'box', { tex: 'win', tx: { cols: 4, rows: 4 } }),   // the brick row
+      B([x, 7.4, 4.7], [10, 7.6, 1.4], '#2a3430', 'box', { tex: 'lattice', metal: 1 }),        // two tiers of galleries
+      B([x, 12.9, 0], [8.4, 1.4, 10.4], '#5a5458', 'prism', { rotY: Math.PI / 2 }),            // the roof
+    ]),
+  ],
+  // St. Louis Cathedral (rebuilt in the 1850s): a white front of two
+  // storeys, three spires, the middle one tallest with the clock, and the
+  // long nave behind; Jackson Square's garden in front.
+  stlouis: [
+    B([0, 0.15, 2], [34, 0.3, 32], '#c8c2b4', 'box', { tex: 'stone' }),
+    B([0, 0.4, 13], [26, 0.3, 8], '#5a8a4a', 'box'),                                        // the square's garden
+    B([0, 1.2, 9.2], [26, 1.2, 0.2], '#2a2e2a', 'box', { tex: 'lattice', metal: 1 }),       // its fence
+    ...[-1, 1].map((sx) => B([sx * 9, 0.6, 13], [1.2, 1.2, 1.2], '#6a5038', 'cyl', {
+      adorn: [B([0, 3.2, 0], [4.0, 2.8, 4.0], '#3a6a2a', 'sphere')],
+    })),
+    B([0, 0.6, 6.0], [12, 0.6, 2.4], '#e8e4da', 'box', { tex: 'stone' }),                   // the steps
+    ...[[-4.8, 4], [0, 5.6], [4.8, 4]].map(([x, w]) => B([x, 3.3, 3.6], [w, 5.4, 2.4], '#f4f2ec', 'box', { tex: 'arch', tx: { n: 1 } })),   // the front, below
+    ...[[-4.8, 4], [0, 5.6], [4.8, 4]].map(([x, w]) => B([x, 8.0, 3.6], [w, 4.0, 2.4], '#f2f0ea', 'box', { tex: 'arch', tx: { n: 1 } })),   // and above
+    B([0, 11.2, 3.6], [3.6, 2.4, 2.4], '#f4f2ec', 'box', {                                   // the clock storey
+      adorn: [B([0, 0, 1.25], [1.6, 1.6, 0.12], '#2a2a30', 'cyl', { rotX: Math.PI / 2 })],
+    }),
+    B([0, 13.4, 3.6], [3.0, 2.0, 3.0], '#f2f0ea', 'tier', { sides: 6, d: 3.0, tex: 'arch', tx: { n: 6 } }),   // the belfry
+    B([0, 17.6, 3.6], [3.0, 6.4, 0.1], '#3a3c44', 'tier', { sides: 6, metal: 1 }),           // the middle spire
+    ...[-4.8, 4.8].flatMap((x) => [
+      B([x, 11.4, 3.6], [2.8, 2.8, 2.8], '#f2f0ea', 'tier', { sides: 6, tex: 'arch', tx: { n: 6 } }),   // the side towers
+      B([x, 14.6, 3.6], [2.8, 3.6, 0.1], '#3a3c44', 'tier', { sides: 6, metal: 1 }),
+    ]),
+    B([0, 5.6, -6.0], [13, 10.4, 16], '#ece8e0', 'box', { tex: 'win', tx: { cols: 4, rows: 2 } }),   // the nave
+    B([0, 11.6, -6.0], [13.4, 2.4, 16.4], '#5a5c64', 'prism', { metal: 1 }),                 // its roof
+  ],
 };
 
 export function getLandmark(id) { return defs[id]; }

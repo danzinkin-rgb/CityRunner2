@@ -391,6 +391,28 @@ export const STREET_FACTS = {
         { text: "Most are bascule bridges, a design so common here that it is called the 'Chicago type'." },
       ] },
   ],
+  // New Orleans: DRAFT, awaiting Dan's sign-off (docs/NEW-ORLEANS-FACTS-DRAFT.md,
+  // sources listed there).
+  neworleans: [
+    { street: 'Royal Street', tag: 'Iron lace and antiques',
+      facts: [
+        { big: '1718', label: 'city founded', text: 'New Orleans was founded in 1718 and grew around the square now called Jackson Square. Royal Street was laid out in its first years.' },
+        { big: '80', unit: '%', label: 'burned', text: 'Great fires in 1788 and 1794 destroyed 80% of the city, so nearly all of the French Quarter was built from the late 1790s on, much of it under Spanish rule.' },
+        { text: 'Royal Street is known for its antique shops and art galleries.' },
+      ] },
+    { street: 'St. Charles Avenue', tag: 'The parade route',
+      facts: [
+        { big: '1835', label: 'streetcar', text: 'The St. Charles streetcar has run since 1835: the oldest streetcar line still running in the world.' },
+        { text: 'It is one of the main Mardi Gras parade routes, lined with mansions and live oaks planted in the early 1900s.' },
+        { big: '1857', label: 'the first floats', text: 'In 1857 the Mistick Krewe of Comus brought torch-lit processions and themed floats to Mardi Gras.' },
+      ] },
+    { street: 'Decatur Street', tag: 'Along the river',
+      facts: [
+        { text: 'Decatur Street runs beside the Mississippi. It was once Levee Street, and was renamed in 1870, after the river had shifted its course.' },
+        { big: '1791', label: 'the market', text: 'Part of the French Market has been a market since 1791. Its oldest buildings date from about 1813.' },
+        { big: '1988', label: 'riverfront line', text: 'The Riverfront streetcar line opened in 1988, the first new streetcar line in the city in 62 years.' },
+      ] },
+  ],
   // Venice: approved by Dan, 15 October 2026 (docs/VENICE-FACTS-DRAFT.md,
   // sources listed there).
   venice: [
@@ -582,6 +604,25 @@ export const MONUMENT_FACTS = {
       { big: '335', unit: 'CE', label: 'first church consecrated', text: 'The first church here was built on the orders of Emperor Constantine and consecrated in 335. Christians revere the site as the place of the crucifixion and burial of Jesus.' },
       { big: '6', unit: 'communities', label: 'share the church', text: 'Six Christian communities share the building — Greek Orthodox, Roman Catholic, Armenian, Coptic, Syriac and Ethiopian — under an arrangement called the Status Quo, set down by the Ottoman authorities in the 1750s and 1850s.' },
       { text: 'The wooden ladder on the ledge above the entrance has stood there since at least the 1700s, because moving it needs every community to agree. For centuries two Muslim families have kept the key and opened the great door each morning.' },
+    ] },
+  // New Orleans: DRAFT, awaiting Dan's sign-off (docs/NEW-ORLEANS-FACTS-DRAFT.md).
+  cabildo: {
+    facts: [
+      { big: '1799', label: 'completed', text: 'Built from 1795 to 1799, it was the seat of the Spanish colonial city government.' },
+      { big: '1803', label: 'Louisiana Purchase', text: 'The ceremonies that handed Louisiana to the United States took place here in 1803.' },
+      { big: '1847', label: 'the roof', text: 'Its Spanish arches are topped by a French mansard roof, added in 1847.' },
+    ] },
+  pontalba: {
+    facts: [
+      { big: '1851', label: 'completed', text: 'Baroness Micaela Almonester de Pontalba built the two matching red-brick rows from 1849 to 1851.' },
+      { text: 'Her initials, AP, are worked into the cast-iron railings of the balconies.' },
+      { text: 'They face each other across Jackson Square, with shops below and homes above.' },
+    ] },
+  stlouis: {
+    facts: [
+      { big: '1718', label: 'first church', text: 'The first church on this site was built in 1718.' },
+      { big: '1850', label: 'rebuilt', text: 'The cathedral was largely rebuilt and completed in the 1850s.' },
+      { text: 'It is among the oldest cathedrals in continuous use in the United States.' },
     ] },
   // Venice: approved by Dan, 15 October 2026 (docs/VENICE-FACTS-DRAFT.md).
   // No height graphics: none of the three has a height worth showing.

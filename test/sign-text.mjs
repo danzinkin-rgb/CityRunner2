@@ -52,7 +52,7 @@ async function street(city, level) {
   return { painted, errors };
 }
 
-const cities = ['nyc', 'paris', 'london', 'rome', 'sf', 'jerusalem', 'mexico', 'marrakech', 'delhi', 'bangkok', 'capetown', 'hanoi', 'seoul', 'samarkand', 'zanzibar', 'beijing', 'havana', 'istanbul', 'chicago', 'buenosaires', 'venice'];
+const cities = ['nyc', 'paris', 'london', 'rome', 'sf', 'jerusalem', 'mexico', 'marrakech', 'delhi', 'bangkok', 'capetown', 'hanoi', 'seoul', 'samarkand', 'zanzibar', 'beijing', 'havana', 'istanbul', 'chicago', 'buenosaires', 'venice', 'neworleans'];
 const jobs = [];
 for (const c of cities) for (const lv of [1, 2, 3]) jobs.push([c, lv]);
 // two at a time: every page runs WebGL, at up to 2.5 GB each

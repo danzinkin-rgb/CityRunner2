@@ -170,6 +170,7 @@ const SCALES = {
   jerusalem: [0, 1, 4, 5, 7],   // a semitone then a third up: the scale heard across the region
   mexico: [0, 4, 7, 9, 12],     // bright major, mariachi-like
   buenosaires: [0, 2, 3, 7, 8],  // a minor mode with a lowered sixth, as in tango
+  neworleans: [0, 3, 4, 7, 9],   // a blue note on a major pentatonic: brass-band jazz
   venice: [0, 2, 4, 5, 7, 9],    // a plain major: a barcarolle, the gondoliers' song
   chicago: [0, 3, 5, 6, 7],      // the blues: a minor third and the flattened fifth
   istanbul: [0, 1, 4, 5, 7],     // a hijaz colour: a lowered second, a raised third
