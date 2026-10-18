@@ -94,6 +94,19 @@
   #missing-help.on,#drag-help.on{display:flex}
   #drag-help{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
     background:rgba(4,6,16,.55);pointer-events:auto;padding:16px}
+  /* What's new: once per release, on the menu, for returning players. Scrolls
+     as a whole on a short screen rather than squeezing the card. */
+  #whats-new{position:fixed;inset:0;z-index:40;display:none;align-items:flex-start;justify-content:center;
+    background:rgba(4,6,16,.72);overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom))}
+  #whats-new.on{display:flex}
+  #whats-new .mh-card{margin:auto 0}
+  .wn-head{font-size:15px;font-weight:800;margin:16px 0 0;color:#fff}
+  #whats-new .mh-card p{margin:6px 0 8px}
+  .wn-row{display:flex;align-items:center;justify-content:center;gap:12px;margin:4px 0 2px;font-size:14px}
+  .wn-note{font-size:13px;opacity:.75}
+  @media (max-height:640px){#whats-new .mh-card{padding:14px 16px}#whats-new .mh-card p{font-size:13.5px;line-height:1.35;margin:4px 0 6px}
+    .wn-head{margin-top:10px}#whats-new .mode-pick{margin:6px 0 2px}}
   .mode-pick{display:flex;gap:10px;justify-content:center;margin:10px 0 4px}
   .mode-pick .btn{font-size:14px;padding:10px 18px;min-height:44px;opacity:.55}
   .mode-pick .btn.on{opacity:1}
@@ -985,6 +998,29 @@
   <button class="linkbtn" id="btn-pause-ghost" aria-label="Race your best run">Race your best run: ON</button>
 </div>
 
+<!-- What's new in this release: shown once (save.newsSeen), see showNews()
+     in src/main.js. -->
+<div id="whats-new" role="dialog" aria-modal="true" aria-labelledby="wn-title">
+  <div class="mh-card">
+    <div class="mh-title" id="wn-title">WHAT'S NEW</div>
+    <div class="wn-head">Two ways to play</div>
+    <p><b>Newbie</b> is the gentle pace, for newer players and slower fingers.
+       <b>Gamer</b> is faster, for experienced players.</p>
+    <div class="mode-pick">
+      <button class="btn" id="wn-mode-newbie" aria-pressed="true">NEWBIE</button>
+      <button class="btn" id="wn-mode-gamer" aria-pressed="false">GAMER</button>
+    </div>
+    <div class="wn-head">Race your best run</div>
+    <p>On a street you have played before, a ghost runner replays your best run there, so you
+       can see if you are ahead. Tap 👻 during a run to hide it.</p>
+    <div class="wn-row"><span>Ghost runner</span><button class="toggle" id="wn-ghost" aria-label="Race your best run">ON</button></div>
+    <p class="wn-note">You can change both any time in Settings.</p>
+    <div class="wn-head">Cities by region</div>
+    <p>Cities now come in region packs. Inside a pack, finish a street in one city to open the next.</p>
+    <button class="btn" id="wn-ok">LET'S GO</button>
+  </div>
+</div>
+
 <div id="screen-menu" class="screen on">
   <div class="title">CITYRUNNER</div>
   <div class="subtitle">Run the world's greatest streets</div>
@@ -1076,6 +1112,10 @@
       <button class="btn" id="help-mode-gamer" aria-pressed="false">GAMER</button>
     </div>
     <p class="tip">The daily challenge is the same for everyone, whatever your mode.</p>
+
+    <h3>Race your best run</h3>
+    <p>On a street you have played before, a ghost runner replays your best run there, so you can see
+       if you are ahead. Tap 👻 during a run to hide it, or turn it off in Settings.</p>
 
     <h3>Running</h3>
     <div class="row"><span class="key">← →</span><span>Swipe or press to change lane</span></div>

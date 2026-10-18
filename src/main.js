@@ -1375,7 +1375,7 @@ function renderModeButtons() {
   const el = $('set-mode');
   el.textContent = gamer ? 'GAMER' : 'NEWBIE';
   el.setAttribute('aria-label', `Game mode: ${gamer ? 'Gamer' : 'Newbie'}`);
-  for (const [id, on] of [['help-mode-newbie', !gamer], ['help-mode-gamer', gamer]]) {
+  for (const [id, on] of [['help-mode-newbie', !gamer], ['help-mode-gamer', gamer], ['wn-mode-newbie', !gamer], ['wn-mode-gamer', gamer]]) {
     $(id).classList.toggle('on', on);
     $(id).setAttribute('aria-pressed', String(on));
   }
@@ -1383,6 +1383,8 @@ function renderModeButtons() {
 $('set-mode').onclick = () => setGameMode(gameMode() === 'gamer' ? 'newbie' : 'gamer');
 $('help-mode-newbie').onclick = () => setGameMode('newbie');
 $('help-mode-gamer').onclick = () => setGameMode('gamer');
+$('wn-mode-newbie').onclick = () => setGameMode('newbie');
+$('wn-mode-gamer').onclick = () => setGameMode('gamer');
 renderModeButtons();
 $('btn-ghost').onclick = (e) => {
   e.stopPropagation();
@@ -1619,6 +1621,30 @@ document.querySelectorAll('.souv[data-city]').forEach((el) => {
 // would cover the menu on every single test run, not just a player's actual
 // first one. See src/core/debug.js.
 if (isFirstRun && !DEBUG_HOOKS) openOverlay('help');
+
+// What's new, once per release that has news, for a player who was here
+// before it (Dan, 18 October 2026: tell players about the two game modes and
+// the ghost). A brand-new player gets Help above instead, which covers both,
+// so for them it is marked seen. Not on the test routes, for the reason given
+// above; ?news shows it there on demand.
+const NEWS = '1.2.0';
+function renderNewsGhost() {
+  const on = save.raceBest !== false, el = $('wn-ghost');
+  el.textContent = on ? 'ON' : 'OFF';
+  el.classList.toggle('on', on);
+  el.setAttribute('aria-pressed', String(on));
+}
+function showNews() {
+  renderModeButtons();
+  renderNewsGhost();
+  $('whats-new').classList.add('on');
+  $('wn-ok').focus();
+}
+$('wn-ghost').onclick = () => { setRaceBest(save.raceBest === false); renderNewsGhost(); renderSettings(); };
+$('wn-ok').onclick = () => { save.newsSeen = NEWS; persist(); $('whats-new').classList.remove('on'); };
+if (isFirstRun) { save.newsSeen = NEWS; persist(); }
+else if (!DEBUG_HOOKS && save.newsSeen !== NEWS) showNews();
+if (DEBUG_HOOKS && new URLSearchParams(location.search).has('news')) showNews();
 frame();
 
 // ---------- tester build ----------

@@ -141,6 +141,33 @@ for (const [city, lv] of [['sf', 3], ['paris', 2]]) {
   await ctx.close();
 }
 
+// ---- what's new: the two modes and the ghost, once per release --------------
+// Shown to returning players on launch (never on the test routes; ?news asks
+// for it). It must fit the smallest phone without scrolling, its buttons must
+// set the same things Settings does, and LET'S GO must record it as seen.
+{
+  const { page, ctx } = await open('?news');
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.waitForTimeout(600);
+  const fit = await page.evaluate(() => {
+    const w = document.getElementById('whats-new');
+    return { open: w.classList.contains('on'), scrolls: w.scrollHeight > w.clientHeight + 1 };
+  });
+  check(fit.open && !fit.scrolls, "what's new: opens, and fits 320x568 without scrolling", JSON.stringify(fit));
+  await page.click('#wn-mode-gamer');
+  await page.click('#wn-ghost');
+  await page.click('#wn-ok');
+  const r = await page.evaluate(() => ({
+    save: JSON.parse(localStorage.getItem('cityrunner2')),
+    open: document.getElementById('whats-new').classList.contains('on'),
+    settingsMode: document.getElementById('set-mode').textContent,
+  }));
+  check(r.save.mode === 'gamer' && r.settingsMode === 'GAMER', "what's new: GAMER sets the mode Settings shows", JSON.stringify({ mode: r.save.mode, s: r.settingsMode }));
+  check(r.save.raceBest === false, "what's new: the ghost switch turns racing your best run off", String(r.save.raceBest));
+  check(!r.open && r.save.newsSeen === '1.2.0', "what's new: LET'S GO closes it and records it as seen", JSON.stringify({ open: r.open, seen: r.save.newsSeen }));
+  await ctx.close();
+}
+
 check(!errors.length, 'no page errors', errors[0] || '');
 await browser.close();
 await close();
