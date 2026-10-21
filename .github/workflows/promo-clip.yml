@@ -5,6 +5,11 @@ name: Promo clip
 
 on:
   workflow_dispatch:
+    inputs:
+      set:
+        description: Which promo (launch, update)
+        type: string
+        default: update
 
 permissions:
   contents: write   # to publish the video to the daily-clips release
@@ -22,11 +27,11 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps webkit
       - run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
-      - run: node marketing/promo-clip.mjs
+      - run: node marketing/promo-clip.mjs "${{ inputs.set }}"
       - name: Publish to the daily-clips release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          name="promo-$(date -u +%F).mp4"
-          cp marketing/out/promo.mp4 "marketing/out/$name"
+          name="promo-${{ inputs.set }}-$(date -u +%F).mp4"
+          cp "marketing/out/promo-${{ inputs.set }}.mp4" "marketing/out/$name"
           gh release upload daily-clips "marketing/out/$name" --clobber

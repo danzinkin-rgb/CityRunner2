@@ -8,9 +8,11 @@
  * shared autopilot; monuments use the puzzle's own self-play mode (?auto),
  * recorded from the game's own starting point (part built) to the end.
  *
- *   node marketing/promo-clip.mjs      writes marketing/out/promo.mp4 (or .webm)
+ *   node marketing/promo-clip.mjs          the launch promo -> marketing/out/promo-launch.mp4 (or .webm)
  *
- * Edit SEGMENTS to change what is shown. SPEED is how much faster than real
+ *   node marketing/promo-clip.mjs update   the 1.2 update: new cities
+ *
+ * Edit SETS to change what is shown. SPEED is how much faster than real
  * time the footage plays.
  */
 import { webkit } from 'playwright';
@@ -29,13 +31,31 @@ const config = JSON.parse(readFileSync(join(HERE, 'config.json'), 'utf8'));
 const FPS = 30;
 const VIEW = { width: 540, height: 675 };   // x2 = 1080x1350
 
-const SEGMENTS = [
-  { kind: 'run', city: 'nyc', level: 3, seconds: 1.8, speed: 2, label: 'Times Square, New York' },
-  { kind: 'build', city: 'nyc', level: 1, seconds: 1.7, label: 'Empire State Building' },
-  { kind: 'run', city: 'paris', level: 1, seconds: 1.8, speed: 2, label: 'Champs-Élysées, Paris' },
-  { kind: 'build', city: 'paris', level: 1, seconds: 1.7, label: 'Eiffel Tower' },
-];
-const END_SECONDS = 1.0;
+// One list per video. A 'card' is a full-screen title; the last card closes it.
+const SETS = {
+  launch: [
+    { kind: 'run', city: 'nyc', level: 3, seconds: 1.8, speed: 2, label: 'Times Square, New York' },
+    { kind: 'build', city: 'nyc', level: 1, seconds: 1.7, label: 'Empire State Building' },
+    { kind: 'run', city: 'paris', level: 1, seconds: 1.8, speed: 2, label: 'Champs-Élysées, Paris' },
+    { kind: 'build', city: 'paris', level: 1, seconds: 1.7, label: 'Eiffel Tower' },
+    { kind: 'card', seconds: 1.0, title: config.appName, lines: ['Run real streets. Rebuild real landmarks.', 'Free on the App Store'] },
+  ],
+  update: [
+    { kind: 'card', seconds: 0.9, title: 'Big update', lines: ['22 cities. 66 landmarks.'] },
+    { kind: 'run', city: 'hanoi', level: 2, seconds: 1.1, speed: 2, label: 'Train Street, Hanoi' },
+    { kind: 'run', city: 'venice', level: 3, seconds: 1.1, speed: 2, label: 'Riva degli Schiavoni, Venice' },
+    { kind: 'run', city: 'marrakech', level: 1, seconds: 1.1, speed: 2, label: 'Jemaa el-Fnaa, Marrakech' },
+    { kind: 'run', city: 'havana', level: 1, seconds: 1.1, speed: 2, label: 'Malecón, Havana' },
+    { kind: 'run', city: 'istanbul', level: 2, seconds: 1.1, speed: 2, label: 'Grand Bazaar, Istanbul' },
+    { kind: 'run', city: 'seoul', level: 3, seconds: 1.1, speed: 2, label: 'Myeongdong, Seoul' },
+    { kind: 'build', city: 'istanbul', level: 2, seconds: 1.9, label: 'Blue Mosque, Istanbul' },
+    { kind: 'card', seconds: 1.2, title: config.appName, lines: ['New York to Hanoi, Havana to Seoul', 'Free on the App Store'] },
+  ],
+};
+const SET = process.argv[2] || 'launch';
+const SEGMENTS = SETS[SET];
+if (!SEGMENTS) { console.error(`Unknown set "${SET}"; one of: ${Object.keys(SETS).join(', ')}`); process.exit(1); }
+
 
 function findFfmpeg() {
   if (spawnSync('ffmpeg', ['-version'], { stdio: 'ignore' }).status === 0) return { bin: 'ffmpeg', full: true };
@@ -108,7 +128,14 @@ async function stepUntil(page, what, test, limitMs = 60000) {
 
 for (const seg of SEGMENTS) {
   const frames = Math.round(seg.seconds * FPS);
-  if (seg.kind === 'run') {
+  if (seg.kind === 'card') {
+    const context = await browser.newContext({ viewport: VIEW, deviceScaleFactor: 2 });
+    const page = await context.newPage();
+    await page.setContent('<html><body style="margin:0;background:#0b1020"></body></html>');
+    await page.evaluate(overlay, { end: { title: seg.title, lines: seg.lines } });
+    for (let i = 0; i < frames; i++) await shoot(page);
+    await context.close();
+  } else if (seg.kind === 'run') {
     const { page, context } = await openPage(`?view=run&city=${seg.city}&level=${seg.level}&god`);
     await stepUntil(page, 'the run', () => window.__cr?.state === 'run' && !!window.__cr.track);
     // Get going first: the opening seconds are the slowest and emptiest.
@@ -145,20 +172,11 @@ for (const seg of SEGMENTS) {
   }
 }
 
-// Closing card, on a blank page so nothing behind it can show through.
-{
-  const context = await browser.newContext({ viewport: VIEW, deviceScaleFactor: 2 });
-  const page = await context.newPage();
-  await page.setContent('<html><body style="margin:0;background:#0b1020"></body></html>');
-  await page.evaluate(overlay, { end: { title: config.appName, lines: ['Run real streets. Rebuild real landmarks.', 'Free on the App Store'] } });
-  for (let i = 0; i < Math.round(END_SECONDS * FPS); i++) await shoot(page);
-  await context.close();
-}
 await browser.close();
 
 const ff = findFfmpeg();
 if (!ff) { console.error('No ffmpeg found; frames are in', FRAMES); process.exit(1); }
-const file = join(OUT, `promo.${ff.full ? 'mp4' : 'webm'}`);
+const file = join(OUT, `promo-${SET}.${ff.full ? 'mp4' : 'webm'}`);
 const encode = ff.full
   ? ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'medium', '-movflags', '+faststart']
   : ['-c:v', 'libvpx', '-b:v', '6M'];
