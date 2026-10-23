@@ -3,6 +3,7 @@ import { getLandmark } from './landmarks.js';
 import { sfx } from '../core/audio.js';
 import { DEBUG_HOOKS } from '../core/debug.js';
 import { disposeTree } from '../core/engine.js';
+import { SKYLINES } from './skylines.js';
 
 // Monument assembly puzzle.
 // Blocks are scattered on a festival plaza; a ghost silhouette shows the
@@ -862,6 +863,9 @@ function panoTex(cityId, P, fogHex, fogF) {
     }
   };
 
+  // what a city painted in skylines.js needs (the near colours join below)
+  const K = { g, W, U, HOR, PANO_H, S, FAR, NEAR, win, farCol, hz, dRand, panoWindows, panoDome, panoCampanile };
+
   if (cityId === 'paris') {
     farRow(9, 15, 14, 26, 1, 5, 21, (x, y, bw) => {
       g.fillStyle = hz(S.roof, FAR + 0.04);
@@ -934,6 +938,8 @@ function panoTex(cityId, P, fogHex, fogF) {
       if (dRand(i, 33) > 0.35) { g.fillStyle = houseCol; g.fillRect(x, y - bh, bw, bh + 3); }
       x += bw + (0.4 + dRand(i, 34) * 3) * U;
     }
+  } else if (SKYLINES[cityId]) {
+    SKYLINES[cityId](K, 'far');
   } else {
     farRow(20, 46, 10, 22, 0.5, 4, 51, (x, y, bw, bh, i) => {
       if (dRand(i, 6) > 0.7) {
@@ -957,6 +963,10 @@ function panoTex(cityId, P, fogHex, fogF) {
   const trimCol = hz(S.trim, NEAR * 0.86);
   const roofCol = hz(S.roof, NEAR * 0.9);
   const shade1 = 'rgba(0,0,0,0.13)';
+  // a facade colour of the city's own (pastel, ochre, brick) mixed into the
+  // near tone by t and hazed like it, so it sits in the same light
+  const tint = (hex, t) => hz(`#${new THREE.Color(S.near).lerp(new THREE.Color(hex), t).getHexString()}`, NEAR);
+  Object.assign(K, { nearCol, trimCol, roofCol, tint });
 
   if (cityId === 'paris') {
     // Haussmann: 6 storeys of ashlar, a continuous cornice, a 45° zinc mansard
@@ -1194,6 +1204,8 @@ function panoTex(cityId, P, fogHex, fogF) {
       g.beginPath(); g.moveTo(cx - w, wallTop + 4); g.quadraticCurveTo(cx - w, wallTop - h * 0.6, cx, wallTop - h);
       g.quadraticCurveTo(cx + w, wallTop - h * 0.6, cx + w, wallTop + 4); g.fill();
     }
+  } else if (SKYLINES[cityId]) {
+    SKYLINES[cityId](K, 'near');
   } else {
     // Manhattan: every tower is a stack of setbacks, never a single slab
     let x = -60, i = 0;
