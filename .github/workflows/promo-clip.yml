@@ -17,7 +17,8 @@ permissions:
 jobs:
   promo:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # The tour (17 cities, each with a run-up) took over 40 minutes on a runner.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
