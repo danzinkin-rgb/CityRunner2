@@ -11,6 +11,7 @@
  *   node marketing/promo-clip.mjs          the launch promo -> marketing/out/promo-launch.mp4 (or .webm)
  *
  *   node marketing/promo-clip.mjs update   the 1.2 update: new cities
+ *   node marketing/promo-clip.mjs tour     a second in each city added since launch
  *
  * Edit SETS to change what is shown. SPEED is how much faster than real
  * time the footage plays.
@@ -32,6 +33,14 @@ const FPS = 30;
 const VIEW = { width: 540, height: 675 };   // x2 = 1080x1350
 
 // One list per video. A 'card' is a full-screen title; the last card closes it.
+// The city table, loaded as text: package.json is "type": "commonjs", and
+// themes.js imports nothing (see marketing/build-pages.mjs).
+const { ALL_CITIES } = await import(`data:text/javascript,${encodeURIComponent(readFileSync(join(HERE, '..', 'src', 'cities', 'themes.js'), 'utf8'))}`);
+const titleCase = (t) => t.toLowerCase().split(' ').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+// The cities the game launched with; the tour shows only the ones added since.
+const LAUNCH_CITIES = ['nyc', 'paris', 'london', 'rome', 'sf'];
+const NEW_CITIES = ALL_CITIES.filter((c) => !LAUNCH_CITIES.includes(c.id));
+
 const SETS = {
   launch: [
     { kind: 'run', city: 'nyc', level: 3, seconds: 1.8, speed: 2, label: 'Times Square, New York' },
@@ -52,6 +61,14 @@ const SETS = {
     { kind: 'card', seconds: 1.2, title: config.appName, lines: ['New York to Hanoi, Havana to Seoul', 'Free on the App Store'] },
   ],
 };
+// A second or so in each new city, on its second street, with a counter.
+SETS.tour = [
+  { kind: 'card', seconds: 1.0, title: `${NEW_CITIES.length} new cities`, lines: ['in CityRunner: Landmark Run'] },
+  ...NEW_CITIES.map((c, i) => ({ kind: 'run', city: c.id, level: 2, seconds: 0.8, speed: 2, warmup: 80,
+    label: `${titleCase(c.name)} · ${i + 1}/${NEW_CITIES.length}` })),
+  { kind: 'card', seconds: 1.3, title: config.appName, lines: [`${ALL_CITIES.length} cities. ${ALL_CITIES.length * 3} landmarks to rebuild.`, 'Free on the App Store'] },
+];
+
 const SET = process.argv[2] || 'launch';
 const SEGMENTS = SETS[SET];
 if (!SEGMENTS) { console.error(`Unknown set "${SET}"; one of: ${Object.keys(SETS).join(', ')}`); process.exit(1); }
@@ -138,8 +155,10 @@ for (const seg of SEGMENTS) {
   } else if (seg.kind === 'run') {
     const { page, context } = await openPage(`?view=run&city=${seg.city}&level=${seg.level}&god`);
     await stepUntil(page, 'the run', () => window.__cr?.state === 'run' && !!window.__cr.track);
+    // On-screen tips are for players, not for a promo.
+    await page.addStyleTag({ content: '#hud-hint{display:none!important}' });
     // Get going first: the opening seconds are the slowest and emptiest.
-    for (let i = 0; i < 60; i++) { await page.evaluate(autopilotStep); await page.clock.runFor(1000 / FPS); }
+    for (let i = 0; i < (seg.warmup ?? 60); i++) { await page.evaluate(autopilotStep); await page.clock.runFor(1000 / FPS); }
     await page.evaluate(overlay, { label: seg.label });
     for (let i = 0; i < frames; i++) {
       for (let k = 0; k < seg.speed; k++) { await page.evaluate(autopilotStep); await page.clock.runFor(1000 / FPS); }
