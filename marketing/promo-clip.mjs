@@ -12,6 +12,7 @@
  *
  *   node marketing/promo-clip.mjs update   the 1.2 update: new cities
  *   node marketing/promo-clip.mjs tour     a second in each city added since launch
+ *   node marketing/promo-clip.mjs monuments  each new city's best-known landmark, built
  *
  * Edit SETS to change what is shown. SPEED is how much faster than real
  * time the footage plays.
@@ -67,6 +68,24 @@ SETS.tour = [
   ...NEW_CITIES.map((c, i) => ({ kind: 'run', city: c.id, level: 2, seconds: 0.8, speed: 2, warmup: 80,
     label: `${titleCase(c.name)} · ${i + 1}/${NEW_CITIES.length}` })),
   { kind: 'card', seconds: 1.3, title: config.appName, lines: [`${ALL_CITIES.length} cities. ${ALL_CITIES.length * 3} landmarks to rebuild.`, 'Free on the App Store'] },
+];
+
+// The landmark each new city is best known for, by street (1-3): that street's
+// monument builds from its pieces in about a second.
+const ICONIC = {
+  jerusalem: 2, mexico: 1, marrakech: 1, delhi: 3, bangkok: 2, capetown: 1, hanoi: 2, seoul: 2,
+  samarkand: 3, zanzibar: 3, beijing: 2, havana: 3, istanbul: 3, chicago: 3, buenosaires: 1,
+  venice: 1, neworleans: 3,
+};
+const { LANDMARK_NAMES } = await import(`data:text/javascript,${encodeURIComponent(readFileSync(join(HERE, '..', 'src', 'cities', 'themes.js'), 'utf8'))}`);
+SETS.monuments = [
+  { kind: 'card', seconds: 1.0, title: `${NEW_CITIES.length} new landmarks`, lines: ['to rebuild in CityRunner: Landmark Run'] },
+  ...NEW_CITIES.map((c, i) => {
+    const level = ICONIC[c.id] || 1;
+    return { kind: 'build', city: c.id, level, seconds: 1.0,
+      label: `${LANDMARK_NAMES[c.landmarks[level - 1]]}, ${titleCase(c.name)} · ${i + 1}/${NEW_CITIES.length}` };
+  }),
+  { kind: 'card', seconds: 1.3, title: config.appName, lines: [`${ALL_CITIES.length * 3} landmarks in ${ALL_CITIES.length} cities.`, 'Free on the App Store'] },
 ];
 
 const SET = process.argv[2] || 'launch';
@@ -170,6 +189,17 @@ for (const seg of SEGMENTS) {
   } else {
     const { page, context } = await openPage(`?view=puzzle&city=${seg.city}&level=${seg.level}&auto`);
     await stepUntil(page, 'the puzzle', () => !!window.__cr?.puzzle?.items?.length);
+    // First-street puzzles open a "Drag to build" tutorial that pauses play
+    // until it is dismissed; tap its GOT IT the way a player would.
+    for (let i = 0; i < 10; i++) {
+      await page.clock.runFor(100);
+      await page.evaluate(() => {
+        for (const id of ['dh-ok', 'mh-ok']) {
+          const b = document.getElementById(id);
+          if (b && b.offsetParent) b.click();
+        }
+      });
+    }
     await page.evaluate(() => window.__cr.puzzle.deliverAllNow?.());
     const total = await page.evaluate(() => window.__cr.puzzle.items.length);
     // On-screen tips are for players, not for a promo.
