@@ -19,7 +19,7 @@ import { DEBUG_HOOKS, TESTER } from './core/debug.js';
 import { loadGhost, saveGhostIfBest, GhostRecorder, GhostRunner } from './run/ghost.js';
 import { HAZARD_RATE } from './run/hazards.js';
 
-export const VERSION = '1.2.0';
+export const VERSION = '1.2.1';
 import { Player, DEFAULT_STYLE } from './run/player.js';
 import { releaseStreetCaches, makeSplash } from './cities/builders.js';
 import { Track } from './run/track.js';

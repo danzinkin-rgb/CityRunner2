@@ -79,7 +79,11 @@ Kyoto is parked (`docs/CITY-ROADMAP.md`).
 
 ## Next release: what is waiting
 
-1.2.0, build 14 (planned 17 October 2026). Since 1.1.1:
+1.2.1, build 15 (23 October 2026). Since 1.2.0: every city added in 1.2.0 has its
+own painted skyline behind its monuments (src/puzzle/skylines.js), where
+they had all shared the generic towers. Nothing else in the game changed.
+
+1.2.0, build 14, live on 23 October 2026 (tagged v1.2.0). Since 1.1.1:
 
 - Region packs at £0.99 (Dan, 14 October 2026), about three cities each:
   each unlocks every city in its region, including ones added later. Six
