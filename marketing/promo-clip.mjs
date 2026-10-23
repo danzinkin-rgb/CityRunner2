@@ -8,9 +8,13 @@
  * shared autopilot; monuments use the puzzle's own self-play mode (?auto),
  * recorded from the game's own starting point (part built) to the end.
  *
- *   node marketing/promo-clip.mjs      writes marketing/out/promo.mp4 (or .webm)
+ *   node marketing/promo-clip.mjs          the launch promo -> marketing/out/promo-launch.mp4 (or .webm)
  *
- * Edit SEGMENTS to change what is shown. SPEED is how much faster than real
+ *   node marketing/promo-clip.mjs update   the 1.2 update: new cities
+ *   node marketing/promo-clip.mjs tour     a second in each city added since launch
+ *   node marketing/promo-clip.mjs monuments  each new city's best-known landmark, built
+ *
+ * Edit SETS to change what is shown. SPEED is how much faster than real
  * time the footage plays.
  */
 import { webkit } from 'playwright';
@@ -29,13 +33,65 @@ const config = JSON.parse(readFileSync(join(HERE, 'config.json'), 'utf8'));
 const FPS = 30;
 const VIEW = { width: 540, height: 675 };   // x2 = 1080x1350
 
-const SEGMENTS = [
-  { kind: 'run', city: 'nyc', level: 3, seconds: 1.8, speed: 2, label: 'Times Square, New York' },
-  { kind: 'build', city: 'nyc', level: 1, seconds: 1.7, label: 'Empire State Building' },
-  { kind: 'run', city: 'paris', level: 1, seconds: 1.8, speed: 2, label: 'Champs-Élysées, Paris' },
-  { kind: 'build', city: 'paris', level: 1, seconds: 1.7, label: 'Eiffel Tower' },
+// One list per video. A 'card' is a full-screen title; the last card closes it.
+// The city table, loaded as text: package.json is "type": "commonjs", and
+// themes.js imports nothing (see marketing/build-pages.mjs).
+const { ALL_CITIES } = await import(`data:text/javascript,${encodeURIComponent(readFileSync(join(HERE, '..', 'src', 'cities', 'themes.js'), 'utf8'))}`);
+const titleCase = (t) => t.toLowerCase().split(' ').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+// The cities the game launched with; the tour shows only the ones added since.
+const LAUNCH_CITIES = ['nyc', 'paris', 'london', 'rome', 'sf'];
+const NEW_CITIES = ALL_CITIES.filter((c) => !LAUNCH_CITIES.includes(c.id));
+
+const SETS = {
+  launch: [
+    { kind: 'run', city: 'nyc', level: 3, seconds: 1.8, speed: 2, label: 'Times Square, New York' },
+    { kind: 'build', city: 'nyc', level: 1, seconds: 1.7, label: 'Empire State Building' },
+    { kind: 'run', city: 'paris', level: 1, seconds: 1.8, speed: 2, label: 'Champs-Élysées, Paris' },
+    { kind: 'build', city: 'paris', level: 1, seconds: 1.7, label: 'Eiffel Tower' },
+    { kind: 'card', seconds: 1.0, title: config.appName, lines: ['Run real streets. Rebuild real landmarks.', 'Free on the App Store'] },
+  ],
+  update: [
+    { kind: 'card', seconds: 0.9, title: 'Big update', lines: ['22 cities. 66 landmarks.'] },
+    { kind: 'run', city: 'hanoi', level: 2, seconds: 1.1, speed: 2, label: 'Train Street, Hanoi' },
+    { kind: 'run', city: 'venice', level: 3, seconds: 1.1, speed: 2, label: 'Riva degli Schiavoni, Venice' },
+    { kind: 'run', city: 'marrakech', level: 1, seconds: 1.1, speed: 2, label: 'Jemaa el-Fnaa, Marrakech' },
+    { kind: 'run', city: 'havana', level: 1, seconds: 1.1, speed: 2, label: 'Malecón, Havana' },
+    { kind: 'run', city: 'istanbul', level: 2, seconds: 1.1, speed: 2, label: 'Grand Bazaar, Istanbul' },
+    { kind: 'run', city: 'seoul', level: 3, seconds: 1.1, speed: 2, label: 'Myeongdong, Seoul' },
+    { kind: 'build', city: 'istanbul', level: 2, seconds: 1.9, label: 'Blue Mosque, Istanbul' },
+    { kind: 'card', seconds: 1.2, title: config.appName, lines: ['New York to Hanoi, Havana to Seoul', 'Free on the App Store'] },
+  ],
+};
+// A second or so in each new city, on its second street, with a counter.
+SETS.tour = [
+  { kind: 'card', seconds: 1.0, title: `${NEW_CITIES.length} new cities`, lines: ['in CityRunner: Landmark Run'] },
+  ...NEW_CITIES.map((c, i) => ({ kind: 'run', city: c.id, level: 2, seconds: 0.8, speed: 2, warmup: 80,
+    label: `${titleCase(c.name)} · ${i + 1}/${NEW_CITIES.length}` })),
+  { kind: 'card', seconds: 1.3, title: config.appName, lines: [`${ALL_CITIES.length} cities. ${ALL_CITIES.length * 3} landmarks to rebuild.`, 'Free on the App Store'] },
 ];
-const END_SECONDS = 1.0;
+
+// The landmark each new city is best known for, by street (1-3): that street's
+// monument builds from its pieces in about a second.
+const ICONIC = {
+  jerusalem: 2, mexico: 1, marrakech: 1, delhi: 3, bangkok: 2, capetown: 1, hanoi: 2, seoul: 2,
+  samarkand: 3, zanzibar: 3, beijing: 2, havana: 3, istanbul: 3, chicago: 3, buenosaires: 1,
+  venice: 1, neworleans: 3,
+};
+const { LANDMARK_NAMES } = await import(`data:text/javascript,${encodeURIComponent(readFileSync(join(HERE, '..', 'src', 'cities', 'themes.js'), 'utf8'))}`);
+SETS.monuments = [
+  { kind: 'card', seconds: 1.0, title: `${NEW_CITIES.length} new landmarks`, lines: ['to rebuild in CityRunner: Landmark Run'] },
+  ...NEW_CITIES.map((c, i) => {
+    const level = ICONIC[c.id] || 1;
+    return { kind: 'build', city: c.id, level, seconds: 1.0,
+      label: `${LANDMARK_NAMES[c.landmarks[level - 1]]}, ${titleCase(c.name)} · ${i + 1}/${NEW_CITIES.length}` };
+  }),
+  { kind: 'card', seconds: 1.3, title: config.appName, lines: [`${ALL_CITIES.length * 3} landmarks in ${ALL_CITIES.length} cities.`, 'Free on the App Store'] },
+];
+
+const SET = process.argv[2] || 'launch';
+const SEGMENTS = SETS[SET];
+if (!SEGMENTS) { console.error(`Unknown set "${SET}"; one of: ${Object.keys(SETS).join(', ')}`); process.exit(1); }
+
 
 function findFfmpeg() {
   if (spawnSync('ffmpeg', ['-version'], { stdio: 'ignore' }).status === 0) return { bin: 'ffmpeg', full: true };
@@ -108,11 +164,20 @@ async function stepUntil(page, what, test, limitMs = 60000) {
 
 for (const seg of SEGMENTS) {
   const frames = Math.round(seg.seconds * FPS);
-  if (seg.kind === 'run') {
+  if (seg.kind === 'card') {
+    const context = await browser.newContext({ viewport: VIEW, deviceScaleFactor: 2 });
+    const page = await context.newPage();
+    await page.setContent('<html><body style="margin:0;background:#0b1020"></body></html>');
+    await page.evaluate(overlay, { end: { title: seg.title, lines: seg.lines } });
+    for (let i = 0; i < frames; i++) await shoot(page);
+    await context.close();
+  } else if (seg.kind === 'run') {
     const { page, context } = await openPage(`?view=run&city=${seg.city}&level=${seg.level}&god`);
     await stepUntil(page, 'the run', () => window.__cr?.state === 'run' && !!window.__cr.track);
+    // On-screen tips are for players, not for a promo.
+    await page.addStyleTag({ content: '#hud-hint{display:none!important}' });
     // Get going first: the opening seconds are the slowest and emptiest.
-    for (let i = 0; i < 60; i++) { await page.evaluate(autopilotStep); await page.clock.runFor(1000 / FPS); }
+    for (let i = 0; i < (seg.warmup ?? 60); i++) { await page.evaluate(autopilotStep); await page.clock.runFor(1000 / FPS); }
     await page.evaluate(overlay, { label: seg.label });
     for (let i = 0; i < frames; i++) {
       for (let k = 0; k < seg.speed; k++) { await page.evaluate(autopilotStep); await page.clock.runFor(1000 / FPS); }
@@ -124,6 +189,17 @@ for (const seg of SEGMENTS) {
   } else {
     const { page, context } = await openPage(`?view=puzzle&city=${seg.city}&level=${seg.level}&auto`);
     await stepUntil(page, 'the puzzle', () => !!window.__cr?.puzzle?.items?.length);
+    // First-street puzzles open a "Drag to build" tutorial that pauses play
+    // until it is dismissed; tap its GOT IT the way a player would.
+    for (let i = 0; i < 10; i++) {
+      await page.clock.runFor(100);
+      await page.evaluate(() => {
+        for (const id of ['dh-ok', 'mh-ok']) {
+          const b = document.getElementById(id);
+          if (b && b.offsetParent) b.click();
+        }
+      });
+    }
     await page.evaluate(() => window.__cr.puzzle.deliverAllNow?.());
     const total = await page.evaluate(() => window.__cr.puzzle.items.length);
     // On-screen tips are for players, not for a promo.
@@ -145,20 +221,11 @@ for (const seg of SEGMENTS) {
   }
 }
 
-// Closing card, on a blank page so nothing behind it can show through.
-{
-  const context = await browser.newContext({ viewport: VIEW, deviceScaleFactor: 2 });
-  const page = await context.newPage();
-  await page.setContent('<html><body style="margin:0;background:#0b1020"></body></html>');
-  await page.evaluate(overlay, { end: { title: config.appName, lines: ['Run real streets. Rebuild real landmarks.', 'Free on the App Store'] } });
-  for (let i = 0; i < Math.round(END_SECONDS * FPS); i++) await shoot(page);
-  await context.close();
-}
 await browser.close();
 
 const ff = findFfmpeg();
 if (!ff) { console.error('No ffmpeg found; frames are in', FRAMES); process.exit(1); }
-const file = join(OUT, `promo.${ff.full ? 'mp4' : 'webm'}`);
+const file = join(OUT, `promo-${SET}.${ff.full ? 'mp4' : 'webm'}`);
 const encode = ff.full
   ? ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'medium', '-movflags', '+faststart']
   : ['-c:v', 'libvpx', '-b:v', '6M'];
