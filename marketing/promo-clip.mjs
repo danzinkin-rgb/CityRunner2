@@ -82,7 +82,9 @@ SETS.monuments = [
   { kind: 'card', seconds: 1.0, title: `${NEW_CITIES.length} new landmarks`, lines: ['to rebuild in CityRunner: Landmark Run'] },
   ...NEW_CITIES.map((c, i) => {
     const level = ICONIC[c.id] || 1;
-    return { kind: 'build', city: c.id, level, seconds: 1.0,
+    // orbit: the camera swings this far round (radians) so the city's
+    // skyline behind the monument shows, not just one side of it.
+    return { kind: 'build', city: c.id, level, seconds: 1.3, orbit: 1.4,
       label: `${LANDMARK_NAMES[c.landmarks[level - 1]]}, ${titleCase(c.name)} · ${i + 1}/${NEW_CITIES.length}` };
   }),
   { kind: 'card', seconds: 1.3, title: config.appName, lines: [`${ALL_CITIES.length * 3} landmarks in ${ALL_CITIES.length} cities.`, 'Free on the App Store'] },
@@ -211,6 +213,7 @@ for (const seg of SEGMENTS) {
     const stepMs = gameMs / Math.round(frames * 0.75);
     await page.evaluate(overlay, { label: seg.label });
     for (let i = 0; i < frames; i++) {
+      if (seg.orbit) await page.evaluate((a) => { window.__cr.cam.angle += a; }, seg.orbit / frames);
       const done = await page.evaluate(() => window.__cr.puzzle.done);
       await page.clock.runFor(done ? 1000 / FPS : stepMs);
       await shoot(page);
