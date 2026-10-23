@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       set:
-        description: Which promo (launch, update)
+        description: Which promo (launch, update, tour)
         type: string
         default: update
 
