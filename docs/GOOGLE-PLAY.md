@@ -128,6 +128,20 @@ Steps 1 and 6 are the long ones: start step 1 today.
    Personal account (unless there is a company), USD 25 once, government ID
    and a phone that can receive a code. Identity verification can take
    several days. Use the Google account you want to own the app for good.
+
+   New personal accounts must also **verify access to a real Android
+   phone** before any app can go live: install the Play Console app on a
+   physical, non-rooted phone running Android 10 or later, sign in as the
+   account owner, tap Verify. Emulators do not count, and an iPhone or iOS
+   simulator cannot run the app. Google's page does not say the phone must be
+   yours: the number on it need not match the account's, and one phone can
+   verify several accounts. Options: borrow a tester's phone for five minutes
+   (then remove your Google account from it), or buy a cheap refurbished
+   Android 10+ phone, which also gives you a device to test purchases on and
+   covers re-verification if Google asks again later. An organisation account
+   skips this and the 14-day test, but needs a registered business and a
+   D-U-N-S number.
+   [support.google.com/googleplay/android-developer/answer/14316361](https://support.google.com/googleplay/android-developer/answer/14316361)
 2. **Set up a payments profile** in Play Console (Settings › Payments
    profile), so the two products can be created and paid out. Add bank and
    tax details.
