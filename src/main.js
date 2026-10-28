@@ -9,7 +9,7 @@ import { renderHero, renderCompact, paintScale, countUp } from './factviz.js';
 import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
 import { startSession, submit, top as topScores, personalBest, currentSession } from './core/scores.js';
 import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset, DAILY } from './core/rng.js';
-import { initNative, onAppPause, hapticLight, hapticMedium, hapticHeavy, hapticSuccess } from './core/native.js';
+import { initNative, onAppPause, hapticLight, hapticMedium, hapticHeavy, hapticSuccess, canShare, shareText, requestReview } from './core/native.js';
 import { reportRun } from './core/gamecenter.js';
 import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild, ownsCity, regionOf } from './core/entitlements.js';
 import { REGIONS } from './cities/themes.js';
@@ -19,7 +19,7 @@ import { DEBUG_HOOKS, TESTER } from './core/debug.js';
 import { loadGhost, saveGhostIfBest, GhostRecorder, GhostRunner } from './run/ghost.js';
 import { HAZARD_RATE } from './run/hazards.js';
 
-export const VERSION = '1.2.1';
+export const VERSION = '1.2.2';
 import { Player, DEFAULT_STYLE } from './run/player.js';
 import { releaseStreetCaches, makeSplash } from './cities/builders.js';
 import { Track } from './run/track.js';
@@ -767,6 +767,9 @@ function finishPuzzle(won) {
     // order — and, in a city the player has not bought, hand out progress in
     // paid content. See the note on the daily exemption in startRun().
     if (!dailyMode) save.stars[city().id] = Math.max(save.stars[city().id] || 0, level);
+    // Counted for the rating prompt below: a player asked after a few wins
+    // has seen enough of the game to have an opinion.
+    save.monumentsWon = (save.monumentsWon || 0) + 1;
     settleRun();
     // A daily is one course: there is no next level to carry on to. Showing
     // the button carried dailyMode — and with it the paywall exemption — into
@@ -783,6 +786,10 @@ function finishPuzzle(won) {
       paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm], !!save.reducedMotion, md?.altitude, md?.note);
       showScreen('pwin');
       state = 'pwin';
+      // Apple's rating prompt, at a good moment: just after a win, on the
+      // 3rd, 10th and 30th monument. StoreKit decides whether it actually
+      // shows (at most three times a year), and it is native only.
+      if (REVIEW_AT.includes(save.monumentsWon)) setTimeout(requestReview, 1500);
     }, 4300);
     state = 'pwin-wait';
   } else {
@@ -1476,6 +1483,32 @@ $('btn-continue-pay').onclick = acceptContinue;
 $('btn-continue-no').onclick = declineContinue;
 $('btn-retry').onclick = () => startRun();
 $('btn-menu').onclick = $('btn-menu2').onclick = () => doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; });
+
+// Sharing (1.2.2): a SHARE button on the result screens opens Apple's share
+// sheet with one line about the run and the App Store link. Native only (see
+// canShare in src/core/native.js); nothing is sent anywhere unless the player
+// picks an app to share to. On a daily the line invites a friend to the same
+// course, which is the point of a daily.
+const APP_STORE_URL = 'https://apps.apple.com/app/id6806808248';
+const REVIEW_AT = [3, 10, 30];
+function shareWhere() {
+  return `${city().streets[level - 1]}, ${titleCase(city().name)}`;
+}
+if (canShare()) {
+  $('btn-share-pw').style.display = '';
+  $('btn-share-over').style.display = '';
+}
+$('btn-share-pw').onclick = () => {
+  const name = $('pw-name').textContent;
+  shareText(dailyMode
+    ? `I rebuilt the ${name} on today's CityRunner daily challenge (${shareWhere()}) and scored ${Math.round(score)}. Everyone gets the same course today. Can you beat it?`
+    : `I just rebuilt the ${name} in CityRunner with ${$('pw-time').textContent} seconds to spare.`, APP_STORE_URL);
+};
+$('btn-share-over').onclick = () => {
+  shareText(dailyMode
+    ? `I scored ${Math.round(score)} on today's CityRunner daily challenge: ${shareWhere()}. Everyone gets the same course today. Can you beat it?`
+    : `I scored ${Math.round(score)} running ${shareWhere()} in CityRunner.`, APP_STORE_URL);
+};
 $('btn-next').onclick = () => {
   // Belt and braces: the button is hidden after a daily (finishPuzzle), but a
   // next level is never a daily, whatever route reached this handler.

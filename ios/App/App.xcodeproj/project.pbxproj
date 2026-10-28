@@ -17,6 +17,7 @@
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
 		CC80D47A3045E153003C460D /* GameCenterPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC80D4793045E153003C460D /* GameCenterPlugin.swift */; };
 		CC80D47C3045E562003C460D /* BridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC80D47B3045E562003C460D /* BridgeViewController.swift */; };
+		CC80D47F3045E600003C460D /* GrowthPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC80D47E3045E600003C460D /* GrowthPlugin.swift */; };
 		CC9BCA003046DBB00024506E /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC9BC9FF3046DBB00024506E /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
@@ -35,6 +36,7 @@
 		AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.release.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.release.xcconfig"; sourceTree = "<group>"; };
 		CC80D4793045E153003C460D /* GameCenterPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCenterPlugin.swift; sourceTree = "<group>"; };
 		CC80D47B3045E562003C460D /* BridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeViewController.swift; sourceTree = "<group>"; };
+		CC80D47E3045E600003C460D /* GrowthPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowthPlugin.swift; sourceTree = "<group>"; };
 		CC9BC9FF3046DBB00024506E /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -84,6 +86,7 @@
 			children = (
 				CC80D47B3045E562003C460D /* BridgeViewController.swift */,
 				CC80D4793045E153003C460D /* GameCenterPlugin.swift */,
+				CC80D47E3045E600003C460D /* GrowthPlugin.swift */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				A1B2C3D4E5F60718293A4B5C /* App.entitlements */,
@@ -224,6 +227,7 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				CC80D47C3045E562003C460D /* BridgeViewController.swift in Sources */,
 				CC80D47A3045E153003C460D /* GameCenterPlugin.swift in Sources */,
+				CC80D47F3045E600003C460D /* GrowthPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -365,12 +369,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = UU8M6MHG9A;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.2.1;
+				MARKETING_VERSION = 1.2.2;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = uk.co.zinkin.cityrunner;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -387,12 +391,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = UU8M6MHG9A;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.2.1;
+				MARKETING_VERSION = 1.2.2;
 				PRODUCT_BUNDLE_IDENTIFIER = uk.co.zinkin.cityrunner;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";

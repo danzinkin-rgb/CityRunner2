@@ -51,8 +51,10 @@ export function initNative() {
       // project writes its own thin native wrappers instead of taking on a
       // third-party plugin for something Apple's own SDK already does.
       const GameCenter = registerPlugin('GameCenter');
+      // Apple's share sheet and rating prompt, the same way: ios/App/App/GrowthPlugin.swift.
+      const Growth = registerPlugin('Growth');
 
-      native = { Haptics, ImpactStyle, NotificationType, App, GameCenter };
+      native = { Haptics, ImpactStyle, NotificationType, App, GameCenter, Growth };
 
       // Fire-and-forget: a signed-out Game Center account or a player who
       // declines the sign-in sheet must never block or interrupt the game.
@@ -135,4 +137,27 @@ export function onAppPause(cb) {
     try { n.App.addListener('appStateChange', ({ isActive }) => { if (!isActive) cb(); }); }
     catch { /* listener unavailable */ }
   });
+}
+
+// ---------------------------------------------------------------------------
+// Sharing and ratings (ios/App/App/GrowthPlugin.swift). Native only: the web
+// build has no share button, because the web version is not promoted and the
+// link shared is the App Store's.
+// ---------------------------------------------------------------------------
+
+/** True where the share button should show. */
+export function canShare() {
+  return isNative();
+}
+
+/** Open the share sheet with a line of text and a link. Never throws. */
+export async function shareText(text, url) {
+  if (!native) return false;
+  try { return !!(await native.Growth.share({ text, url })).shared; } catch { return false; }
+}
+
+/** Ask StoreKit for its rating prompt. StoreKit decides whether to show it. */
+export function requestReview() {
+  if (!native) return;
+  fire(() => native.Growth.requestReview());
 }
