@@ -79,7 +79,7 @@ const ICONIC = {
 };
 const { LANDMARK_NAMES } = await import(`data:text/javascript,${encodeURIComponent(readFileSync(join(HERE, '..', 'src', 'cities', 'themes.js'), 'utf8'))}`);
 SETS.monuments = [
-  { kind: 'card', seconds: 1.0, title: `${NEW_CITIES.length} new landmarks`, lines: ['to rebuild in CityRunner: Landmark Run'] },
+  { kind: 'card', seconds: 1.4, title: `${NEW_CITIES.length * 3} new landmarks`, lines: [`Here's one from each of ${NEW_CITIES.length} new cities`] },
   ...NEW_CITIES.map((c, i) => {
     const level = ICONIC[c.id] || 1;
     // orbit: the camera swings this far round (radians) so the city's
