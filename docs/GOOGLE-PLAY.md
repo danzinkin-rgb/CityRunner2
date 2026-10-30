@@ -70,10 +70,14 @@ re-check before submitting.
 - **Store graphics:** `npm run shots:play` makes phone, 7-inch and 10-inch
   tablet screenshots and the 1024×500 feature graphic.
 - `privacy.html` gains a Purchases section naming Apple and Google Play.
-- 1.2.2's share button and rating prompt use a Swift plugin, so Android
-  has neither: the share button is hidden there (it shares an App Store
-  link anyway) and the rating call does nothing. Adding them means Google's
-  Play In-App Review library and an Android share, a later decision.
+- **Share and rating** (Dan, 30 October 2026: in the first Android
+  release): `GrowthPlugin.java` is the Android twin of the Swift plugin,
+  under the same name. Share opens Android's share sheet with the Google
+  Play link; the rating prompt is Google Play's in-app review card
+  (`com.google.android.play:review` 2.0.2), shown after the 3rd, 10th and
+  30th monument as on iOS. Play decides whether the card appears, and it
+  only appears in a copy installed from Play. Checked on the emulator: the
+  share sheet opens; the rating call finishes quietly without a Play Store.
 - The back button also closes 1.2's What's new card and the drag-to-build
   card at the start of a puzzle.
 

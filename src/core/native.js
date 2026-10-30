@@ -58,12 +58,13 @@ export function initNative() {
       // version coupling to track — see docs/COMPLIANCE.md §4 on why this
       // project writes its own thin native wrappers instead of taking on a
       // third-party plugin for something Apple's own SDK already does.
-      // Both are Swift, so Android has neither: there they are null and the
-      // helpers below return early.
-      const ios = nativePlatform() === 'ios';
-      const GameCenter = ios ? registerPlugin('GameCenter') : null;
-      // Apple's share sheet and rating prompt, the same way: ios/App/App/GrowthPlugin.swift.
-      const Growth = ios ? registerPlugin('Growth') : null;
+      // Game Center is Swift only, so Android gets null and the gk* helpers
+      // below return early.
+      const GameCenter = nativePlatform() === 'ios' ? registerPlugin('GameCenter') : null;
+      // The share sheet and the store's rating prompt, the same way on both:
+      // ios/App/App/GrowthPlugin.swift and, on Android,
+      // android/app/src/main/java/uk/co/zinkin/cityrunner/GrowthPlugin.java.
+      const Growth = registerPlugin('Growth');
 
       native = { Haptics, ImpactStyle, NotificationType, App, GameCenter, Growth };
 
@@ -153,13 +154,19 @@ export function onAppPause(cb) {
 // ---------------------------------------------------------------------------
 // Sharing and ratings (ios/App/App/GrowthPlugin.swift). Native only: the web
 // build has no share button, because the web version is not promoted and the
-// link shared is the App Store's. Not on Android yet either: the plugin is
-// Swift, and the link would be the wrong store's.
+// link shared is the store's own (storeLink below).
 // ---------------------------------------------------------------------------
 
 /** True where the share button should show. */
 export function canShare() {
-  return nativePlatform() === 'ios';
+  return isNative();
+}
+
+/** The game's page in the store this copy came from, for sharing. */
+export function storeLink() {
+  return nativePlatform() === 'android'
+    ? 'https://play.google.com/store/apps/details?id=uk.co.zinkin.cityrunner'
+    : 'https://apps.apple.com/app/id6806808248';
 }
 
 /** Open the share sheet with a line of text and a link. Never throws. */
@@ -168,7 +175,10 @@ export async function shareText(text, url) {
   try { return !!(await native.Growth.share({ text, url })).shared; } catch { return false; }
 }
 
-/** Ask StoreKit for its rating prompt. StoreKit decides whether to show it. */
+/**
+ * Ask for the store's rating prompt: StoreKit on iOS, Play's in-app review on
+ * Android. The store decides whether to show it.
+ */
 export function requestReview() {
   if (!native?.Growth) return;
   fire(() => native.Growth.requestReview());

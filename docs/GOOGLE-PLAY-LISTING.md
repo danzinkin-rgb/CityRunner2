@@ -50,7 +50,7 @@ All shops, signs and products shown are fictional.
 ```
 
 Not mentioned, because Android does not have them: Game Center, online
-leaderboards, achievements, the share button.
+leaderboards, achievements.
 
 **Category:** Game › Arcade. **Tags:** pick from Play's list (Action,
 Endless runner, Puzzle, Casual are the nearest).
@@ -137,7 +137,7 @@ requirement and where the app stands:
 | Requirement | Status |
 |---|---|
 | Ads only from Families self-certified ad SDKs | No ads |
-| No SDKs not approved for child-directed services | Only Capacitor (open source, no network) and Google's Play Billing Library |
+| No SDKs not approved for child-directed services | Only Capacitor (open source, no network) and Google's own Play Billing and in-app review libraries |
 | No advertising ID, IMEI, MAC, SSID and similar identifiers | None read or sent; the built manifest has no `AD_ID` permission |
 | No location permission or precise location | None (built manifest: INTERNET, VIBRATE, BILLING, ACCESS_NETWORK_STATE) |
 | No phone number from TelephonyManager | Not used |
@@ -161,9 +161,17 @@ re-checked:
   does not access the financial data and the service collects it directly.
   Both hold. The app learns only which product is owned and keeps that on
   the device.
+- Ratings: the rating card is Google Play's own (the in-app review
+  library). Google's documentation lists what it handles as "user-entered
+  data (rating and free-text review)", typed by the player into Play's card
+  and sent by Play, never seen by the app. Same reasoning as billing: the
+  service collects it directly. Google adds that the developer is
+  "solely responsible" for the Data safety answer, so this is the second
+  answer to revisit if Google's guidance changes.
 - No other library sends anything. The Android project has no Firebase, no
   Play Services SDK and no analytics; `test/android.mjs` fails if one appears
-  in the Gradle files.
+  in the Gradle files, or if any Google Play library other than the review
+  one does.
 - Android backup: the app keeps Android's default `allowBackup`, so progress
   can come back on a new phone through the player's own Google account
   backup. That copy goes to the user's own account and never reaches the

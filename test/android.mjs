@@ -71,8 +71,26 @@ check(mainSrc.includes("'TESTER BUILD'"),
 
 // Comments stripped: app/build.gradle explains why Firebase was taken out.
 const gradleAll = [read('android', 'build.gradle'), appGradle].join('\n').replace(/^\s*\/\/.*$/gm, '');
-check(!/google-services|firebase|play-services-games|gms:/i.test(gradleAll),
-  'android: no Firebase, Play Games or other Google SDK in the Gradle files');
+check(!/google-services|firebase|play-services|gms:/i.test(gradleAll),
+  'android: no Firebase, Play Games or other Google Play services SDK in the Gradle files');
+// The one Google library allowed: Play's in-app review, which only talks to
+// the Play Store (docs/COMPLIANCE.md section 1.2). Anything else from Google's
+// com.google.android.play group needs the same check first.
+const playLibs = [...gradleAll.matchAll(/['"](com\.google\.android\.play:[^:'"]+)/g)].map((m) => m[1]);
+check(playLibs.join() === 'com.google.android.play:review',
+  'android: the only Google Play library is the in-app review one', playLibs.join(', ') || 'none');
+
+// Share and rating: the Java plugin must exist under the name native.js asks
+// for, and be registered, or both calls fail silently on every phone.
+const javaDir = ['android', 'app', 'src', 'main', 'java', 'uk', 'co', 'zinkin', 'cityrunner'];
+const growth = existsSync(join(REPO, ...javaDir, 'GrowthPlugin.java')) ? read(...javaDir, 'GrowthPlugin.java') : '';
+const nativeSrc = read('src', 'core', 'native.js');
+check(/@CapacitorPlugin\(name = "Growth"\)/.test(growth) && nativeSrc.includes("registerPlugin('Growth')"),
+  'android: the Growth plugin exists under the name native.js registers');
+check(read(...javaDir, 'MainActivity.java').includes('registerPlugin(GrowthPlugin.class)'),
+  'android: MainActivity registers the Growth plugin');
+check(nativeSrc.includes(`play.google.com/store/apps/details?id=${appId}`),
+  'android: sharing links to this app on Google Play');
 
 const manifest = read('android', 'app', 'src', 'main', 'AndroidManifest.xml');
 const perms = [...manifest.matchAll(/uses-permission android:name="([^"]+)"/g)].map((m) => m[1]);
@@ -137,6 +155,9 @@ for (const [platform, want, account] of [
   check(got.calls.some((c) => c[0] === 'restore'), `${platform}: Restore asks the store`);
   check(got.restore.includes(account), `${platform}: the restore message names the ${account}`,
     JSON.stringify(got.restore));
+  const shareShown = await page.evaluate(() => getComputedStyle(document.getElementById('btn-share-over')).display !== 'none'
+    || document.getElementById('btn-share-over').style.display === '');
+  check(shareShown, `${platform}: the share button is enabled`);
   check(!errors.length, `${platform}: no page errors`, errors[0] || '');
   await ctx.close();
 }
