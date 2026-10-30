@@ -1,7 +1,12 @@
 package uk.co.zinkin.cityrunner;
 
 import android.app.Activity;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import androidx.core.content.ContextCompat;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -25,29 +30,72 @@ import com.google.android.play.core.review.ReviewManagerFactory;
 @CapacitorPlugin(name = "Growth")
 public class GrowthPlugin extends Plugin {
 
+    private static final String CHOSEN = "uk.co.zinkin.cityrunner.SHARE_CHOSEN";
+
+    /** The share() call waiting to hear whether the player picked an app. */
+    private PluginCall pendingShare;
+    private boolean chosen;
+    private BroadcastReceiver receiver;
+
     @PluginMethod
     public void share(PluginCall call) {
         String text = call.getString("text", "");
         String url = call.getString("url", "");
         String body = url.isEmpty() ? text : (text.isEmpty() ? url : text + " " + url);
         Activity activity = getActivity();
-        JSObject ret = new JSObject();
-        if (body.isEmpty() || activity == null) {
-            ret.put("shared", false);
-            call.resolve(ret);
+        if (body.isEmpty() || activity == null || pendingShare != null) {
+            resolveShare(call, false);
             return;
         }
         Intent send = new Intent(Intent.ACTION_SEND);
         send.setType("text/plain");
         send.putExtra(Intent.EXTRA_TEXT, body);
+
+        // iOS reports whether the share went through. Android only reports
+        // which app the player picked, and nothing if they backed out, so
+        // "shared" here means an app was picked. The chooser tells us through
+        // this broadcast, which only this app can send or receive.
+        chosen = false;
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                chosen = true;
+            }
+        };
+        ContextCompat.registerReceiver(activity, receiver, new IntentFilter(CHOSEN),
+            ContextCompat.RECEIVER_NOT_EXPORTED);
+        Intent callback = new Intent(CHOSEN).setPackage(activity.getPackageName());
+        PendingIntent onChosen = PendingIntent.getBroadcast(activity, 0, callback,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
         try {
-            activity.startActivity(Intent.createChooser(send, null));
-            // Android does not report whether the player went through with
-            // it, so "shared" means the sheet opened.
-            ret.put("shared", true);
+            pendingShare = call;
+            activity.startActivity(Intent.createChooser(send, null, onChosen.getIntentSender()));
         } catch (Exception e) {
-            ret.put("shared", false);
+            finishShare(false);
         }
+    }
+
+    /** Back in the game after the sheet: answer the waiting share() call. */
+    @Override
+    protected void handleOnResume() {
+        super.handleOnResume();
+        if (pendingShare != null) finishShare(chosen);
+    }
+
+    private void finishShare(boolean shared) {
+        Activity activity = getActivity();
+        if (receiver != null && activity != null) {
+            try { activity.unregisterReceiver(receiver); } catch (Exception ignored) { }
+        }
+        receiver = null;
+        PluginCall call = pendingShare;
+        pendingShare = null;
+        if (call != null) resolveShare(call, shared);
+    }
+
+    private static void resolveShare(PluginCall call, boolean shared) {
+        JSObject ret = new JSObject();
+        ret.put("shared", shared);
         call.resolve(ret);
     }
 

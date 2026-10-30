@@ -65,7 +65,7 @@
  *     works there; it re-queries Play.
  */
 
-import { isNative, nativePlatform } from './native.js';
+import { isNative, storeFacts } from './native.js';
 import { PRODUCTS, ALL_PRODUCTS, packForCity, grant, reconcile } from './entitlements.js';
 
 /**
@@ -83,27 +83,25 @@ let ready = null;       // in-flight init promise
 const offers = new Map();   // productId -> {productId, price, title} once known
 
 /**
- * Wait for a store call, but not for ever. When Google Play Billing cannot
- * start (no Play Store on the device, or no Google account signed in) the
- * plugin reports the error and never settles initialize(), so the paywall
- * and Restore waited for good (seen on an Android 16 emulator, 11 October
- * 2026). After STORE_WAIT_MS the caller carries on as if the store had
- * answered with nothing; if it does come up later, its products appear on
- * the next getOffers().
+ * Wait for a Google Play call, but not for ever. When Google Play Billing
+ * cannot start (no Play Store on the device, or no Google account signed in)
+ * the plugin reports the error and never settles initialize(), so the
+ * paywall and Restore waited for good (seen on an Android 16 emulator, 11
+ * October 2026). After STORE_WAIT_MS the caller carries on as if the store
+ * had answered with nothing; if it does come up later, its products appear
+ * on the next getOffers(). Android only: StoreKit always answers, and on a
+ * slow connection an iPhone should keep waiting for it as before.
  */
 const STORE_WAIT_MS = 10000;
-const settleWithin = (p) => Promise.race([p, new Promise((r) => setTimeout(r, STORE_WAIT_MS))]);
+function settleWithin(p) {
+  if (!storeFacts().google) return p;
+  let timer;
+  const limit = new Promise((r) => { timer = setTimeout(r, STORE_WAIT_MS); });
+  return Promise.race([p, limit]).finally(() => clearTimeout(timer));
+}
 
 /** Which store this build sells through, in the plugin's own terms. */
-const storePlatform = (Platform) => (nativePlatform() === 'android'
-  ? Platform.GOOGLE_PLAY : Platform.APPLE_APPSTORE);
-
-/** The store's name and account, for the paywall's and Settings' messages. */
-export function storeWords() {
-  return nativePlatform() === 'android'
-    ? { store: 'Google Play', account: 'Google Account' }
-    : { store: 'the App Store', account: 'Apple Account' };
-}
+const storePlatform = (Platform) => (storeFacts().google ? Platform.GOOGLE_PLAY : Platform.APPLE_APPSTORE);
 
 /**
  * Subscribers notified whenever an entitlement is granted after the fact —

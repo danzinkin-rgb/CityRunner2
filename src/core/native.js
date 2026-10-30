@@ -157,16 +157,34 @@ export function onAppPause(cb) {
 // link shared is the store's own (storeLink below).
 // ---------------------------------------------------------------------------
 
-/** True where the share button should show. */
+/**
+ * True where the share button should show: once initNative() has resolved
+ * with the Growth plugin in place, so a plugin that failed to load never
+ * leaves a button that does nothing.
+ */
 export function canShare() {
-  return isNative();
+  return !!native?.Growth;
 }
 
-/** The game's page in the store this copy came from, for sharing. */
-export function storeLink() {
-  return nativePlatform() === 'android'
-    ? 'https://play.google.com/store/apps/details?id=uk.co.zinkin.cityrunner'
-    : 'https://apps.apple.com/app/id6806808248';
+/**
+ * Everything that differs by store, in one place: the name and account the
+ * paywall and Settings mention, and the link a share sends. `google` is
+ * what iap.js uses to pick the plugin's platform.
+ */
+const STORES = {
+  apple: {
+    google: false, name: 'the App Store', account: 'Apple Account',
+    link: 'https://apps.apple.com/app/id6806808248',
+  },
+  google: {
+    google: true, name: 'Google Play', account: 'Google Account',
+    link: 'https://play.google.com/store/apps/details?id=uk.co.zinkin.cityrunner',
+  },
+};
+
+/** The store this copy came from. The web build is treated as Apple's. */
+export function storeFacts() {
+  return nativePlatform() === 'android' ? STORES.google : STORES.apple;
 }
 
 /** Open the share sheet with a line of text and a link. Never throws. */

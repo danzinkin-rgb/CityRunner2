@@ -9,11 +9,11 @@ import { renderHero, renderCompact, paintScale, countUp } from './factviz.js';
 import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
 import { startSession, submit, top as topScores, personalBest, currentSession } from './core/scores.js';
 import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset, DAILY } from './core/rng.js';
-import { initNative, onAppPause, onBackButton, hapticLight, hapticMedium, hapticHeavy, hapticSuccess, canShare, shareText, requestReview, storeLink } from './core/native.js';
+import { initNative, onAppPause, onBackButton, hapticLight, hapticMedium, hapticHeavy, hapticSuccess, canShare, shareText, requestReview, storeFacts } from './core/native.js';
 import { reportRun } from './core/gamecenter.js';
 import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild, ownsCity, regionOf } from './core/entitlements.js';
 import { REGIONS } from './cities/themes.js';
-import { initIAP, getOffers, purchase, restore, onEntitlementGranted, storeWords } from './core/iap.js';
+import { initIAP, getOffers, purchase, restore, onEntitlementGranted } from './core/iap.js';
 import { STORAGE } from './core/storage-keys.js';
 import { DEBUG_HOOKS, TESTER } from './core/debug.js';
 import { loadGhost, saveGhostIfBest, GhostRecorder, GhostRunner } from './run/ghost.js';
@@ -1149,7 +1149,7 @@ async function buyOffer(kind) {
   const offer = offers[kind];
   if (!offer) return;
   btn.disabled = true;
-  status.textContent = `Opening ${storeWords().store}…`;
+  status.textContent = `Opening ${storeFacts().name}…`;
   const ok = await purchase(offer.productId);
   btn.disabled = false;
   if (!ok) {
@@ -1194,7 +1194,7 @@ onEntitlementGranted(() => {
 
 /** Shared by the paywall and the Settings row — Apple requires both to work. */
 async function doRestore(statusEl) {
-  statusEl.textContent = `Checking with ${storeWords().store}…`;
+  statusEl.textContent = `Checking with ${storeFacts().name}…`;
   const found = await restore();
   if (found.length) buildCitySelect();
   if (hasFullAccess() || (statusEl.id === 'paywall-status' && paywallSatisfied())) {
@@ -1204,7 +1204,7 @@ async function doRestore(statusEl) {
   } else {
     statusEl.textContent = found.length
       ? 'Restored.'
-      : `No previous purchase found on this ${storeWords().account}.`;
+      : `No previous purchase found on this ${storeFacts().account}.`;
   }
 }
 
@@ -1514,20 +1514,22 @@ const REVIEW_AT = [3, 10, 30];
 function shareWhere() {
   return `${city().streets[level - 1]}, ${titleCase(city().name)}`;
 }
-if (canShare()) {
+// After initNative(), so the buttons appear only if the plugin really loaded.
+initNative().then(() => {
+  if (!canShare()) return;
   $('btn-share-pw').style.display = '';
   $('btn-share-over').style.display = '';
-}
+});
 $('btn-share-pw').onclick = () => {
   const name = $('pw-name').textContent;
   shareText(dailyMode
     ? `I rebuilt the ${name} on today's CityRunner daily challenge (${shareWhere()}) and scored ${Math.round(score)}. Everyone gets the same course today. Can you beat it?`
-    : `I just rebuilt the ${name} in CityRunner with ${$('pw-time').textContent} seconds to spare.`, storeLink());
+    : `I just rebuilt the ${name} in CityRunner with ${$('pw-time').textContent} seconds to spare.`, storeFacts().link);
 };
 $('btn-share-over').onclick = () => {
   shareText(dailyMode
     ? `I scored ${Math.round(score)} on today's CityRunner daily challenge: ${shareWhere()}. Everyone gets the same course today. Can you beat it?`
-    : `I scored ${Math.round(score)} running ${shareWhere()} in CityRunner.`, storeLink());
+    : `I scored ${Math.round(score)} running ${shareWhere()} in CityRunner.`, storeFacts().link);
 };
 $('btn-next').onclick = () => {
   // Belt and braces: the button is hidden after a daily (finishPuzzle), but a

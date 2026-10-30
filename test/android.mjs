@@ -155,9 +155,6 @@ for (const [platform, want, account] of [
   check(got.calls.some((c) => c[0] === 'restore'), `${platform}: Restore asks the store`);
   check(got.restore.includes(account), `${platform}: the restore message names the ${account}`,
     JSON.stringify(got.restore));
-  const shareShown = await page.evaluate(() => getComputedStyle(document.getElementById('btn-share-over')).display !== 'none'
-    || document.getElementById('btn-share-over').style.display === '');
-  check(shareShown, `${platform}: the share button is enabled`);
   check(!errors.length, `${platform}: no page errors`, errors[0] || '');
   await ctx.close();
 }
