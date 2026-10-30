@@ -35,17 +35,17 @@ re-check before submitting.
   `adjustMarginsForEdgeToEdge: "auto"`, so Capacitor keeps the game clear of
   the status and navigation bars, which show the game's night colour.
 
-## 2. What is done (Claude, 11 October 2026)
+## 2. What is done (Claude, 11 October 2026; brought up to 1.2.2 on 30 October)
 
 - `android/` project (Capacitor 7.6.8), app id `uk.co.zinkin.cityrunner`,
-  version name 1.1.1, version code 1. Target and compile SDK 36; Android
+  version name 1.2.2 (as iOS), version code 1. Target and compile SDK 36; Android
   Gradle plugin 8.10.1 (the first that supports 36); Gradle 8.11.1, which
   needs **JDK 21** (`android/gradle/gradle-daemon-jvm.properties`).
 - Scripts: `npm run android:sync`, `android:sync:tester`, `android:open`.
 - Launcher icons from `assets/icon-1024.png` (`npm run assets:android`),
   adaptive icon on the night colour, dark splash and system bars. The
   Capacitor template's logo and Firebase hook are removed.
-- **Purchases** (`src/core/iap.js`): the same two products, registered with
+- **Purchases** (`src/core/iap.js`): the same products (Founder and the six region packs), registered with
   Google Play on Android and with the App Store on iOS. Messages name the
   right store ("Checking with Google Play…", "this Google Account"). Play
   restores purchases by itself at every launch; the Restore button asks it
@@ -70,6 +70,12 @@ re-check before submitting.
 - **Store graphics:** `npm run shots:play` makes phone, 7-inch and 10-inch
   tablet screenshots and the 1024×500 feature graphic.
 - `privacy.html` gains a Purchases section naming Apple and Google Play.
+- 1.2.2's share button and rating prompt use a Swift plugin, so Android
+  has neither: the share button is hidden there (it shares an App Store
+  link anyway) and the rating call does nothing. Adding them means Google's
+  Play In-App Review library and an Android share, a later decision.
+- The back button also closes 1.2's What's new card and the drag-to-build
+  card at the start of a puzzle.
 
 **Checked on an emulator** (Pixel 6 size, Android 16, API 36, no Play
 Store): the debug build installs and boots to How to play; back closes it;
@@ -143,7 +149,7 @@ Steps 1 and 6 are the long ones: start step 1 today.
    D-U-N-S number.
    [support.google.com/googleplay/android-developer/answer/14316361](https://support.google.com/googleplay/android-developer/answer/14316361)
 2. **Set up a payments profile** in Play Console (Settings › Payments
-   profile), so the two products can be created and paid out. Add bank and
+   profile), so the products can be created and paid out. Add bank and
    tax details.
 3. **Create the app** in Play Console: name `CityRunner: Landmark Run`,
    default language English (UK), Game, Free (the download is free; the
@@ -172,7 +178,7 @@ Steps 1 and 6 are the long ones: start step 1 today.
       for drop-outs.
    3. Add the testers' Gmail addresses under Settings › License testing too,
       so they can test the purchase without being charged.
-   4. Once the build is live on the track, create the two products
+   4. Once the build is live on the track, create the products
       (`GOOGLE-PLAY-LISTING.md` §3): Play only allows it after an upload
       that contains the billing permission.
    5. Keep the 12 opted in for 14 days in a row. Each new build: bump
@@ -195,8 +201,8 @@ Steps 1 and 6 are the long ones: start step 1 today.
 
 Ask them to report anything wrong with:
 
-- Buying the unlock (license testers are not charged): Rome and San
-  Francisco open, the padlocks go.
+- Buying a region pack (license testers are not charged): that region's
+  cities open and their padlocks go.
 - Uninstall, reinstall: the unlock comes back by itself, or with Settings ›
   Restore.
 - Cancelling the purchase sheet: no error, nothing changes.

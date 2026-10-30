@@ -18,9 +18,12 @@ export function isNative() {
     && globalThis.Capacitor.isNativePlatform());
 }
 
-/** 'ios', 'android' or 'web'. */
+/**
+ * 'ios', 'android' or 'web'. A native runtime that cannot say is taken as
+ * iOS, the only native platform before Android, so nothing there changes.
+ */
 export function nativePlatform() {
-  return isNative() ? globalThis.Capacitor.getPlatform() : 'web';
+  return isNative() ? (globalThis.Capacitor.getPlatform?.() || 'ios') : 'web';
 }
 
 /**

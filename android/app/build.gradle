@@ -11,7 +11,7 @@ android {
         // uploads to the closed test track. versionName is what players see;
         // keep it the same as the iOS MARKETING_VERSION.
         versionCode 1
-        versionName "1.1.1"
+        versionName "1.2.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
