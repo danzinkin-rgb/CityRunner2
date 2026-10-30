@@ -48,9 +48,13 @@ async function layoutFor(seed, city = 'nyc', level = 2) {
     if (!track) return null;
     // Chunks are generated up front, so read them without letting the track
     // scroll — position within the chunk is what determinism must preserve.
-    return track.obstacles
-      .map((o) => `${o.chunk.position.z}|${o.localZ.toFixed(3)}|${o.lane}|${o.kind}|${o.y1}|${o.halfLen}`)
-      .join('\n');
+    // Obstacles, then the monument pieces: a piece's lane and position are
+    // part of the course too (they score), and were left out until a
+    // placement change in October 2026 would have slipped past.
+    return [
+      ...track.obstacles.map((o) => `${o.chunk.position.z}|${o.localZ.toFixed(3)}|${o.lane}|${o.kind}|${o.y1}|${o.halfLen}${o.hazard ? `|haz:${o.hazard}` : ''}`),
+      ...track.pieces.map((p) => `piece|${p.idx}|${p.chunk.position.z}|${p.mesh.position.x}|${p.mesh.position.z.toFixed(3)}`),
+    ].join('\n');
   });
 }
 
@@ -96,7 +100,7 @@ check('daily picks a valid city and street',
 // 5. the daily is versioned. Each version's city pool is recorded here; a
 // changed pool under an old version number would put players on different
 // app versions on different courses, posting to one leaderboard.
-const KNOWN_DAILY = { 2: 'nyc,paris,london,rome,sf' };
+const KNOWN_DAILY = { 2: 'nyc,paris,london,rome,sf', 3: 'nyc,paris,london,rome,sf,jerusalem,mexico,marrakech,delhi,bangkok,capetown,hanoi,seoul,samarkand,zanzibar,beijing,havana,istanbul,chicago,buenosaires,venice,neworleans' };
 const dv = await page.evaluate(async () => {
   const { DAILY } = await import('/src/core/rng.js');
   const { LEADERBOARDS } = await import('/src/core/gamecenter.js');
@@ -119,12 +123,16 @@ check('every daily city exists, and only pool cities are dealt',
 // seed, so a change to what a seed builds must come with a new COURSE_VERSION
 // (src/run/track.js), which retires the old ghosts. Three streets that cover
 // the city-specific branches (Rome's weaving Vespas, SF's cable cars).
-const KNOWN_COURSE = { 1: '6d6e0b32' };
+const KNOWN_COURSE = { 2: '5ba20cef' };   // v2 also fingerprints the monument pieces
 const fnv = (str) => { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, '0'); };
 const courseSrc = readFileSync(join(HERE, '..', 'src', 'run', 'track.js'), 'utf8');
 const courseVersion = +(courseSrc.match(/export const COURSE_VERSION = (\d+);/) || [])[1];
 const prints = [];
-for (const [c, lv] of [['nyc', 1], ['rome', 3], ['sf', 2]]) prints.push(await layoutFor(4242, c, lv));
+// Paris street 3 because its opening chunks hold a moving hazard on this
+// seed (src/run/hazards.js), so the fingerprint covers hazards too.
+for (const [c, lv] of [['nyc', 1], ['rome', 3], ['sf', 2], ['paris', 3]]) prints.push(await layoutFor(4242, c, lv));
+check('the fingerprinted courses include a moving hazard', prints.join('\n').includes('|haz:'),
+  'pick a seed/street whose opening chunks hold one');
 const courseHash = fnv(prints.join('#'));
 check('the courses match the fingerprint recorded for COURSE_VERSION',
   KNOWN_COURSE[courseVersion] === courseHash,

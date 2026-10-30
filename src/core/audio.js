@@ -152,6 +152,15 @@ export const sfx = {
   win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.22, 'triangle', 0.28, i * 0.11)); },
   tick() { tone(880, 0.05, 'square', 0.1); },
   powerup() { [440, 554, 659, 880].forEach((f, i) => tone(f, 0.1, 'square', 0.15, i * 0.05)); },
+  // moving hazards' warnings (src/run/hazards.js)
+  whistle() { [0, 0.11, 0.22].forEach((t) => tone(2600, 0.08, 'square', 0.12, t, 180)); },
+  flap() { [0, 0.07, 0.14, 0.21].forEach((t) => tone(140, 0.05, 'triangle', 0.18, t, 60)); },
+  // falling into Venice's water: a plunge, then the spray
+  splash() {
+    tone(420, 0.28, 'sine', 0.35, 0, -320);
+    [0.04, 0.09, 0.15, 0.22].forEach((t, i) => tone(1400 + i * 260, 0.07, 'triangle', 0.1, t, -600));
+  },
+  rumble() { tone(90, 0.5, 'sawtooth', 0.12, 0, -30); tone(130, 0.5, 'sawtooth', 0.08, 0.05, -40); },
 };
 
 // Minimal driving music loop: bass pulse + arpeggio, per-city scale flavor.
@@ -160,6 +169,21 @@ const SCALES = {
   sf: [0, 2, 4, 7, 11],   // major with a raised seventh: bright, a little wistful
   jerusalem: [0, 1, 4, 5, 7],   // a semitone then a third up: the scale heard across the region
   mexico: [0, 4, 7, 9, 12],     // bright major, mariachi-like
+  buenosaires: [0, 2, 3, 7, 8],  // a minor mode with a lowered sixth, as in tango
+  neworleans: [0, 3, 4, 7, 9],   // a blue note on a major pentatonic: brass-band jazz
+  venice: [0, 2, 4, 5, 7, 9],    // a plain major: a barcarolle, the gondoliers' song
+  chicago: [0, 3, 5, 6, 7],      // the blues: a minor third and the flattened fifth
+  istanbul: [0, 1, 4, 5, 7],     // a hijaz colour: a lowered second, a raised third
+  havana: [0, 2, 4, 7, 9],       // major pentatonic, the bright side of son
+  beijing: [0, 2, 4, 7, 9],      // the five-note gong scale of Chinese music
+  zanzibar: [0, 2, 3, 7, 9],     // the minor-leaning modes heard in taarab music
+  samarkand: [0, 1, 4, 5, 7],    // a lowered second, as in the maqom music of Central Asia
+  seoul: [0, 2, 5, 7, 10],       // the five-note scale of Korean folk song
+  hanoi: [0, 2, 5, 7, 9],        // the five-note scale of Vietnamese folk song
+  capetown: [0, 2, 4, 5, 7],     // bright major, the first five steps
+  bangkok: [0, 2, 4, 7, 9],      // five even-ish steps, close to the Thai seven-tone scale's pentatonic core
+  delhi: [0, 1, 4, 5, 8],        // a lowered second and sixth with a major third, like raga Bhairav
+  marrakech: [0, 1, 4, 7, 8],    // a lowered second and sixth, as in much North African music
 };
 
 export function startMusic(cityId) {

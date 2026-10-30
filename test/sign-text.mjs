@@ -37,19 +37,37 @@ async function street(city, level) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto(`${BASE}/?view=run&city=${city}&level=${level}&seed=7&god=1`, { waitUntil: 'load' });
-  await page.waitForFunction(() => window.__cr?.track, null, { timeout: 20000 });
-  await page.waitForTimeout(6000);   // several chunks in, past a few obstacle rows
-  const painted = await page.evaluate(() => window.__painted);
+  await page.waitForFunction(() => window.__cr?.track, null, { timeout: 60000 })   // a busy machine builds a street slowly
+    .catch(async (e) => { await ctx.close(); throw e; });                         // free its memory before any retry
+  // 600 m in, past many obstacle rows: driven in code rather than waited
+  // for, so a slow machine (software WebGL on a CI runner) sees the same
+  // stretch of street as a fast one. A street whose only text is on its
+  // overhead signs can paint nothing in its opening chunks.
+  const painted = await page.evaluate(() => {
+    const t = window.__cr.track;
+    const away = { hitbox: () => ({ x: 999, y0: 50, y1: 51, r: 0.4 }) };
+    for (let i = 0; i < 2000 && t.distance < Math.min(600, t.goal - 10); i++) t.update(0.05, 30, away, () => {}, () => {});
+    return window.__painted;
+  });
   await ctx.close();
   return { painted, errors };
 }
 
-const cities = ['nyc', 'paris', 'london', 'rome', 'sf', 'jerusalem', 'mexico'];
+const cities = ['nyc', 'paris', 'london', 'rome', 'sf', 'jerusalem', 'mexico', 'marrakech', 'delhi', 'bangkok', 'capetown', 'hanoi', 'seoul', 'samarkand', 'zanzibar', 'beijing', 'havana', 'istanbul', 'chicago', 'buenosaires', 'venice', 'neworleans'];
 const jobs = [];
 for (const c of cities) for (const lv of [1, 2, 3]) jobs.push([c, lv]);
-// a few at a time: every page runs WebGL
-for (let i = 0; i < jobs.length; i += 5) {
-  const batch = await Promise.all(jobs.slice(i, i + 5).map(([c, lv]) => street(c, lv).then((r) => ({ c, lv, ...r }))));
+// two at a time: every page runs WebGL, at up to 2.5 GB each
+for (let i = 0; i < jobs.length; i += 2) {
+  // One retry, in a fresh page, for a street that never finished building.
+  // Under the full suite's load a WebKit page now and then stalls before the
+  // street exists (seen on Rome's streets 2 and 3, which pass on their own);
+  // a second stall is a real failure and still fails the gate.
+  const attempt = (c, lv) => street(c, lv).catch((e) => {
+    if (e.name !== 'TimeoutError') throw e;
+    console.log(`.. ${c} street ${lv}: did not build in 60 s, trying once more`);
+    return street(c, lv);
+  });
+  const batch = await Promise.all(jobs.slice(i, i + 2).map(([c, lv]) => attempt(c, lv).then((r) => ({ c, lv, ...r }))));
   for (const { c, lv, painted, errors } of batch) {
     const bad = [...new Set(painted.filter((t) => BAD.test(t)))];
     check(painted.length > 0 && bad.length === 0, `${c} street ${lv}: painted text is all real words`,

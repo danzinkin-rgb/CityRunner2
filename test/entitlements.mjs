@@ -76,17 +76,18 @@ console.log(`cities [${CITIES.join(', ')}]`);
 console.log(`free   [${FREE.join(', ')}]   paid [${PAID.join(', ')}]\n`);
 
 // ---------------------------------------------------------------- static
-// The promise is three free cities. If someone edits FREE_CITIES to two or
-// four, that is a change to what existing players were already given, and it
-// should require deliberately editing this number too.
-check(FREE.length === 3, 'exactly three cities are free forever', `got ${FREE.length}`);
+// The promise is four free cities (three until Jerusalem joined them, Dan,
+// 17 October 2026). If someone edits FREE_CITIES, that is a change to what
+// existing players were already given, and it should require deliberately
+// editing this number too.
+check(FREE.length === 4, 'exactly four cities are free forever', `got ${FREE.length}`);
 // ...and these three specifically. FREE above is derived FROM the source, so
 // every other check in this file agrees with whatever the source says — edit
 // the constant and they all happily re-derive. The promise itself has to be
 // pinned to a literal written HERE, so that changing which cities were given
 // away forever takes two deliberate edits instead of one careless one.
-check(FREE.join(',') === 'nyc,paris,london',
-  'the free-forever set is exactly the three cities players were promised',
+check(FREE.join(',') === 'nyc,paris,london,jerusalem',
+  'the free-forever set is exactly the four cities players were promised',
   FREE.join(','));
 check(FREE.every((c) => CITIES.includes(c)), 'every free city id exists in themes.js',
   FREE.filter((c) => !CITIES.includes(c)).join(',') || '');
@@ -165,10 +166,13 @@ const browser = await webkit.launch();
     return out;
   });
 
-  // Map display names back to ids by position — themes.js order drives both.
-  const names = Object.keys(state);
+  // Map display names back to ids by NAME: the menu groups cities by region
+  // pack, so its order is no longer themes.js order (October 2026).
   const byId = {};
-  CITIES.forEach((id, i) => { if (names[i]) byId[id] = state[names[i]]; });
+  for (const id of CITIES) {
+    const name = themesSrc.match(new RegExp(`id: '${id}', name: '([^']+)'`))?.[1];
+    if (name && state[name]) byId[id] = state[name];
+  }
 
   for (const id of FREE) {
     check(byId[id] && !byId[id].paid, `native: ${id} is not behind the paywall`);
@@ -396,6 +400,101 @@ const browser = await webkit.launch();
   check(opened.clickable === 'pointer', `native/bought: ${paidId} is now tappable`, opened.clickable);
   check(opened.stars, `native/bought: ${paidId} shows its stars row again`);
 
+  await ctx.close();
+}
+
+// ------------------------------------------------- native, owning a REGION PACK
+// Region packs (October 2026): a pack opens every city in its region and
+// nothing else. Seeded with the Europe pack only: Rome and Istanbul (Europe)
+// must open, San Francisco and Jerusalem must not, and owning a pack is not
+// owning everything.
+{
+  const packMatch = entSrc.match(/europe:\s*'([^']+)'/);
+  const ctx = await browser.newContext();
+  await ctx.addInitScript((pack) => {
+    window.Capacitor = { isNativePlatform: () => true };
+    localStorage.setItem('cityrunner2.ent', JSON.stringify([pack]));
+  }, packMatch && packMatch[1]);
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await page.goto(MENU, { waitUntil: 'load' });
+  await page.waitForTimeout(900);
+  const r = await page.evaluate(async () => {
+    const m = await import('/src/core/entitlements.js');
+    const ids = ['rome', 'istanbul', 'sf', 'marrakech', 'paris'];
+    return {
+      entitled: Object.fromEntries(ids.map((id) => [id, m.isCityEntitled(id)])),
+      full: m.hasFullAccess(),
+      everyCityHasAPack: (await import('/src/cities/themes.js')).ALL_CITIES
+        .filter((c) => m.isPaidCity(c.id)).every((c) => !!m.packForCity(c.id)),
+    };
+  });
+  check(!!packMatch, 'entitlements.js names a Europe pack');
+  check(r.entitled.rome && r.entitled.istanbul, 'native/pack: the Europe pack opens Rome and Istanbul', JSON.stringify(r.entitled));
+  check(!r.entitled.sf && !r.entitled.marrakech, 'native/pack: it does not open San Francisco or Marrakech', JSON.stringify(r.entitled));
+  check(r.entitled.paris, 'native/pack: free cities stay free');
+  check(!r.full, 'native/pack: owning a pack is not owning everything');
+  check(r.everyCityHasAPack, 'every paid city belongs to a region with a pack');
+  check(!errors.length, 'native/pack: no page errors', errors[0] || '');
+  await ctx.close();
+}
+
+// ---------------------------------------------------- native, REGION CHAINS
+// With every city released (October 2026), paid cities open in a chain within
+// their region: the region's first paid city opens after a street in London
+// (the last free city), each later one after a street in the one before it IN
+// THAT REGION. Founder owned and no stars: Rome and Delhi wait on London;
+// with a star in London they play, Istanbul waits on Rome and Chicago on San
+// Francisco; a star in Rome opens Istanbul. Until 15 October 2026 a region's
+// first city needed nothing, so six bright "buy" cards met a new player.
+{
+  const ctx = await browser.newContext();
+  await ctx.addInitScript((founder) => {
+    window.Capacitor = { isNativePlatform: () => true };
+    localStorage.setItem('cityrunner2.ent', JSON.stringify([founder]));
+    if (localStorage.getItem('cityrunner2') == null) {
+      localStorage.setItem('cityrunner2', JSON.stringify({ stars: {}, coins: 0, best: 0 }));
+    }
+  }, FOUNDER);
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  const cards = () => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('#city-select .city-card')].map((el) => [
+    el.querySelector('.name').textContent.trim(),
+    { gated: el.classList.contains('gated'), locked: el.classList.contains('locked'), note: el.querySelector('.gate')?.textContent.trim() || '' },
+  ])));
+  await page.goto(MENU, { waitUntil: 'load' });
+  await page.waitForTimeout(900);
+  const z = await cards();
+  check(z.ROME?.gated && /LONDON/i.test(z.ROME.note), 'chains: Rome, first paid city in Europe, waits on a street in London', JSON.stringify(z.ROME));
+  check(z.DELHI?.gated && /LONDON/i.test(z.DELHI.note), 'chains: Delhi, first in South and Central Asia, waits on London too', JSON.stringify(z.DELHI));
+  check(z.MARRAKECH?.gated && /LONDON/i.test(z.MARRAKECH.note), 'chains: Marrakech, first paid city in its region now Jerusalem is free, waits on London', JSON.stringify(z.MARRAKECH));
+  check(z.JERUSALEM?.locked, 'chains: Jerusalem (free) waits on a street in London', JSON.stringify(z.JERUSALEM));
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('cityrunner2'));
+    s.stars.london = 1;
+    localStorage.setItem('cityrunner2', JSON.stringify(s));
+  });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(900);
+  const a = await cards();
+  check(a.ROME && !a.ROME.gated && !a.ROME.locked, 'chains: a street in London opens Rome', JSON.stringify(a.ROME));
+  check(a.DELHI && !a.DELHI.gated && !a.DELHI.locked, 'chains: and Delhi, first in South and Central Asia', JSON.stringify(a.DELHI));
+  check(a.JERUSALEM && !a.JERUSALEM.locked, 'chains: and Jerusalem, the fourth free city', JSON.stringify(a.JERUSALEM));
+  check(a.MARRAKECH && !a.MARRAKECH.gated && !a.MARRAKECH.locked, 'chains: and Marrakech; Jerusalem is no step in front of the paid cities', JSON.stringify(a.MARRAKECH));
+  check(a.ISTANBUL?.gated && /ROME/i.test(a.ISTANBUL.note), 'chains: Istanbul waits on a street in Rome, not the city before it in the list', JSON.stringify(a.ISTANBUL));
+  check(a.CHICAGO?.gated && /SAN FRANCISCO/i.test(a.CHICAGO.note), 'chains: Chicago waits on San Francisco', JSON.stringify(a.CHICAGO));
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('cityrunner2'));
+    s.stars.rome = 1;
+    localStorage.setItem('cityrunner2', JSON.stringify(s));
+  });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(900);
+  const b = await cards();
+  check(b.ISTANBUL && !b.ISTANBUL.gated && !b.ISTANBUL.locked, 'chains: a street in Rome opens Istanbul', JSON.stringify(b.ISTANBUL));
+  check(!errors.length, 'chains: no page errors', errors[0] || '');
   await ctx.close();
 }
 

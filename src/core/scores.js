@@ -35,12 +35,12 @@ const LIFETIME_STORE = STORAGE.LIFETIME_SCORE;
 // ---------------------------------------------------------------------------
 
 // Score accrues as 2 x speed per second, plus 25 per souvenir, plus a puzzle
-// bonus of at most 50 x 60 = 3000 per level. Speed starts at ~20 and ramps by
-// 0.25/s. These bounds are deliberately generous — the goal is to reject the
+// bonus of at most 50 x 60 = 3000 per level. The fastest mode (Gamer, in
+// main.js) starts at 26 and ramps by 0.35/s; Newbie is slower and scores 70%. These bounds are deliberately generous — the goal is to reject the
 // absurd (nine billion), not to police skilled play.
 export function maxPlausibleScore(seconds) {
   const t = Math.max(0, seconds);
-  const fromDistance = 2 * (22 * t + 0.125 * t * t);
+  const fromDistance = 2 * (28 * t + 0.2 * t * t);
   const fromSouvenirs = 200 * t;      // ~8 souvenirs/sec, well above real rates
   const fromPuzzle = 3000;
   return Math.ceil(fromDistance + fromSouvenirs + fromPuzzle + 500);

@@ -5,6 +5,11 @@ name: Promo clip
 
 on:
   workflow_dispatch:
+    inputs:
+      set:
+        description: Which promo (launch, update, tour, monuments)
+        type: string
+        default: update
 
 permissions:
   contents: write   # to publish the video to the daily-clips release
@@ -12,7 +17,8 @@ permissions:
 jobs:
   promo:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # The tour (17 cities, each with a run-up) took over 40 minutes on a runner.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -22,11 +28,11 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps webkit
       - run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
-      - run: node marketing/promo-clip.mjs
+      - run: node marketing/promo-clip.mjs "${{ inputs.set }}"
       - name: Publish to the daily-clips release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          name="promo-$(date -u +%F).mp4"
-          cp marketing/out/promo.mp4 "marketing/out/$name"
+          name="promo-${{ inputs.set }}-$(date -u +%F).mp4"
+          cp "marketing/out/promo-${{ inputs.set }}.mp4" "marketing/out/$name"
           gh release upload daily-clips "marketing/out/$name" --clobber

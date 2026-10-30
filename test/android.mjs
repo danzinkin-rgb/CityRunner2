@@ -130,8 +130,8 @@ for (const [platform, want, account] of [
   }));
   const reg = got.calls.find((c) => c[0] === 'register');
   const init = got.calls.find((c) => c[0] === 'initialize');
-  check(reg && reg[1].length === 2 && reg[1].every((p) => p === want),
-    `${platform}: both products are registered with ${want}`, JSON.stringify(reg?.[1]));
+  check(reg && reg[1].length >= 2 && reg[1].every((p) => p === want),
+    `${platform}: every product is registered with ${want}`, `${reg?.[1].length} products`);
   check(init && init[1].join() === want, `${platform}: the store initialises ${want} only`,
     JSON.stringify(init?.[1]));
   check(got.calls.some((c) => c[0] === 'restore'), `${platform}: Restore asks the store`);
@@ -165,7 +165,10 @@ for (const [platform, want, account] of [
   await page.waitForTimeout(21500);   // STORE_WAIT_MS for initialize, again for restore
   const restore = await page.textContent('#set-restore-status');
   check(/No previous purchase/.test(restore), 'stuck store: Restore gives up and says so', JSON.stringify(restore));
-  await page.click('#set-purchase');
+  // From a padlocked city, so there is a pack to look for.
+  await page.click('#btn-settings-close');
+  await page.waitForTimeout(300);
+  await page.click('#city-select .city-card:has(.padlock)');
   await page.waitForTimeout(500);
   const pay = await page.textContent('#paywall-status');
   check(/not reachable/.test(pay), 'stuck store: the paywall says the store is not reachable', JSON.stringify(pay));

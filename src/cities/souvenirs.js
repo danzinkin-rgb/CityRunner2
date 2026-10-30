@@ -136,6 +136,328 @@ export function makeCollectible(theme) {
       wh.position.set(wx, -0.24, 0);
       g.add(wh);
     }
+  } else if (theme.id === 'buenosaires') {
+    // A mate gourd: a round cup bound in a silver band, green leaves
+    // heaped inside, and the metal straw, the bombilla.
+    const gourd = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 14, 0, Math.PI * 2, 0.5, Math.PI - 0.5),
+      new THREE.MeshStandardMaterial({ color: 0x7a4a2a, roughness: 0.6, emissive: 0x2a1408, emissiveIntensity: 0.35, side: THREE.DoubleSide }));
+    gourd.scale.set(1, 1.15, 1); g.add(gourd);
+    const silver = new THREE.MeshStandardMaterial({ color: 0xd8dce4, roughness: 0.25, metalness: 0.85 });
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.03, 8, 28), silver);
+    band.rotation.x = Math.PI / 2; band.position.y = 0.2; g.add(band);
+    const leaves = new THREE.Mesh(new THREE.CircleGeometry(0.19, 18),
+      new THREE.MeshStandardMaterial({ color: 0x6a9a3a, roughness: 0.9, emissive: 0x1a3a0a, emissiveIntensity: 0.3 }));
+    leaves.rotation.x = -Math.PI / 2; leaves.position.y = 0.18; g.add(leaves);
+    const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.5, 6), silver);
+    straw.position.set(0.06, 0.32, 0); straw.rotation.z = -0.3; g.add(straw);
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.06, 16), silver);
+    foot.position.y = -0.26; g.add(foot);
+  } else if (theme.id === 'venice') {
+    // A carnival mask: a gold half-mask with two eye holes, a red band
+    // across the brow and a white feather on one side.
+    const out = new THREE.Shape();
+    out.moveTo(-0.34, 0.02);
+    out.quadraticCurveTo(-0.34, 0.2, -0.14, 0.19);
+    out.quadraticCurveTo(-0.04, 0.18, 0, 0.13);
+    out.quadraticCurveTo(0.04, 0.18, 0.14, 0.19);
+    out.quadraticCurveTo(0.34, 0.2, 0.34, 0.02);
+    out.quadraticCurveTo(0.3, -0.15, 0.12, -0.14);
+    out.quadraticCurveTo(0.04, -0.12, 0, -0.04);
+    out.quadraticCurveTo(-0.04, -0.12, -0.12, -0.14);
+    out.quadraticCurveTo(-0.3, -0.15, -0.34, 0.02);
+    for (const sx of [-1, 1]) {
+      const eye = new THREE.Path();
+      eye.absellipse(sx * 0.15, 0.03, 0.075, 0.045, 0, Math.PI * 2, sx > 0, 0);
+      out.holes.push(eye);
+    }
+    const gold = new THREE.MeshStandardMaterial({ color: 0xe8c050, roughness: 0.3, metalness: 0.7, emissive: 0x4a3008, emissiveIntensity: 0.35 });
+    const face = new THREE.Mesh(new THREE.ExtrudeGeometry(out, { depth: 0.02, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.008, bevelSegments: 2 }), gold);
+    face.position.z = -0.01; g.add(face);
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.035, 0.03),
+      new THREE.MeshStandardMaterial({ color: 0xb8202a, roughness: 0.5, emissive: 0x3a0808, emissiveIntensity: 0.3 }));
+    band.position.set(0, 0.13, 0.025); band.scale.set(1, 0.8, 1); g.add(band);
+    const plume = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8),
+      new THREE.MeshStandardMaterial({ color: 0xf4f0e8, roughness: 0.9, emissive: 0x404040, emissiveIntensity: 0.3 }));
+    plume.scale.set(0.05, 0.24, 0.015); plume.position.set(0.32, 0.32, 0); plume.rotation.z = -0.5; g.add(plume);
+  } else if (theme.id === 'neworleans') {
+    // A string of Mardi Gras beads in purple, green and gold, hanging in a
+    // loop, with a gold medallion at the bottom.
+    const cols = [0x7a2aaa, 0x2aa84a, 0xf0c030];
+    for (let i = 0; i < 22; i++) {
+      const a = (i / 22) * Math.PI * 2;
+      const bead = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8),
+        new THREE.MeshStandardMaterial({ color: cols[i % 3], roughness: 0.2, metalness: 0.6, emissive: cols[i % 3], emissiveIntensity: 0.25 }));
+      bead.position.set(Math.sin(a) * 0.22, Math.cos(a) * 0.3, 0);
+      g.add(bead);
+    }
+    const medal = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.03, 18),
+      new THREE.MeshStandardMaterial({ color: 0xf0c030, roughness: 0.25, metalness: 0.8, emissive: 0x4a3008, emissiveIntensity: 0.4 }));
+    medal.rotation.x = Math.PI / 2; medal.position.y = -0.4; g.add(medal);
+  } else if (theme.id === 'chicago') {
+    // A slice of deep-dish pizza: a tall golden crust round a thick layer
+    // of cheese and red tomato on top, flecked with herbs.
+    const wedge = (r, h, col, em) => {
+      const geo = new THREE.CylinderGeometry(r, r, h, 16, 1, false, -Math.PI / 6, Math.PI / 3);
+      return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.6, emissive: em, emissiveIntensity: 0.35 }));
+    };
+    const crust = wedge(0.5, 0.26, 0xd89a48, 0x5a3a10);
+    crust.position.y = -0.05; g.add(crust);
+    const sauce = wedge(0.44, 0.06, 0xc8301a, 0x5a0a04);
+    sauce.position.y = 0.09; g.add(sauce);
+    const herb = new THREE.MeshStandardMaterial({ color: 0x3a7a2a });
+    for (const [a, rr] of [[0.2, 0.2], [-0.25, 0.3], [0.05, 0.38], [0.3, 0.32]]) {
+      const h = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 4), herb);
+      h.position.set(Math.sin(a) * rr, 0.13, Math.cos(a) * rr); g.add(h);
+    }
+    g.rotation.set(0.6, Math.PI, 0); g.position.z = -0.2;
+  } else if (theme.id === 'istanbul') {
+    // A tulip-shaped glass of tea on its little red saucer.
+    const glass = new THREE.Mesh(new THREE.LatheGeometry([
+      [0.11, -0.2], [0.09, -0.12], [0.08, -0.02], [0.1, 0.1], [0.14, 0.2], [0.15, 0.22],
+    ].map(([x, y]) => new THREE.Vector2(x, y)), 20),
+      new THREE.MeshStandardMaterial({ color: 0xf0f6fa, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.45, side: THREE.DoubleSide }));
+    g.add(glass);
+    const tea = new THREE.Mesh(new THREE.LatheGeometry([
+      [0.001, -0.19], [0.1, -0.19], [0.085, -0.1], [0.075, -0.02], [0.095, 0.1], [0.128, 0.17], [0.001, 0.17],
+    ].map(([x, y]) => new THREE.Vector2(x, y)), 20),
+      new THREE.MeshStandardMaterial({ color: 0xa8301a, roughness: 0.2, emissive: 0x5a1a08, emissiveIntensity: 0.4 }));
+    g.add(tea);
+    const saucer = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.04, 24),
+      new THREE.MeshStandardMaterial({ color: 0xc8202a, roughness: 0.3, emissive: 0x5a0a0a, emissiveIntensity: 0.3 }));
+    saucer.position.y = -0.23; g.add(saucer);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.012, 6, 28), new THREE.MeshStandardMaterial({ color: 0xe8c060, metalness: 0.7, roughness: 0.3 }));
+    rim.rotation.x = Math.PI / 2; rim.position.y = -0.21; g.add(rim);
+  } else if (theme.id === 'havana') {
+    // A pair of maracas, crossed: round gourd heads painted in bright
+    // stripes, on wooden handles.
+    const handle = new THREE.MeshStandardMaterial({ color: 0x8a5a32, roughness: 0.6 });
+    const cols = [[0xe8302a, 0xf2c418], [0x2a8ac8, 0x3ab05a]];
+    for (const [i, s] of [[0, -1], [1, 1]]) {
+      const m = new THREE.Group();
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 12),
+        new THREE.MeshStandardMaterial({ color: cols[i][0], roughness: 0.4, emissive: cols[i][0], emissiveIntensity: 0.25 }));
+      head.scale.set(1, 1.15, 1); head.position.y = 0.2; m.add(head);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.03, 6, 20),
+        new THREE.MeshStandardMaterial({ color: cols[i][1], roughness: 0.4, emissive: cols[i][1], emissiveIntensity: 0.25 }));
+      band.rotation.x = Math.PI / 2; band.position.y = 0.2; m.add(band);
+      const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.34, 8), handle);
+      stick.position.y = -0.1; m.add(stick);
+      m.rotation.z = s * 0.4; m.position.x = s * 0.1;
+      g.add(m);
+    }
+  } else if (theme.id === 'beijing') {
+    // A little panda sitting up, white with black ears, eye patches, arms
+    // and legs, holding a sprig of bamboo.
+    const white = new THREE.MeshStandardMaterial({ color: 0xf4f2ec, roughness: 0.7, emissive: 0x3a3a3a, emissiveIntensity: 0.25 });
+    const black = new THREE.MeshStandardMaterial({ color: 0x1e1e22, roughness: 0.7 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 12), white);
+    body.scale.set(1, 1.1, 0.9); body.position.y = -0.12; g.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 12), white);
+    head.position.y = 0.24; g.add(head);
+    for (const s of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), black);
+      ear.position.set(s * 0.14, 0.4, 0); g.add(ear);
+      const patch = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), black);
+      patch.scale.set(1, 1.3, 0.5); patch.position.set(s * 0.075, 0.26, 0.16); patch.rotation.z = s * 0.4; g.add(patch);
+      const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.14, 4, 8), black);
+      arm.position.set(s * 0.2, -0.04, 0.1); arm.rotation.z = s * 0.6; g.add(arm);
+      const leg = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), black);
+      leg.scale.set(1, 0.8, 1.2); leg.position.set(s * 0.15, -0.34, 0.1); g.add(leg);
+    }
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), black);
+    nose.position.set(0, 0.2, 0.19); g.add(nose);
+    const bamboo = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 6), new THREE.MeshStandardMaterial({ color: 0x6aa040 }));
+    bamboo.position.set(0.05, 0.02, 0.2); bamboo.rotation.z = -0.5; g.add(bamboo);
+  } else if (theme.id === 'zanzibar') {
+    // A little carved Zanzibar door: dark teak, round-topped, two leaves,
+    // studded with brass, under a carved frame.
+    const teak = new THREE.MeshStandardMaterial({ color: 0x6a4228, roughness: 0.6, emissive: 0x2a1408, emissiveIntensity: 0.4 });
+    const brass = new THREE.MeshStandardMaterial({ color: 0xe8c060, roughness: 0.25, metalness: 0.8, emissive: 0x5a4010, emissiveIntensity: 0.4 });
+    const door = new THREE.Shape();
+    door.moveTo(-0.24, -0.4); door.lineTo(0.24, -0.4); door.lineTo(0.24, 0.16);
+    door.absarc(0, 0.16, 0.24, 0, Math.PI, false); door.lineTo(-0.24, -0.4);
+    const leaf = new THREE.Mesh(new THREE.ExtrudeGeometry(door, { depth: 0.06, bevelEnabled: false }), teak);
+    leaf.position.z = -0.03; g.add(leaf);
+    const frame = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.04, 6, 20, Math.PI), teak);
+    frame.position.set(0, 0.16, 0.02); g.add(frame);
+    for (const x of [-0.28, 0.28]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.58, 0.08), teak);
+      post.position.set(x, -0.13, 0.02); g.add(post);
+    }
+    const seam = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.7, 0.07), new THREE.MeshStandardMaterial({ color: 0x2a180a }));
+    seam.position.y = -0.04; g.add(seam);
+    const stud = new THREE.SphereGeometry(0.025, 6, 5);
+    for (let y = -0.3; y < 0.2; y += 0.12) for (const x of [-0.14, 0.14]) {
+      const s = new THREE.Mesh(stud, brass); s.position.set(x, y, 0.045); g.add(s);
+    }
+  } else if (theme.id === 'samarkand') {
+    // A painted ceramic plate in cobalt and turquoise, a white star in a
+    // ring of petals at its centre, a raised rim.
+    const glaze = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.25, metalness: 0.05, emissive: c, emissiveIntensity: 0.18 });
+    const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.3, 0.06, 32), glaze(0x2a4aa8));
+    plate.rotation.x = Math.PI / 2; g.add(plate);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.03, 8, 40), glaze(0x2aa8b8));
+    g.add(rim);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.3, 32), glaze(0x2aa8b8));
+    ring.position.z = 0.035; g.add(ring);
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const petal = new THREE.Mesh(new THREE.CircleGeometry(0.05, 8), glaze(0xf2ecd8));
+      petal.scale.set(1, 1.8, 1); petal.position.set(Math.cos(a) * 0.25, Math.sin(a) * 0.25, 0.04); petal.rotation.z = a - Math.PI / 2;
+      g.add(petal);
+    }
+    const star = new THREE.Shape();
+    for (let k = 0; k < 16; k++) { const a = (k / 16) * Math.PI * 2, rr = k % 2 ? 0.07 : 0.15; star[k ? 'lineTo' : 'moveTo'](Math.cos(a) * rr, Math.sin(a) * rr); }
+    const st = new THREE.Mesh(new THREE.ShapeGeometry(star), glaze(0xf4f0e0));
+    st.position.z = 0.04; g.add(st);
+  } else if (theme.id === 'seoul') {
+    // A folding fan, open, its paper painted with plum blossom on bamboo
+    // ribs, and a red tassel hanging from the pivot.
+    const paper = new THREE.MeshStandardMaterial({ color: 0xf4ead4, roughness: 0.7, emissive: 0x4a4030, emissiveIntensity: 0.3, side: THREE.DoubleSide });
+    const leaf = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.48, 24, 1, Math.PI * 0.15, Math.PI * 0.7), paper);
+    leaf.position.y = -0.14; g.add(leaf);
+    const rib = new THREE.MeshStandardMaterial({ color: 0x8a5a3a, roughness: 0.7 });
+    for (let i = 0; i <= 8; i++) {
+      const a = Math.PI * (0.15 + 0.7 * i / 8);
+      const s = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.5, 0.02), rib);
+      s.position.set(Math.cos(a) * 0.25, -0.14 + Math.sin(a) * 0.25, 0.01);
+      s.rotation.z = a - Math.PI / 2; g.add(s);
+    }
+    const bloom = new THREE.MeshStandardMaterial({ color: 0xe8507a, emissive: 0x7a1a3a, emissiveIntensity: 0.4 });
+    for (const [x, y] of [[-0.18, 0.2], [0.05, 0.27], [0.22, 0.14], [-0.04, 0.12]]) {
+      const b = new THREE.Mesh(new THREE.CircleGeometry(0.04, 5), bloom);
+      b.position.set(x, y - 0.06, 0.02); g.add(b);
+    }
+    const tassel = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.04, 0.18, 6),
+      new THREE.MeshStandardMaterial({ color: 0xc8202a, roughness: 0.6 }));
+    tassel.position.set(0, -0.26, 0); g.add(tassel);
+  } else if (theme.id === 'hanoi') {
+    // A conical leaf hat, the non la: a shallow cone of palm leaf with its
+    // rings of stitching, and a red ribbon to tie under the chin.
+    const straw = new THREE.MeshStandardMaterial({ color: 0xe8d4a0, roughness: 0.7, emissive: 0x5a4a20, emissiveIntensity: 0.35, side: THREE.DoubleSide });
+    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.46, 0.34, 24, 1, true), straw);
+    hat.position.y = 0.08; g.add(hat);
+    const ringMat = new THREE.MeshStandardMaterial({ color: 0xb89a60, roughness: 0.8 });
+    for (const t of [0.25, 0.5, 0.75]) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.46 * t, 0.008, 4, 28), ringMat);
+      ring.rotation.x = Math.PI / 2; ring.position.y = 0.25 - 0.34 * t; g.add(ring);
+    }
+    const ribbon = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.02, 6, 20, Math.PI),
+      new THREE.MeshStandardMaterial({ color: 0xd8202a, roughness: 0.5, emissive: 0x5a0a0a, emissiveIntensity: 0.4 }));
+    ribbon.rotation.z = Math.PI; ribbon.position.y = -0.09; g.add(ribbon);
+    g.rotation.x = 0.35;
+  } else if (theme.id === 'capetown') {
+    // A king protea, South Africa's national flower: a cup of pointed pink
+    // bracts around a domed, silvery centre, on a short stem with leaves.
+    const pink = new THREE.MeshStandardMaterial({ color: 0xe8708a, roughness: 0.5, emissive: 0x6a1a2a, emissiveIntensity: 0.35 });
+    const bract = new THREE.ConeGeometry(0.07, 0.34, 5);
+    bract.translate(0, 0.17, 0);
+    for (let ring = 0; ring < 2; ring++) {
+      const n = ring ? 11 : 9;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + ring * 0.3;
+        const b = new THREE.Mesh(bract, pink);
+        b.position.set(Math.cos(a) * (0.14 + ring * 0.05), -0.1 - ring * 0.05, Math.sin(a) * (0.14 + ring * 0.05));
+        b.rotation.set(0, -a, 0, 'YXZ');
+        b.rotateZ(-(0.35 + ring * 0.35));
+        g.add(b);
+      }
+    }
+    const centre = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: 0xf0d8dc, roughness: 0.8, emissive: 0x4a3a3e, emissiveIntensity: 0.3 }));
+    centre.scale.set(1, 1.3, 1); centre.position.y = 0.02; g.add(centre);
+    const green = new THREE.MeshStandardMaterial({ color: 0x4a7a3a, roughness: 0.6 });
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.3, 6), green);
+    stem.position.y = -0.36; g.add(stem);
+    for (const s of [-1, 1]) {
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), green);
+      leaf.scale.set(0.5, 1.6, 0.25); leaf.position.set(s * 0.09, -0.38, 0); leaf.rotation.z = s * 0.5;
+      g.add(leaf);
+    }
+  } else if (theme.id === 'bangkok') {
+    // A little carved elephant figurine in grey, trunk raised, with a red
+    // and gold saddle cloth on its back.
+    const hide = new THREE.MeshStandardMaterial({ color: 0x9a9aa4, roughness: 0.6, emissive: 0x2a2a34, emissiveIntensity: 0.3 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 12), hide);
+    body.scale.set(1.25, 0.95, 0.9); g.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 14, 10), hide);
+    head.position.set(0.32, 0.12, 0); g.add(head);
+    for (const z of [-0.15, 0.15]) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), hide);
+      ear.scale.set(0.25, 1, 0.9); ear.position.set(0.28, 0.14, z * 1.15); g.add(ear);
+    }
+    const trunk = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.045, 8, 14, Math.PI * 0.9), hide);
+    trunk.rotation.z = -Math.PI * 0.55; trunk.position.set(0.5, 0.02, 0); g.add(trunk);
+    for (const [x, z] of [[-0.18, -0.13], [-0.18, 0.13], [0.16, -0.13], [0.16, 0.13]]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.075, 0.26, 10), hide);
+      leg.position.set(x, -0.3, z); g.add(leg);
+    }
+    const cloth = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.03, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0xc8202a, roughness: 0.5, emissive: 0x5a0a0a, emissiveIntensity: 0.4 }));
+    cloth.position.y = 0.25; g.add(cloth);
+    const gold = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.035, 0.08),
+      new THREE.MeshStandardMaterial({ color: 0xe8b830, roughness: 0.3, metalness: 0.6 }));
+    for (const z of [-0.22, 0.22]) { const b = gold.clone(); b.position.set(0, 0.24, z); g.add(b); }
+    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.18, 5), hide);
+    tail.rotation.z = -0.5; tail.position.set(-0.36, 0.0, 0); g.add(tail);
+  } else if (theme.id === 'delhi') {
+    // A paper fighter kite, the kind flown from Delhi's rooftops: a diamond
+    // in two bright colours on a bamboo spine and bow, with a short tail.
+    const half = (col, s) => {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0.42, 0, 0, -0.42, 0, s * 0.36, 0.04, 0], 3));
+      geo.computeVertexNormals();
+      return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+        color: col, emissive: col, emissiveIntensity: 0.35, roughness: 0.6, side: THREE.DoubleSide,
+      }));
+    };
+    g.add(half(0xe8306a, -1), half(0xf2b418, 1));
+    const bamboo = new THREE.MeshStandardMaterial({ color: 0xc8a060, roughness: 0.7 });
+    const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.86, 5), bamboo);
+    spine.position.z = 0.01; g.add(spine);
+    const bow = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.012, 4, 16, Math.PI * 0.62), bamboo);
+    bow.rotation.z = Math.PI * 0.19; bow.position.set(0, -0.34, 0.01); g.add(bow);
+    const tailMat = new THREE.MeshStandardMaterial({ color: 0x2a9a4a, emissive: 0x2a9a4a, emissiveIntensity: 0.3, side: THREE.DoubleSide });
+    for (let i = 0; i < 3; i++) {
+      const t = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 0.1), tailMat);
+      t.position.set(Math.sin(i) * 0.04, -0.5 - i * 0.1, 0); t.rotation.z = (i % 2 ? 0.4 : -0.4);
+      g.add(t);
+    }
+  } else if (theme.id === 'marrakech') {
+    // A brass lantern: a six-sided body of coloured glass behind brass
+    // ribs, a pointed cap with a ball finial, and a ring to hang it by.
+    const brass = new THREE.MeshStandardMaterial({ color: 0xd8a838, roughness: 0.3, metalness: 0.7, emissive: 0x5a3a08, emissiveIntensity: 0.4 });
+    // one pane of coloured glass per side, lit from inside (plain materials,
+    // no canvas: a texture here would outlive the street)
+    const cols = [0xe83a3a, 0x2aa860, 0x2a6ae8, 0xf2b020, 0xe83a3a, 0x2aa860];
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+      const pane = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.44, 0.02),
+        new THREE.MeshStandardMaterial({ color: cols[i], emissive: cols[i], emissiveIntensity: 0.8, roughness: 0.3 }));
+      pane.position.set(Math.cos(a) * 0.18, 0, Math.sin(a) * 0.18);
+      pane.rotation.y = Math.PI / 2 - a;
+      g.add(pane);
+    }
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8),
+      new THREE.MeshStandardMaterial({ color: 0xfff0c0, emissive: 0xffd070, emissiveIntensity: 2 }));
+    g.add(core);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.48, 0.03), brass);
+      rib.position.set(Math.cos(a) * 0.2, 0, Math.sin(a) * 0.2);
+      rib.rotation.z = Math.cos(a) * 0.1; rib.rotation.x = -Math.sin(a) * 0.1;
+      g.add(rib);
+    }
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.12, 0.1, 6), brass);
+    base.position.y = -0.28; g.add(base);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.23, 0.06, 6), brass);
+    rim.position.y = 0.25; g.add(rim);
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.3, 6), brass);
+    cap.position.y = 0.43; g.add(cap);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), brass);
+    ball.position.y = 0.6; g.add(ball);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.015, 6, 14), brass);
+    ring.position.y = 0.7; g.add(ring);
   } else if (theme.id === 'mexico') {
     // A marigold (cempasuchil), the flower of the Day of the Dead: a dense
     // pompom of ruffled orange petals on a short stem with two leaves.
@@ -252,5 +574,52 @@ export function makeCollectible(theme) {
     g.add(laurel);
   }
   g.traverse((n) => { if (n.isMesh) n.castShadow = true; });
-  return g;
+  return mergeByMaterial(g);
+}
+
+// Bake a model into one mesh per material. A souvenir is drawn 40 to 60
+// times at once along the street, so every part is a draw call each time:
+// the marigold's 150 petals and the pomegranate's seeds made Mexico City and
+// Jerusalem draw 9,000 to 11,000 times a frame, against under 2,000 for any
+// other city (measured October 2026). Merged, it looks the same and draws a
+// handful of times. The parts are never drawn, so they hold no GPU memory.
+function mergeByMaterial(root) {
+  root.updateMatrixWorld(true);
+  const toRoot = new THREE.Matrix4().copy(root.matrixWorld).invert();
+  const groups = new Map();   // material -> geometries in root space
+  const keep = [];            // meshes that cannot be merged (several materials)
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    if (Array.isArray(o.material)) { keep.push(o); return; }
+    const geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(toRoot, o.matrixWorld));
+    if (!groups.has(o.material)) groups.set(o.material, []);
+    groups.get(o.material).push(geo);
+  });
+  const out = new THREE.Group();
+  out.position.copy(root.position);
+  out.quaternion.copy(root.quaternion);
+  out.scale.copy(root.scale);
+  for (const [material, geos] of groups) {
+    const withUv = geos.every((gg) => gg.attributes.uv);
+    const merged = new THREE.BufferGeometry();
+    for (const name of withUv ? ['position', 'normal', 'uv'] : ['position', 'normal']) {
+      const size = geos[0].attributes[name].itemSize;
+      const total = geos.reduce((n, gg) => n + gg.attributes[name].count * size, 0);
+      const arr = new Float32Array(total);
+      let off = 0;
+      for (const gg of geos) { arr.set(gg.attributes[name].array, off); off += gg.attributes[name].array.length; }
+      merged.setAttribute(name, new THREE.BufferAttribute(arr, size));
+    }
+    const mesh = new THREE.Mesh(merged, material);
+    mesh.castShadow = true;
+    out.add(mesh);
+  }
+  for (const o of keep) {
+    o.updateMatrixWorld(true);
+    const m = new THREE.Matrix4().multiplyMatrices(toRoot, o.matrixWorld);
+    m.decompose(o.position, o.quaternion, o.scale);
+    out.add(o);
+  }
+  return out;
 }

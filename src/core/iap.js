@@ -11,7 +11,7 @@
  * but UNVERIFIED — written on a machine that cannot build or run the native
  * half. Every function below still fails safe if the plugin is missing or
  * throws — on the web, and on an iOS build without the pod installed,
- * `getOffer()` returns null and the paywall never appears. Nothing is broken;
+ * `getOffers()` returns nothing to sell and the paywall never appears. Nothing is broken;
  * nothing is purchasable until a real device confirms it works.
  *
  * Remaining Mac work — `npm install`, `pod install` via `cap sync`, the
@@ -53,7 +53,7 @@
  * ---------------------------------------------------------------------------
  * ANDROID
  *
- * The same two product ids are used on Google Play (they are valid Play ids:
+ * The same product ids are used on Google Play (they are valid Play ids:
  * lowercase, dots allowed), so entitlements.js needs no platform branch.
  * Differences that matter here:
  *   - Play refunds any purchase not acknowledged within three days. finish()
@@ -66,19 +66,21 @@
  */
 
 import { isNative, nativePlatform } from './native.js';
-import { PRODUCTS, grant, reconcile } from './entitlements.js';
+import { PRODUCTS, ALL_PRODUCTS, packForCity, grant, reconcile } from './entitlements.js';
 
 /**
- * Preference order when deciding what to offer. The store is asked for both
- * and the first one it actually returns as purchasable wins — which is how
- * the three-month founder window closes without an app update or a date
- * constant anywhere in the client. See entitlements.js.
+ * The "everything" products, in preference order: the first one the store
+ * returns as purchasable is offered. That is how FOUNDER is withdrawn (after
+ * ~250 sales) without an app update or a counter anywhere in the client:
+ * removed from sale in App Store Connect, it simply stops being returned.
+ * Region packs are offered alongside, for the city the player tapped. See
+ * entitlements.js.
  */
-const OFFER_ORDER = [PRODUCTS.FOUNDER, PRODUCTS.UNLOCK];
+const EVERYTHING_ORDER = [PRODUCTS.FOUNDER, PRODUCTS.UNLOCK];
 
 let store = null;       // resolved plugin handle, or null everywhere else
 let ready = null;       // in-flight init promise
-let offer = null;       // cached {productId, price, title} once known
+const offers = new Map();   // productId -> {productId, price, title} once known
 
 /**
  * Wait for a store call, but not for ever. When Google Play Billing cannot
@@ -87,7 +89,7 @@ let offer = null;       // cached {productId, price, title} once known
  * and Restore waited for good (seen on an Android 16 emulator, 11 October
  * 2026). After STORE_WAIT_MS the caller carries on as if the store had
  * answered with nothing; if it does come up later, its products appear on
- * the next getOffer().
+ * the next getOffers().
  */
 const STORE_WAIT_MS = 10000;
 const settleWithin = (p) => Promise.race([p, new Promise((r) => setTimeout(r, STORE_WAIT_MS))]);
@@ -136,7 +138,7 @@ async function loadStore() {
   try {
     const { store: cdvStore, ProductType, Platform } = window.CdvPurchase ?? {};
     if (!cdvStore) return null;
-    cdvStore.register(OFFER_ORDER.map((id) => ({
+    cdvStore.register(ALL_PRODUCTS.map((id) => ({
       id, type: ProductType.NON_CONSUMABLE, platform: storePlatform(Platform),
     })));
     // Deliberately NOT approved->verify->verified: the plugin's own docs say
@@ -160,7 +162,7 @@ async function loadStore() {
       // "is owned" rather than "just became owned" would re-run the
       // subscribers -- and their success haptic -- on every refresh.
       let granted = false;
-      for (const id of OFFER_ORDER) {
+      for (const id of ALL_PRODUCTS) {
         if (cdvStore.owned(id) && grant(id)) granted = true;
       }
       if (granted) for (const fn of entitlementListeners) fn();
@@ -186,31 +188,38 @@ export function initIAP() {
   return ready;
 }
 
+/** One product's offer, or null if the store does not sell it right now. */
+function offerFor(id) {
+  if (!id) return null;
+  if (offers.has(id)) return offers.get(id);
+  const p = store.get?.(id);
+  if (!p || !p.canPurchase) return null;
+  // Price comes from the store, localised by the store to the user's own
+  // storefront. Never hardcode "£1.99" in the UI — the same product is $1.99
+  // in the US and something else again in Japan, and a wrong price on screen
+  // is a refund request at best.
+  const o = { productId: id, price: p.pricing?.price ?? '', title: p.title ?? '' };
+  offers.set(id, o);
+  return o;
+}
+
 /**
- * The offer to show, or null if there is nothing to sell right now.
- *
- * Null is a completely normal answer, not an error: it is what the web build
- * returns, what an unfinished native build returns, and what a device with no
- * network returns. Every caller must treat null as "show no paywall".
+ * What to offer: `everything` (FOUNDER while it is on sale) and `pack`, the
+ * region pack for `cityId` if one was given. Either may be null, and both
+ * null is a completely normal answer, not an error: it is what the web build
+ * returns, what an unfinished native build returns, and what a device with
+ * no network returns. Every caller must treat it as "nothing to sell".
  */
-export async function getOffer() {
-  if (offer) return offer;
+export async function getOffers(cityId) {
   await initIAP();
-  if (!store) return null;
+  if (!store) return { everything: null, pack: null };
   try {
-    for (const id of OFFER_ORDER) {
-      const p = store.get?.(id);
-      if (p && p.canPurchase) {
-        // Price comes from the store, localised by the store to the user's own
-        // storefront. Never hardcode "£1.99" in the UI — the same product is
-        // $1.99 in the US and something else again in Japan, and a wrong
-        // price on screen is a refund request at best.
-        offer = { productId: id, price: p.pricing?.price ?? '', title: p.title ?? '' };
-        return offer;
-      }
-    }
-  } catch { /* treated as no offer */ }
-  return null;
+    let everything = null;
+    for (const id of EVERYTHING_ORDER) if ((everything = offerFor(id))) break;
+    return { everything, pack: cityId ? offerFor(packForCity(cityId)) : null };
+  } catch {
+    return { everything: null, pack: null };
+  }
 }
 
 /**
@@ -249,15 +258,14 @@ export async function purchase(productId) {
  * MANDATORY, not optional. Apple rejects apps selling non-consumables with no
  * restore control (docs/PROPOSALS.md §4 records this). It lives in Settings so
  * it is always reachable, not only from a paywall the player may never see
- * again after buying. Google Play restores by itself at launch; on Android
- * the same button asks Play again, which helps if that first query failed.
+ * again after buying.
  */
 export async function restore() {
   await initIAP();
   if (!store) return [];
   try {
     await settleWithin(store.restorePurchases?.());
-    const found = OFFER_ORDER.filter((id) => store.get?.(id)?.owned);
+    const found = ALL_PRODUCTS.filter((id) => store.get?.(id)?.owned);
     reconcile(found);
     return found;
   } catch {

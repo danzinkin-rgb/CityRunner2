@@ -91,7 +91,25 @@
      stays visible behind it; holds input while it is up. */
   #missing-help{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
     background:rgba(4,6,16,.55);pointer-events:auto;padding:16px}
-  #missing-help.on{display:flex}
+  #missing-help.on,#drag-help.on{display:flex}
+  #drag-help{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(4,6,16,.55);pointer-events:auto;padding:16px}
+  /* What's new: once per release, on the menu, for returning players. Scrolls
+     as a whole on a short screen rather than squeezing the card. */
+  #whats-new{position:fixed;inset:0;z-index:40;display:none;align-items:flex-start;justify-content:center;
+    background:rgba(4,6,16,.72);overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom))}
+  #whats-new.on{display:flex}
+  #whats-new .mh-card{margin:auto 0}
+  .wn-head{font-size:15px;font-weight:800;margin:16px 0 0;color:#fff}
+  #whats-new .mh-card p{margin:6px 0 8px}
+  .wn-row{display:flex;align-items:center;justify-content:center;gap:12px;margin:4px 0 2px;font-size:14px}
+  .wn-note{font-size:13px;opacity:.75}
+  @media (max-height:640px){#whats-new .mh-card{padding:14px 16px}#whats-new .mh-card p{font-size:13.5px;line-height:1.35;margin:4px 0 6px}
+    .wn-head{margin-top:10px}#whats-new .mode-pick{margin:6px 0 2px}}
+  .mode-pick{display:flex;gap:10px;justify-content:center;margin:10px 0 4px}
+  .mode-pick .btn{font-size:14px;padding:10px 18px;min-height:44px;opacity:.55}
+  .mode-pick .btn.on{opacity:1}
   .mh-card{max-width:340px;text-align:center;padding:20px 22px;border-radius:18px;
     background:rgba(14,20,44,.94);border:1px solid rgba(255,209,102,.35)}
   .mh-title{font-size:18px;font-weight:900;letter-spacing:3px;color:var(--gold)}
@@ -325,6 +343,13 @@
   .city-card .thumb{width:100%;height:86px;border-radius:12px;background-size:135%;background-position:center 32%;
     position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 4px 12px rgba(0,0,0,.35)}
   .city-card .thumb-flag{position:absolute;right:5px;bottom:3px;font-size:17px;filter:drop-shadow(0 1px 2px #000)}
+  /* Cities are grouped by region pack: each group starts a new column, and
+     its first card carries the group's name over the thumbnail, so the
+     grouping costs no height (test/menu-fit.mjs). */
+  .city-card.group-start{grid-row-start:1}
+  .city-card .region-tag{position:absolute;left:5px;top:4px;max-width:calc(100% - 10px);
+    font-size:9px;font-weight:700;letter-spacing:.02em;line-height:1.5;padding:0 4px;border-radius:6px;
+    background:rgba(0,0,0,.6);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* One line, always. A name that wraps makes its card taller, and because
      the picker is a two-row grid that taller card stretches every other
      card in its row — and the placeholder cards, which cannot know the
@@ -412,15 +437,24 @@
 
   /* scale — true to scale, so the reference looking tiny IS the point */
   .fv-scale{display:flex;align-items:flex-end;justify-content:center;gap:28px;height:100%;width:100%}
-  .fv-sbar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .fv-sbar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;width:94px}
+  /* The captions sit in their own row under both drawings, so a three-line
+     name takes the same height off both and the two stay to scale. */
+  .fv-scalewrap{display:flex;flex-direction:column;height:100%;width:100%}
+  .fv-scalewrap > .fv-scale{flex:1 1 0;min-height:0;height:auto}
+  .fv-scaps{display:flex;justify-content:center;gap:28px}
+  .fv-scaps > .fv-scap{width:94px}
+  .fv-snote{font-size:10px;line-height:1.25;font-style:italic;opacity:.78;text-align:center;margin-top:3px;
+    text-shadow:0 1px 7px rgba(0,0,0,.85)}
+  .fv-sarea{flex:1 1 0;min-height:0;width:100%;display:flex;align-items:flex-end;justify-content:center}
   .fv-scol{width:36px;height:0;border-radius:6px 6px 0 0;
     background:linear-gradient(180deg,var(--fp-accent,#ffd166),rgba(255,209,102,.2));
     box-shadow:0 0 22px rgba(255,190,80,.3);transition:height .9s cubic-bezier(.2,.8,.3,1)}
-  .fv-sart{width:44px;height:0;min-height:9px;display:flex;align-items:flex-end;
+  .fv-sart{height:0;min-height:9px;display:flex;align-items:flex-end;justify-content:center;
     transition:height .9s cubic-bezier(.2,.8,.3,1)}
   /* The chart is the one part of the monument page with no card behind it, so
      its labels and the reference silhouette land directly on the 3D scene. */
-  .fv-sart svg{width:100%;height:100%;fill:rgba(255,255,255,.66);
+  .fv-sart svg{width:100%;height:100%;fill:#fff;opacity:.66;
     filter:drop-shadow(0 1px 5px rgba(0,0,0,.65))}
   .fv-sval{font-size:12px;font-weight:800;color:var(--fp-accent,#ffd166);margin-bottom:5px;
     text-shadow:0 1px 7px rgba(0,0,0,.85)}
@@ -431,7 +465,7 @@
   .fv-ahill .hill{fill:var(--fp-accent,#ffd166);opacity:.78}
   .fv-ahill .sea{fill:rgba(120,176,224,.7)}
   .fv-ahill .pin{fill:#fff}
-  .fv-scap{font-size:10px;letter-spacing:.4px;opacity:.82;margin-top:6px;text-align:center;max-width:94px;
+  .fv-scap{font-size:10px;line-height:1.2;letter-spacing:.4px;opacity:.82;margin-top:6px;text-align:center;max-width:94px;
     text-shadow:0 1px 7px rgba(0,0,0,.85)}
 
   @media (max-height:950px){
@@ -612,12 +646,15 @@
      and rendered as flat coloured boxes on iOS. */
   #hud-coin-icon{width:22px;height:22px;object-fit:contain;display:block;
     filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
-  .souv-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 0 10px}
+  /* minmax(0,1fr), not 1fr: a plain 1fr column cannot shrink below its
+     longest word, and with twenty cities' souvenirs one ran off a 320px
+     screen. Long words wrap instead. */
+  .souv-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:4px 0 10px}
   .souv{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;
     padding:8px 4px;border-radius:12px;background:rgba(255,255,255,.05);
     border:1px solid rgba(255,255,255,.10)}
   .souv img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 2px 5px rgba(0,0,0,.45))}
-  .souv span{font-size:10px;line-height:1.3;color:var(--fg-3)}
+  .souv span{font-size:10px;line-height:1.3;color:var(--fg-3);overflow-wrap:anywhere}
   .souv b{color:var(--gold);font-size:10.5px;opacity:1}
   @media (max-height:950px){ .souv img{width:32px;height:32px} .souv{padding:6px 3px} }
 
@@ -753,7 +790,9 @@
     .fp-big{font-size:23px}
     .fp-text{font-size:12.5px;line-height:1.4}
     .fp-stat{flex-basis:72px}
-    .fp-scale{height:84px;margin:0}
+    /* grows with the screen: the comparisons need height to read, and short
+       phones keep the old 84px */
+    .fp-scale{height:clamp(84px,calc(17vh - 12px),128px);margin:0}
     .fp-tag{font-size:12.5px;margin:4px 0 0}
     .fv{padding:13px 13px 11px;border-radius:17px}
     .fv-num{font-size:clamp(32px,10.5vw,46px)}
@@ -931,6 +970,14 @@
       <button class="btn ghost" id="mh-bring"></button>
     </div>
   </div>
+  <!-- The first time a city's street-1 monument is built by dragging. -->
+  <div id="drag-help" role="dialog" aria-modal="true" aria-labelledby="dh-title">
+    <div class="mh-card">
+      <div class="mh-title" id="dh-title">DRAG TO BUILD</div>
+      <p id="dh-text"></p>
+      <button class="btn" id="dh-ok">GOT IT</button>
+    </div>
+  </div>
   <button id="btn-pause" aria-label="Pause">❚❚</button>
   <!-- Only on a ghost run: one tap and the ghost is gone (fun, but it can
        also get in the way). Tap again to bring it back. -->
@@ -951,6 +998,29 @@
   <button class="linkbtn" id="btn-pause-ghost" aria-label="Race your best run">Race your best run: ON</button>
 </div>
 
+<!-- What's new in this release: shown once (save.newsSeen), see showNews()
+     in src/main.js. -->
+<div id="whats-new" role="dialog" aria-modal="true" aria-labelledby="wn-title">
+  <div class="mh-card">
+    <div class="mh-title" id="wn-title">WHAT'S NEW</div>
+    <div class="wn-head">Two ways to play</div>
+    <p><b>Newbie</b> is easier, for newer players and slower fingers.
+       <b>Gamer</b> is faster, for experienced players.</p>
+    <div class="mode-pick">
+      <button class="btn" id="wn-mode-newbie" aria-pressed="true">NEWBIE</button>
+      <button class="btn" id="wn-mode-gamer" aria-pressed="false">GAMER</button>
+    </div>
+    <div class="wn-head">Race your best run</div>
+    <p>On a street you have played before, a ghost runner replays your best run there, so you
+       can see if you are ahead. Tap 👻 during a run to hide it.</p>
+    <div class="wn-row"><span>Ghost runner</span><button class="toggle" id="wn-ghost" aria-label="Race your best run">ON</button></div>
+    <p class="wn-note">You can change both any time in Settings.</p>
+    <div class="wn-head">Cities by region</div>
+    <p>Cities now come in region packs. Inside a pack, finish a street in one city to open the next.</p>
+    <button class="btn" id="wn-ok">LET'S GO</button>
+  </div>
+</div>
+
 <div id="screen-menu" class="screen on">
   <div class="title">CITYRUNNER</div>
   <div class="subtitle">Run the world's greatest streets</div>
@@ -959,7 +1029,11 @@
        right height and wraps the same way before main.js has run. buildCitySelect()
        opens with wrap.innerHTML = '', so these are cleared by the code that
        replaces them and need no dismissal of their own.
-       KEEP THE COUNT IN STEP WITH CITIES — test/boot.mjs fails if it drifts. -->
+       KEEP THE COUNT IN STEP WITH CITIES — test/boot.mjs fails if it drifts.
+       The menu groups cities by region pack, each group starting a new
+       column, so the placeholders that start a group carry .group-start:
+       free 4, Europe 3, North America 3, Middle East and Africa 3, Latin
+       America 3, South and Central Asia 3, East Asia 3. -->
   <!-- data-xscroll marks this as a horizontal scroller: its cards may sit
        outside the viewport on purpose, and test/ios-ui.mjs skips its
        children in the overflow-x audit for that reason. -->
@@ -967,6 +1041,23 @@
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel group-start" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel group-start" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel group-start" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel group-start" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel group-start" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
+    <div class="city-card skel group-start" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
   </div>
@@ -1013,15 +1104,30 @@
 <div id="screen-help" class="screen">
   <div class="title" style="font-size:clamp(26px,7vmin,48px)">HOW TO PLAY</div>
   <div class="sheet">
+    <h3>Game mode</h3>
+    <p><b>Newbie</b> is easier, for newer players and slower fingers. <b>Gamer</b> is faster, for
+       experienced players. Change it any time in Settings.</p>
+    <div class="mode-pick">
+      <button class="btn" id="help-mode-newbie" aria-pressed="true">NEWBIE</button>
+      <button class="btn" id="help-mode-gamer" aria-pressed="false">GAMER</button>
+    </div>
+    <p class="tip">The daily challenge is the same for everyone, whatever your mode.</p>
+
+    <h3>Race your best run</h3>
+    <p>On a street you have played before, a ghost runner replays your best run there, so you can see
+       if you are ahead. Tap 👻 during a run to hide it, or turn it off in Settings.</p>
+
     <h3>Running</h3>
     <div class="row"><span class="key">← →</span><span>Swipe or press to change lane</span></div>
     <div class="row"><span class="key">↑</span><span>Jump — clears barriers, cars and taxis</span></div>
     <div class="row"><span class="key">↓</span><span>Roll — slides under overhead signs</span></div>
     <div class="row"><span class="key">❚❚</span><span>Pause (or press P / Esc)</span></div>
     <p class="tip">Buses are solid walls — change lane, you cannot jump those.</p>
+    <p class="tip">From the second street, watch for things moving in — a flashing amber patch shows the lane:
+       roll under swooping birds, jump a runaway suitcase, and change lane for a traffic officer.</p>
 
     <h3>Souvenirs</h3>
-    <p>Each city has its own collectible, worth 25 points each.</p>
+    <p>Each city has its own collectible, worth 25 points each in Gamer mode.</p>
     <div class="souv-row">
       <div class="souv"><img src="assets/souvenirs/nyc.png" alt="I heart NY heart"><span>New York<br><b>Hearts</b></span></div>
       <div class="souv"><img src="assets/souvenirs/paris.png" alt="Croissant"><span>Paris<br><b>Croissants</b></span></div>
@@ -1030,11 +1136,27 @@
       <div class="souv"><img src="assets/souvenirs/sf.png" alt="Cable car"><span>San Francisco<br><b>Cable cars</b></span></div>
       <div class="souv" data-city="jerusalem"><img src="assets/souvenirs/jerusalem.png" alt="Pomegranate"><span>Jerusalem<br><b>Pomegranates</b></span></div>
       <div class="souv" data-city="mexico"><img src="assets/souvenirs/mexico.png" alt="Marigold"><span>Mexico City<br><b>Marigolds</b></span></div>
+      <div class="souv" data-city="marrakech"><img src="assets/souvenirs/marrakech.png" alt="Brass lantern"><span>Marrakech<br><b>Lanterns</b></span></div>
+      <div class="souv" data-city="delhi"><img src="assets/souvenirs/delhi.png" alt="Paper kite"><span>Delhi<br><b>Kites</b></span></div>
+      <div class="souv" data-city="bangkok"><img src="assets/souvenirs/bangkok.png" alt="Elephant figurine"><span>Bangkok<br><b>Elephants</b></span></div>
+      <div class="souv" data-city="capetown"><img src="assets/souvenirs/capetown.png" alt="Protea flower"><span>Cape Town<br><b>Proteas</b></span></div>
+      <div class="souv" data-city="hanoi"><img src="assets/souvenirs/hanoi.png" alt="Conical hat"><span>Hanoi<br><b>Conical hats</b></span></div>
+      <div class="souv" data-city="seoul"><img src="assets/souvenirs/seoul.png" alt="Folding fan"><span>Seoul<br><b>Fans</b></span></div>
+      <div class="souv" data-city="samarkand"><img src="assets/souvenirs/samarkand.png" alt="Ceramic plate"><span>Samarkand<br><b>Plates</b></span></div>
+      <div class="souv" data-city="zanzibar"><img src="assets/souvenirs/zanzibar.png" alt="Carved door"><span>Zanzibar<br><b>Carved doors</b></span></div>
+      <div class="souv" data-city="beijing"><img src="assets/souvenirs/beijing.png" alt="Panda"><span>Beijing<br><b>Pandas</b></span></div>
+      <div class="souv" data-city="havana"><img src="assets/souvenirs/havana.png" alt="Maracas"><span>Havana<br><b>Maracas</b></span></div>
+      <div class="souv" data-city="istanbul"><img src="assets/souvenirs/istanbul.png" alt="Tea glass"><span>Istanbul<br><b>Tea glasses</b></span></div>
+      <div class="souv" data-city="chicago"><img src="assets/souvenirs/chicago.png" alt="Deep-dish pizza"><span>Chicago<br><b>Pizza slices</b></span></div>
+      <div class="souv" data-city="buenosaires"><img src="assets/souvenirs/buenosaires.png" alt="Mate gourd"><span>Buenos Aires<br><b>Mate gourds</b></span></div>
+      <div class="souv" data-city="neworleans"><img src="assets/souvenirs/neworleans.png" alt="Mardi Gras beads"><span>New Orleans<br><b>Mardi Gras beads</b></span></div>
+      <div class="souv" data-city="venice"><img src="assets/souvenirs/venice.png" alt="Carnival mask"><span>Venice<br><b>Carnival masks</b></span></div>
     </div>
 
     <h3>Building the monument</h3>
-    <p>Reach the end of a street and you get 60 seconds to rebuild that city's landmark.
-       Tap the <b>glowing</b> blocks — they are the ones you may place next.
+    <p>Reach the end of a street and you race the clock to rebuild that city's landmark.
+       <b>Drag</b> each block onto its outline; the <b>glowing</b> blocks are the ones you may place next.
+       In Newbie mode, the first street of New York, Paris and London is built by tapping instead.
        Build from the ground up: a block cannot go on before whatever it rests on.
        Blocks in the same course glow together and may be placed in any order.</p>
     <p class="tip">Drag anywhere to spin the view. Finishing early is worth 50 points per second left.</p>
@@ -1054,12 +1176,13 @@
     <div class="row"><span>Reduced motion</span><button class="toggle" id="set-motion" aria-label="Reduced motion">OFF</button></div>
     <div class="row"><span>On-screen controls</span><button class="toggle" id="set-touchbtns" aria-label="On-screen controls">OFF</button></div>
     <div class="row"><span>Race your best run</span><button class="toggle" id="set-ghost" aria-label="Race your best run">ON</button></div>
+    <div class="row"><span>Game mode</span><button class="toggle on" id="set-mode" aria-label="Game mode">NEWBIE</button></div>
     <h3>Player</h3>
     <div class="row"><span id="set-name" class="muted">—</span>
       <button class="linkbtn" id="set-reroll" aria-label="Get a new nickname">new nickname</button></div>
     <h3 id="set-purchase-head">Purchases</h3>
-    <div class="row"><span id="set-purchase-label">Full city set</span>
-      <button class="linkbtn" id="set-purchase" aria-label="View full city set purchase">view</button></div>
+    <div class="row"><span id="set-purchase-label">More cities</span>
+      <button class="linkbtn" id="set-purchase" aria-label="View city purchases">view</button></div>
     <div class="row"><span>Bought on another device?</span>
       <button class="linkbtn" id="set-restore" aria-label="Restore purchases">Restore</button></div>
     <div class="row muted" id="set-restore-status" style="font-size:12px"></div>
@@ -1090,22 +1213,26 @@
     * the price is written by StoreKit at runtime, localised by Apple. There
       is no hardcoded "1.99" in this file on purpose
 
-  #pw-price is the offer price; #pw-offer-name is the product title. Both stay
-  empty until the store answers, and if it never answers the screen is never
-  shown at all (see getOffer() in src/core/iap.js).
+  #pw-price and #pw-pack-price are the two offers' prices (everything, and
+  the tapped city's region pack). They stay empty, and their buttons hidden,
+  until the store answers (see getOffers() in src/core/iap.js).
 -->
 <div id="screen-paywall" class="screen">
-  <div class="title" style="font-size:clamp(24px,6.4vmin,42px)">THE FULL CITY SET</div>
+  <div class="title" style="font-size:clamp(24px,6.4vmin,42px)">MORE CITIES</div>
   <div class="sheet">
-    <div class="row"><span id="paywall-lede">Unlock every city and every monument.</span></div>
+    <div class="row"><span id="paywall-lede">Unlock more cities and their monuments.</span></div>
     <hr>
-    <div class="row"><span>Rome, San Francisco, and every city added later</span><span class="muted">included</span></div>
-    <div class="row"><span>New monuments in cities you already have</span><span class="muted">included</span></div>
+    <!-- Shown only when the store sells them: "everything" (the Founder
+         unlock while it is on sale) and the tapped city's region pack. No
+         counts, no deadlines: see docs/FREEMIUM-IAP.md §3. -->
+    <div class="row" id="pw-all-row" style="display:none"><span><b>Everything</b>: every city and monument, including every city added later</span></div>
+    <div class="row" id="pw-pack-row" style="display:none"><span id="pw-pack-text"></span></div>
     <div class="row"><span>One payment, kept forever</span><span class="muted">no subscription</span></div>
     <hr>
-    <div class="row muted" style="font-size:12px"><span>New York, Paris and London stay free, always.</span></div>
+    <div class="row muted" style="font-size:12px"><span>New York, Paris, London and Jerusalem stay free, always.</span></div>
   </div>
-  <button class="btn" id="btn-paywall-buy"><span id="pw-buy-label">UNLOCK</span> <span id="pw-price"></span></button>
+  <button class="btn" id="btn-paywall-buy" style="display:none"><span id="pw-buy-label">UNLOCK EVERYTHING</span> <span id="pw-price"></span></button>
+  <button class="btn" id="btn-paywall-pack" style="display:none"><span id="pw-pack-label">REGION PACK</span> <span id="pw-pack-price"></span></button>
   <button class="btn" id="btn-paywall-close">NOT NOW</button>
   <button class="linkbtn" id="btn-paywall-restore">Restore purchases</button>
   <div class="muted" id="paywall-status" style="font-size:12px;margin-top:8px;min-height:16px"></div>
@@ -1122,8 +1249,8 @@
        purchase required knowing to look in Settings first. -->
   <div class="sheet" id="shop-purchase-sheet" style="display:none;padding:12px 22px;margin:0 0 4px">
     <div class="row" style="padding:0">
-      <span id="shop-purchase-label">Full city set</span>
-      <button class="linkbtn" id="shop-purchase" aria-label="View full city set purchase">view</button>
+      <span id="shop-purchase-label">More cities</span>
+      <button class="linkbtn" id="shop-purchase" aria-label="View city purchases">view</button>
     </div>
   </div>
   <div class="sheet wide">
@@ -1154,10 +1281,12 @@
 </div>
 
 <div id="screen-over" class="screen">
-  <div class="label">Run over</div>
+  <div class="label" id="over-title">Run over</div>
+  <div class="continue-note" id="over-note"></div>
   <div class="big-num" id="over-score">0</div>
   <div class="label" style="margin:10px 0 30px"><span id="over-coins">0</span> souvenirs collected</div>
   <button class="btn" id="btn-retry">RUN AGAIN</button>
+  <button class="btn ghost" id="btn-share-over" style="display:none">SHARE</button>
   <button class="btn ghost" id="btn-menu">CITY SELECT</button>
 </div>
 
@@ -1170,6 +1299,7 @@
     <div class="fp-cards" id="pw-facts"></div>
   </div>
   <button class="btn" id="btn-next">NEXT LEVEL</button>
+  <button class="btn ghost" id="btn-share-pw" style="display:none">SHARE</button>
   <button class="btn ghost" id="btn-menu2">CITY SELECT</button>
 </div>
 

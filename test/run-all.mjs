@@ -8,6 +8,12 @@
  * thrown by a busy machine, so they run on their own once the parallel
  * batch is done.
  *
+ * Memory, not CPU, is the limit (October 2026): a WebKit page drawing a
+ * street takes 1.5 to 2.5 GB, and four suites at once on a 16 GB laptop
+ * ran it out, so WebGL lost its context and suites timed out. A suite
+ * starts only when MIN_FREE_GB is free (one always runs), and a stopped
+ * run takes its suites' browsers down with it rather than leaving them.
+ *
  * Prints one line per suite as it finishes, then the full output of any
  * that failed. Exits non-zero if any did.
  *
@@ -15,7 +21,7 @@
  *        npm run test:serial                     the old one-at-a-time chain
  */
 import { spawn } from 'node:child_process';
-import { cpus } from 'node:os';
+import { cpus, freemem } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,12 +37,16 @@ const SUITES = [
   { file: 'test/menu-fit.mjs' },
   { file: 'test/determinism.mjs' },
   { file: 'test/rome-weave.mjs' },
+  { file: 'test/city-mechanics.mjs' },
   { file: 'test/entitlements.mjs' },
   { file: 'test/save-and-scores.mjs' },
   { file: 'test/storage-keys.mjs' },
   { file: 'test/puzzle-solvable.mjs' },
   { file: 'test/puzzle-drag.mjs' },
   { file: 'test/run-pieces.mjs' },
+  { file: 'test/piece-lanes.mjs' },
+  { file: 'test/modes.mjs' },
+  { file: 'test/hazards.mjs' },
   { file: 'test/boot.mjs' },
   { file: 'test/audio-unlock.mjs' },
   { file: 'test/daily-rules.mjs' },
@@ -54,13 +64,30 @@ const argJobs = process.argv.indexOf('--jobs');
 const JOBS = argJobs > 0 ? Math.max(1, +process.argv[argJobs + 1])
   : Math.max(2, Math.min(4, Math.floor(cpus().length / 3)));
 
-const run = (s) => new Promise((resolve) => {
+const MIN_FREE_GB = 3;
+const running = new Set();
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Kill a suite and its browsers. On Windows a child's own children outlive
+// it unless the whole tree is killed.
+const kill = (child) => {
+  if (process.platform === 'win32') spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+  else child.kill('SIGKILL');
+};
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => { for (const c of running) kill(c); process.exit(130); });
+
+const run = async (s) => {
+  while (running.size && freemem() / 2 ** 30 < MIN_FREE_GB) await sleep(2000);
+  return runNow(s);
+};
+const runNow = (s) => new Promise((resolve) => {
   const t0 = Date.now();
   const child = spawn(process.execPath, [join(ROOT, s.file), ...(s.args || [])], { cwd: ROOT });
+  running.add(child);
   let out = '';
   child.stdout.on('data', (d) => { out += d; });
   child.stderr.on('data', (d) => { out += d; });
   child.on('close', (code) => {
+    running.delete(child);
     const secs = ((Date.now() - t0) / 1000).toFixed(0);
     console.log(`${code === 0 ? 'ok ' : 'x  '} ${s.file.padEnd(28)} ${secs.padStart(4)}s`);
     resolve({ ...s, code, out, secs });
@@ -84,6 +111,15 @@ const results = [
 const failed = results.filter((r) => r.code !== 0);
 for (const f of failed) {
   console.log(`\n==== ${f.file} (exit ${f.code}) ====\n${f.out.trim()}`);
+  // On GitHub Actions, also as an annotation: readable from the run's page
+  // and its API without downloading the log.
+  if (process.env.GITHUB_ACTIONS) {
+    const all = f.out.trim().split('\n');
+    // each failing line, and the indented detail lines under it
+    const lines = all.filter((l, i) => /^x |^✗|Error/.test(l.trim())
+      || (/^\s/.test(l) && all.slice(Math.max(0, i - 4), i).some((p) => /^x |^✗/.test(p.trim())))).slice(0, 30);
+    console.log(`::error title=${f.file} failed::${(lines.length ? lines : all.slice(-15)).join('%0A')}`);
+  }
 }
 const mins = ((Date.now() - t0) / 60000).toFixed(1);
 console.log(`\n${failed.length ? `x ${failed.length} of ${results.length} gates failed` : `ok all ${results.length} gates passed`} in ${mins} min`);

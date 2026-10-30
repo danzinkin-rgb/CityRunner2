@@ -27,6 +27,9 @@
  * not optional polish.
  */
 
+import { MONUMENT_FACTS } from './facts.js';
+import { LANDMARK_NAMES } from './cities/themes.js';
+
 const SVG = 'http://www.w3.org/2000/svg';
 const el = (tag, cls, parent) => {
   const n = document.createElement(tag);
@@ -47,6 +50,8 @@ const COUNTABLE = new Set([
   'names', 'lifts', 'capsules', 'entrances', 'elephants', 'strikes', 'minutes',
   'days', 'stalls', 'traders', 'fountains', 'steps', 'columns', 'statues',
   'rooms', 'windows', 'arches', 'bells', 'seats', 'gates', 'stalls',
+  'tiles', 'tablets', 'streets', 'ribs', 'pillars', 'minarets', 'houses',
+  'bridges', 'bastions', 'communities', 'layers', 'sides', 'bends', 'gondolas', 'islands',
 ]);
 
 const PEOPLE_UNITS = new Set(['people', 'visitors', 'spectators']);
@@ -284,49 +289,86 @@ export function renderCompact(f) {
 // ---------------------------------------------------------------------------
 
 // Silhouettes, because the reference was a grey blob and read as a placeholder
-// rather than a bus. Each path is drawn in a 100-wide box, flat on the baseline.
+// rather than a bus. Each is drawn 100 high, flat on the baseline, and as wide
+// as its shape needs: the svg keeps that ratio, so a tower stays slim.
 const SILHOUETTES = {
-  bus: 'M6 96V34c0-5 4-9 9-9h70c5 0 9 4 9 9v62H6zM14 40h30v20H14zM56 40h30v20H56z'
-     + 'M20 96a9 9 0 0 1 18 0zM62 96a9 9 0 0 1 18 0z',
-  person: 'M50 8a11 11 0 1 1 0 22 11 11 0 0 1 0-22zM34 36h32c4 0 6 3 6 7v26h-9v27h-26V69h-9V43c0-4 2-7 6-7z',
+  bus: { w: 100, d: ['M6 96V34c0-5 4-9 9-9h70c5 0 9 4 9 9v62H6zM14 40h30v20H14zM56 40h30v20H56z'
+     + 'M20 96a9 9 0 0 1 18 0zM62 96a9 9 0 0 1 18 0z'] },
+  person: { w: 44, d: ['M22 8a11 11 0 1 1 0 22 11 11 0 0 1 0-22zM6 36h32c4 0 6 3 6 7v26h-9v27H9V69H0V43c0-4 2-7 6-7z'] },
+  bigben: { w: 26, d: ['M5 100V34H3V20h3L13 0l7 20h3v14h-2v66z', 'M13 23a4 4 0 1 0 0 8 4 4 0 0 0 0-8z'] },
+  arc: { w: 90, d: ['M0 100V0h90v100H61V60a16 16 0 0 0-32 0v40z'] },
+  pantheon: { w: 104, d: ['M14 100V48a38 38 0 0 1 76 0v52z', 'M0 100V56h54v44z', 'M0 57L27 42l27 15z'] },
+  empire: { w: 30, d: ['M0 100V58h3V38h4V22h4V12h3V3h1V0h0.2V3h1v9h3v10h4v16h4v20h3v42z'] },
+  willis: { w: 40, d: ['M0 100V36h10V18h10V0h10V24h10v76z'] },
+  koutoubia: { w: 24, d: ['M2 100V22h20v78z', 'M7 22V8h10v14z', 'M11.4 8V0h1.2v8z'] },
+  templomayor: { w: 120, d: ['M0 100V86h8V72h8V58h8V44h8V32h56V44h8V58h8V72h8V86h8v14z',
+    'M36 32V12h18v20zM66 32V12h18v20z', 'M34 13L45 4l11 9zM64 13L75 4l11 9z'] },
+  liberty: { w: 44, d: ['M4 100V88h4V55h28v33h4v12z', 'M14 55l3-30c0-4 2-6 4-6s4 2 5 4l1-15h3l-1 18c0 2 1 4 1 6l-2 23z',
+    'M21 9a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9z', 'M27 0h4v4h-4z'] },
 };
 
-const SCALE_REFS = {
-  bus: { h: 4.4, name: 'double-decker bus', art: 'bus' },
-  person: { h: 1.7, name: 'person', art: 'person' },
+// The reference is a familiar object, or a monument with a real link to this
+// one (the `note` on its MONUMENT_FACTS entry says what the link is). A
+// monument's height comes from its own MONUMENT_FACTS entry, so the two
+// graphics can never disagree.
+const OBJECTS = {
+  bus: { h: 4.4, name: 'double-decker bus' },
+  person: { h: 1.7, name: 'person' },
+  // ground to the tip of the torch, 305 ft 1 in (nps.gov/stli, statue statistics)
+  liberty: { h: 93, name: 'Statue of Liberty' },
 };
+
+function refFor(compare) {
+  if (OBJECTS[compare]) return { ...OBJECTS[compare], art: compare };
+  const h = MONUMENT_FACTS[compare]?.scale;
+  if (h && SILHOUETTES[compare]) return { h, name: LANDMARK_NAMES[compare], art: compare };
+  return { ...OBJECTS.bus, art: 'bus' };
+}
+
+function silhouette(key) {
+  const art = SILHOUETTES[key];
+  const svg = svgEl('svg', { viewBox: `0 0 ${art.w} 100`, preserveAspectRatio: 'xMidYMax meet' });
+  for (const d of art.d) svg.appendChild(svgEl('path', { d, 'fill-rule': 'evenodd' }));
+  return svg;
+}
 
 /**
- * Height of a monument against a familiar object, so "96 m" means something.
- * The reference is drawn as a real silhouette scaled to true relative height.
+ * Height of a monument against something the player knows, so "96 m" means
+ * something. Both are drawn to true relative height; whichever is taller
+ * fills the slot. A monument with no `scale` and no `altitude` shows nothing:
+ * its facts carry the page.
  */
-export function paintScale(container, metres, compare, name, reduced = false, altitude = 0) {
+export function paintScale(container, metres, compare, name, reduced = false, altitude = 0, note = '') {
   container.innerHTML = '';
   if (!metres) {
     // No sourced height for the building itself (the Tower of David, the
-    // Chapultepec Castle), but a sourced altitude: show that instead.
+    // Chapultepec Castle), but an altitude worth showing: show that instead.
     if (altitude) paintAltitude(container, altitude, reduced);
     return;
   }
-  const ref = SCALE_REFS[compare] || SCALE_REFS.bus;
-  const refPct = Math.max(3, (ref.h / metres) * 100);
+  const ref = refFor(compare);
+  const top = Math.max(metres, ref.h);
+  const monPct = (metres / top) * 100;
+  const refPct = Math.max(3, (ref.h / top) * 100);
 
-  const row = el('div', 'fv-scale', container);
+  const wrap = el('div', 'fv-scalewrap', container);
+  const row = el('div', 'fv-scale', wrap);
+  const caps = el('div', 'fv-scaps', wrap);
 
   const tall = el('div', 'fv-sbar', row);
   el('div', 'fv-sval', tall).textContent = `${metres} m`;
-  const col = el('div', 'fv-scol', tall);
-  el('div', 'fv-scap', tall).textContent = name;
+  const col = el('div', 'fv-scol', el('div', 'fv-sarea', tall));
+  el('div', 'fv-scap', caps).textContent = name;
 
   const small = el('div', 'fv-sbar ref', row);
   el('div', 'fv-sval', small).textContent = `${ref.h} m`;
-  const holder = el('div', 'fv-sart', small);
-  const art = svgEl('svg', { viewBox: '0 0 100 100', preserveAspectRatio: 'xMidYMax meet' });
-  art.appendChild(svgEl('path', { d: SILHOUETTES[ref.art] }));
-  holder.appendChild(art);
-  el('div', 'fv-scap', small).textContent = ref.name;
+  const holder = el('div', 'fv-sart', el('div', 'fv-sarea', small));
+  holder.style.aspectRatio = `${SILHOUETTES[ref.art].w} / 100`;
+  holder.appendChild(silhouette(ref.art));
+  el('div', 'fv-scap', caps).textContent = ref.name;
+  if (note) el('div', 'fv-snote', wrap).textContent = note;
 
-  const grow = () => { col.style.height = '100%'; holder.style.height = `${refPct}%`; };
+  const grow = () => { col.style.height = `${monPct}%`; holder.style.height = `${refPct}%`; };
   if (reduced) grow(); else requestAnimationFrame(grow);
 }
 

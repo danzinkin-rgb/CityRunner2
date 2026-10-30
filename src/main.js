@@ -9,17 +9,19 @@ import { renderHero, renderCompact, paintScale, countUp } from './factviz.js';
 import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
 import { startSession, submit, top as topScores, personalBest, currentSession } from './core/scores.js';
 import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset, DAILY } from './core/rng.js';
-import { initNative, onAppPause, onBackButton, hapticLight, hapticMedium, hapticHeavy, hapticSuccess } from './core/native.js';
+import { initNative, onAppPause, onBackButton, hapticLight, hapticMedium, hapticHeavy, hapticSuccess, canShare, shareText, requestReview } from './core/native.js';
 import { reportRun } from './core/gamecenter.js';
-import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild } from './core/entitlements.js';
-import { initIAP, getOffer, purchase, restore, onEntitlementGranted, storeWords } from './core/iap.js';
+import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild, ownsCity, regionOf } from './core/entitlements.js';
+import { REGIONS } from './cities/themes.js';
+import { initIAP, getOffers, purchase, restore, onEntitlementGranted, storeWords } from './core/iap.js';
 import { STORAGE } from './core/storage-keys.js';
 import { DEBUG_HOOKS, TESTER } from './core/debug.js';
 import { loadGhost, saveGhostIfBest, GhostRecorder, GhostRunner } from './run/ghost.js';
+import { HAZARD_RATE } from './run/hazards.js';
 
-export const VERSION = '1.1.1';
+export const VERSION = '1.2.2';
 import { Player, DEFAULT_STYLE } from './run/player.js';
-import { releaseStreetCaches } from './cities/builders.js';
+import { releaseStreetCaches, makeSplash } from './cities/builders.js';
 import { Track } from './run/track.js';
 import { Puzzle, looseDefs, releasePuzzleTextures } from './puzzle/puzzle.js';
 import { CHARACTERS, characterById } from './run/characters.js';
@@ -129,8 +131,45 @@ let cityIdx = 0, level = 1;
 let scene = null, player = null, track = null, puzzle = null;
 let speed = 0, coins = 0, score = 0, puzzleBonus = 0;
 let shake = 0;
+// Falling into water (Venice's canals and floods) splashes instead of the
+// bump: the effect, and how long it has run.
+let splash = null, splashT = 0, splashDeep = false;
+function clearSplash() {
+  if (splash) { scene?.remove(splash); splash = null; }
+  if (player) player.group.visible = true;
+}
 
 const city = () => CITIES[cityIdx];
+
+// ---------- game modes ----------
+// Newbie is the original pace; Gamer is for players who know runners (a
+// 14-year-old found Newbie too slow, October 2026). Gamer runs faster and
+// builds every monument by dragging. Newbie scores 70%, rather than Gamer
+// scoring more, so a Gamer score is the full one. Obstacles are placed by
+// distance, not time, so both modes run the same course for a seed.
+const MODES = {
+  newbie: { start: [14, 17, 20], ramp: 0.25, scoreMul: 0.7 },
+  gamer: { start: [20, 23, 26], ramp: 0.35, scoreMul: 1 },
+};
+// Tapping a piece home is kept only for newcomers: Newbie mode, street 1, in
+// these three cities. Every other monument is built by dragging.
+const TAP_CITIES = ['nyc', 'paris', 'london'];
+const gameMode = () => (save.mode === 'gamer' ? 'gamer' : 'newbie');
+const tapsHere = () => rules.name === 'newbie' && level === 1 && TAP_CITIES.includes(city().id);
+// The monument clock: 15% less in Gamer, and 3% less per city after the
+// first three (at most 15%), so later cities ask for quicker building.
+const puzzleTimeScale = () => (rules.name === 'gamer' ? 0.85 : 1) * (1 - Math.min(0.15, 0.03 * Math.max(0, cityIdx - 2)));
+// The rules for the run or puzzle being played. The daily challenge is one
+// course for everyone, so it ignores the chosen mode: Newbie pace and puzzle
+// rules, at full score, as every daily before modes existed was.
+function playRules() {
+  const name = dailyMode ? 'newbie' : gameMode();
+  return { name, ...MODES[name], scoreMul: dailyMode ? 1 : MODES[name].scoreMul };
+}
+// set again by startRun() and startPuzzle(); dailyMode is not declared yet here
+let rules = { name: 'newbie', ...MODES.newbie };
+const hazardHintsShown = new Set();   // once per kind per session
+const addScore = (n) => { score += n * rules.scoreMul; };
 
 // ---------- daily challenge ----------
 // One course a day, identical for every player worldwide, rotating city.
@@ -201,6 +240,41 @@ function startDaily() {
 }
 
 // ---------- menu ----------
+// ---------- progression: which city opens which ----------
+// Dan, 15 October 2026, with every city released into region packs: the free
+// cities form one chain (a street in each opens the next), and the paid cities
+// form a chain within their region. A region's first paid city opens after a
+// street in London, as Rome always did; each later one
+// after a street in the one before it in that region. A single chain across
+// twenty cities would have made someone who bought the East Asia pack play
+// fifteen others first. Without the London step, all six region openers
+// were bright "buy" cards from the first launch (Dan, 15 October 2026), an
+// offer pushed at a player three cities away from it (docs/PROPOSALS.md 4).
+function chainPrev(cityId) {
+  const i = CITIES.findIndex((c) => c.id === cityId);
+  if (i < 0) return null;
+  const c = CITIES[i];
+  const paid = isPaidCity(c.id);
+  for (let j = i - 1; j >= 0; j--) {
+    const p = CITIES[j];
+    if (paid ? isPaidCity(p.id) && p.region === c.region : !isPaidCity(p.id)) return p.id;
+  }
+  return paid && CITIES.some((p) => p.id === PAID_GATE) ? PAID_GATE : null;
+}
+// The city a region's first paid city waits on. London, not "the last free
+// city": Jerusalem became free after it (17 October 2026) and was not to
+// become a fourth step in front of every paid city.
+const PAID_GATE = 'london';
+// Where NEXT LEVEL goes from a city's last street. Several cities can open
+// from London (Jerusalem and every paid region's first city), so a free one
+// comes first: a player who has bought nothing is sent on to Jerusalem, not
+// to a paywall.
+const chainNext = (cityId) => {
+  const next = CITIES.filter((c) => chainPrev(c.id) === cityId);
+  return (next.find((c) => !isPaidCity(c.id)) || next[0])?.id || null;
+};
+const isEarned = (cityId) => { const p = chainPrev(cityId); return !p || (save.stars[p] || 0) >= 1; };
+
 function buildCitySelect() {
   const wrap = $('city-select');
   // This clears the placeholder cards the HTML ships with as well as any
@@ -209,7 +283,17 @@ function buildCitySelect() {
   wrap.innerHTML = '';
   wrap.removeAttribute('aria-busy');
   const flagFix = { london: '💂' };   // 🇬🇧 renders as plain "GB" on Windows
-  CITIES.forEach((c, i) => {
+  // Shown grouped: the free cities, then each region's pack (Dan, 15 October
+  // 2026). Each group starts a new column and its first card names it. Only
+  // the order on screen changes: CITIES keeps its order, which the chains,
+  // NEXT LEVEL and saved indexes are built on.
+  const regionOrder = [];
+  for (const c of CITIES) if (isPaidCity(c.id) && !regionOrder.includes(c.region)) regionOrder.push(c.region);
+  const groups = [['FREE', CITIES.filter((c) => !isPaidCity(c.id))],
+    ...regionOrder.map((r) => [REGIONS[r].replace(' and ', ' & ').toUpperCase(), CITIES.filter((c) => isPaidCity(c.id) && c.region === r)])];
+  const shown = groups.flatMap(([label, list]) => list.map((c, k) => [c, k === 0 ? label : null]));
+  shown.forEach(([c, groupLabel]) => {
+    const i = CITIES.indexOf(c);
     const stars = save.stars[c.id] || 0;
     // Two independent gates. `earned` is the game's own pacing; `owned` is
     // whether it has been paid for (always true on the web build). A card is
@@ -219,7 +303,7 @@ function buildCitySelect() {
     // unearned city is dimmed, an earned-but-unbought one is bright
     // merchandise, and anything unbought carries a padlock and opens the
     // paywall -- from the first launch, so the offer is never hidden.
-    const earned = i === 0 || (save.stars[CITIES[i - 1].id] || 0) >= 1;
+    const earned = isEarned(c.id);
     const owned = isCityEntitled(c.id);
     const sellable = earned && !owned;
     // Bought but not yet reached. The two gates are independent, so this
@@ -239,7 +323,7 @@ function buildCitySelect() {
     // is told Rome is "unlocked", which is not what that word means to them.
     // (It also made the menu two lines taller on a 320x568 screen and pushed
     // Settings below the fold -- test/menu-fit.mjs caught that.)
-    const gated = !isFreeBuild() && isPaidCity(c.id) && owned && !earned && i > 0;
+    const gated = !isFreeBuild() && isPaidCity(c.id) && owned && !earned;
     // The padlock marks "this is purchasable content", so it shows from the
     // very first launch rather than only once the city has been earned. !owned
     // already means exactly that: isCityEntitled() is true for every free city
@@ -255,19 +339,19 @@ function buildCitySelect() {
     const purchasable = !owned;
     const el = document.createElement('div');
     el.className = 'city-card' + (gated ? ' gated' : !earned ? ' locked' : sellable ? ' paid' : '')
-      + (purchasable && !earned ? ' buyable' : '');
+      + (purchasable && !earned ? ' buyable' : '') + (groupLabel ? ' group-start' : '');
     el.innerHTML = `<div class="thumb" style="background-image:url(assets/thumbs/${c.id}.png)">
-        <span class="thumb-flag">${flagFix[c.id] || c.flag}</span>${purchasable ? '<span class="padlock">🔒</span>' : ''}</div>
+        ${groupLabel ? `<span class="region-tag">${groupLabel}</span>` : ''}<span class="thumb-flag">${flagFix[c.id] || c.flag}</span>${purchasable ? '<span class="padlock">🔒</span>' : ''}</div>
       <div class="name">${c.name}</div>
       ${gated
-        ? `<div class="gate">Unlocked — finish a street in ${CITIES[i - 1].name} to reach it</div>`
+        ? `<div class="gate">Unlocked — finish a street in ${CITIES.find((x) => x.id === chainPrev(c.id))?.name} to reach it</div>`
         : `<div class="stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>`}`;
     if (earned && owned) el.onclick = () => {
       dailyMode = false; runSeed = null;
       cityIdx = i; level = Math.min(3, (save.stars[c.id] || 0) + 1);
       startRun();
     };
-    else if (purchasable) el.onclick = () => openPaywall();
+    else if (purchasable) el.onclick = () => openPaywall('menu', c.id);
     wrap.appendChild(el);
   });
   const stats = document.getElementById('menu-stats');
@@ -300,19 +384,20 @@ function startRun() {
   // any city (see finishPuzzle), and no way to carry on past it (NEXT LEVEL is
   // hidden after a daily). One run a day in a locked city is a taster, and it
   // ends there.
-  if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall(); return; }
+  if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall('menu', city().id); return; }
   // Racing your best: a street you have finished before replays the course
   // of your best run on it, with that run beside you as a ghost. Never on the
   // daily (one course for everyone, and not yours to replay).
-  const best = !dailyMode && save.raceBest !== false ? loadGhost(city().id, level) : null;
+  rules = playRules();
+  const best = !dailyMode && save.raceBest !== false ? loadGhost(city().id, level, rules.name) : null;
   if (best && runSeed == null) runSeed = best.seed;
   doFade(() => {
     disposeAll();
     scene = new THREE.Scene();
     dressScene(scene, city());
     player = new Player(scene, characterById(save.equipped).style);
-    const pieceDefs = looseDefs(city().landmarks[level - 1], level);
-    track = new Track(scene, city(), level, runSeed, pieceDefs);
+    const pieceDefs = looseDefs(city().landmarks[level - 1], level, tapsHere(), rules.name === 'gamer');
+    track = new Track(scene, city(), level, runSeed, pieceDefs, rules.start[level - 1], HAZARD_RATE[rules.name][level - 1], rules.name === 'gamer');
     ghostRec = new GhostRecorder(track.seed);
     player.onAction = (a) => ghostRec.move(track.distance, a);
     ghost = best && best.seed === track.seed
@@ -322,7 +407,7 @@ function startRun() {
     piecesGot = 0;
     track.onPiece = () => {
       piecesGot++;
-      score += 50;
+      addScore(50);
       sfx.powerup();
       hapticMedium();
       $('hud-pieces').textContent = `${piecesGot}/${pieceDefs.length}`;
@@ -332,8 +417,17 @@ function startRun() {
     $('hud-piece-icon').src = `assets/monuments/${city().landmarks[level - 1]}.png`;
     document.body.classList.add('run-pieces');
     track.onWeave = () => hint('That Vespa is signalling — it\'s about to change lanes!');
-    speed = 14 + (level - 1) * 3;
-    coins = 0; score = 0; shake = 0;
+    track.onMechanic = (text) => hint(text);
+    track.onHazard = (kind) => {
+      ({ birds: sfx.flap, officer: sfx.whistle, suitcase: sfx.rumble })[kind]?.();
+      if (hazardHintsShown.has(kind)) return;
+      hazardHintsShown.add(kind);
+      hint({ birds: 'Birds swooping in — roll under them!',
+        officer: 'A traffic officer is stepping out — change lanes!',
+        suitcase: 'A runaway suitcase! Jump over it.' }[kind]);
+    };
+    speed = rules.start[level - 1];
+    coins = 0; score = 0; shake = 0; splash = null;
     continuesUsed = 0;
     camera.position.set(0, 5.2, 8.5);
     $('hud-city').textContent = (dailyMode ? 'DAILY · ' : '')
@@ -379,7 +473,7 @@ let testerInvincible = false;   // tester builds only; see the Tester section be
 function showGoal(lm) {
   $('hud-goal-img').src = `assets/monuments/${lm}.png`;
   $('hud-goal-name').textContent = LANDMARK_NAMES[lm];
-  const n = looseDefs(lm, level).length;
+  const n = looseDefs(lm, level, tapsHere(), rules.name === 'gamer').length;
   $('hud-goal-sub').textContent = n ? `Collect its ${n} pieces on the way` : '';
   const el = $('hud-goal');
   el.classList.add('on');
@@ -406,12 +500,20 @@ function hint(text) {
 const CONTINUE_PRICES = [150, 300, 600];
 let continuesUsed = 0;
 
-function crash() {
+function crash(o) {
   if (GOD || testerInvincible) return;
-  sfx.crash();
+  if (o?.water) {
+    sfx.splash();
+    splash = makeSplash(); splashT = 0; splashDeep = o.water === 'deep';
+    splash.position.set(player.x, 0, player.group.position.z);
+    scene.add(splash);
+    shake = 0.3;
+  } else {
+    sfx.crash();
+    shake = 0.7;
+  }
   hapticHeavy();
   stopMusic();
-  shake = 0.7;
   state = 'dead';
   const price = CONTINUE_PRICES[continuesUsed];
   const offerContinue = !dailyMode && price !== undefined;
@@ -441,6 +543,7 @@ function acceptContinue() {
   continuesUsed++;
   shake = 0;
   track.clearNearPlayer();
+  clearSplash();
   player.vy = 0; player.y = 0; player.grounded = true; player.rolling = 0;
   state = 'run';
   showScreen(null);
@@ -475,7 +578,10 @@ function settleRun() {
 }
 
 function endRun() {
+  clearSplash();
   settleRun();
+  $('over-title').textContent = 'Run over';
+  $('over-note').textContent = '';
   $('over-score').textContent = Math.round(score);
   $('over-coins').textContent = coins;
   showScreen('over');
@@ -590,7 +696,7 @@ function applyCityPalette() {
 function showStreetFacts() {
   lastRunPieces = track ? track.piecesCollected.slice() : null;
   // a finished street that beats the saved one becomes the ghost to race
-  if (!dailyMode && ghostRec) saveGhostIfBest(city().id, level, ghostRec.result(score));
+  if (!dailyMode && ghostRec) saveGhostIfBest(city().id, level, ghostRec.result(score), rules.name);
   fadeOutMusic();
   state = 'facts';
   applyCityPalette();
@@ -608,7 +714,7 @@ function startPuzzle() {
   // parameter reaches this directly. The normal path (the BUILD button after a
   // run) is already entitled, so this only ever fires on a debug URL — but a
   // debug URL that survives into a shipped build is a one-tap bypass.
-  if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall(); return; }
+  if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall('menu', city().id); return; }
   stopMusic();
   hideGoal();
   doFade(() => {
@@ -616,7 +722,10 @@ function startPuzzle() {
     scene = new THREE.Scene();
     dressScene(scene, city());
     const lm = city().landmarks[level - 1];
-    puzzle = new Puzzle(scene, camera, lm, level, { collected: lastRunPieces });
+    // Straight from a run, keep that run's rules: its pieces were dealt for
+    // them, even if the mode was switched in Settings on the way.
+    if (!lastRunPieces) rules = playRules();
+    puzzle = new Puzzle(scene, camera, lm, level, { collected: lastRunPieces, tap: tapsHere(), gamer: rules.name === 'gamer', timeScale: puzzleTimeScale() });
     lastRunPieces = null;
     puzzle.hintFn = hint;
     document.body.classList.remove('run-pieces');
@@ -630,7 +739,11 @@ function startPuzzle() {
     state = 'puzzle';
     showScreen(null);
     const missing = puzzle.missingLeft();
-    if (missing && !save.seenMissingHelp) showMissingHelp();
+    // A first street that is dragged gets a clear warning, once per city:
+    // players who learnt tapping in the first three cities would otherwise
+    // tap away at a monument that no longer responds to it.
+    if (level === 1 && puzzle.mode === 'drag' && !(save.dragTold || {})[city().id]) showDragHelp();
+    else if (missing && !save.seenMissingHelp) showMissingHelp();
     hint(missing
       ? `${missing} piece${missing > 1 ? 's' : ''} missed on the street — they'll arrive as you build`
       : puzzle.mode === 'tap' ? 'Tap the glowing blocks — drag to look around'
@@ -647,13 +760,16 @@ function finishPuzzle(won) {
     // A share of the clock rather than raw seconds: the total now scales with
     // the monument, and this keeps the bonus's ceiling at 3000 either way —
     // which is also what the score plausibility bound in scores.js assumes.
-    puzzleBonus = Math.round((puzzle.time / puzzle.timeTotal) * 60) * 50;
+    puzzleBonus = Math.round((puzzle.time / puzzle.timeTotal) * 60 * 50 * rules.scoreMul);
     score += puzzleBonus;
     // A daily awards no stars. Its city and street come from the date, not
     // from the player's progress, so a star here would open cities out of
     // order — and, in a city the player has not bought, hand out progress in
     // paid content. See the note on the daily exemption in startRun().
     if (!dailyMode) save.stars[city().id] = Math.max(save.stars[city().id] || 0, level);
+    // Counted for the rating prompt below: a player asked after a few wins
+    // has seen enough of the game to have an opinion.
+    save.monumentsWon = (save.monumentsWon || 0) + 1;
     settleRun();
     // A daily is one course: there is no next level to carry on to. Showing
     // the button carried dailyMode — and with it the paywall exemption — into
@@ -667,17 +783,32 @@ function finishPuzzle(won) {
       applyCityPalette();
       const md = MONUMENT_FACTS[lm];
       paintFacts($('pw-facts'), md?.facts || [], 'm:' + lm);
-      paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm], !!save.reducedMotion, md?.altitude);
+      paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm], !!save.reducedMotion, md?.altitude, md?.note);
       showScreen('pwin');
       state = 'pwin';
+      // Apple's rating prompt, at a good moment: just after a win, on the
+      // 3rd, 10th and 30th monument. StoreKit decides whether it actually
+      // shows (at most three times a year), and it is native only.
+      if (REVIEW_AT.includes(save.monumentsWon)) setTimeout(requestReview, 1500);
     }, 4300);
     state = 'pwin-wait';
   } else {
     settleRun();            // the run still counts even if the puzzle timed out
-    $('over-score').textContent = Math.round(score);
-    $('over-coins').textContent = coins;
-    showScreen('over');
-    state = 'over';
+    // Say why it ended (device feedback, 15 October 2026: the clock ran out
+    // and the game cut straight to RUN AGAIN with no word of what happened).
+    // The half-built monument stays on screen under "TIME'S UP" for a moment.
+    const placed = puzzle.placedCount, total = puzzle.items.length;
+    hint("TIME'S UP");
+    state = 'pfail-wait';
+    setTimeout(() => {
+      if (state !== 'pfail-wait') return;
+      $('over-title').textContent = 'Out of time';
+      $('over-note').textContent = `${LANDMARK_NAMES[lm]}: ${placed} of ${total} pieces placed. Run the street again to rebuild it.`;
+      $('over-score').textContent = Math.round(score);
+      $('over-coins').textContent = coins;
+      showScreen('over');
+      state = 'over';
+    }, 1800);
   }
 }
 
@@ -695,7 +826,12 @@ function syncFetchButton() {
   const show = n > 0 && coins + save.coins >= price;
   // What is happening, in words: "2 missing pieces on the way · next in 3s".
   // First device feedback was that nothing said pieces were coming at all.
-  const dt = n ? `${n} missing piece${n > 1 ? 's' : ''} on the way · next in ${Math.ceil(puzzle.nextDeliveryIn())}s` : '';
+  // And when the next course is held up by one of them, say so: with nothing
+  // placeable, the pieces left on the ground simply refused to fit (device
+  // feedback, 15 October 2026, the Casa Rosada's windows).
+  const secs = n ? Math.ceil(puzzle.nextDeliveryIn()) : 0;
+  const dt = !n ? '' : `${n} missing piece${n > 1 ? 's' : ''} on the way · next in ${secs}s`
+    + (puzzle.waitingOnMissing() ? '. Nothing else fits until it lands.' : '');
   if (dt !== deliverText) {
     deliverText = dt;
     $('hud-deliver').textContent = dt;
@@ -723,6 +859,20 @@ function showMissingHelp() {
   $('missing-help').classList.add('on');
   state = 'puzzle-intro';
 }
+function showDragHelp() {
+  $('dh-text').textContent = `The ${LANDMARK_NAMES[city().landmarks[level - 1]]} is built by dragging. `
+    + 'Press a glowing block, drag it onto its outline and let go. Tapping a block will not place it.';
+  $('drag-help').classList.add('on');
+  state = 'puzzle-intro';
+}
+$('dh-ok').onclick = () => {
+  $('drag-help').classList.remove('on');
+  save.dragTold = { ...(save.dragTold || {}), [city().id]: true };
+  persist();
+  state = 'puzzle';
+  clock.getDelta();                 // the card's time is not the player's
+  if (puzzle.missingLeft() && !save.seenMissingHelp) showMissingHelp();
+};
 function closeMissingHelp(bring) {
   $('missing-help').classList.remove('on');
   save.seenMissingHelp = true;
@@ -913,60 +1063,95 @@ let paywallFrom = 'menu';
  */
 function showPaywallOwned(message) {
   $('btn-paywall-buy').style.display = 'none';
+  $('btn-paywall-pack').style.display = 'none';
   $('btn-paywall-restore').style.display = 'none';
   $('btn-paywall-close').textContent = 'CONTINUE';
   $('paywall-status').textContent = message;
 }
 
-async function openPaywall(from) {
+// The city whose card opened the paywall (null from Settings or the Shop):
+// its region's pack is the one offered beside "everything".
+let paywallCity = null;
+// The paid cities in a region the player can see now, for the pack's line.
+const regionCityNames = (region) => CITIES
+  .filter((c) => c.region === region && isPaidCity(c.id)).map((c) => titleCase(c.name));
+const titleCase = (s) => s.toLowerCase().replace(/(^|[\s-])\S/g, (m) => m.toUpperCase());
+
+async function openPaywall(from, cityId = null) {
   paywallFrom = from === 'settings' || from === 'shop' ? from : 'menu';
-  const buy = $('btn-paywall-buy');
+  paywallCity = cityId;
+  const buy = $('btn-paywall-buy'), pack = $('btn-paywall-pack');
   const status = $('paywall-status');
   status.textContent = '';
   $('pw-price').textContent = '';
+  $('pw-pack-price').textContent = '';
   $('btn-paywall-restore').style.display = '';
   $('btn-paywall-close').textContent = 'NOT NOW';
   // Hidden rather than disabled-looking until we know there is something to
   // sell. A buy button that is visible before the price loads invites a tap
   // that cannot work.
   buy.style.display = 'none';
+  pack.style.display = 'none';
+  $('pw-pack-row').style.display = 'none';
+  $('pw-all-row').style.display = 'none';
   openOverlay('paywall');
 
   if (hasFullAccess()) {
     showPaywallOwned('You already own everything.');
     return;
   }
+  if (cityId && ownsCity(cityId)) {
+    showPaywallOwned('You already own this city.');
+    return;
+  }
 
-  const offer = await getOffer();
-  if (!offer) {
+  const { everything, pack: packOffer } = await getOffers(cityId);
+  if (!everything && !packOffer) {
     // Normal on the web build, and on a device that cannot reach the store.
     // Say so plainly and leave Restore reachable — a player who already paid
     // must not be stuck behind a broken shop.
+    // From Settings or the Shop there is no city, so once FOUNDER is gone
+    // there is no single pack to show: the locked city's own card is the
+    // way in.
     status.textContent = isFreeBuild()
       ? 'Everything is already unlocked in the browser version.'
-      : 'The store is not reachable right now. Please try again later.';
+      : cityId ? 'The store is not reachable right now. Please try again later.'
+        : 'Tap a locked city on the menu to see its region pack.';
     return;
   }
-  $('pw-price').textContent = offer.price;
-  $('pw-buy-label').textContent = 'UNLOCK';
-  buy.style.display = '';
+  if (everything) {
+    $('pw-all-row').style.display = '';
+    $('pw-price').textContent = everything.price;
+    buy.style.display = '';
+  }
+  if (packOffer) {
+    const region = regionOf(cityId);
+    const names = regionCityNames(region);
+    $('pw-pack-text').innerHTML = `<b>${REGIONS[region]} pack</b>: ${names.join(', ')}, and every city added to the region later`;
+    // The line above names the region; on the button the longest name
+    // (Middle East and Africa) would not fit a 375px screen.
+    $('pw-pack-label').textContent = 'REGION PACK';
+    $('pw-pack-price').textContent = packOffer.price;
+    $('pw-pack-row').style.display = '';
+    pack.style.display = '';
+  }
 }
-
 $('btn-paywall-close').onclick = () => {
   if (paywallFrom === 'settings') { renderSettings(); openOverlay('settings'); return; }
   if (paywallFrom === 'shop') { renderShop(); openOverlay('shop'); return; }
   closeOverlay();
 };
 
-$('btn-paywall-buy').onclick = async () => {
+async function buyOffer(kind) {
   const status = $('paywall-status');
-  const buy = $('btn-paywall-buy');
-  const offer = await getOffer();
+  const btn = kind === 'pack' ? $('btn-paywall-pack') : $('btn-paywall-buy');
+  const offers = await getOffers(paywallCity);
+  const offer = offers[kind];
   if (!offer) return;
-  buy.disabled = true;
+  btn.disabled = true;
   status.textContent = `Opening ${storeWords().store}…`;
   const ok = await purchase(offer.productId);
-  buy.disabled = false;
+  btn.disabled = false;
   if (!ok) {
     // Covers the player simply cancelling Apple's sheet, which is not a
     // failure and must not be reported as one.
@@ -975,14 +1160,22 @@ $('btn-paywall-buy').onclick = async () => {
   }
   // The entitlement itself is granted by the store's verified handler, not
   // here — including for an Ask to Buy approval that lands much later.
-  if (hasFullAccess()) {
+  if (paywallSatisfied()) {
     hapticSuccess();
     buildCitySelect();
-    showPaywallOwned('Thank you. Everything is unlocked.');
+    showPaywallOwned(thanks());
   } else {
     status.textContent = 'Waiting for confirmation. This can take a moment.';
   }
-};
+}
+$('btn-paywall-buy').onclick = () => buyOffer('everything');
+$('btn-paywall-pack').onclick = () => buyOffer('pack');
+
+// The paywall's job is done when the player owns everything, or the city
+// that opened it.
+const paywallSatisfied = () => hasFullAccess() || (!!paywallCity && ownsCity(paywallCity));
+const thanks = () => (hasFullAccess() ? 'Thank you. Everything is unlocked.'
+  : `Thank you. ${REGIONS[regionOf(paywallCity)]} is unlocked.`);
 
 // A purchase can verify after purchase() has already resolved — often
 // seconds later while "Waiting for confirmation" is still on screen, and for
@@ -991,9 +1184,9 @@ $('btn-paywall-buy').onclick = async () => {
 onEntitlementGranted(() => {
   buildCitySelect();
   const paywallOpen = $('screen-paywall').classList.contains('on');
-  if (paywallOpen && hasFullAccess()) {
+  if (paywallOpen && paywallSatisfied()) {
     hapticSuccess();
-    showPaywallOwned('Thank you. Everything is unlocked.');
+    showPaywallOwned(thanks());
   }
   if ($('screen-settings').classList.contains('on')) renderPurchaseRows();
   if ($('screen-shop').classList.contains('on')) renderShopPurchaseRow();
@@ -1003,13 +1196,11 @@ onEntitlementGranted(() => {
 async function doRestore(statusEl) {
   statusEl.textContent = `Checking with ${storeWords().store}…`;
   const found = await restore();
-  if (hasFullAccess()) {
-    buildCitySelect();
-    if (statusEl.id === 'paywall-status') {
-      showPaywallOwned('Restored. Everything is unlocked.');
-    } else {
-      statusEl.textContent = 'Restored. Everything is unlocked.';
-    }
+  if (found.length) buildCitySelect();
+  if (hasFullAccess() || (statusEl.id === 'paywall-status' && paywallSatisfied())) {
+    const msg = hasFullAccess() ? 'Restored. Everything is unlocked.' : `Restored. ${REGIONS[regionOf(paywallCity)]} is unlocked.`;
+    if (statusEl.id === 'paywall-status') showPaywallOwned(msg);
+    else statusEl.textContent = msg;
   } else {
     statusEl.textContent = found.length
       ? 'Restored.'
@@ -1108,6 +1299,7 @@ function renderSettings() {
   setToggle('set-motion', !!save.reducedMotion);
   setToggle('set-ghost', save.raceBest !== false);
   setToggle('set-touchbtns', !!save.touchButtons);
+  renderModeButtons();
   $('set-vol').value = Math.round(audioPrefs.volume * 100);
   $('set-name').textContent = getIdentity().name;
   $('set-version').textContent = `v${VERSION}`;
@@ -1127,10 +1319,10 @@ function setPurchaseRowState(label, view) {
     label.textContent = 'Founder — thank you';
     view.style.display = 'none';
   } else if (hasFullAccess()) {
-    label.textContent = 'Full city set — unlocked';
+    label.textContent = 'All cities — unlocked';
     view.style.display = 'none';
   } else {
-    label.textContent = 'Full city set';
+    label.textContent = 'More cities';
     view.style.display = '';
     view.textContent = 'view';
   }
@@ -1180,6 +1372,27 @@ $('set-motion').onclick = () => {
 };
 // Off: every street is a fresh random course, with no ghost.
 $('set-ghost').onclick = () => { setRaceBest(save.raceBest === false); renderSettings(); };
+function setGameMode(mode) {
+  save.mode = mode;
+  persist();
+  renderModeButtons();
+}
+function renderModeButtons() {
+  const gamer = gameMode() === 'gamer';
+  const el = $('set-mode');
+  el.textContent = gamer ? 'GAMER' : 'NEWBIE';
+  el.setAttribute('aria-label', `Game mode: ${gamer ? 'Gamer' : 'Newbie'}`);
+  for (const [id, on] of [['help-mode-newbie', !gamer], ['help-mode-gamer', gamer], ['wn-mode-newbie', !gamer], ['wn-mode-gamer', gamer]]) {
+    $(id).classList.toggle('on', on);
+    $(id).setAttribute('aria-pressed', String(on));
+  }
+}
+$('set-mode').onclick = () => setGameMode(gameMode() === 'gamer' ? 'newbie' : 'gamer');
+$('help-mode-newbie').onclick = () => setGameMode('newbie');
+$('help-mode-gamer').onclick = () => setGameMode('gamer');
+$('wn-mode-newbie').onclick = () => setGameMode('newbie');
+$('wn-mode-gamer').onclick = () => setGameMode('gamer');
+renderModeButtons();
 $('btn-ghost').onclick = (e) => {
   e.stopPropagation();
   const on = save.raceBest === false;
@@ -1273,13 +1486,15 @@ const BACK_BUTTONS = {
   'ui-scores': 'btn-scores-close', 'ui-shop': 'btn-shop-close',
   'ui-paywall': 'btn-paywall-close', paused: 'btn-resume',
   'continue-offer': 'btn-continue-no', over: 'btn-menu', pwin: 'btn-menu2',
-  'puzzle-intro': 'mh-ok',
+  'puzzle-intro': ['dh-ok', 'mh-ok'],   // whichever card is up
 };
 function handleBack() {
+  // The What's new card sits over the menu without changing the state.
+  if ($('whats-new').classList.contains('on')) { $('wn-ok').click(); return true; }
   if (state === 'menu') return false;
   if (state === 'run' || state === 'puzzle') { pauseGame(); return true; }
-  const id = BACK_BUTTONS[state];
-  if (id && $(id).getClientRects().length) $(id).click();   // only if it is on screen
+  const id = [].concat(BACK_BUTTONS[state] || []).find((i) => $(i).getClientRects().length);
+  if (id) $(id).click();   // only a button that is on screen
   return true;
 }
 onBackButton(handleBack);
@@ -1289,12 +1504,41 @@ $('btn-continue-pay').onclick = acceptContinue;
 $('btn-continue-no').onclick = declineContinue;
 $('btn-retry').onclick = () => startRun();
 $('btn-menu').onclick = $('btn-menu2').onclick = () => doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; });
+
+// Sharing (1.2.2): a SHARE button on the result screens opens Apple's share
+// sheet with one line about the run and the App Store link. Native only (see
+// canShare in src/core/native.js); nothing is sent anywhere unless the player
+// picks an app to share to. On a daily the line invites a friend to the same
+// course, which is the point of a daily.
+const APP_STORE_URL = 'https://apps.apple.com/app/id6806808248';
+const REVIEW_AT = [3, 10, 30];
+function shareWhere() {
+  return `${city().streets[level - 1]}, ${titleCase(city().name)}`;
+}
+if (canShare()) {
+  $('btn-share-pw').style.display = '';
+  $('btn-share-over').style.display = '';
+}
+$('btn-share-pw').onclick = () => {
+  const name = $('pw-name').textContent;
+  shareText(dailyMode
+    ? `I rebuilt the ${name} on today's CityRunner daily challenge (${shareWhere()}) and scored ${Math.round(score)}. Everyone gets the same course today. Can you beat it?`
+    : `I just rebuilt the ${name} in CityRunner with ${$('pw-time').textContent} seconds to spare.`, APP_STORE_URL);
+};
+$('btn-share-over').onclick = () => {
+  shareText(dailyMode
+    ? `I scored ${Math.round(score)} on today's CityRunner daily challenge: ${shareWhere()}. Everyone gets the same course today. Can you beat it?`
+    : `I scored ${Math.round(score)} running ${shareWhere()} in CityRunner.`, APP_STORE_URL);
+};
 $('btn-next').onclick = () => {
   // Belt and braces: the button is hidden after a daily (finishPuzzle), but a
   // next level is never a daily, whatever route reached this handler.
   dailyMode = false; runSeed = null;
+  // after a city's last street, the next city in its chain (see chainPrev),
+  // not the next in the list, which may be another region's
+  const next = level === 3 ? chainNext(city().id) : null;
   if (level < 3) level++;
-  else if (cityIdx < CITIES.length - 1) { cityIdx++; level = 1; }
+  else if (next) { cityIdx = CITIES.findIndex((c) => c.id === next); level = 1; }
   else { doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; }); return; }
   startRun();
 };
@@ -1331,11 +1575,11 @@ function frame() {
 
   if (state === 'run' || state === 'dead') {
     if (state === 'run') {
-      speed += dt * 0.25;                       // gentle ramp
-      score += speed * dt * 2;
+      speed += dt * rules.ramp;                 // a gentle ramp (steeper in Gamer)
+      addScore(speed * dt * 2);
       track.update(dt, speed, player,
-        () => { coins++; sfx.coin(); hapticLight(); score += 25; },
-        () => crash());
+        () => { coins++; sfx.coin(); hapticLight(); addScore(25); },
+        (o) => crash(o));
       player.update(dt, speed);
       ghostRec?.sample(track.distance, score);
       if (ghost && save.raceBest !== false) {
@@ -1346,6 +1590,14 @@ function frame() {
         el.className = gap >= 0 ? 'ahead' : 'behind';
       }
       if (track.done()) showStreetFacts();
+    }
+    // falling in: the runner sinks, the spray rises and settles
+    if (splash) {
+      splashT += dt;
+      splash.userData.update(splashT);
+      // a canal takes you under; a flooded street only to the waist
+      player.group.position.y = -Math.min(splashDeep ? 1.6 : 0.8, splashT * 3);
+      if (splashDeep && splashT > 0.6) player.group.visible = false;
     }
     // camera follow + speed shake
     const targetFov = 62 + Math.min(14, (speed - 14) * 0.5);
@@ -1423,6 +1675,30 @@ document.querySelectorAll('.souv[data-city]').forEach((el) => {
 // would cover the menu on every single test run, not just a player's actual
 // first one. See src/core/debug.js.
 if (isFirstRun && !DEBUG_HOOKS) openOverlay('help');
+
+// What's new, once per release that has news, for a player who was here
+// before it (Dan, 18 October 2026: tell players about the two game modes and
+// the ghost). A brand-new player gets Help above instead, which covers both,
+// so for them it is marked seen. Not on the test routes, for the reason given
+// above; ?news shows it there on demand.
+const NEWS = '1.2.0';
+function renderNewsGhost() {
+  const on = save.raceBest !== false, el = $('wn-ghost');
+  el.textContent = on ? 'ON' : 'OFF';
+  el.classList.toggle('on', on);
+  el.setAttribute('aria-pressed', String(on));
+}
+function showNews() {
+  renderModeButtons();
+  renderNewsGhost();
+  $('whats-new').classList.add('on');
+  $('wn-ok').focus();
+}
+$('wn-ghost').onclick = () => { setRaceBest(save.raceBest === false); renderNewsGhost(); renderSettings(); };
+$('wn-ok').onclick = () => { save.newsSeen = NEWS; persist(); $('whats-new').classList.remove('on'); };
+if (isFirstRun) { save.newsSeen = NEWS; persist(); }
+else if (!DEBUG_HOOKS && save.newsSeen !== NEWS) showNews();
+if (DEBUG_HOOKS && new URLSearchParams(location.search).has('news')) showNews();
 frame();
 
 // ---------- tester build ----------
@@ -1503,6 +1779,8 @@ if (DEBUG_HOOKS && q.get('view')) {
     // memory probes: GPU resource counts, and a way to change street
     // in-session (a page reload would reset memory and hide a leak)
     get gpu() { return { ...renderer.info.memory, programs: renderer.info.programs?.length }; },
+    // the last frame's draw calls and triangles, for performance probes
+    get render() { return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }; },
     go(cityId, lv, asPuzzle = false) {
       const ci = CITIES.findIndex((c) => c.id === cityId);
       if (ci < 0) return;
@@ -1518,6 +1796,7 @@ if (DEBUG_HOOKS && q.get('view')) {
     get ghost() { return ghost; },
     get player() { return player; },
     get speed() { return speed; },
+    get rules() { return rules; },
     get seed() { return runSeed; },
     get score() { return score; },
     get continuesUsed() { return continuesUsed; },
@@ -1562,7 +1841,7 @@ if (DEBUG_HOOKS && q.get('ui')) {
     applyCityPalette();
     const md = MONUMENT_FACTS[lm];
     paintFacts($('pw-facts'), md?.facts || [], 'm:' + lm);
-    paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm], !!save.reducedMotion, md?.altitude);
+    paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm], !!save.reducedMotion, md?.altitude, md?.note);
     showScreen('pwin'); state = 'pwin';
   } else if (which === 'paused') {
     showScreen('paused'); state = 'paused';
@@ -1575,9 +1854,15 @@ if (DEBUG_HOOKS && q.get('ui')) {
     // answer in a browser. Stand in a representative one so the layout can
     // be reviewed at every viewport — this branch is debug-only and never
     // runs in the app.
+    // Both offers, the tallest the screen gets, so the fit suites measure it.
     $('pw-price').textContent = q.get('price') || '£1.99';
-    $('pw-buy-label').textContent = 'UNLOCK';
     $('btn-paywall-buy').style.display = '';
+    $('pw-all-row').style.display = '';
+    $('pw-pack-text').innerHTML = '<b>Europe pack</b>: Rome, and every city added to the region later';
+    $('pw-pack-label').textContent = 'REGION PACK';
+    $('pw-pack-price').textContent = q.get('packprice') || '£0.99';
+    $('pw-pack-row').style.display = '';
+    $('btn-paywall-pack').style.display = '';
     $('paywall-status').textContent = '';
     showScreen('paywall'); state = 'ui-paywall';
   }

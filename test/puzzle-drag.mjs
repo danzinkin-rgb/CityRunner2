@@ -9,7 +9,9 @@
  * directly — because the pointer layer deciding "drag this piece" versus
  * "orbit the camera" is exactly the part that can break.
  *
- *   street 2: dragging a glowing piece onto its ghost places it
+ *   street 1 outside the first three cities: dragging a glowing piece onto
+ *             its ghost places it
+ *   street 2: no glow, at most one piece turned
  *   street 3: a piece from a later course is refused, even on its own spot
  *   street 3: a piece that is a quarter-turn out is refused until tapped
  *   every street: the clock scales with the loose pieces
@@ -59,6 +61,13 @@ async function drag(page, from, to) {
 
 async function openPuzzle(city, level) {
   const ctx = await browser.newContext({ viewport: VIEW });
+  // The "Drag to build" card holds the puzzle on a dragged street 1; this
+  // suite is about the dragging itself (test/modes.mjs covers the card).
+  await ctx.addInitScript(() => {
+    if (localStorage.getItem('cityrunner2')) return;
+    localStorage.setItem('cityrunner2', JSON.stringify({ stars: {}, coins: 0, best: 0,
+      dragTold: { nyc: true, paris: true, london: true, rome: true, sf: true, jerusalem: true, mexico: true } }));
+  });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
@@ -83,11 +92,22 @@ async function candidates(page, filterSrc) {
   const { ctx, page, errors } = await openPuzzle('paris', 2);
   const info = await page.evaluate(() => {
     const p = window.__cr.puzzle;
-    return { mode: p.mode, glow: p.glow, total: p.timeTotal, loose: p.items.length - p.placedCount };
+    return { mode: p.mode, glow: p.glow, turning: p.turning, total: p.timeTotal, loose: p.items.length - p.placedCount,
+      turned: p.items.filter((it) => it.turns).length };
   });
-  check(info.mode === 'drag' && info.glow, 'street 2 is drag-to-place, with glow', JSON.stringify(info));
-  check(info.total === Math.round(Math.min(120, Math.max(40, 20 + 3.4 * info.loose))),
+  check(info.mode === 'drag' && !info.glow && info.turning, 'street 2 is drag-to-place, with no glow, and turns pieces', JSON.stringify(info));
+  check(info.turned <= 1, 'street 2 turns at most one piece', `${info.turned}`);
+  // Paris is one of the first three cities, so no per-city tightening; Newbie.
+  check(info.total === Math.round(Math.min(120, Math.max(30, 20 + 3.0 * info.loose))),
     'street 2 clock scales with the loose pieces', `${info.total}s for ${info.loose}`);
+  await ctx.close();
+}
+
+// ------------------------------------------- a dragged street 1 (Rome, Newbie)
+{
+  const { ctx, page, errors } = await openPuzzle('rome', 1);
+  const info = await page.evaluate(() => ({ mode: window.__cr.puzzle.mode, glow: window.__cr.puzzle.glow }));
+  check(info.mode === 'drag' && info.glow, 'a dragged street 1 glows', JSON.stringify(info));
   let placed = false;
   for (const order of await candidates(page, 'p.pickable(it)')) {
     const loc = await page.evaluate(LOCATE, { order });
@@ -98,31 +118,16 @@ async function candidates(page, filterSrc) {
     placed = after === before + 1;
     break;
   }
-  check(placed, 'street 2: dragging a glowing piece onto its ghost places it');
-  check(!errors.length, 'street 2: no page errors', errors[0] || '');
+  check(placed, 'street 1 (dragged): dragging a glowing piece onto its ghost places it');
+  check(!errors.length, 'street 1 (dragged): no page errors', errors[0] || '');
   await ctx.close();
 }
 
-// ------------------------------------------------------------- street 3
-{
-  const { ctx, page, errors } = await openPuzzle('paris', 3);
-  const info = await page.evaluate(() => ({ mode: window.__cr.puzzle.mode, glow: window.__cr.puzzle.glow }));
-  check(info.mode === 'drag' && !info.glow, 'street 3 is drag-to-place, with no glow', JSON.stringify(info));
-
-  // out of order: a piece from a later course, dropped on its own ghost
-  let refused = null;
-  for (const order of await candidates(page, '!p.pickable(it) && it.turns === 0')) {
-    const loc = await page.evaluate(LOCATE, { order });
-    if (!loc.clear) continue;
-    const before = await page.evaluate(() => window.__cr.puzzle.placedCount);
-    await drag(page, loc.at, loc.target);
-    refused = (await page.evaluate(() => window.__cr.puzzle.placedCount)) === before;
-    break;
-  }
-  check(refused === true, 'street 3: a piece from a later course is refused on its own spot');
-
-  // Build up to the first course that has a turned piece, by tapping pieces
-  // home programmatically (tryPick is the placement call street 1 uses).
+// Build up to the first course that has a turned piece, by tapping pieces
+// home programmatically (tryPick is the placement call street 1 uses), then
+// drag a turned piece: refused, tap it, drag again: placed. Returns nulls if
+// no turned piece could be seen clearly on this board.
+async function turnCheck(page) {
   for (let guard = 0; guard < 40; guard++) {
     const turnedNow = await candidates(page, 'p.pickable(it) && it.turns === 1');
     if (turnedNow.length) break;
@@ -152,6 +157,39 @@ async function candidates(page, filterSrc) {
     turnedThenPlaced = turns === 0
       && (await page.evaluate(() => window.__cr.puzzle.placedCount)) === before + 1;
     break;
+  }
+  return { turnRefused, turnedThenPlaced };
+}
+
+// ------------------------------------------------------------- street 3
+{
+  const { ctx, page, errors } = await openPuzzle('paris', 3);
+  const info = await page.evaluate(() => ({ mode: window.__cr.puzzle.mode, glow: window.__cr.puzzle.glow }));
+  check(info.mode === 'drag' && !info.glow, 'street 3 is drag-to-place, with no glow', JSON.stringify(info));
+
+  // out of order: a piece from a later course, dropped on its own ghost
+  let refused = null;
+  for (const order of await candidates(page, '!p.pickable(it) && it.turns === 0')) {
+    const loc = await page.evaluate(LOCATE, { order });
+    if (!loc.clear) continue;
+    const before = await page.evaluate(() => window.__cr.puzzle.placedCount);
+    await drag(page, loc.at, loc.target);
+    refused = (await page.evaluate(() => window.__cr.puzzle.placedCount)) === before;
+    break;
+  }
+  check(refused === true, 'street 3: a piece from a later course is refused on its own spot');
+
+  // Which pieces are turned, and whether one is in clear view once the
+  // courses below it are built, depends on the board: three per monument on
+  // street 3 now, often hidden behind the courses already placed. Try a few
+  // boards until one shows a turned piece clearly.
+  let { turnRefused, turnedThenPlaced } = await turnCheck(page);
+  for (const [c, l] of [['london', 3], ['nyc', 3], ['paris', 2], ['london', 2]]) {
+    if (turnRefused !== null) break;
+    const other = await openPuzzle(c, l);
+    ({ turnRefused, turnedThenPlaced } = await turnCheck(other.page));
+    errors.push(...other.errors);
+    await other.ctx.close();
   }
   check(turnRefused === true, 'street 3: a piece a quarter-turn out is refused');
   check(turnedThenPlaced === true, 'street 3: tapping it turns it, and then it fits');

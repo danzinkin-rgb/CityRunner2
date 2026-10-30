@@ -105,17 +105,111 @@ A Sydney built on the **Harbour Bridge (1932)**, Queen Victoria Building and Bon
 
 ---
 
+## Thirteen more cities (12 October 2026)
+
+Dan asked for more cities, light on Europe and heavier on Asia and Africa,
+grouped by region so they could later be sold as region packs, and each
+with a move of its own, in the way Rome has its signalling Vespas. All
+thirteen are built and in the release queue behind Mexico City
+(`docs/RELEASES.md`). Each city has a `region` in `themes.js` (`REGIONS`
+lists them); packs themselves are not built, and how they would sit beside
+the Founder and Unlock purchases is still Dan's decision.
+
+| # | City | Region | Monuments (street 1, 2, 3) | Its move |
+|---|---|---|---|---|
+| 1 | Marrakech | Middle East and Africa | Koutoubia Minaret, Bab Agnaou, Ben Youssef Madrasa | Porters' handcarts cross the road |
+| 2 | Delhi | Asia | Red Fort (Lahori Gate), Qutub Minar, India Gate | Rickshaws drive on ahead, then brake hard |
+| 3 | Bangkok | Asia | Giant Swing, Wat Arun, Chakri Maha Prasat | Tuk-tuks U-turn across one or two lanes |
+| 4 | Cape Town | Middle East and Africa | Waterfront Clock Tower, Castle of Good Hope, City Hall | Wind gusts push you a lane, never into anything |
+| 5 | Hanoi | Asia | Turtle Tower, Long Bien Bridge, Temple of Literature | Motorbikes swerve in pairs; a train on Train Street |
+| 6 | Seoul | Asia | Heunginjimun, Gyeonghoeru Pavilion, Geunjeongjeon | A crowd crosses when the countdown ends |
+| 7 | Zanzibar | Middle East and Africa | Old Fort, Christ Church Cathedral, House of Wonders | Houses jut out: the street narrows to two lanes |
+| 8 | Samarkand | Asia | Ulugh Beg Observatory, Gur-e-Amir, the Registan | Walls of tiled arches; the open arch switches |
+| 9 | Beijing | Asia | Drum Tower, Hall of Prayer for Good Harvests, Hall of Supreme Harmony | Tricycles: jump the low loads, go round the tall |
+| 10 | Havana | Latin America | Castillo de la Real Fuerza, Havana Cathedral, Morro Castle | Waves over the sea wall; old cars pull out |
+| 11 | Istanbul | Europe | Galata Tower, Blue Mosque, Hagia Sophia | The tram down the middle; porters in the bazaar |
+| 12 | Chicago | North America | Water Tower, Buckingham Fountain, Willis Tower | Bascule bridges lift: jump the edge; cabs pull out |
+| 13 | Buenos Aires | Latin America | Casa Rosada, Teatro Colón, Palace of the Congress | Buses pull out from their stops |
+
+Every move lives in `src/run/mechanics.js` and is gated by
+`test/city-mechanics.mjs`: each one is driven by the seed, warns before it
+happens, keeps a lane open, and runs only in its own city, so the existing
+courses (and the determinism fingerprint) do not change. Monuments get more
+pieces street by street (about 12, 18 and 24), on top of main's general
+puzzle tuning.
+
+**Monuments swapped from the first plan**, all on copyright grounds:
+
+- **One Pillar Pagoda → Long Bien Bridge** (Hanoi): the pagoda standing is a 1955 rebuild by an architect who died this century; Vietnam is life + 50.
+- **Sungnyemun → Gyeonghoeru Pavilion** (Seoul): Sungnyemun was rebuilt in 2013, and three gates would look alike.
+- **Bibi-Khanym Mosque → Ulugh Beg Observatory** (Samarkand): largely reconstructed from 1974.
+- **El Capitolio → Castillo de la Real Fuerza** (Havana): a joint work protected until 50 years after its last author's death, and not every co-author's death date could be confirmed.
+
+**Still to check:** Cape Town City Hall's architects (Reid and Green, 1890s competition): their death dates were not found; South Africa is life + 50, so it would take one living past 1975.
+
+**Left out of every skyline and street:** Buenos Aires' Obelisco (to 2041), N Seoul Tower, Tiananmen Square, the Bean and other recent sculptures, and the bronze sea horses of Buckingham Fountain.
+
+---
+
+## Venice (15 October 2026)
+
+Packs went on sale by region on 14 October, and Dan wanted them roughly
+equal, so Europe and North America each needed one more paid city. Of the
+candidates (Lisbon, Venice, Amsterdam; Quebec City, New Orleans,
+Washington), Dan chose Venice first, for the water. North America is still
+open.
+
+- **Streets:** Strada Nova (the 1871 street from the Rialto to the
+  station, washing hung across), the Zattere (the quay on the Giudecca
+  Canal, gondolas moored along it), the Riva degli Schiavoni (the lagoon
+  front, the Campanile at the end).
+- **Monuments:** Rialto Bridge (13 pieces), Santa Maria della Salute (15),
+  Doge's Palace with the Bridge of Sighs and the Piazzetta's columns (24).
+  All long out of copyright.
+- **No cars.** The obstacle that stands in a lane is a porter's trolley of
+  parcels, jumpable; trolleys also stand along the sides in place of
+  parked cars.
+- **Moves:** on the first two streets a gondola crosses in a side canal.
+  The canal is a jump in every lane, and the gondola, being long, walls
+  off the middle lane and one outer lane when you get there: jump in the
+  lane it will have left. On the Riva, acqua alta: two lanes flood for
+  15 m and a wooden walkway runs along the third. test/city-mechanics.mjs
+  gates both.
+- **Souvenir:** a carnival mask.
+- Queued second, behind Mexico City.
+
+## New Orleans (17 October 2026)
+
+Dan's pick for the second North America city.
+
+- **Streets:** Royal Street (pastel Creole houses under cast-iron
+  galleries), St. Charles Avenue (the parade route, big houses under live
+  oaks hung with moss), Decatur Street (beside the Mississippi, the red
+  Riverfront streetcar, St. Louis Cathedral at the end).
+- **Monuments:** the Cabildo (13 pieces), the Pontalba Buildings (17),
+  St. Louis Cathedral (21).
+- **Moves:** Mardi Gras floats on the first two streets: two floats nose
+  to tail come up one lane, riders throwing beads that land as souvenirs
+  in the lane beside them, which is kept clear. On Decatur Street, the
+  streetcar down the middle (the rail move Hanoi and Istanbul share).
+  test/city-mechanics.mjs gates both.
+- **Left out:** Bourbon Street, the Andrew Jackson statue, any krewe's
+  float design.
+- **Souvenir:** Mardi Gras beads. Traffic: ordinary cars.
+
+---
+
 ## Balance check
 
 | Region | Cities |
 |---|---|
-| Europe | Paris, London, Rome *(already 3 of 4)* |
-| North America | New York, **San Francisco** |
-| Asia | **Kyoto** |
-| Latin America | **Mexico City** |
-| Middle East | **Jerusalem** |
+| North America | New York, San Francisco, Chicago, New Orleans |
+| Latin America | Mexico City, Havana, Buenos Aires |
+| Europe | Paris, London, Rome, Istanbul, Venice |
+| Middle East and Africa | Jerusalem, Marrakech, Cape Town, Zanzibar |
+| Asia | Delhi, Bangkok, Hanoi, Seoul, Samarkand, Beijing *(Kyoto parked)* |
 
-That lands at **8 cities, 24 streets, 24 monuments**, with Europe down from 75% to 38% of the roster.
+With Venice and New Orleans that makes **22 cities, 66 streets, 66 monuments**.
 
 ---
 

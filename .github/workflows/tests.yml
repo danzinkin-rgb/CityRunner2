@@ -1,0 +1,33 @@
+# Runs the full gate suite (npm test) on a Linux runner.
+#
+# Added 14 October 2026 when WebKit stopped opening pages on the Windows
+# development machine, so the suite could still be run before a release.
+# The suite is the same one npm test runs locally (test/run-all.mjs); on a
+# runner WebGL is software-rendered, so it is slower than on a desktop.
+# A failing suite's output is also written as an error annotation
+# (run-all.mjs), readable from the run's page.
+#
+# Manual only since 18 October 2026 (Dan: "failed tests aren't useful"). On
+# a runner WebGL is software-rendered, and the suites that time a live run
+# (rome-weave, ghost, puzzle-drag, city-mechanics, audio-unlock, the iPhone
+# SE win screen) failed on every push, so the runs cost minutes and said
+# nothing. The gate is npm test on the development machine; start this from
+# the Actions tab only if WebKit stops working there again.
+name: Tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      - run: npm test

@@ -3,6 +3,7 @@ import { getLandmark } from './landmarks.js';
 import { sfx } from '../core/audio.js';
 import { DEBUG_HOOKS } from '../core/debug.js';
 import { disposeTree } from '../core/engine.js';
+import { SKYLINES } from './skylines.js';
 
 // Monument assembly puzzle.
 // Blocks are scattered on a festival plaza; a ghost silhouette shows the
@@ -18,6 +19,21 @@ const CITY_OF = {
   ggbridge: 'sf', coit: 'sf', paintedladies: 'sf',
   templomayor: 'mexico', catedral: 'mexico', castillo: 'mexico',
   kotel: 'jerusalem', domerock: 'jerusalem', towerdavid: 'jerusalem', holysepulchre: 'jerusalem',
+  koutoubia: 'marrakech', babagnaou: 'marrakech', benyoussef: 'marrakech',
+  lahori: 'delhi', qutub: 'delhi', indiagate: 'delhi',
+  giantswing: 'bangkok', watarun: 'bangkok', chakri: 'bangkok',
+  clocktower: 'capetown', goodhope: 'capetown', cityhall: 'capetown',
+  turtletower: 'hanoi', longbien: 'hanoi', vanmieu: 'hanoi',
+  heunginjimun: 'seoul', gyeonghoeru: 'seoul', geunjeongjeon: 'seoul',
+  observatory: 'samarkand', gurlamir: 'samarkand', registan: 'samarkand',
+  oldfort: 'zanzibar', christchurch: 'zanzibar', wonders: 'zanzibar',
+  drumtower: 'beijing', qiniandian: 'beijing', taihedian: 'beijing',
+  realfuerza: 'havana', habanacathedral: 'havana', morro: 'havana',
+  galata: 'istanbul', bluemosque: 'istanbul', hagiasophia: 'istanbul',
+  watertower: 'chicago', buckingham: 'chicago', willis: 'chicago',
+  casarosada: 'buenosaires', colon: 'buenosaires', congreso: 'buenosaires',
+  rialto: 'venice', salute: 'venice', dogespalace: 'venice',
+  cabildo: 'neworleans', pontalba: 'neworleans', stlouis: 'neworleans',
 };
 // Plaza floors deliberately contrast their monuments. Every landmark in the
 // game is a warm stone/limestone/bronze hero, and every city theme lights the
@@ -36,6 +52,21 @@ const PLAZA = {
   sf: { stone: '#6a6e76', dark: '#4e525a', trim: '#98a0aa', ground: '#30343a', sky: '#3a4656' },
   jerusalem: { stone: '#667080', dark: '#4c5462', trim: '#96a0b0', ground: '#30343e', sky: '#3c4468' },
   mexico: { stone: '#626a80', dark: '#4a5066', trim: '#9098b0', ground: '#2e3242', sky: '#3e3a6a' },
+  marrakech: { stone: '#5e6a7c', dark: '#465062', trim: '#8c9aac', ground: '#2c323e', sky: '#34466a' },
+  delhi: { stone: '#606a7a', dark: '#48505e', trim: '#8e98a8', ground: '#2e323c', sky: '#3a4a66' },
+  bangkok: { stone: '#5c687a', dark: '#444e60', trim: '#8a98ac', ground: '#2c303c', sky: '#344868' },
+  capetown: { stone: '#5a6676', dark: '#424c5c', trim: '#8896a8', ground: '#2a2e3a', sky: '#304a70' },
+  hanoi: { stone: '#5e687a', dark: '#465060', trim: '#8c98aa', ground: '#2c303c', sky: '#384a68' },
+  seoul: { stone: '#626a7c', dark: '#4a5264', trim: '#909aae', ground: '#2e3240', sky: '#30466e' },
+  samarkand: { stone: '#646a78', dark: '#4c5260', trim: '#929aaa', ground: '#30323c', sky: '#2e4470' },
+  zanzibar: { stone: '#5c6a78', dark: '#445260', trim: '#8a9aac', ground: '#2a323c', sky: '#2a4a70' },
+  beijing: { stone: '#626876', dark: '#4a505e', trim: '#9098a8', ground: '#2e323e', sky: '#34466a' },
+  havana: { stone: '#5e6878', dark: '#465060', trim: '#8c98aa', ground: '#2c323e', sky: '#2e486e' },
+  istanbul: { stone: '#606878', dark: '#485060', trim: '#8e98aa', ground: '#2e323e', sky: '#32466c' },
+  chicago: { stone: '#626a7a', dark: '#4a5262', trim: '#909aac', ground: '#2e3240', sky: '#30466e' },
+  buenosaires: { stone: '#5e6878', dark: '#465060', trim: '#8c98aa', ground: '#2c323e', sky: '#32486e' },
+  venice: { stone: '#5a6676', dark: '#44505e', trim: '#8a96a8', ground: '#2a3240', sky: '#30486c' },
+  neworleans: { stone: '#5c6676', dark: '#46505e', trim: '#8c96a8', ground: '#2c3240', sky: '#32466c' },
 };
 
 // Painted-panorama palette. Near layer is the darker, more saturated band the
@@ -48,6 +79,21 @@ const SKYPAL = {
   sf: { near: '#3c4656', far: '#6a7686', trim: '#556070', roof: '#2e3440', win: '255,220,170', accent: '#c1440e' },
   jerusalem: { near: '#6a5a44', far: '#8c7c62', trim: '#7a6a50', roof: '#5a4a36', win: '255,216,160', accent: '#d8b460' },
   mexico: { near: '#5a3e4a', far: '#806a7a', trim: '#7a4a52', roof: '#6a3a30', win: '255,210,150', accent: '#d81b7a' },
+  marrakech: { near: '#6a3a30', far: '#8e6a5a', trim: '#7a4a3a', roof: '#5a3428', win: '255,206,140', accent: '#2e8a6a' },
+  delhi: { near: '#5e4034', far: '#86705e', trim: '#7a4e3a', roof: '#5a3a2a', win: '255,210,150', accent: '#e8780a' },
+  bangkok: { near: '#4e4050', far: '#7a6a78', trim: '#6a4a52', roof: '#8a3a2a', win: '255,214,150', accent: '#e8a818' },
+  capetown: { near: '#3a4a5e', far: '#6a7a8e', trim: '#4a5a6e', roof: '#2a3440', win: '255,224,170', accent: '#e8508a' },
+  hanoi: { near: '#5a4a3a', far: '#827260', trim: '#6a5240', roof: '#6a3a2a', win: '255,212,150', accent: '#c8202a' },
+  seoul: { near: '#3a4454', far: '#6a7486', trim: '#4a5466', roof: '#2a2e36', win: '255,222,170', accent: '#2a7a6a' },
+  samarkand: { near: '#5a4a38', far: '#86745c', trim: '#6a5642', roof: '#4a3a2a', win: '255,214,150', accent: '#2aa8b8' },
+  zanzibar: { near: '#4a5058', far: '#7a8488', trim: '#5a6066', roof: '#3a3a3a', win: '255,220,170', accent: '#2a8aa8' },
+  beijing: { near: '#44444a', far: '#727278', trim: '#55555c', roof: '#2e2e34', win: '255,214,150', accent: '#c8202a' },
+  havana: { near: '#5a4a50', far: '#86727a', trim: '#6a5660', roof: '#4a3a3a', win: '255,214,150', accent: '#3ab0c8' },
+  istanbul: { near: '#4a4256', far: '#76708a', trim: '#5a5266', roof: '#3a3644', win: '255,214,150', accent: '#c8202a' },
+  chicago: { near: '#2e3646', far: '#5a6476', trim: '#3e4658', roof: '#22262e', win: '255,218,160', accent: '#2a5ab0' },
+  buenosaires: { near: '#44465a', far: '#727488', trim: '#54566a', roof: '#33343f', win: '255,216,160', accent: '#8a6ad8' },
+  venice: { near: '#4e4450', far: '#7c7080', trim: '#5e5262', roof: '#3e3438', win: '255,216,160', accent: '#2a8a88' },
+  neworleans: { near: '#46404e', far: '#746c7e', trim: '#56505e', roof: '#36323a', win: '255,214,150', accent: '#6a2a9a' },
 };
 const FESTIVE = ['#e75c5c', '#f4b942', '#4ca7e0', '#66c07a', '#e78ac0', '#f2884b'];
 
@@ -292,6 +338,67 @@ function makeBlockTexture(def) {
         }
         g.fillStyle = shade(c, -0.28); g.fillRect(0, j * h + h - 2, S, 2);
       }
+      return;
+    }
+    if (tex === 'flute') {
+      // Vertical flutes, alternately rounded and sharp-edged, as on the
+      // lower storeys of the Qutub Minar. tx.n flutes round the whole piece.
+      baseFill(g, S, c);
+      const n = tx.n || 12, w = S / n;
+      for (let i = 0; i < n; i++) {
+        const grad = g.createLinearGradient(i * w, 0, (i + 1) * w, 0);
+        grad.addColorStop(0, shade(c, -0.25));
+        grad.addColorStop(i % 2 ? 0.5 : 0.25, shade(c, 0.18));
+        grad.addColorStop(1, shade(c, -0.25));
+        g.fillStyle = grad; g.fillRect(i * w, 0, w, S);
+      }
+      g.fillStyle = shade(c, -0.35); g.fillRect(0, S * 0.46, S, 6);   // a band of carved script
+      g.fillStyle = shade(c, 0.25);
+      for (let x = 4; x < S; x += 9) g.fillRect(x, S * 0.47, 4, 3);
+      return;
+    }
+    if (tex === 'lozenge') {
+      // The Doge's Palace's upper wall: pink and white brick laid in a
+      // diamond pattern, with tx.n great pointed windows across it.
+      baseFill(g, S, c);
+      const cw = S / 8, ch = cw * 1.4;
+      g.strokeStyle = shade(c, 0.32); g.lineWidth = 3;
+      for (let j = -1; j < S / ch + 1; j++) for (let i = -1; i <= 8; i++) {
+        const cx = (i + (j % 2 ? 0.5 : 0)) * cw + cw / 2, cy = j * ch + ch / 2;
+        g.beginPath(); g.moveTo(cx, cy - ch / 2); g.lineTo(cx + cw / 2, cy); g.lineTo(cx, cy + ch / 2); g.lineTo(cx - cw / 2, cy);
+        g.closePath(); g.stroke();
+      }
+      const n = tx.n || 2, ww = S / n;
+      for (let i = 0; i < n; i++) {
+        const x = i * ww + ww * 0.32, w = ww * 0.36, y = S * 0.3, h = S * 0.42;
+        g.fillStyle = '#f4f0e6';
+        g.beginPath(); g.moveTo(x - 6, y + h + 6); g.lineTo(x - 6, y + w * 0.5);
+        g.quadraticCurveTo(x - 6, y - 4, x + w / 2, y - 12); g.quadraticCurveTo(x + w + 6, y - 4, x + w + 6, y + w * 0.5);
+        g.lineTo(x + w + 6, y + h + 6); g.closePath(); g.fill();
+        g.fillStyle = '#3a4048';
+        g.beginPath(); g.moveTo(x, y + h); g.lineTo(x, y + w * 0.5);
+        g.quadraticCurveTo(x, y + 2, x + w / 2, y - 6); g.quadraticCurveTo(x + w, y + 2, x + w, y + w * 0.5);
+        g.lineTo(x + w, y + h); g.closePath(); g.fill();
+      }
+      return;
+    }
+    if (tex === 'sebka') {
+      // Raised lozenge net carved over a plain field, as on the faces of
+      // Almohad minarets: interlaced arcs drawn as a diamond lattice, each
+      // diamond's top rounded. tx.n sets diamonds across.
+      baseFill(g, S, c);
+      const n = tx.n || 4, cw = S / n, ch = cw * 1.3;
+      g.strokeStyle = shade(c, 0.2); g.lineWidth = 5;
+      for (let j = -1; j < S / ch + 1; j++) for (let i = -1; i <= n; i++) {
+        const cx = (i + (j % 2 ? 0.5 : 0)) * cw + cw / 2, cy = j * ch + ch / 2;
+        g.beginPath();
+        g.moveTo(cx, cy + ch / 2); g.lineTo(cx - cw / 2, cy);
+        g.quadraticCurveTo(cx - cw / 4, cy - ch / 2, cx, cy - ch / 2);
+        g.quadraticCurveTo(cx + cw / 4, cy - ch / 2, cx + cw / 2, cy);
+        g.closePath(); g.stroke();
+      }
+      g.strokeStyle = shade(c, -0.3); g.lineWidth = 2;
+      g.strokeRect(6, 6, S - 12, S - 12);
       return;
     }
     if (tex === 'tile') {
@@ -756,6 +863,9 @@ function panoTex(cityId, P, fogHex, fogF) {
     }
   };
 
+  // what a city painted in skylines.js needs (the near colours join below)
+  const K = { g, W, U, HOR, PANO_H, S, FAR, NEAR, win, farCol, hz, dRand, panoWindows, panoDome, panoCampanile };
+
   if (cityId === 'paris') {
     farRow(9, 15, 14, 26, 1, 5, 21, (x, y, bw) => {
       g.fillStyle = hz(S.roof, FAR + 0.04);
@@ -828,6 +938,8 @@ function panoTex(cityId, P, fogHex, fogF) {
       if (dRand(i, 33) > 0.35) { g.fillStyle = houseCol; g.fillRect(x, y - bh, bw, bh + 3); }
       x += bw + (0.4 + dRand(i, 34) * 3) * U;
     }
+  } else if (SKYLINES[cityId]) {
+    SKYLINES[cityId](K, 'far');
   } else {
     farRow(20, 46, 10, 22, 0.5, 4, 51, (x, y, bw, bh, i) => {
       if (dRand(i, 6) > 0.7) {
@@ -851,6 +963,10 @@ function panoTex(cityId, P, fogHex, fogF) {
   const trimCol = hz(S.trim, NEAR * 0.86);
   const roofCol = hz(S.roof, NEAR * 0.9);
   const shade1 = 'rgba(0,0,0,0.13)';
+  // a facade colour of the city's own (pastel, ochre, brick) mixed into the
+  // near tone by t and hazed like it, so it sits in the same light
+  const tint = (hex, t) => hz(`#${new THREE.Color(S.near).lerp(new THREE.Color(hex), t).getHexString()}`, NEAR);
+  Object.assign(K, { nearCol, trimCol, roofCol, tint });
 
   if (cityId === 'paris') {
     // Haussmann: 6 storeys of ashlar, a continuous cornice, a 45° zinc mansard
@@ -1088,6 +1204,8 @@ function panoTex(cityId, P, fogHex, fogF) {
       g.beginPath(); g.moveTo(cx - w, wallTop + 4); g.quadraticCurveTo(cx - w, wallTop - h * 0.6, cx, wallTop - h);
       g.quadraticCurveTo(cx + w, wallTop - h * 0.6, cx + w, wallTop + 4); g.fill();
     }
+  } else if (SKYLINES[cityId]) {
+    SKYLINES[cityId](K, 'near');
   } else {
     // Manhattan: every tower is a stack of setbacks, never a single slab
     let x = -60, i = 0;
@@ -1217,7 +1335,7 @@ export function makeBlockMesh(def, isGhost = false, isChild = false) {
         geo = new THREE.CylinderGeometry(Math.max(0.02, d / Math.SQRT2), w / Math.SQRT2, h, 4);
         geo.rotateY(Math.PI / 4);
       } else {
-        geo = new THREE.CylinderGeometry(Math.max(0.02, d / 2), w / 2, h, 20);
+        geo = new THREE.CylinderGeometry(Math.max(0.02, d / 2), w / 2, h, def.sides || 20);
       }
       break;
     case 'eifleg': {
@@ -1546,6 +1664,15 @@ export function makeBlockMesh(def, isGhost = false, isChild = false) {
           path.absarc(cx - hw, spring, 2 * hw, 0, Math.PI / 3, false);
           path.absarc(cx + hw, spring, 2 * hw, 2 * Math.PI / 3, Math.PI, false);
           path.lineTo(cx - hw, y0);
+        } else if (o.arch === 'horseshoe') {
+          // the Moorish horseshoe arch: the circle carries on past its
+          // widest point, so the opening narrows again at the springing
+          const r = hw * 1.18, k = Math.sqrt(r * r - hw * hw);
+          const yc = y1 - r, spring = yc - k, a0 = Math.atan2(-k, hw);
+          path.moveTo(cx - hw, y0); path.lineTo(cx + hw, y0);
+          path.lineTo(cx + hw, spring);
+          path.absarc(cx, yc, r, a0, Math.PI - a0, false);
+          path.lineTo(cx - hw, y0);
         } else if (o.arch) {
           const spring = y1 - hw;                  // where the semicircle begins
           path.moveTo(cx - hw, y0); path.lineTo(cx + hw, y0);
@@ -1680,8 +1807,12 @@ function vExtent(d) {
 // where they blended into its outlines and a monument with nothing yet built
 // looked almost finished. Parked small, big pieces sit round the plaza like
 // every other monument's, and grow into place as they fly home.
+// parkK shrinks every parked piece on a crowded build, so thirty-odd pieces
+// can lie round the plaza without stacking; set per puzzle (only one exists
+// at a time) from the number of loose pieces.
+let parkK = 1;
 function parkScale(d) {
-  return Math.min(1, Math.max(0.4, 5.5 / Math.max(...effSize(d))));
+  return Math.min(1, Math.max(0.4, 5.5 / Math.max(...effSize(d)))) * parkK;
 }
 
 // Can this piece look wrong when turned a quarter? Round and square-plan
@@ -1720,18 +1851,83 @@ function resaturate(mesh) {
 // street for the player to collect, so both must agree on the order and on
 // how many start pre-placed. One definition, used by both, is what keeps them
 // agreeing.
-export function preplacedFor(len, level) {
-  return level === 1 ? Math.floor(len * 0.35) : level === 2 ? Math.floor(len * 0.15) : 0;
+// How many of the lowest pieces start in place. Only street 1 starts with any,
+// and a tapped street 1 (Newbie, first three cities) gets the most help.
+export function preplacedFor(len, level, tap = false) {
+  return level === 1 ? Math.floor(len * (tap ? 0.35 : 0.2)) : 0;
 }
 export function buildOrder(def) {
   return def.map((d, i) => ({ def: d, idx: i }))
     .sort((a, b) => (a.def.sortY ?? a.def.p[1]) - (b.def.sortY ?? b.def.p[1]));
 }
 /** The block defs a street leaves loose, in build order. */
-export function looseDefs(landmarkId, level) {
-  const def = getLandmark(landmarkId);
+export function looseDefs(landmarkId, level, tap = false, gamer = false) {
+  const def = monumentDefs(landmarkId, level, gamer);
   if (!def) return [];
-  return buildOrder(def).slice(preplacedFor(def.length, level)).map((e) => e.def);
+  return buildOrder(def).slice(preplacedFor(def.length, level, tap)).map((e) => e.def);
+}
+
+// ---------- Gamer mode: more pieces on streets 2 and 3 ----------
+// Strong players collect every piece on the run, so to them a build is only
+// as hard as its piece count. In Gamer mode a monument gets more pieces,
+// made from its own: a piece's attached detail (pinnacles, railings, window
+// strips) comes off as a piece of its own, placed after it; a tall box,
+// cylinder or tier is cut into a lower and an upper half; a long box into
+// two halves side by side. At most 30% more pieces on street 2 and 50% on
+// street 3, biggest pieces first. Deterministic: the same monument always
+// splits the same way. The shapes chosen are the ones that split cleanly.
+const GAMER_EXTRA = { 2: 0.3, 3: 0.5 };
+const bare = (d) => !d.rotX && !d.rotZ && !d.adorn && !d.outline;
+const isBox = (d) => !d.shape || d.shape === 'box';
+const canSplitTall = (d) => bare(d) && (isBox(d) || d.shape === 'cyl' || d.shape === 'tier')
+  && d.s[1] >= 1.4 && d.s[1] >= Math.max(d.s[0], d.shape === 'tier' ? 0 : d.s[2]);
+const canSplitLong = (d) => bare(d) && isBox(d)
+  && Math.max(d.s[0], d.s[2]) >= 1.6 && Math.max(d.s[0], d.s[2]) >= 1.8 * Math.min(d.s[0], d.s[2]);
+
+function splitTall(d) {
+  const [w, h, dd] = d.s, y = d.p[1];
+  const key = d.sortY;
+  if (d.shape === 'tier') {
+    const mid = (w + dd) / 2;   // a tier's s is [bottom width, height, top width]
+    return [
+      { ...d, p: [d.p[0], y - h / 4, d.p[2]], s: [w, h / 2, mid] },
+      { ...d, p: [d.p[0], y + h / 4, d.p[2]], s: [mid, h / 2, dd], ...(key !== undefined ? { sortY: key + 0.65 } : {}) },
+    ];
+  }
+  return [
+    { ...d, p: [d.p[0], y - h / 4, d.p[2]], s: [w, h / 2, dd] },
+    { ...d, p: [d.p[0], y + h / 4, d.p[2]], s: [w, h / 2, dd], ...(key !== undefined ? { sortY: key + 0.65 } : {}) },
+  ];
+}
+function splitLong(d) {
+  const [w, h, dd] = d.s, a = d.rotY || 0;
+  const alongX = w >= dd, off = (alongX ? w : dd) / 4;
+  // the piece's own axis, turned by its rotY into plaza coordinates
+  const dx = alongX ? Math.cos(a) * off : Math.sin(a) * off;
+  const dz = alongX ? -Math.sin(a) * off : Math.cos(a) * off;
+  const s = alongX ? [w / 2, h, dd] : [w, h, dd / 2];
+  return [
+    { ...d, p: [d.p[0] - dx, d.p[1], d.p[2] - dz], s },
+    { ...d, p: [d.p[0] + dx, d.p[1], d.p[2] + dz], s },
+  ];
+}
+function detachDetail(d) {
+  const { adorn, ...body } = d;
+  const key = d.sortY ?? d.p[1];
+  return [body, { p: d.p, s: d.s, c: d.c, shape: 'group', rotY: d.rotY, adorn, sortY: key + 0.65 }];
+}
+
+/** The monument's pieces as this street and mode deal them. */
+export function monumentDefs(landmarkId, level, gamer = false) {
+  const def = getLandmark(landmarkId);
+  if (!def || !gamer || !GAMER_EXTRA[level]) return def;
+  let budget = Math.ceil(def.length * GAMER_EXTRA[level]);
+  const vol = (d) => d.s[0] * d.s[1] * d.s[2];
+  const how = (d) => (d.adorn?.length && d.shape !== 'group' && !d.rotX && !d.rotZ ? detachDetail
+    : canSplitTall(d) ? splitTall : canSplitLong(d) ? splitLong : null);
+  const pick = new Set(def.map((d, i) => ({ d, i })).filter((e) => how(e.d))
+    .sort((a, b) => vol(b.d) - vol(a.d) || a.i - b.i).slice(0, budget).map((e) => e.i));
+  return def.flatMap((d, i) => (pick.has(i) ? how(d)(d) : [d]));
 }
 
 // ============================================================
@@ -1752,32 +1948,37 @@ export class Puzzle {
     this.time = 60;                // replaced once the loose pieces are counted
     this.elapsed = 0;
     // ---- difficulty, by street ----------------------------------------------
-    // Street 1: tap a glowing piece and it flies home.
-    // Street 2: drag each piece to its spot yourself; the next course glows.
-    // Street 3: drag, NO glow, and some pieces arrive a quarter-turn out and
-    //           must be turned (tap) before they fit. The ghost silhouette
+    // Street 1: drag, the next course glows. Tapping instead (a glowing
+    //           piece flies home) is kept only for newcomers: Newbie mode, in
+    //           the first three cities. main.js decides, via opts.tap.
+    // Street 2: drag, NO glow, and one piece arrives a quarter-turn out and
+    //           must be turned (tap) before it fits. The ghost silhouette
     //           still shows the whole monument, but not which piece is next —
     //           working out what goes on next is the puzzle.
+    // Street 3: as street 2, with up to three pieces turned and less time.
+    // (Made harder in October 2026 on player feedback: street 2 used to glow
+    // and street 3 turned at most two.)
     // The order rule (bottom-up by course, with authored sortY for things like
     // a bridge deck hung after its cables) is the same on every street.
     this.level = level;
-    this.mode = level >= 2 ? 'drag' : 'tap';
-    this.glow = level < 3;
-    this.turning = level >= 3;
+    this.mode = level === 1 && opts.tap ? 'tap' : 'drag';
+    this.glow = level === 1;
+    this.turning = level >= 2;
+    const maxTurned = level >= 3 ? 3 : 1;
     this.dragging = null;
     this.hintFn = null;            // set by main.js: shows a short line of text
     // Bob is driven by its own accumulator rather than by elapsed time, so the
     // urgency pass can raise the rate without the sine phase jumping.
     this.bobT = 0;
 
-    const def = getLandmark(landmarkId);
+    const def = monumentDefs(landmarkId, level, !!opts.gamer);
     const P = PLAZA[CITY_OF[landmarkId]] || PLAZA.paris;
     this.P = P;
 
     this.buildPlaza(P, CITY_OF[landmarkId]);
 
     // Difficulty: level 1 pre-places some base blocks, level 3 scatters everything.
-    let preplaced = preplacedFor(def.length, level);
+    let preplaced = preplacedFor(def.length, level, this.mode === 'tap');
     // Visual-review harness: ?built=1 shows the finished monument, ?auto=1
     // self-plays a block every half second. Compiled out of release builds
     // (src/core/debug.js): ?built=1 completes the monument outright, which
@@ -1862,7 +2063,7 @@ export class Puzzle {
     {
       let turned = 0;
       this.blocks.forEach(({ def: d }, order) => {
-        if (this.turning && order >= preplaced && turned < 2 && needsTurning(d) && dRand(order, 29) < 0.45) {
+        if (this.turning && order >= preplaced && turned < maxTurned && needsTurning(d) && dRand(order, 29) < 0.45) {
           turnsOf.set(order, 1);
           turned++;
         }
@@ -1874,6 +2075,8 @@ export class Puzzle {
     // best, so how a piece looked parked said nothing about how it would fit
     // — device feedback: "aligned but dont fit", "not aligned but do fit".)
     const landYaw = (d, order) => (d.rotY || 0) + (turnsOf.get(order) || 0) * Math.PI / 2;
+    const looseN = this.blocks.length - preplaced;
+    parkK = looseN > 16 ? Math.max(0.7, Math.sqrt(16 / looseN)) : 1;
     const SCATTER_R = 13.2;                       // hard radial cap (<14)
     const XBUD = 11.0;                            // budget for |x| + half the piece's screen width
     let xExt = 0, zExt = 0;
@@ -1911,6 +2114,38 @@ export class Puzzle {
       .filter((x) => x.order >= preplaced)
       .sort((a, b) => bulkOf(b.e.def) - bulkOf(a.e.def));
     const layout = new Map();
+    // No two parked pieces on top of each other (device feedback, 15 October
+    // 2026: on the bigger builds three or four pieces lay stacked in one spot,
+    // because the frame limits below pull many of them to the same place).
+    // A piece keeps its slot if that is clear; otherwise it takes the nearest
+    // clear spot that still meets every limit, or failing that the least
+    // crowded one. Deterministic, like the rest of the layout.
+    const parked = [];
+    const settle = (a0, r0, sw, rr, oversized) => {
+      const ok = (a, r) => {
+        const x = Math.cos(a) * r, z = Math.sin(a) * r, off = Math.atan2(z, Math.abs(x));
+        if (oversized) return r <= SCATTER_R + 0.6 && z < 0 && Math.abs(x) + sw / 2 <= XBUD + 1;
+        return r <= SCATTER_R && r >= clearAt(off, sw) - 0.01 && Math.abs(x) + sw / 2 <= XBUD + 0.01
+          && z <= 9.4 - sw * 0.3 && off >= -1.46;
+      };
+      const crowd = (a, r) => {
+        const x = Math.cos(a) * r, z = Math.sin(a) * r;
+        let c = 0;
+        for (const p of parked) { const d = Math.hypot(x - p.x, z - p.z), need = rr + p.rr + 0.3; if (d < need) c += need - d; }
+        return c;
+      };
+      let best = { a: a0, r: r0, c: crowd(a0, r0) };
+      search: for (let k = 1; best.c > 0 && k <= 24; k++) {
+        for (const sgn of [1, -1]) for (const dr of [0, 0.9, -0.9, 1.8]) {
+          const a = a0 + sgn * k * 0.07, r = r0 + dr;
+          if (!ok(a, r)) continue;
+          const c = crowd(a, r);
+          if (c < best.c) { best = { a, r, c }; if (!c) break search; }
+        }
+      }
+      parked.push({ x: Math.cos(best.a) * best.r, z: Math.sin(best.a) * best.r, rr });
+      return best;
+    };
     let back = 0, tallN = 0;
     loose.forEach((x, k) => {
       const side = k % 2 ? 1 : -1;
@@ -1931,7 +2166,9 @@ export class Puzzle {
       if (Math.min(w, dp) > 8 || Math.max(w, dp) > 15 || hh > 9) {
         const yaw = landYaw(x.e.def, x.order);
         const a = -Math.PI / 2 + (back % 2 ? 0.36 : -0.36) + (Math.floor(back / 2) % 2 ? 0.13 : -0.13);
-        layout.set(x.order, { a, r: 10.8 + (back % 3) * 0.9, yaw });
+        const swb = Math.abs(Math.cos(yaw)) * w + Math.abs(Math.sin(yaw)) * dp;
+        const at = settle(a, 10.8 + (back % 3) * 0.9, swb, 0.42 * Math.hypot(w, dp), true);
+        layout.set(x.order, { a: at.a, r: at.r, yaw });
         back++;
         return;
       }
@@ -1962,7 +2199,8 @@ export class Puzzle {
       // and never let a big piece camp in the player's lap
       if (Math.sin(off) * r > 9.4 - sw * 0.3) off = -off;
       const a = side > 0 ? off : Math.PI - off;
-      layout.set(x.order, { a, r, yaw });
+      const at = settle(a, r, sw, 0.42 * Math.hypot(w, dp), false);
+      layout.set(x.order, { a: at.a, r: at.r, yaw });
     });
 
     this.items = this.blocks.map((entry, order) => {
@@ -2004,8 +2242,12 @@ export class Puzzle {
     // each piece costs more handling. The bonus in main.js is a SHARE of
     // this clock, so it still tops out at 3000 whatever the total.
     const looseCount = this.items.length - this.placedCount;
-    const PER = { 1: 2.6, 2: 3.4, 3: 4.2 }[level] || 3.4;
-    this.timeTotal = Math.round(Math.min(120, Math.max(40, 20 + PER * looseCount)));
+    // Tapping is quicker than dragging, so a tapped build gets less per piece.
+    // opts.timeScale (from main.js) tightens it further: Gamer mode, and the
+    // cities later in the order.
+    const PER = this.mode === 'tap' ? 2.6 : level >= 3 ? 3.6 : 3.0;
+    const scale = opts.timeScale || 1;
+    this.timeTotal = Math.round(Math.min(120, Math.max(30, (20 + PER * looseCount) * scale)));
     this.time = t0 > 0 ? Math.min(this.timeTotal, t0) : this.timeTotal;
 
     // Street 3's quarter-turned pieces were chosen before the layout (turnsOf).
@@ -2282,6 +2524,13 @@ export class Puzzle {
   }
 
   missingLeft() { return this.items.filter((it) => it.missing).length; }
+  // True when nothing can be placed until a missed piece arrives: every piece
+  // left in the current course is still on its way.
+  waitingOnMissing() {
+    const lo = this.currentLayer();
+    const left = this.items.filter((it) => it.layer === lo && !it.placed && !this.flying.includes(it));
+    return left.length > 0 && left.every((it) => it.missing || it.dropping);
+  }
   nextDeliveryIn() { return Math.max(0, this.deliverAt); }
 
   // A missed piece arrives: dropped onto its parking spot from above.

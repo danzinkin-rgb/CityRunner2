@@ -12,4 +12,7 @@
 // test/releases.mjs checks the menu shows exactly the released cities.
 //
 // In release order: the first entry is the next city to ship.
-export const RELEASE_QUEUE = ['jerusalem', 'mexico'];
+// Since 1.2.0 (Dan, 15 October 2026) every city finished by then is
+// released, each into its region pack, Venice and New Orleans included
+// (Dan, 17 October 2026).
+export const RELEASE_QUEUE = [];

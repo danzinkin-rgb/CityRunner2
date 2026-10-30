@@ -816,8 +816,11 @@ const defs = {
       adorn: [B([0, 0.85, 0], [top + 0.2, 0.5, top + 0.2], ['#a2947e', '#a69884', '#aa9c88', '#aea08c'][i], 'box', { tex: 'stone', tx: { cols: 8, rows: 1 } })],
     })),
     B([0, 8.05, -0.3], [6.4, 0.5, 6.0], '#a4987e', 'box', { tex: 'stone', tx: { cols: 6, rows: 1 } }),   // summit platform
-    // the double staircase: two flights side by side, each a stepped profile
-    ...[[-1.3, '#3a6a9a'], [1.3, '#b0402a']].map(([x, col]) => B([x, 4.0, 5.2], [2.4, 7.6, 4.2], col, 'extrude', {
+    // the double staircase: two flights side by side, each a stepped profile.
+    // The extrusion depth is each flight's width once turned: 4.2 made the two
+    // overlap by 1.6 m, and the blue and red fought over the same faces
+    // (device feedback, 15 October 2026: the colours flickered).
+    ...[[-1.3, '#3a6a9a'], [1.3, '#b0402a']].map(([x, col]) => B([x, 4.0, 5.2], [2.4, 7.6, 2.5], col, 'extrude', {
       rotY: -Math.PI / 2,
       outline: (() => {
         const pts = [[0.5, -0.5]];
@@ -897,6 +900,1247 @@ const defs = {
         ...[['#2e7d4a', 0.24], ['#f4f4f0', 0.6], ['#c8202e', 0.96]].map(([c, x]) => B([x, 2.9, 0], [0.36, 0.7, 0.04], c)),
       ],
     }),
+  ],
+  // ================= MARRAKECH =================
+  // All three are Almohad or Saadian work, centuries old: no copyright
+  // question. Stone and plaster colours are the city's red-pink earth.
+
+  // The Koutoubia minaret: a square shaft about one fifth as wide as it is
+  // tall, its faces carved with arches and a lozenge net (sebka) that grows
+  // busier towards the top, a band of turquoise tile under stepped merlons,
+  // then the small lantern tower, its dome, and the spire of copper balls.
+  // Street 1: about a dozen pieces.
+  koutoubia: [
+    B([0, 0.3, 0], [7.2, 0.6, 7.2], '#a88468', 'box', { tex: 'stone' }),
+    B([0, 1.75, 0], [4.4, 2.3, 4.4], '#bc845e', 'box', { tex: 'stone', tx: { cols: 4, rows: 3 } }),
+    B([0, 4.05, 0], [4.4, 2.3, 4.4], '#c08660', 'box', { tex: 'stone', tx: { cols: 4, rows: 3 } }),
+    B([0, 7.2, 0], [4.4, 4.0, 4.4], '#c48a62', 'box', { tex: 'arch', tx: { n: 2 } }),
+    B([0, 11.2, 0], [4.4, 4.0, 4.4], '#c68c64', 'box', { tex: 'sebka', tx: { n: 3 } }),
+    B([0, 15.2, 0], [4.4, 4.0, 4.4], '#c88e66', 'box', { tex: 'sebka', tx: { n: 4 } }),
+    B([0, 17.6, 0], [4.5, 0.8, 4.5], '#2e8a86', 'box', { tex: 'tile' }),
+    B([0, 18.5, 0], [4.6, 1.0, 4.6], '#c48a62', 'group', {
+      adorn: [
+        B([0, -0.3, 0], [4.6, 0.4, 4.6], '#c48a62'),
+        ...[-1.8, -0.6, 0.6, 1.8].flatMap((x) => [
+          B([x, 0.2, 2.1], [0.5, 0.6, 0.3], '#c88e66', 'pyramid'), B([x, 0.2, -2.1], [0.5, 0.6, 0.3], '#c88e66', 'pyramid'),
+          B([2.1, 0.2, x], [0.3, 0.6, 0.5], '#c88e66', 'pyramid'), B([-2.1, 0.2, x], [0.3, 0.6, 0.5], '#c88e66', 'pyramid'),
+        ]),
+      ],
+    }),
+    B([0, 20.2, 0], [1.8, 2.4, 1.8], '#c88e66', 'box', { tex: 'sebka', tx: { n: 1 } }),
+    B([0, 21.6, 0], [1.9, 0.4, 1.9], '#2e8a86', 'box', { tex: 'tile' }),
+    B([0, 22.25, 0], [1.6, 0.9, 1.6], '#3a8a6a', 'dome'),
+    B([0, 23.75, 0], [0.9, 2.2, 0.9], '#d8b04a', 'group', {
+      adorn: [
+        B([0, 0, 0], [0.1, 2.2, 0.1], '#c8a040', 'cyl', { metal: 1 }),
+        B([0, -0.6, 0], [0.62, 0.62, 0.62], '#e0b84e', 'sphere', { metal: 1, em: '#ffd070', emI: 0.3 }),
+        B([0, 0.05, 0], [0.48, 0.48, 0.48], '#e0b84e', 'sphere', { metal: 1, em: '#ffd070', emI: 0.3 }),
+        B([0, 0.6, 0], [0.34, 0.34, 0.34], '#e0b84e', 'sphere', { metal: 1, em: '#ffd070', emI: 0.3 }),
+      ],
+    }),
+  ],
+
+  // Bab Agnaou: the carved stone gate of the royal kasbah. A horseshoe arch
+  // under bands of carved stone, set in a rectangular frame with an
+  // inscription band across the top, between walls of rammed red earth.
+  // Street 2: about eighteen pieces; the carving goes on piece by piece.
+  babagnaou: [
+    B([0, 0.2, 0], [20, 0.4, 5], '#9a7a62', 'box', { tex: 'stone' }),
+    B([0, 0.55, 2.0], [4.0, 0.3, 1.2], '#8a6c54', 'box', { tex: 'stone' }),          // threshold step
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 7.4, 1.9, -0.4], [5.6, 3.0, 1.8], '#c06648', 'box', { tex: 'stone', tx: { cols: 4, rows: 2, rough: 1 } }),
+      B([sx * 7.4, 4.9, -0.4], [5.6, 3.0, 1.8], '#c46a4c', 'box', { tex: 'stone', tx: { cols: 4, rows: 2, rough: 1 } }),
+      B([sx * 7.4, 6.75, -0.4], [5.6, 0.7, 1.0], '#c46a4c', 'group', {
+        adorn: [-2.1, -0.7, 0.7, 2.1].map((x) => B([x, 0, 0], [0.6, 0.7, 1.0], '#c46a4c', 'pyramid')),
+      }),
+    ]),
+    B([0, 3.4, -0.6], [3.2, 5.8, 0.2], '#3a2a20'),                                    // the dark passage
+    B([0, 4.4, 0], [9.0, 8.0, 2.0], '#b08c6a', 'extrude', {
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.12, w: 0.36, h: 0.72, arch: 'horseshoe' }],
+    }),
+    B([0, 4.41, 1.05], [5.2, 2.6, 0.5], '#d4aa7a', 'arch'),                           // inner carved band
+    B([0, 4.42, 1.15], [6.2, 3.1, 0.3], '#9a7454', 'arch'),                           // outer carved band
+    B([-3.6, 6.5, 1.15], [0.4, 2.2, 0.3], '#d4aa7a'),                                 // the frame
+    B([3.6, 6.5, 1.15], [0.4, 2.2, 0.3], '#d4aa7a'),
+    B([0, 7.9, 1.15], [7.6, 0.7, 0.3], '#6a4a34', 'box', {                           // inscription band
+      adorn: [B([0, 0, 0.12], [6.8, 0.3, 0.1], '#e0c08a', 'box', { em: '#ffd8a0', emI: 0.1 })],
+    }),
+    B([0, 8.5, 0], [9.2, 0.6, 2.2], '#a8845e'),
+    B([0, 9.2, 0], [9.2, 0.8, 1.2], '#b08c6a', 'group', {
+      adorn: [-3.6, -1.8, 0, 1.8, 3.6].map((x) => B([x, 0, 0], [0.7, 0.8, 1.2], '#b08c6a', 'pyramid')),
+    }),
+  ],
+
+  // The Ben Youssef Madrasa, seen from inside its courtyard: the long pool
+  // on a marble floor, cedar-and-stucco galleries down both sides with the
+  // students' rooms above, green-tiled eaves, and the prayer hall's great
+  // arch at the far end over a band of zellige tile.
+  // Street 3: about two dozen pieces, the galleries in bays.
+  benyoussef: [
+    B([-4.25, 0.2, 0], [8.5, 0.4, 13], '#e6e0d2', 'box', { tex: 'stone', tx: { cols: 6, rows: 8 } }),
+    B([4.25, 0.2, 0], [8.5, 0.4, 13], '#e2dccc', 'box', { tex: 'stone', tx: { cols: 6, rows: 8 } }),
+    B([0, 0.45, 1.2], [4.0, 0.2, 8.0], '#cfc6b2'),                                       // the pool's rim
+    B([0, 0.6, 1.2], [3.4, 0.3, 7.4], '#5cc0dc', 'box', { wet: 1, em: '#9ce4f4', emI: 0.4 }),
+    B([0, 0.9, 5.4], [1.2, 0.6, 1.2], '#e6e0d2', 'cyl'),                                 // the basin
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 6.8, 0.8, 0.6], [1.7, 0.8, 10.05], '#2e7a5a', 'box', { tex: 'tile' }),     // zellige dado
+      B([sx * 6.8, 2.4, -1.9], [1.6, 4.0, 5], '#ece2cc', 'box', { tex: 'arch', tx: { n: 3 } }),
+      B([sx * 6.8, 2.4, 3.1], [1.6, 4.0, 5], '#ece2cc', 'box', { tex: 'arch', tx: { n: 3 } }),
+      B([sx * 6.8, 4.55, 0.6], [1.7, 0.3, 10.05], '#7a4a2a'),                            // cedar beam
+      B([sx * 6.8, 5.9, -1.9], [1.6, 2.4, 5], '#e2d4b4', 'box', { tex: 'win', tx: { cols: 3, rows: 1, lit: '#e8b070' } }),
+      B([sx * 6.8, 5.9, 3.1], [1.6, 2.4, 5], '#e2d4b4', 'box', { tex: 'win', tx: { cols: 3, rows: 1, lit: '#e8b070' } }),
+      B([sx * 6.8, 7.6, -1.9], [2.2, 1.0, 5.2], '#2e7a5a', 'prism'),
+      B([sx * 6.8, 7.6, 3.1], [2.2, 1.0, 5.2], '#2e7a5a', 'prism'),
+    ]),
+    B([0, 3.4, -6.1], [3.4, 5.4, 0.2], '#4a3424'),                                       // the prayer hall, dark within
+    B([0, 4.2, -5.6], [10, 8.0, 1.0], '#eadfc6', 'extrude', {
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.08, w: 0.34, h: 0.7, arch: 'horseshoe' }],
+    }),
+    B([-3.4, 1.25, -5.0], [3.0, 1.8, 0.1], '#2e7a5a', 'box', { tex: 'tile', sortY: 4.3 }),
+    B([3.4, 1.25, -5.0], [3.0, 1.8, 0.1], '#2e7a5a', 'box', { tex: 'tile', sortY: 4.3 }),
+    B([0, 7.2, -5.0], [10, 1.2, 0.1], '#7a4a2a', 'box', { tex: 'sebka', tx: { n: 8 } }),
+    B([0, 8.7, -5.6], [10.8, 1.0, 2.0], '#2e7a5a', 'prism'),
+  ],
+  // ================= DELHI =================
+  // The Red Fort (1639-48) and the Qutub Minar (from 1199) are centuries
+  // old. India Gate (1931) was designed by Edwin Lutyens, who died in 1944:
+  // out of copyright in India since 2005 (life + 60) and in the UK since
+  // 2015 (life + 70); the United States does not protect buildings
+  // completed before 1990.
+
+  // The Red Fort's Lahori Gate: a red sandstone gatehouse with a pointed
+  // arch, two octagonal towers each topped by a domed pavilion (chhatri),
+  // a row of small white chhatris along the top, and the battlemented
+  // walls either side. Street 1: about a dozen pieces.
+  lahori: [
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 8.2, 3.0, -0.6], [6.4, 6.0, 2.4], '#b04e38', 'box', { tex: 'stone', tx: { cols: 5, rows: 4, rough: 1 } }),
+      B([sx * 8.2, 6.4, -0.6], [6.4, 0.8, 1.2], '#b85640', 'group', {
+        adorn: [-2.6, -1.3, 0, 1.3, 2.6].map((x) => B([x, 0, 0], [0.7, 0.8, 1.2], '#b85640', 'dome')),
+      }),
+    ]),
+    B([0, 3.4, -0.8], [3.0, 5.4, 0.2], '#2e2420'),                                       // the dark passage
+    B([0, 4.5, 0], [8.0, 9.0, 3.0], '#bc5a40', 'extrude', {
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.15, w: 0.34, h: 0.62, arch: 'pointed' }],
+    }),
+    B([0, 4.0, 1.55], [3.6, 6.4, 0.15], '#ece4d4', 'extrude', {                         // white marble frame
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.07, w: 0.76, h: 0.86, arch: 'pointed' }],
+    }),
+    ...[-1, 1].map((sx) => B([sx * 4.6, 5.5, 0.6], [2.6, 11, 2.3], '#c46446', 'tier', {
+      sides: 8, tex: 'stone', tx: { cols: 8, rows: 8 },
+    })),
+    ...[-1, 1].map((sx) => B([sx * 4.6, 12.3, 0.6], [2.4, 2.6, 2.4], '#ece4d4', 'group', {
+      adorn: [
+        ...[[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]].map(([x, z]) => B([x, -0.5, z], [0.18, 1.4, 0.18], '#ece4d4')),
+        B([0, 0.25, 0], [2.2, 0.2, 2.2], '#e0d6c4'),
+        B([0, 0.35, 0], [1.8, 1.0, 1.8], '#f4f0e8', 'dome', { adorn: [B([0, 1.0, 0], [0.12, 0.5, 0.12], '#d8b04a', 'cyl', { metal: 1 })] }),
+      ],
+    })),
+    B([0, 9.5, 0.2], [8.2, 1.4, 1.6], '#ece4d4', 'group', {                            // the row of little chhatris
+      adorn: [-3.3, -2.2, -1.1, 0, 1.1, 2.2, 3.3].flatMap((x) => [
+        B([x, -0.35, 0], [0.7, 0.6, 0.7], '#e8e0d0'),
+        B([x, 0.0, 0], [0.62, 0.6, 0.62], '#f4f0e8', 'dome'),
+      ]),
+    }),
+  ],
+
+  // The Qutub Minar: five storeys of fluted red sandstone and white marble,
+  // tapering from a wide base to a narrow top, each storey ringed by a
+  // carved balcony on stone brackets; the iron pillar stands nearby.
+  // Street 2: about eighteen pieces.
+  qutub: [
+    B([0, 0.3, 0], [16, 0.6, 11], '#9a8a76', 'box', { tex: 'stone' }),
+    B([0, 0.8, 0], [7.4, 0.4, 7.4], '#a8604a', 'cyl'),                                   // the base step
+    B([0, 2.75, 0], [6.0, 3.5, 5.45], '#b0583e', 'tier', { tex: 'flute', tx: { n: 16 } }),
+    B([0, 4.5, 0], [5.6, 0.4, 5.6], '#d89070', 'cyl'),                                    // a band of carved script
+    B([0, 6.25, 0], [5.45, 3.5, 4.9], '#b25a40', 'tier', { tex: 'flute', tx: { n: 16 } }),
+    B([0, 8.25, 0], [4.9, 0.5, 5.6], '#c87050', 'tier'),                                  // balcony 1, on its brackets
+    B([0, 9.75, 0], [4.6, 2.5, 4.3], '#b65c42', 'tier', { tex: 'flute', tx: { n: 14 } }),
+    B([0, 11.0, 0], [4.4, 0.35, 4.4], '#d89070', 'cyl'),
+    B([0, 12.25, 0], [4.3, 2.5, 4.0], '#b85e44', 'tier', { tex: 'flute', tx: { n: 14 } }),
+    B([0, 13.75, 0], [4.0, 0.5, 4.7], '#c87050', 'tier'),                                 // balcony 2
+    B([0, 15.0, 0], [3.8, 2.0, 3.55], '#ba6046', 'tier', { tex: 'flute', tx: { n: 12 } }),
+    B([0, 17.0, 0], [3.55, 2.0, 3.3], '#bc6248', 'tier', { tex: 'flute', tx: { n: 12 } }),
+    B([0, 18.25, 0], [3.3, 0.5, 4.0], '#c87050', 'tier'),                                 // balcony 3
+    B([0, 20.0, 0], [3.1, 3.0, 2.7], '#ece6da', 'tier', {                                // marble, with sandstone bands
+      adorn: [B([0, 0.4, 0], [2.95, 0.3, 2.95], '#c06a4c', 'cyl'), B([0, -0.8, 0], [3.05, 0.3, 3.05], '#c06a4c', 'cyl')],
+    }),
+    B([0, 21.75, 0], [2.7, 0.5, 3.3], '#c87050', 'tier'),                                 // balcony 4
+    B([0, 23.25, 0], [2.6, 2.5, 2.2], '#c06a4c', 'tier', {
+      adorn: [B([0, 0.2, 0], [2.45, 0.6, 2.45], '#ece6da', 'cyl')],
+    }),
+    B([0, 24.85, 0], [2.4, 0.7, 2.4], '#d8d0c0', 'group', {                              // the railing at the top
+      adorn: [B([0, -0.25, 0], [2.4, 0.2, 2.4], '#d0c4b0', 'cyl'), B([0, 0.1, 0], [2.2, 0.12, 0.12], '#d8d0c0', 'torus', { rotX: Math.PI / 2 })],
+    }),
+    B([6.0, 3.95, 2.6], [0.6, 6.7, 0.6], '#4a3e36', 'cyl', {                             // the iron pillar
+      metal: 1, adorn: [B([0, 3.2, 0], [0.8, 0.4, 0.8], '#5a4c42', 'cyl', { metal: 1 })],
+    }),
+  ],
+
+  // India Gate: the great arch of buff sandstone on a red sandstone base,
+  // the deep cornice, the stepped attic carrying INDIA across its face, and
+  // the shallow bowl on top. Street 3: about two dozen pieces.
+  indiagate: [
+    B([0, 0.25, 0], [20, 0.5, 11], '#a85a40', 'box', { tex: 'stone' }),
+    B([0, 0.75, 0], [16, 0.5, 8], '#b06248', 'box', { tex: 'stone' }),
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 4.75, 3.0, 0], [4.5, 4.0, 6], '#d6be96', 'box', { tex: 'stone', tx: { cols: 3, rows: 4 } }),
+      B([sx * 4.75, 7.0, 0], [4.5, 4.0, 6], '#d8c098', 'box', { tex: 'stone', tx: { cols: 3, rows: 4 } }),
+      B([sx * 4.75, 5.0, 3.06], [3.4, 6.6, 0.15], '#c8ae86', 'box', { tex: 'niche', tx: { n: 1 }, sortY: 9.05 }),
+      B([sx * 4.75, 5.0, -3.06], [3.4, 6.6, 0.15], '#c8ae86', 'box', { tex: 'niche', tx: { n: 1 }, sortY: 9.05 }),
+      B([sx * 4.75, 9.2, 0], [4.9, 0.4, 6.4], '#e4d0aa', 'box', { sortY: 9.1 }),          // impost moulding
+    ]),
+    B([0, 12.2, 0], [14, 6.0, 6], '#dac29c', 'extrude', {                               // the arch and its crown
+      outline: (() => {
+        const pts = [[-0.5, -0.5]];
+        for (let k = 0; k <= 16; k++) {
+          const a = Math.PI - (k / 16) * Math.PI;
+          pts.push([Math.cos(a) * 2.5 / 14, -0.5 + Math.sin(a) * 2.5 / 6]);
+        }
+        pts.push([0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]);
+        return pts;
+      })(),
+    }),
+    B([0, 13.6, 3.06], [8.0, 1.4, 0.15], '#ecdcb8', 'box', {                           // the INDIA panel
+      adorn: [-2.0, -1.0, 0, 1.0, 2.0].map((x) => B([x, 0, 0.05], [0.5, 0.8, 0.06], '#8a7458')),
+    }),
+    B([0, 15.5, 0], [14.8, 0.6, 6.8], '#e4d0aa'),                                        // the cornice
+    B([0, 16.6, 0], [12.0, 1.6, 5.2], '#d6be96', 'box', { tex: 'stone' }),               // the attic, stepping in
+    B([0, 18.1, 0], [9.6, 1.4, 4.4], '#d8c098', 'box', { tex: 'stone' }),
+    B([0, 19.4, 0], [7.2, 1.2, 3.6], '#dac29c'),
+    B([0, 20.4, 0], [2.8, 0.8, 4.2], '#e4d0aa', 'tier'),                                 // the shallow bowl
+    ...[[-1, 1], [1, 1], [-1, -1], [1, -1]].map(([sx, sz]) => B([sx * 7.4, 2.4, sz * 3.4], [0.5, 3.2, 0.5], '#3a3a40', 'cyl', {
+      metal: 1, adorn: [B([0, 1.7, 0], [0.5, 0.5, 0.5], '#fff2c0', 'sphere', { em: '#ffe9a0', emI: 1.2 })],
+    })),
+  ],
+  // ================= BANGKOK =================
+  // All three are 18th and 19th-century royal or religious buildings: no
+  // copyright question. The Giant Swing's timbers were replaced to the old
+  // design in 2007. Shown as buildings only: no Buddha images, and nothing
+  // said about the monarchy (docs/BANGKOK-FACTS-DRAFT.md).
+
+  // The Giant Swing: two tall red teak pillars on a stepped white stone
+  // base, joined by a carved crossbeam with upturned ends, braced by
+  // struts at the foot. Street 1: about a dozen pieces.
+  giantswing: [
+    B([0, 0.3, 0], [12, 0.6, 7], '#d8d0c0', 'box', { tex: 'stone' }),
+    B([0, 0.85, 0], [9, 0.5, 4.4], '#e8e2d4', 'box', { tex: 'stone' }),
+    B([0, 0.85, 3.0], [3, 0.5, 1.6], '#e0d8c8', 'box', { tex: 'stone' }),                // steps
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 3.2, 4.6, 0], [0.9, 7.0, 0.9], '#c8282a', 'cyl'),
+      B([sx * 3.2, 11.6, 0], [0.8, 7.0, 0.8], '#cc2c2c', 'cyl'),
+      B([sx * 3.9, 2.3, 0], [0.3, 2.8, 0.3], '#b82424', 'box', { rotZ: sx * 0.5 }),       // a strut at the foot
+    ]),
+    B([0, 7.6, 0], [6.4, 0.4, 0.5], '#b82424'),                                           // a lower tie beam
+    B([0, 15.4, 0], [9.0, 0.6, 0.9], '#c8282a', 'box', {                                  // the crossbeam
+      adorn: [-1, 1].map((sx) => B([sx * 4.7, 0.4, 0], [0.6, 1.0, 0.6], '#c8282a', 'cone4', { rotZ: -sx * 0.6 })),
+    }),
+    B([0, 16.1, 0], [7.4, 0.8, 0.5], '#e0b040', 'box', {                                  // its carved, gilded crest
+      metal: 1, em: '#ffd070', emI: 0.2,
+      adorn: [-2.4, -1.2, 0, 1.2, 2.4].map((x) => B([x, 0.5, 0], [0.5, 0.5, 0.3], '#e0b040', 'pyramid', { metal: 1 })),
+    }),
+  ],
+
+  // Wat Arun: the central prang on three steep terraces, its tiers crusted
+  // with coloured porcelain, four smaller prangs at the corners, and steep
+  // stairs up each face. Street 2: about twenty pieces.
+  watarun: [
+    B([0, 0.4, 0], [18, 0.8, 18], '#d8d0c0', 'box', { tex: 'stone' }),
+    B([0, 1.5, 0], [12, 1.4, 12], '#e4dccc', 'tier', { sides: 4, tex: 'tile', tx: {} }),
+    B([0, 3.2, 0], [9.6, 2.0, 9.6], '#e8e0d0', 'tier', { sides: 4 }),
+    B([0, 5.2, 0], [7.2, 2.0, 7.2], '#ece4d4', 'tier', { sides: 4 }),
+    ...[[0, 1], [0, -1], [1, 0], [-1, 0]].map(([x, z]) => B([x * 5.0, 3.0, z * 5.0], [1.6, 4.4, 2.4], '#dcd2c0', 'prism', {
+      rotY: x ? Math.PI / 2 : 0, sortY: 6.3,                                             // steep stairs, one per face
+    })),
+    B([0, 7.5, 0], [5.6, 2.6, 4.8], '#d8c8b0', 'tier', { sides: 8, tex: 'tile' }),
+    B([0, 10.0, 0], [4.8, 2.4, 4.0], '#e0d0b8', 'tier', { sides: 8, tex: 'niche', tx: { n: 4 } }),
+    B([0, 12.3, 0], [4.0, 2.2, 3.2], '#e4d4bc', 'tier', { sides: 8, tex: 'tile' }),
+    B([0, 14.6, 0], [3.2, 2.4, 2.0], '#e8d8c0', 'tier', { sides: 8, tex: 'tile' }),
+    B([0, 17.0, 0], [2.0, 2.4, 0.6], '#ecdcc4', 'tier', { sides: 8 }),
+    B([0, 18.9, 0], [0.5, 1.4, 0.5], '#e0b040', 'group', {                                // the spire's top
+      adorn: [B([0, 0, 0], [0.16, 1.4, 0.16], '#e0b040', 'cyl', { metal: 1 }), B([0, -0.4, 0], [0.45, 0.2, 0.45], '#e0b040', 'cyl', { metal: 1 })],
+    }),
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([x, z]) => B([x * 6.8, 4.4, z * 6.8], [2.4, 7.2, 2.4], '#e0d4c0', 'group', {
+      adorn: [
+        B([0, -2.8, 0], [2.4, 1.6, 2.0], '#e4dccc', 'tier', { sides: 4 }),
+        B([0, -0.6, 0], [1.8, 2.8, 1.2], '#e0d0b8', 'tier', { sides: 8, tex: 'tile' }),
+        B([0, 1.8, 0], [1.2, 2.2, 0.3], '#e8d8c0', 'tier', { sides: 8 }),
+        B([0, 3.3, 0], [0.1, 0.8, 0.1], '#e0b040', 'cyl', { metal: 1 }),
+      ],
+    })),
+  ],
+
+  // The Chakri Maha Prasat throne hall at the Grand Palace: a European
+  // classical body of three pavilions joined by wings, under three tiered
+  // Thai roofs, each crowned with a tall gilded spire. Street 3: about
+  // two dozen pieces.
+  chakri: [
+    B([0, 0.3, 0], [26, 0.6, 12], '#d8d0c0', 'box', { tex: 'stone' }),
+    B([0, 0.9, 1.5], [10, 0.6, 3], '#e4dccc', 'box', { tex: 'stone' }),                     // front steps
+    B([0, 3.0, 0], [8, 4.2, 8], '#f0ece2', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),
+    B([0, 6.6, 0], [8, 3.0, 8], '#f2eee6', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),
+    B([0, 4.6, 4.3], [6.0, 7.4, 0.8], '#f6f2ea', 'colonnade', { cols: 6 }),                  // the portico
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 7.5, 2.6, 0], [7, 3.4, 6], '#ece8de', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),   // wing, ground
+      B([sx * 7.5, 5.5, 0], [7, 2.4, 6], '#eeeae0', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),   // wing, upper
+      B([sx * 7.5, 6.9, 0], [7.2, 0.4, 6.2], '#d8d0c0', 'box', { sortY: 6.95 }),                        // wing balustrade
+      B([sx * 11.0, 3.6, 0], [4, 6.6, 6], '#f0ece2', 'box', { tex: 'win', tx: { cols: 2, rows: 2 } }), // end pavilion
+    ]),
+    B([0, 8.4, 0], [8.6, 0.6, 8.6], '#d8d0c0'),                                               // the central cornice
+    B([0, 9.6, 0], [8.0, 1.8, 7.0], '#c8402a', 'prism'),                                      // central roof, lower tier
+    B([0, 11.0, 0], [6.2, 1.6, 5.4], '#2a7a4a', 'prism'),                                      // upper tier
+    B([0, 12.6, 0], [4.4, 1.6, 4.0], '#c8402a', 'prism'),
+    B([0, 15.6, 0], [1.6, 6.0, 0.1], '#e0b040', 'tier', { sides: 8, metal: 1, em: '#ffd070', emI: 0.25 }),   // gilded spire
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 11.0, 7.3, 0], [4.6, 0.6, 6.4], '#d8d0c0'),
+      B([sx * 11.0, 8.4, 0], [4.2, 1.6, 6.0], '#c8402a', 'prism', { rotY: Math.PI / 2 }),
+      B([sx * 11.0, 9.8, 0], [3.0, 1.4, 4.4], '#2a7a4a', 'prism', { rotY: Math.PI / 2 }),
+      B([sx * 11.0, 12.4, 0], [1.2, 4.6, 0.1], '#e0b040', 'tier', { sides: 8, metal: 1, em: '#ffd070', emI: 0.25 }),
+    ]),
+  ],
+  // ================= CAPE TOWN =================
+  // The Castle (1666-79) and the Clock Tower (1882) are centuries old. City
+  // Hall (1905) is by Harry Austin Reid and Frederick George Green, who won
+  // its competition in the 1890s; their death dates were not found, but
+  // South Africa's term is life + 50, so it would take an architect active
+  // in the 1890s living past 1975 to matter (docs/CAPE-TOWN-FACTS-DRAFT.md).
+
+  // The Waterfront Clock Tower: the old Port Captain's office, three
+  // storeys of red Gothic Revival with white trim, a clock stage with four
+  // faces, and a steep pointed roof. Street 1: about a dozen pieces.
+  clocktower: [
+    B([0, 0.25, 0], [7, 0.5, 7], '#8a8a86', 'box', { tex: 'stone' }),
+    B([0, 1.9, 0], [3.6, 2.8, 3.6], '#b8362a', 'box', { tex: 'gothic' }),
+    B([0, 4.6, 0], [3.4, 2.6, 3.4], '#bc3a2c', 'box', { tex: 'gothic' }),
+    B([0, 7.1, 0], [3.2, 2.4, 3.2], '#c03e2e', 'box', { tex: 'win', tx: { cols: 2, rows: 1 } }),
+    B([0, 8.55, 0], [3.5, 0.5, 3.5], '#f2ece0'),                                         // white cornice
+    B([0, 9.8, 0], [2.8, 2.0, 2.8], '#c4402e'),                                            // the clock stage
+    B([0, 9.8, 1.42], [1.6, 1.6, 0.14], '#f8f2e0', 'clock'),
+    B([0, 9.8, -1.42], [1.6, 1.6, 0.14], '#f8f2e0', 'clock'),
+    B([1.42, 9.8, 0], [1.6, 1.6, 0.14], '#f8f2e0', 'clock', { rotY: Math.PI / 2 }),
+    B([-1.42, 9.8, 0], [1.6, 1.6, 0.14], '#f8f2e0', 'clock', { rotY: Math.PI / 2 }),
+    B([0, 12.0, 0], [3.2, 2.4, 3.2], '#4a5a6a', 'pyramid'),                                 // the slate roof
+    B([0, 13.8, 0], [0.5, 1.2, 0.5], '#e0b040', 'group', {                              // the finial and its ball
+      adorn: [B([0, 0, 0], [0.08, 1.2, 0.08], '#e0b040', 'cyl', { metal: 1 }), B([0, -0.2, 0], [0.3, 0.3, 0.3], '#e0b040', 'sphere', { metal: 1 })],
+    }),
+  ],
+
+  // The Castle of Good Hope: a five-pointed star fort of grey stone, a
+  // pointed bastion at each corner, low curtain walls between, the moat
+  // in front, the gate with its bell tower, and the yellow buildings
+  // inside. Street 2: about eighteen pieces.
+  goodhope: (() => {
+    const out = [
+      B([0, 0.2, 0], [22, 0.4, 22], '#7a8a5a', 'box'),
+      B([0, 0.42, 9.6], [12, 0.12, 2.2], '#4a7a9a', 'box', { wet: 1, em: '#7ab4d4', emI: 0.3 }),   // the moat
+    ];
+    const R = 8.2;
+    for (let i = 0; i < 5; i++) {
+      const a = Math.PI / 2 + (i / 5) * Math.PI * 2;
+      const bx = Math.cos(a) * R, bz = Math.sin(a) * R;
+      out.push(B([bx, 1.7, bz], [3.2, 2.6, 3.2], '#8a8a80', 'box', { tex: 'stone', rotY: -a + Math.PI / 4 }));   // a bastion
+      const b = Math.PI / 2 + ((i + 0.5) / 5) * Math.PI * 2;
+      const wx = Math.cos(b) * R * 0.8, wz = Math.sin(b) * R * 0.8;
+      out.push(B([wx, 1.5, wz], [7.6, 2.2, 1.2], '#92928a', 'box', { tex: 'stone', rotY: -b + Math.PI / 2 }));   // a curtain wall
+    }
+    out.push(
+      B([0, 1.9, 6.6], [3.8, 3.0, 1.6], '#f0d060', 'extrude', {                            // the gate
+        outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+        holes: [{ x: 0, y: -0.18, w: 0.36, h: 0.6, arch: true }],
+      }),
+      B([0, 4.3, 6.6], [1.6, 1.8, 1.4], '#f2d468', 'box', {                                 // the bell tower over it
+        adorn: [B([0, 1.2, 0], [1.8, 0.6, 1.6], '#b84a2a', 'prism')],
+      }),
+      B([0, 2.0, -1.5], [8, 3.2, 3], '#f0d060', 'box', { tex: 'win', tx: { cols: 6, rows: 1 } }),   // the yellow buildings inside
+      B([0, 4.0, -1.5], [8.4, 1.0, 3.4], '#9a3a2a', 'prism'),
+      B([4.8, 5.4, -4.0], [0.1, 5.0, 0.1], '#e0e0e0', 'group', {                            // a flagpole on a bastion
+        adorn: [B([0, 0, 0], [0.08, 5.0, 0.08], '#e0e0e0', 'cyl', { metal: 1 })],
+      }),
+    );
+    return out;
+  })(),
+
+  // Cape Town City Hall: an Edwardian palace of honey-coloured stone, a
+  // colonnaded centre with the balcony over the entrance, domed corner
+  // pavilions, and the tall clock tower with four faces and a cupola.
+  // Street 3: about two dozen pieces.
+  cityhall: [
+    B([0, 0.3, 0], [26, 0.6, 12], '#9a948a', 'box', { tex: 'stone' }),
+    B([0, 0.8, 4.2], [8, 0.4, 2.4], '#cfc2a0', 'box', { tex: 'stone' }),                  // the front steps
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 6.5, 2.6, 0], [7, 3.6, 7], '#dcc898', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),
+      B([sx * 6.5, 6.0, 0], [7, 3.2, 7], '#e0cc9c', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),
+      B([sx * 10.8, 4.4, 0], [3.4, 7.6, 7.6], '#d8c494', 'box', { tex: 'arch', tx: { n: 2 } }),   // corner pavilion
+      B([sx * 10.8, 8.9, 0], [2.6, 1.4, 2.6], '#5a7a6a', 'dome', { metal: 1 }),
+    ]),
+    B([0, 2.6, 0.2], [6, 3.6, 7.4], '#e4d0a0', 'box', { tex: 'arch', tx: { n: 3 } }),
+    B([0, 6.0, 0.2], [6, 3.2, 7.4], '#e6d4a6', 'box', { tex: 'win', tx: { cols: 3, rows: 1 } }),
+    B([0, 4.4, 4.3], [5.6, 7.2, 0.9], '#f0e2be', 'colonnade', { cols: 6 }),
+    B([0, 4.3, 4.9], [3.0, 0.3, 1.2], '#d0bc90', 'box', {                                   // the balcony over the door
+      adorn: [B([0, 0.4, 0.5], [3.0, 0.5, 0.1], '#d0bc90')],
+    }),
+    B([0, 8.6, 4.4], [6.2, 1.6, 1.0], '#e8d6aa', 'prism'),                                   // the pediment
+    B([0, 8.0, 0], [21, 0.5, 7.6], '#d0bc90', 'box', { sortY: 8.1 }),                       // balustrade and cornice
+    B([0, 10.6, -1.8], [3.6, 4.6, 3.6], '#dcc898', 'box', { tex: 'arch', tx: { n: 2 } }),   // the tower
+    B([0, 14.3, -1.8], [3.2, 2.8, 3.2], '#e0cc9c', 'box', { tex: 'arch', tx: { n: 2 } }),
+    B([0, 16.6, -1.8], [3.0, 1.8, 3.0], '#e4d0a0'),                                          // the clock stage
+    B([0, 16.6, -0.28], [1.5, 1.5, 0.12], '#f8f2e0', 'clock'),
+    B([0, 16.6, -3.32], [1.5, 1.5, 0.12], '#f8f2e0', 'clock'),
+    B([1.52, 16.6, -1.8], [1.5, 1.5, 0.12], '#f8f2e0', 'clock', { rotY: Math.PI / 2 }),
+    B([-1.52, 16.6, -1.8], [1.5, 1.5, 0.12], '#f8f2e0', 'clock', { rotY: Math.PI / 2 }),
+    B([0, 18.3, -1.8], [2.6, 1.6, 2.6], '#d8c494', 'colonnade', { cols: 4 }),              // the open belfry
+    B([0, 19.4, -1.8], [2.4, 1.4, 2.4], '#5a7a6a', 'dome', { metal: 1 }),
+    B([0, 21.2, -1.8], [0.3, 1.6, 0.3], '#e0b040', 'cyl', { metal: 1 }),
+  ],
+  // ================= HANOI =================
+  // The Turtle Tower (1886), Long Bien Bridge (1903, by the Paris firm
+  // Daydé & Pillé) and the Temple of Literature (1070, its pavilion 1805)
+  // are all long out of copyright. The One Pillar Pagoda was left out: the
+  // one standing is a 1955 rebuild by an architect who died this century.
+
+  // The Turtle Tower on its island in Hoan Kiem Lake: three small storeys
+  // of arched openings, each a step narrower, under a curved roof.
+  // Street 1: about a dozen pieces.
+  turtletower: [
+    B([0, 0.15, 0], [16, 0.3, 12], '#4a7a6a', 'box', { wet: 1, em: '#7ab0a0', emI: 0.3 }),   // the lake
+    B([0, 0.6, 0], [8, 0.8, 6], '#7a7058', 'lathe', { profile: [[1, 0], [0.92, 0.6], [0.7, 1]] }),
+    B([-2.6, 1.3, 1.2], [1.4, 1.2, 1.4], '#4a8a3a', 'sphere'),                              // shrubs
+    B([2.8, 1.2, -1.0], [1.2, 1.0, 1.2], '#3a7a34', 'sphere'),
+    B([0, 2.6, 0], [3.6, 2.6, 3.6], '#d8d0b8', 'box', { tex: 'arch', tx: { n: 3 } }),
+    B([0, 4.05, 0], [4.0, 0.3, 4.0], '#c8bea4'),
+    B([0, 5.2, 0], [2.8, 2.0, 2.8], '#dcd4bc', 'box', { tex: 'arch', tx: { n: 3 } }),
+    B([0, 6.35, 0], [3.2, 0.3, 3.2], '#c8bea4'),
+    B([0, 7.3, 0], [2.0, 1.6, 2.0], '#e0d8c0', 'box', { tex: 'arch', tx: { n: 1 } }),
+    B([0, 8.6, 0], [2.8, 1.0, 2.8], '#8a5a3a', 'pyramid'),
+    B([0, 9.5, 0], [0.4, 0.8, 0.4], '#e0b040', 'cone4', { metal: 1 }),
+    B([3.2, 1.6, 1.8], [0.4, 1.2, 0.4], '#9a9488', 'box'),                                  // a stone lantern
+  ],
+
+  // Long Bien Bridge: dark steel cantilever trusses on tall stone piers over
+  // the Red River, the railway running along the deck between them.
+  // Street 2: about eighteen pieces.
+  longbien: [
+    B([0, 0.15, 0], [30, 0.3, 8], '#8a6a4a', 'box', { wet: 1, em: '#a08060', emI: 0.2 }),   // the Red River
+    B([-13.5, 0.9, 0], [4, 1.2, 8], '#6a7a4a', 'box'),                                      // the banks
+    B([13.5, 0.9, 0], [4, 1.2, 8], '#6a7a4a', 'box'),
+    ...[-9, -3, 3, 9].map((x) => B([x, 2.3, 0], [1.4, 4.6, 2.2], '#8a8a80', 'box', { tex: 'stone' })),
+    ...[-6, 0, 6].flatMap((x) => [
+      B([x, 4.75, 0], [6, 0.3, 2.0], '#4a4a46'),                                            // the deck
+      B([x, 5.9, 0], [6, 2.0, 1.8], '#4e4e48', 'box', { tex: 'lattice' }),                  // a truss
+      B([x, 7.4, 0], [6, 1.0, 1.8], '#4e4e48', 'prism', { tex: 'lattice' }),                // its humped top chord
+    ]),
+    B([-13.5, 4.75, 0], [6, 0.3, 2.0], '#7a6a5a', 'box', {                                 // the stone approaches
+      adorn: [B([0, -1.7, 0], [1.0, 3.2, 1.6], '#8a8a80')],
+    }),
+    B([13.5, 4.75, 0], [6, 0.3, 2.0], '#7a6a5a', 'box', {
+      adorn: [B([0, -1.7, 0], [1.0, 3.2, 1.6], '#8a8a80')],
+    }),
+    B([0, 5.05, 0], [24, 0.12, 0.9], '#9a9aa0', 'box', { metal: 1, sortY: 7.5 }),          // the rails
+  ],
+
+  // The Temple of Literature: the Khue Van Cac pavilion on its four white
+  // pillars, the square Well of Heavenly Clarity, rows of stone tablets on
+  // the backs of stone turtles, and the great middle gate behind.
+  // Street 3: about two dozen pieces.
+  vanmieu: [
+    B([0, 0.15, 0], [20, 0.3, 16], '#7a8a5a', 'box'),
+    B([0, 0.35, 0], [3, 0.1, 14], '#c8bca0', 'box', { tex: 'stone' }),                     // the path
+    B([0, 0.4, 4.2], [5.6, 0.2, 4.4], '#a8a090', 'box', { tex: 'stone' }),                  // the well's rim
+    B([0, 0.52, 4.2], [5.0, 0.12, 3.8], '#3a7a8a', 'box', { wet: 1, em: '#6ab0c0', emI: 0.3 }),
+    ...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([x, z]) => B([x * 1.2, 1.9, z * 1.2 - 0.5], [0.9, 3.2, 0.9], '#ece6d8', 'box')),
+    B([0, 4.6, -0.5], [3.4, 2.2, 3.4], '#a8302a', 'box', {                                 // the wooden upper storey
+      adorn: [
+        B([0, 0, 1.72], [1.2, 1.2, 0.08], '#f0c050', 'cyl', { rotX: Math.PI / 2, em: '#ffd070', emI: 0.3 }),
+        B([0, 0, -1.72], [1.2, 1.2, 0.08], '#f0c050', 'cyl', { rotX: Math.PI / 2, em: '#ffd070', emI: 0.3 }),
+      ],
+    }),
+    B([0, 6.1, -0.5], [4.8, 0.9, 4.8], '#6a3a2a', 'pyramid'),
+    B([0, 6.9, -0.5], [3.0, 0.8, 3.0], '#6a3a2a', 'pyramid', {
+      adorn: [B([0, 0.6, 0], [0.3, 0.5, 0.3], '#e0b040', 'cone4', { metal: 1 })],
+    }),
+    ...[-1, 1].flatMap((sx) => [-3.4, -1.2, 1.0, 3.2].map((z) => B([sx * 5.6, 1.1, z], [1.0, 1.6, 1.4], '#8a8a84', 'group', {
+      adorn: [
+        B([0, -0.5, 0], [0.9, 0.5, 1.3], '#7a7a74', 'sphere'),                             // the turtle
+        B([0, 0.25, 0], [0.8, 1.1, 0.16], '#9a9a90', 'box'),                                // the tablet
+        B([0, 0.85, 0], [0.9, 0.25, 0.3], '#8a8a80', 'prism'),
+      ],
+    }))),
+    B([0, 1.7, -6.0], [8, 3.0, 1.6], '#d8c8a0', 'box', { tex: 'arch', tx: { n: 3 } }),    // the middle gate
+    B([0, 3.8, -6.0], [2.6, 1.2, 9], '#8a3a2a', 'prism', { rotY: Math.PI / 2 }),
+    B([-7.0, 1.2, -6.0], [6, 2.4, 0.8], '#c8b890', 'box', { tex: 'stone' }),
+    B([7.0, 1.2, -6.0], [6, 2.4, 0.8], '#c8b890', 'box', { tex: 'stone' }),
+  ],
+  // ================= SEOUL =================
+  // All three stand as rebuilt in 1867-1869, to the Joseon designs: long
+  // out of copyright. Sungnyemun was left out (rebuilt 2013), and so was N
+  // Seoul Tower (1971).
+  // Roofs are built as a dark eave slab under a ridge, the closest the
+  // block shapes come to the curved Korean hip-and-gable roof.
+
+  // Heunginjimun, the Great East Gate: a stone base pierced by an arched
+  // passage, a two-storey timber gatehouse on it under two tiled roofs,
+  // and in front the ongseong, the half-ring of wall that guards it.
+  // Street 1: about a dozen pieces.
+  heunginjimun: [
+    B([0, 0.2, 2], [22, 0.4, 18], '#8a8a80', 'box'),
+    B([0, 2.4, 0], [10, 4.0, 5], '#bcb4a4', 'extrude', {
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.12, w: 0.3, h: 0.76, arch: true }],
+    }),
+    ...[0, 1, 2, 3].map((i) => {
+      const a = 0.25 + (i / 3) * (Math.PI - 0.9);
+      return B([Math.cos(a) * 7.2, 1.6, 2.6 + Math.sin(a) * 7.2], [4.4, 2.8, 1.4], '#b8b0a0', 'box', { tex: 'stone', rotY: Math.PI / 2 - a });
+    }),
+    B([0, 5.4, 0], [8.4, 2.0, 3.8], '#a8302a', 'box', { tex: 'arch', tx: { n: 5 } }),
+    B([0, 6.7, 0], [10.4, 0.5, 5.6], '#4a4c52', 'box', {                                // lower eaves, painted beneath
+      adorn: [B([0, -0.35, 0], [9.6, 0.2, 5.0], '#2a7a6a')],
+    }),
+    B([0, 8.0, 0], [7.4, 2.0, 3.4], '#a8302a', 'box', { tex: 'arch', tx: { n: 4 } }),
+    B([0, 9.3, 0], [9.6, 0.5, 5.2], '#4a4c52', 'box', {
+      adorn: [B([0, -0.35, 0], [8.8, 0.2, 4.6], '#2a7a6a')],
+    }),
+    B([0, 10.4, 0], [8.4, 1.6, 4.4], '#4a4c52', 'prism', { rotY: Math.PI / 2 }),
+  ],
+
+  // Gyeonghoeru: the royal banquet pavilion on its island in the palace
+  // pond, raised on 48 stone pillars, its wide timber hall and great roof
+  // above them, reached by stone bridges. Street 2: about eighteen pieces.
+  gyeonghoeru: [
+    B([0, 0.15, 0], [26, 0.3, 20], '#3a6a6a', 'box', { wet: 1, em: '#6aa0a0', emI: 0.3 }),   // the pond
+    B([0, 0.55, 0], [17, 0.8, 12], '#bcb4a4', 'box', { tex: 'stone' }),                     // the island
+    ...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => B([sx * 3.6, 2.4, sz * 2.4], [6.4, 3.0, 4.2], '#d8d0c0', 'group', {
+      adorn: [0, 1, 2, 3].flatMap((i) => [0, 1, 2].map((j) => B([-2.7 + i * 1.8, 0, -1.6 + j * 1.6], [0.5, 3.0, 0.5], '#d8d0c0', i % 3 && j === 1 ? 'cyl' : 'box'))),
+    }))),
+    B([0, 4.1, 0], [15.4, 0.4, 10.4], '#8a5a3a'),                                             // the timber floor
+    B([0, 4.6, 0], [15.6, 0.6, 10.6], '#a8302a', 'box', { sortY: 4.25,                       // its red railing
+      adorn: [B([0, 0, 0], [15.0, 0.5, 10.0], '#7a2a24')] }),
+    B([0, 5.9, 0], [13, 2.6, 8], '#b83a2c', 'box', { tex: 'win', tx: { cols: 8, rows: 1, lit: '#f2e2b8' } }),
+    B([0, 7.5, 0], [17.4, 0.6, 12.2], '#4a4c52', 'box', {
+      adorn: [B([0, -0.4, 0], [16.4, 0.2, 11.2], '#2a7a6a')],
+    }),
+    B([0, 9.0, 0], [11.4, 2.4, 15], '#4a4c52', 'prism', { rotY: Math.PI / 2 }),
+    B([0, 10.3, 0], [0.4, 0.4, 9], '#3a3c42'),                                              // the ridge
+    ...[-4, 0, 4].map((x) => B([x, 0.75, 7.4], [2.2, 0.4, 3.0], '#c8c0b0', 'box', { tex: 'stone' })),   // three bridges
+    B([-10, 1.4, -7.5], [2.6, 2.6, 2.6], '#4a8a3a', 'sphere'),                              // willows by the pond
+  ],
+
+  // Geunjeongjeon, the throne hall: a great two-storey timber hall on a
+  // two-tier stone terrace ringed with balustrades and stone animals, in a
+  // stone-paved courtyard. Street 3: about two dozen pieces.
+  geunjeongjeon: [
+    B([0, 0.2, 0], [24, 0.4, 22], '#b8b0a0', 'box', { tex: 'stone', tx: { cols: 16, rows: 14 } }),
+    B([0, 0.9, -1.5], [18, 1.0, 13], '#c8c0b0', 'box', { tex: 'stone' }),                    // the lower terrace
+    B([0, 1.9, -2.0], [15, 1.0, 10], '#ccc4b4', 'box', { tex: 'stone' }),                    // the upper terrace
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 8.8, 1.7, -1.5], [12.8, 0.6, 0.3], '#d8d0c0', 'colonnade', { cols: 10, rotY: Math.PI / 2, sortY: 1.45 }),
+      B([sx * 7.3, 2.7, -2.0], [9.8, 0.6, 0.3], '#d8d0c0', 'colonnade', { cols: 8, rotY: Math.PI / 2, sortY: 2.45 }),
+      B([sx * 8.6, 1.9, 4.6], [0.7, 1.0, 0.7], '#a8a090', 'sphere', { sortY: 1.5 }),         // stone guardians
+      B([sx * 7.1, 2.9, 2.6], [0.7, 1.0, 0.7], '#a8a090', 'sphere', { sortY: 2.5 }),
+      B([sx * 6.0, 0.7, 7.5], [0.9, 1.0, 0.9], '#5a4a3a', 'cyl', { metal: 1 }),              // bronze cauldrons
+    ]),
+    B([0, 1.4, 5.4], [3.0, 1.0, 2.0], '#c8c0b0', 'prism', { sortY: 1.6 }),                  // the front stairs
+    B([0, 2.4, 3.3], [3.0, 1.0, 2.0], '#c8c0b0', 'prism', { sortY: 2.6 }),
+    B([0, 4.4, -3.0], [12, 4.0, 7], '#a8302a', 'box', { tex: 'arch', tx: { n: 7 } }),        // the hall, lower storey
+    B([0, 6.7, -3.0], [14.4, 0.6, 9.4], '#4a4c52', 'box', {
+      adorn: [B([0, -0.4, 0], [13.6, 0.2, 8.6], '#2a7a6a')],
+    }),
+    B([0, 8.2, -3.0], [10, 2.4, 5.4], '#a8302a', 'box', { tex: 'win', tx: { cols: 7, rows: 1, lit: '#f2e2b8' } }),
+    B([0, 9.7, -3.0], [12.8, 0.6, 8.0], '#4a4c52', 'box', {
+      adorn: [B([0, -0.4, 0], [12.0, 0.2, 7.2], '#2a7a6a')],
+    }),
+    B([0, 11.2, -3.0], [7.0, 2.4, 11.4], '#4a4c52', 'prism', { rotY: Math.PI / 2 }),
+    B([0, 12.5, -3.0], [0.4, 0.4, 8], '#3a3c42'),
+    B([0, 0.5, 9.0], [2.4, 0.2, 4.0], '#d8d0c0', 'box', { tex: 'stone' }),                   // the royal path
+    ...[-1, 1].map((sx) => B([sx * 3.0, 0.6, 8.6], [0.4, 0.4, 4.4], '#a8a090', 'group', {   // rank stones
+      adorn: [-1.8, -0.6, 0.6, 1.8].map((z) => B([0, 0, z], [0.4, 0.4, 0.3], '#a8a090')),
+    })),
+  ],
+  // ================= SAMARKAND =================
+  // Timurid and later work, 1400s-1600s: no copyright question. The
+  // Bibi-Khanym Mosque was left out: its dome was largely rebuilt from 1974.
+
+  // The Ulugh Beg Observatory, as it stood in the 1420s: a round,
+  // three-storey building on its hill, faced in tile, with the great marble
+  // arc of its sextant running down through it into the ground.
+  // Street 1: about a dozen pieces.
+  observatory: [
+    B([0, 0.7, 0], [18, 1.4, 14], '#a89470', 'lathe', { profile: [[1, 0], [0.9, 0.6], [0.75, 1]] }),
+    B([0, 1.7, 0], [11, 0.6, 11], '#c8b490', 'cyl'),
+    B([0, 3.4, 0], [9.6, 2.8, 9.6], '#d8b888', 'cyl', { tex: 'arch', tx: { n: 12 } }),
+    B([0, 6.2, 0], [9.2, 2.8, 9.2], '#2aa8b8', 'cyl', { tex: 'tile' }),
+    B([0, 8.9, 0], [8.8, 2.6, 8.8], '#d4b484', 'cyl', { tex: 'arch', tx: { n: 12 } }),
+    B([0, 10.45, 0], [9.0, 0.5, 9.0], '#2a4aa8', 'cyl', { tex: 'tile' }),
+    B([-0.4, 6.0, 0], [12, 6, 0.4], '#ece6d8', 'arch', { rotY: Math.PI / 2, sortY: 10.6 }),   // the sextant's two marble rails
+    B([0.4, 6.0, 0], [12, 6, 0.4], '#ece6d8', 'arch', { rotY: Math.PI / 2, sortY: 10.7 }),
+    B([0, 2.6, 6.2], [3.0, 1.2, 2.4], '#c8b490', 'prism', { rotY: Math.PI / 2 }),          // steps up the hill
+    B([-7, 3.0, 4], [1.0, 4.0, 1.0], '#3a6a3a', 'cone4'),                                   // poplars
+    B([7, 3.0, -4], [1.0, 4.0, 1.0], '#3a6a3a', 'cone4'),
+    B([6.5, 1.8, 4.5], [1.2, 1.0, 1.2], '#4a7a3a', 'sphere'),
+  ],
+
+  // Gur-e-Amir, Timur's tomb: an octagonal base, a tall drum ringed with a
+  // band of script in tile, the ribbed turquoise melon dome, and the great
+  // tiled entrance gate with its two minarets. Street 2: about eighteen
+  // pieces.
+  gurlamir: [
+    B([0, 0.2, 0], [20, 0.4, 18], '#c8b490', 'box', { tex: 'stone' }),
+    B([0, 2.4, -2], [10, 4.0, 10], '#d8b888', 'tier', { sides: 8, tex: 'arch', tx: { n: 8 } }),
+    B([0, 5.0, -2], [9.4, 1.2, 9.4], '#2a4aa8', 'tier', { sides: 8, tex: 'tile' }),
+    B([0, 7.4, -2], [6.6, 3.6, 6.6], '#2aa8b8', 'cyl', { tex: 'tile' }),                   // the drum
+    B([0, 9.5, -2], [6.8, 0.6, 6.8], '#f2ecd8', 'cyl'),                                    // its band of script
+    B([0, 12.8, -2], [8.0, 6.0, 8.0], '#2ab0c8', 'lathe', {                                 // the ribbed melon dome
+      tex: 'flute', tx: { n: 32 },
+      profile: [[0.82, 0], [0.98, 0.25], [1, 0.45], [0.9, 0.7], [0.6, 0.9], [0.2, 0.98], [0, 1]],
+    }),
+    B([0, 16.3, -2], [0.3, 1.2, 0.3], '#e0b040', 'cyl', { metal: 1 }),
+    B([0, 4.6, 5.0], [7.0, 9.2, 1.4], '#d8b888', 'extrude', {                             // the entrance gate
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.06, w: 0.5, h: 0.74, arch: 'pointed' }],
+    }),
+    B([0, 4.6, 5.75], [7.2, 9.4, 0.12], '#2a4aa8', 'extrude', {                           // its tile frame
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.03, w: 0.78, h: 0.9, arch: 'pointed' }],
+    }),
+    B([0, 3.0, 4.4], [3.2, 5.0, 0.2], '#3a2a20'),                                          // the shadowed door
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 4.2, 4.0, 5.0], [1.3, 8.0, 1.3], '#d8b888', 'cyl', { tex: 'tile', tx: {} }),
+      B([sx * 4.2, 8.8, 5.0], [1.6, 1.6, 1.6], '#2aa8b8', 'cyl', {
+        adorn: [B([0, 1.2, 0], [1.2, 0.8, 1.2], '#d8b888', 'dome')],
+      }),
+      B([sx * 7.5, 1.8, 2.0], [4.0, 3.2, 1.0], '#d4b484', 'box', { tex: 'arch', tx: { n: 2 } }),   // courtyard walls
+    ]),
+    B([0, 0.55, 7.2], [5, 0.3, 2.4], '#c8b490', 'box', { tex: 'stone' }),
+  ],
+
+  // The Registan: three madrasas around the square, each behind a huge
+  // tiled gate (pishtaq) with a pointed arch, flanked by towers. Ulugh Beg's
+  // on the left, Sher-Dor facing it on the right, Tilya-Kori at the back
+  // with its turquoise dome. Street 3: about two dozen pieces.
+  registan: (() => {
+    const out = [B([0, 0.2, 0], [30, 0.4, 28], '#c8b490', 'box', { tex: 'stone', tx: { cols: 20, rows: 18 } })];
+    const madrasa = (x, z, rotY, tint) => {
+      const at = (dx, dy, dz) => {
+        const c = Math.cos(rotY), s = Math.sin(rotY);
+        return [x + dx * c + dz * s, dy, z - dx * s + dz * c];
+      };
+      out.push(
+        B(at(0, 5.4, 0), [7.4, 10.4, 1.4], '#d8b888', 'extrude', { rotY,
+          outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+          holes: [{ x: 0, y: -0.05, w: 0.52, h: 0.76, arch: 'pointed' }] }),
+        B(at(0, 5.4, 0.76), [7.6, 10.6, 0.12], tint, 'extrude', { rotY, tex: 'tile',
+          outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+          holes: [{ x: 0, y: -0.03, w: 0.8, h: 0.9, arch: 'pointed' }] }),
+        B(at(-6.2, 3.2, -1.8), [5.0, 6.0, 4.0], '#d4b484', 'box', { rotY, tex: 'arch', tx: { n: 3 } }),
+        B(at(6.2, 3.2, -1.8), [5.0, 6.0, 4.0], '#d4b484', 'box', { rotY, tex: 'arch', tx: { n: 3 } }),
+        B(at(-8.9, 5.6, -0.2), [1.3, 11, 1.3], '#d8b888', 'cyl', { tex: 'tile' }),
+        B(at(8.9, 5.6, -0.2), [1.3, 11, 1.3], '#d8b888', 'cyl', { tex: 'tile' }),
+      );
+    };
+    madrasa(-10.5, 0, Math.PI / 2, '#2a4aa8');      // Ulugh Beg, facing the square from the left
+    madrasa(10.5, 0, -Math.PI / 2, '#2aa8b8');      // Sher-Dor, facing it
+    madrasa(0, -10.5, 0, '#2a6ac8');                // Tilya-Kori, at the back
+    out.push(
+      B([-6.0, 7.2, -12.5], [4.6, 1.6, 4.6], '#d8b888', 'cyl'),                           // Tilya-Kori's dome
+      B([-6.0, 8.0, -12.5], [5.0, 3.6, 5.0], '#2ab0c8', 'dome'),
+      B([12.3, 6.6, -3.5], [3.6, 2.4, 3.6], '#2aa8b8', 'dome', { tex: 'flute', tx: { n: 20 } }),   // Sher-Dor's ribbed domes
+      B([12.3, 6.6, 3.5], [3.6, 2.4, 3.6], '#2aa8b8', 'dome', { tex: 'flute', tx: { n: 20 } }),
+      B([0, 0.45, 2], [8, 0.1, 8], '#b8a480', 'box', { tex: 'stone' }),                     // the square's centre
+    );
+    return out;
+  })(),
+  // ================= ZANZIBAR =================
+  // The Old Fort (1699), Christ Church (1873-80) and the House of Wonders
+  // (1883) are all long out of copyright. The slave memorial beside the
+  // cathedral (1998) is a living artist's work and is not shown.
+
+  // The Old Fort: a square of high, weathered stone walls with stepped
+  // battlements, a round tower at each corner and the gate in front.
+  // Street 1: about a dozen pieces.
+  oldfort: [
+    B([0, 0.2, 0], [22, 0.4, 22], '#9a8a6a', 'box'),
+    ...[[0, 7.2, 0], [0, -7.2, 0], [7.2, 0, Math.PI / 2], [-7.2, 0, Math.PI / 2]].map(([x, z, rot]) =>
+      B([x, 2.6, z], [12, 4.4, 1.4], '#b8a888', 'box', { tex: 'stone', tx: { rough: 1 }, rotY: rot,
+        adorn: [-5, -3, -1, 1, 3, 5].map((dx) => B([dx, 2.6, 0], [0.8, 0.8, 1.4], '#b0a080', 'pyramid')) })),
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) =>
+      B([sx * 7.2, 3.0, sz * 7.2], [3.0, 6.0, 3.0], '#c0b090', 'cyl', { tex: 'stone', tx: { rough: 1 },
+        adorn: [B([0, 3.3, 0], [3.2, 0.6, 3.2], '#b0a080', 'cyl')] })),
+    B([0, 2.4, 8.0], [3.6, 4.4, 1.0], '#c8b896', 'extrude', {
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.15, w: 0.5, h: 0.6, arch: true }],
+    }),
+    B([0, 0.55, 10.5], [4, 0.3, 3], '#a89a7a', 'box', { tex: 'stone' }),
+  ],
+
+  // Christ Church Cathedral: a long nave of coral stone with pointed
+  // windows under a barrel roof, aisles either side, a rounded apse at the
+  // east end, and the clock tower with its spire at the west front.
+  // Street 2: about eighteen pieces.
+  christchurch: [
+    B([0, 0.2, 0], [16, 0.4, 24], '#9a9480', 'box'),
+    B([0, 3.0, -2], [6, 5.2, 7], '#e8e0cc', 'box', { tex: 'gothic' }),
+    B([0, 3.0, -9], [6, 5.2, 7], '#e8e0cc', 'box', { tex: 'gothic' }),
+    B([0, 6.4, -5.5], [6.4, 1.8, 14.2], '#8a7a6a', 'prism'),                                // the barrel roof
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 4.4, 2.0, -5.5], [2.8, 3.2, 14], '#e4dcc6', 'box', { tex: 'gothic' }),       // aisles
+      B([sx * 4.4, 4.0, -5.5], [3.0, 0.9, 14.2], '#8a7a6a', 'prism'),
+      B([sx * 5.9, 1.6, -5.5], [0.6, 2.8, 12], '#d8d0bc', 'group', {                       // buttresses
+        adorn: [-5, -2.5, 0, 2.5, 5].map((z) => B([0, 0, z], [0.6, 2.8, 0.6], '#d8d0bc')),
+      }),
+    ]),
+    B([0, 3.0, -13.6], [6, 5.2, 6], '#e4dcc6', 'cyl', { tex: 'gothic' }),                   // the apse
+    B([0, 5.6, -13.6], [6.2, 2.4, 6.2], '#8a7a6a', 'dome'),
+    B([0, 3.0, 3.8], [3.6, 5.6, 3.6], '#ece4d0', 'box', { tex: 'gothic' }),                 // the tower
+    B([0, 7.2, 3.8], [3.4, 2.8, 3.4], '#ece4d0', 'box'),
+    B([0, 7.2, 5.55], [1.6, 1.6, 0.12], '#f8f2e0', 'clock'),
+    B([0, 9.8, 3.8], [3.6, 2.4, 3.6], '#6a6a70', 'pyramid'),
+    B([0, 11.6, 3.8], [0.2, 1.2, 0.2], '#e0b040', 'cyl', { metal: 1 }),
+    B([0, 1.8, 5.65], [1.8, 3.2, 0.2], '#4a3424', 'box', { sortY: 3.1 }),                   // the west door
+    B([0, 0.55, 7.0], [4, 0.3, 2.4], '#b8b0a0', 'box', { tex: 'stone' }),
+  ],
+
+  // The House of Wonders: a tall square palace wrapped on every floor in
+  // balconies carried on slim cast-iron columns, with the clock tower in
+  // front. Street 3: about two dozen pieces.
+  wonders: [
+    B([0, 0.2, 0], [22, 0.4, 20], '#a89c84', 'box', { tex: 'stone' }),
+    ...[0, 1, 2].flatMap((fl) => [
+      B([-3.0, 2.2 + fl * 4, 0], [6, 4, 12], '#ece6d6', 'box', { tex: 'win', tx: { cols: 3, rows: 1 } }),
+      B([3.0, 2.2 + fl * 4, 0], [6, 4, 12], '#e8e2d2', 'box', { tex: 'win', tx: { cols: 3, rows: 1 } }),
+      B([0, 4.05 + fl * 4, 0], [16, 0.3, 16], '#d8d0bc', 'box', { sortY: 4.25 + fl * 4 }),       // the balcony floor
+      B([0, 2.2 + fl * 4, 7.6], [15.6, 3.7, 0.4], '#e8e4d8', 'colonnade', { cols: 12, sortY: 4.3 + fl * 4 }),
+      B([0, 2.2 + fl * 4, -7.6], [15.6, 3.7, 0.4], '#e8e4d8', 'colonnade', { cols: 12, sortY: 4.3 + fl * 4 }),
+    ]),
+    B([0, 12.6, 0], [16.4, 0.6, 16.4], '#7a6a5a'),                                          // the roof
+    B([0, 8.6, 9.2], [3.2, 17, 3.2], '#ece6d6', 'box', { tex: 'arch', tx: { n: 2 } }),     // the clock tower
+    B([0, 16.1, 10.82], [2.0, 2.0, 0.12], '#f8f2e0', 'clock', { sortY: 16.2 }),
+    B([0, 16.1, 7.58], [2.0, 2.0, 0.12], '#f8f2e0', 'clock', { sortY: 16.2 }),
+    B([1.62, 16.1, 9.2], [2.0, 2.0, 0.12], '#f8f2e0', 'clock', { rotY: Math.PI / 2, sortY: 16.2 }),
+    B([-1.62, 16.1, 9.2], [2.0, 2.0, 0.12], '#f8f2e0', 'clock', { rotY: Math.PI / 2, sortY: 16.2 }),
+    B([0, 17.9, 9.2], [3.6, 1.6, 3.6], '#6a7a6a', 'pyramid'),
+    B([0, 0.6, 11.6], [5, 0.4, 2.4], '#c8bea8', 'box', { tex: 'stone' }),                   // the steps
+  ],
+  // ================= BEIJING =================
+  // Ming buildings, rebuilt to their old designs (the Hall of Prayer after a
+  // fire in 1889, the Hall of Supreme Harmony in 1695): no copyright
+  // question. Tiananmen Square and its monuments are not in the game.
+
+  // The Drum Tower: a massive base of red-plastered brick pierced by arched
+  // tunnels, and on it a timber hall of red columns under a double roof of
+  // grey tile with green-painted eaves. Street 1: about a dozen pieces.
+  drumtower: [
+    B([0, 0.2, 0], [20, 0.4, 14], '#8a8478', 'box', { tex: 'stone' }),
+    B([0, 3.0, 0], [14, 5.2, 9], '#a8402a', 'extrude', {
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: -0.25, y: -0.18, w: 0.14, h: 0.55, arch: true }, { x: 0, y: -0.18, w: 0.14, h: 0.55, arch: true }, { x: 0.25, y: -0.18, w: 0.14, h: 0.55, arch: true }],
+    }),
+    B([0, 5.85, 0], [14.6, 0.5, 9.6], '#8a8478'),                                            // the parapet
+    B([0, 7.8, 0], [11, 3.4, 6.4], '#b8302a', 'colonnade', { cols: 8 }),
+    B([0, 7.8, 0], [10, 3.2, 5.4], '#7a2a1a', 'box', { tex: 'win', tx: { cols: 6, rows: 1, lit: '#f2c470' } }),
+    B([0, 9.8, 0], [13.6, 0.5, 9.0], '#3a3c42', 'box', { adorn: [B([0, -0.35, 0], [12.8, 0.2, 8.2], '#2a6a5a')] }),
+    B([0, 11.4, 0], [9.6, 2.6, 5.2], '#b8302a', 'box', { tex: 'win', tx: { cols: 6, rows: 1, lit: '#f2c470' } }),
+    B([0, 13.0, 0], [12.4, 0.5, 8.0], '#3a3c42', 'box', { adorn: [B([0, -0.35, 0], [11.6, 0.2, 7.2], '#2a6a5a')] }),
+    B([0, 14.4, 0], [7.0, 2.2, 11.4], '#3a3c42', 'prism', { rotY: Math.PI / 2 }),
+    B([0, 15.6, 0], [0.4, 0.5, 7.6], '#2a2c32'),
+    B([4.0, 6.6, 3.6], [1.0, 1.0, 0.6], '#b8302a', 'cyl', { rotX: Math.PI / 2, sortY: 6.0 }),     // the great drum, seen through
+  ],
+
+  // The Hall of Prayer for Good Harvests at the Temple of Heaven: a round
+  // hall of red and gold under three tiers of blue glazed roof, on three
+  // round white marble terraces with balustrades. Street 2: about eighteen
+  // pieces.
+  qiniandian: [
+    B([0, 0.2, 0], [24, 0.4, 24], '#8a8a84', 'box', { tex: 'stone' }),
+    ...[[18, 0.9], [15, 2.1], [12, 3.3]].flatMap(([w, y]) => [
+      B([0, y, 0], [w, 1.2, w], '#ece8de', 'cyl'),                                            // a marble terrace
+      B([0, y + 0.85, 0], [w, 0.3, 0.3], '#f2eee4', 'torus', { rotX: Math.PI / 2, sortY: y + 0.7 }),   // its balustrade
+    ]),
+    B([0, 4.5, 6.6], [3.2, 4.2, 2.6], '#e4e0d6', 'prism', { sortY: 4.0 }),                  // the stair up the terraces
+    B([0, 6.0, 0], [9.0, 3.6, 9.0], '#b8302a', 'cyl', { tex: 'win', tx: { cols: 12, rows: 1, lit: '#e8b850' } }),
+    B([0, 8.0, 0], [11.4, 0.4, 11.4], '#2a4a9a', 'cyl'),                                    // the lowest eaves
+    B([0, 8.8, 0], [11.0, 1.2, 7.6], '#2a5aa8', 'tier'),                                     // the lowest roof
+    B([0, 9.9, 0], [7.4, 1.4, 7.4], '#b8302a', 'cyl', { tex: 'win', tx: { cols: 10, rows: 1, lit: '#e8b850' } }),
+    B([0, 11.2, 0], [9.0, 1.2, 5.8], '#2a5aa8', 'tier'),                                     // the middle roof
+    B([0, 12.2, 0], [5.6, 1.2, 5.6], '#b8302a', 'cyl', { tex: 'win', tx: { cols: 8, rows: 1, lit: '#e8b850' } }),
+    B([0, 13.3, 0], [7.0, 2.4, 1.0], '#2a5aa8', 'tier'),                                     // the top roof
+    B([0, 15.0, 0], [0.9, 1.4, 0.9], '#e0b040', 'sphere', { metal: 1, em: '#ffd070', emI: 0.3 }),
+    B([0, 8.35, 0], [9.4, 0.3, 0.3], '#e0b040', 'torus', { rotX: Math.PI / 2, metal: 1, sortY: 8.7 }),   // gilded ring
+    B([0, 0.6, 10.5], [6, 0.4, 3], '#c8c4ba', 'box', { tex: 'stone' }),                       // the raised way
+  ],
+
+  // The Hall of Supreme Harmony in the Forbidden City: a vast hall of red
+  // columns and walls under a double hipped roof of yellow glazed tile, on
+  // a three-tier white marble terrace with balustrades and staircases.
+  // Street 3: about two dozen pieces.
+  taihedian: [
+    B([0, 0.2, 0], [30, 0.4, 24], '#9a948a', 'box', { tex: 'stone', tx: { cols: 20, rows: 16 } }),
+    ...[[26, 18, 1.0], [22, 15, 2.2], [19, 12.5, 3.4]].flatMap(([w, d, y]) => [
+      B([0, y, -1], [w, 1.2, d], '#ece8de', 'box', { tex: 'stone' }),
+      B([0, y + 0.85, -1 + d / 2], [w, 0.5, 0.25], '#f2eee4', 'colonnade', { cols: Math.round(w / 1.2), sortY: y + 0.7 }),
+    ]),
+    B([0, 2.2, 9.0], [3.6, 3.6, 3.0], '#e4e0d6', 'prism', { sortY: 3.0 }),                    // the central stair
+    B([-5, 2.2, 9.0], [2.4, 3.6, 3.0], '#e4e0d6', 'prism', { sortY: 3.05 }),
+    B([5, 2.2, 9.0], [2.4, 3.6, 3.0], '#e4e0d6', 'prism', { sortY: 3.1 }),
+    B([-4.5, 6.4, -1], [9, 5.2, 9], '#b8302a', 'box', { tex: 'win', tx: { cols: 5, rows: 1, lit: '#e8b850' } }),
+    B([4.5, 6.4, -1], [9, 5.2, 9], '#b8302a', 'box', { tex: 'win', tx: { cols: 5, rows: 1, lit: '#e8b850' } }),
+    B([0, 6.4, 3.8], [17.6, 5.0, 0.8], '#c8382c', 'colonnade', { cols: 12 }),               // the front columns
+    B([0, 9.3, -1], [21, 0.6, 12.6], '#e8b830', 'box', { adorn: [B([0, -0.4, 0], [20.2, 0.2, 11.8], '#2a6a5a')] }),   // lower eaves
+    B([0, 10.6, -1], [16, 2.0, 9.6], '#b8302a', 'box', { tex: 'win', tx: { cols: 9, rows: 1, lit: '#e8b850' } }),
+    B([0, 12.0, -1], [19, 0.6, 11.4], '#e8b830', 'box', { adorn: [B([0, -0.4, 0], [18.2, 0.2, 10.6], '#2a6a5a')] }),  // upper eaves
+    B([-4.6, 13.8, -1], [8.6, 3.0, 9.6], '#e8b830', 'prism', { rotY: Math.PI / 2 }),
+    B([4.6, 13.8, -1], [8.6, 3.0, 9.6], '#e8b830', 'prism', { rotY: Math.PI / 2 }),
+    B([0, 15.4, -1], [12, 0.5, 0.5], '#d8a020'),                                             // the ridge
+    ...[-1, 1].map((sx) => B([sx * 6.2, 16.0, -1], [0.6, 1.2, 0.6], '#d8a020', 'cone4')),    // ridge beasts
+    ...[-1, 1].map((sx) => B([sx * 10.5, 4.5, 6.0], [1.2, 1.4, 1.2], '#4a4038', 'cyl', { metal: 1 })),   // bronze cauldrons
+  ],
+  // ================= HAVANA =================
+  // Spanish colonial work of the 1500s to 1700s: no copyright question.
+  // El Capitolio (1929) was left out: it is a joint work, and Cuba protects
+  // it until 50 years after the last of its architects died; not every
+  // co-author's death date could be confirmed.
+
+  // The Castillo de la Real Fuerza: a square stone fort with an arrowhead
+  // bastion at each corner, a moat, and the watchtower with the Giraldilla
+  // weathervane on top. Street 1: about a dozen pieces.
+  realfuerza: [
+    B([0, 0.15, 0], [22, 0.3, 22], '#4a7a8a', 'box', { wet: 1, em: '#6aa0b0', emI: 0.3 }),   // the moat
+    B([0, 0.55, 0], [14, 0.6, 14], '#8a8a72', 'box'),
+    ...[[0, 5.5, 0], [0, -5.5, 0], [5.5, 0, Math.PI / 2], [-5.5, 0, Math.PI / 2]].map(([x, z, rot]) =>
+      B([x, 2.6, z], [9, 3.6, 1.6], '#b8a888', 'box', { tex: 'stone', tx: { rough: 1 }, rotY: rot })),
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) =>
+      B([sx * 6.2, 2.4, sz * 6.2], [3.4, 3.2, 3.4], '#c0b090', 'box', { tex: 'stone', tx: { rough: 1 }, rotY: Math.PI / 4 })),
+    B([4.8, 6.0, -4.8], [2.2, 4.0, 2.2], '#c8b896', 'box', { tex: 'arch', tx: { n: 1 } }),   // the watchtower
+    B([4.8, 8.6, -4.8], [1.4, 1.6, 1.4], '#8a5a3a', 'cyl', {
+      adorn: [B([0, 1.2, 0], [0.4, 0.9, 0.4], '#c8a050', 'cone4', { metal: 1 })],         // the Giraldilla's perch
+    }),
+  ],
+
+  // Havana Cathedral: a curving Baroque front of coral stone between two
+  // bell towers of different widths, three doorways, and the dome behind.
+  // Street 2: about eighteen pieces. Each part has its own tone (device
+  // feedback, 15 October 2026: in one sandy colour throughout, nobody could
+  // tell which piece went where): the front pale, the towers a warmer coral
+  // getting lighter up each stage, the nave grey stone under a tiled roof.
+  habanacathedral: [
+    B([0, 0.2, 0], [22, 0.4, 20], '#a89c84', 'box', { tex: 'stone' }),
+    B([0, 0.55, 5.2], [11, 0.3, 2.0], '#c0b49c', 'box', { tex: 'stone' }),                   // the steps
+    B([0, 3.6, 3.6], [9.0, 6.4, 1.2], '#d4c8a8', 'extrude', {                                 // the front
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: -0.3, y: -0.2, w: 0.12, h: 0.5, arch: true }, { x: 0, y: -0.15, w: 0.16, h: 0.6, arch: true }, { x: 0.3, y: -0.2, w: 0.12, h: 0.5, arch: true }],
+    }),
+    B([0, 3.0, 3.2], [8, 5.4, 0.2], '#3a2a20'),                                              // the doors, in shadow
+    B([0, 7.8, 3.6], [6.0, 2.4, 1.0], '#d8ccac', 'extrude', {                               // the curving gable
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.42, -0.1], [0.3, 0.1], [0.15, 0.25], [0.06, 0.5], [-0.06, 0.5], [-0.15, 0.25], [-0.3, 0.1], [-0.42, -0.1]],
+    }),
+    B([0, 4.4, 4.25], [8.6, 0.4, 0.2], '#c8bc9c', 'box', { sortY: 6.9 }),                     // the cornice between storeys
+    ...[[-1, 3.2], [1, 2.6]].flatMap(([sx, w]) => [
+      B([sx * (4.5 + w / 2), 3.4, 3.0], [w, 6.4, w], '#c49a78', 'box', { tex: 'stone' }),
+      B([sx * (4.5 + w / 2), 7.8, 3.0], [w * 0.9, 2.4, w * 0.9], '#d2ae8a', 'box', { tex: 'arch', tx: { n: 1 } }),
+      B([sx * (4.5 + w / 2), 9.6, 3.0], [w * 0.8, 1.2, w * 0.8], '#e0c4a2', 'box', { tex: 'arch', tx: { n: 1 } }),
+      B([sx * (4.5 + w / 2), 10.7, 3.0], [w * 0.7, 1.0, w * 0.7], '#8a6a52', 'pyramid'),
+    ]),
+    B([0, 3.4, -2.5], [9, 6.4, 11], '#a8a294', 'box', { tex: 'stone' }),                     // the nave
+    B([0, 7.0, -2.5], [9.4, 0.8, 11.4], '#a0583a', 'prism'),                                // its tiled roof
+    B([0, 7.8, -5.0], [3.6, 1.6, 3.6], '#e8e0cc', 'cyl'),                                   // the dome
+    B([0, 8.6, -5.0], [3.8, 2.6, 3.8], '#7a8a8e', 'dome'),
+  ],
+
+  // Morro Castle: the fortress on its rock at the harbour mouth, walls
+  // stepping down to the sea in tiers, sentry boxes on the corners, and the
+  // lighthouse at the point. Street 3: about two dozen pieces.
+  morro: [
+    B([0, 0.15, 0], [30, 0.3, 24], '#2a6a8a', 'box', { wet: 1, em: '#4a8aaa', emI: 0.3 }),   // the sea
+    B([-2, 1.2, -1], [24, 2.4, 16], '#7a6a5a', 'rock'),
+    B([6, 1.4, 4], [10, 2.6, 8], '#6a5a4a', 'rock'),
+    ...[[-8, -4, 10, 6], [-1, -5, 8, 6], [5, -3, 6, 6], [-7, 3, 8, 5], [0, 2, 8, 5]].map(([x, z, w, d], i) =>
+      B([x, 3.6 + (i % 2) * 0.8, z], [w, 2.6 + (i % 2) * 0.8, d], '#c0a888', 'box', { tex: 'stone', tx: { rough: 1 } })),
+    ...[[-12, -6], [3, -7], [-11, 5], [4, 5]].map(([x, z]) => B([x, 5.4, z], [2.4, 2.0, 2.4], '#c8b090', 'box', { tex: 'stone', rotY: Math.PI / 4 })),   // bastion tips
+    B([-3, 5.6, -0.5], [14, 0.6, 10], '#b8a080', 'box', { sortY: 5.9 }),                     // the parade ground
+    B([-6, 6.9, -2], [6, 2.0, 4], '#d0b898', 'box', { tex: 'arch', tx: { n: 3 } }),          // barracks
+    B([-6, 8.2, -2], [6.4, 0.8, 4.4], '#9a7a5a', 'prism', { rotY: Math.PI / 2 }),
+    ...[[-12.6, -6.6], [3.6, -7.6], [-11.6, 5.6], [4.6, 5.6]].map(([x, z]) => B([x, 7.1, z], [1.0, 1.4, 1.0], '#d0b898', 'cyl', {   // sentry boxes
+      adorn: [B([0, 0.9, 0], [1.1, 0.5, 1.1], '#c0a888', 'dome')],
+    })),
+    B([7.5, 6.0, 4.5], [2.6, 3.0, 2.6], '#d8d0c0', 'cyl'),                                  // the lighthouse
+    B([7.5, 9.5, 4.5], [2.2, 4.0, 2.2], '#e8e2d4', 'cyl'),
+    B([7.5, 12.5, 4.5], [1.8, 2.0, 1.8], '#ece6d8', 'cyl'),
+    B([7.5, 14.0, 4.5], [2.4, 0.4, 2.4], '#3a3a40', 'cyl', { metal: 1 }),
+    B([7.5, 14.9, 4.5], [1.4, 1.4, 1.4], '#fff2c0', 'cyl', { glass: 1, em: '#ffe090', emI: 1.2 }),
+    B([7.5, 16.0, 4.5], [1.7, 0.9, 1.7], '#3a3a40', 'dome', { metal: 1 }),
+  ],
+  // ================= ISTANBUL =================
+  // Hagia Sophia (537), the Blue Mosque (1609-16) and the Galata Tower
+  // (1348; its cap rebuilt in the 1960s to the old shape) are long out of
+  // copyright. Both mosques are places of worship today: shown as
+  // buildings, from outside.
+
+  // The Galata Tower: a round stone tower on the hill above the Golden
+  // Horn, a gallery ringed with arched windows near the top, and a tall
+  // conical cap. Street 1: about a dozen pieces.
+  galata: [
+    B([0, 0.4, 0], [14, 0.8, 12], '#8a8070', 'box', { tex: 'stone' }),
+    B([-5, 2.4, -3], [3.6, 3.6, 4], '#d8c4a4', 'box', { tex: 'win', tx: { cols: 2, rows: 1 } }),   // houses below it
+    B([5, 2.0, 3], [3.4, 2.8, 4], '#c8b8a0', 'box', { tex: 'win', tx: { cols: 2, rows: 1 } }),
+    B([0, 2.6, 0], [5.6, 3.6, 5.6], '#a89880', 'cyl', { tex: 'stone', tx: { rough: 1 } }),
+    B([0, 6.2, 0], [5.4, 3.6, 5.4], '#ac9c84', 'cyl', { tex: 'stone' }),
+    B([0, 9.8, 0], [5.2, 3.6, 5.2], '#b0a088', 'cyl', { tex: 'stone' }),
+    B([0, 13.4, 0], [5.0, 3.6, 5.0], '#b4a48c', 'cyl', { tex: 'stone' }),
+    B([0, 15.5, 0], [6.0, 0.4, 6.0], '#8a7a66', 'cyl'),                                     // the gallery floor
+    B([0, 16.9, 0], [4.8, 2.4, 4.8], '#c8b898', 'cyl', { tex: 'arch', tx: { n: 8 } }),
+    B([0, 18.3, 0], [6.0, 0.24, 0.24], '#3a3a40', 'torus', { rotX: Math.PI / 2, metal: 1 }),   // the gallery rail
+    B([0, 20.6, 0], [5.4, 4.4, 0.1], '#5a5e66', 'tier'),                                   // the conical cap
+    B([0, 23.2, 0], [0.3, 1.0, 0.3], '#d8b04a', 'cyl', { metal: 1 }),
+  ],
+
+  // The Blue Mosque (Sultan Ahmed Mosque): a square hall under a central
+  // dome and a cascade of half-domes and smaller domes, six slender
+  // minarets with balconies, and the arcaded courtyard in front.
+  // Street 2: about eighteen pieces.
+  bluemosque: [
+    B([0, 0.2, 0], [26, 0.4, 26], '#a8a49c', 'box', { tex: 'stone' }),
+    B([0, 3.0, -2], [14, 5.2, 14], '#cac6be', 'box', { tex: 'arch', tx: { n: 6 } }),
+    ...[[0, 4], [0, -8], [6, -2], [-6, -2]].map(([x, z]) => B([x, 6.0, z], [6.4, 2.4, 6.4], '#8a909a', 'dome')),   // half-domes
+    B([0, 7.4, -2], [8.6, 2.0, 8.6], '#cac6be', 'cyl', { tex: 'win', tx: { cols: 16, rows: 1, lit: '#f2d8a0' } }),
+    B([0, 8.4, -2], [9.6, 5.4, 9.6], '#8a909a', 'dome'),
+    B([0, 14.4, -2], [0.3, 1.4, 0.3], '#d8b04a', 'cyl', { metal: 1 }),
+    ...[[-8, 6], [8, 6], [-8, -10], [8, -10], [-11.5, 8.5], [11.5, 8.5]].map(([x, z]) => B([x, 7.6, z], [1.0, 15.2, 1.0], '#d6d2ca', 'cyl', {   // minarets
+      adorn: [
+        B([0, 1.2, 0], [1.6, 0.3, 1.6], '#c4c0b8', 'cyl'), B([0, 4.0, 0], [1.6, 0.3, 1.6], '#c4c0b8', 'cyl'),
+        B([0, 7.2, 0], [1.1, 1.6, 1.1], '#7a808a', 'cone4'),
+      ],
+    })),
+    B([-6.5, 2.0, 9.5], [6, 3.2, 1.6], '#cac6be', 'colonnade', { cols: 5 }),                // the courtyard arcades
+    B([6.5, 2.0, 9.5], [6, 3.2, 1.6], '#cac6be', 'colonnade', { cols: 5 }),
+    B([0, 3.0, 10.0], [4.4, 5.6, 1.4], '#d0ccc4', 'extrude', {                             // the courtyard gate
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.12, w: 0.5, h: 0.62, arch: 'pointed' }],
+    }),
+  ],
+
+  // Hagia Sophia: a huge block of pinkish stone and brick held up by heavy
+  // buttresses, the vast shallow dome on its ring of windows, half-domes
+  // east and west, and the four minarets at its corners.
+  // Street 3: about two dozen pieces.
+  hagiasophia: [
+    B([0, 0.2, 0], [30, 0.4, 28], '#a8a094', 'box', { tex: 'stone' }),
+    B([-4, 3.6, 0], [8, 6.4, 16], '#d8a07a', 'box', { tex: 'arch', tx: { n: 4 } }),
+    B([4, 3.6, 0], [8, 6.4, 16], '#d4a078', 'box', { tex: 'arch', tx: { n: 4 } }),
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) => B([sx * 8.6, 4.4, sz * 5.6], [2.4, 8.0, 3.0], '#cc9670', 'box', { tex: 'stone' })),   // buttresses
+    B([0, 8.6, 0], [10, 2.0, 10], '#d8a47e', 'box'),
+    B([0, 7.6, 6.0], [8.4, 3.4, 8.4], '#7a8088', 'dome'),                                  // half-domes, west and east
+    B([0, 7.6, -6.0], [8.4, 3.4, 8.4], '#7a8088', 'dome'),
+    B([0, 10.3, 0], [9.0, 1.4, 9.0], '#d8a47e', 'cyl', { tex: 'win', tx: { cols: 20, rows: 1, lit: '#f2d8a0' } }),   // the ring of windows
+    B([0, 11.0, 0], [10.4, 4.0, 10.4], '#7a8088', 'dome'),                                 // the great dome
+    B([0, 15.3, 0], [0.3, 1.2, 0.3], '#d8b04a', 'cyl', { metal: 1 }),
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].flatMap(([sx, sz]) => [
+      B([sx * 12, 5.0, sz * 10], [1.2, 10, 1.2], sx * sz > 0 ? '#d6d2ca' : '#d0a080', 'cyl'),   // minarets, two of stone and two of brick
+      B([sx * 12, 12.0, sz * 10], [1.0, 4.0, 1.0], '#d6d2ca', 'cyl', {
+        adorn: [B([0, -1.2, 0], [1.6, 0.3, 1.6], '#c4c0b8', 'cyl'), B([0, 2.6, 0], [1.0, 1.4, 1.0], '#7a8088', 'cone4')],
+      }),
+    ]),
+    B([0, 2.6, 9.5], [14, 4.4, 3], '#d4a078', 'box', { tex: 'arch', tx: { n: 7 } }),        // the porch
+    ...[[-10, -9], [10, -9]].map(([x, z]) => B([x, 2.2, z], [4, 3.6, 4], '#cac6be', 'box', {   // tombs in the grounds
+      adorn: [B([0, 1.8, 0], [3.6, 2.0, 3.6], '#7a8088', 'dome')],
+    })),
+  ],
+  // ================= CHICAGO =================
+  // All three are US buildings or structures finished before 1990 (the
+  // Water Tower 1869, Buckingham Fountain 1927, the Willis Tower 1973):
+  // US copyright does not cover buildings built before 1 December 1990.
+  // The fountain's bronze sea horses (1927) are sculptures and are not
+  // modelled; their pedestals stand empty.
+
+  // The Chicago Water Tower: a little castle of yellow limestone, turrets at
+  // its corners, and a slim octagonal shaft rising to a lantern and cap.
+  // Street 1: about a dozen pieces.
+  watertower: [
+    B([0, 0.2, 0], [14, 0.4, 14], '#8a8a80', 'box', { tex: 'stone' }),
+    B([-1.6, 2.6, 0], [3.2, 4.4, 6.4], '#e0d0a0', 'box', { tex: 'gothic' }),
+    B([1.6, 2.6, 0], [3.2, 4.4, 6.4], '#dccc9c', 'box', { tex: 'gothic' }),
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) => B([sx * 3.3, 3.2, sz * 3.3], [1.0, 5.6, 1.0], '#e4d4a4', 'cyl', {
+      adorn: [B([0, 3.2, 0], [1.1, 0.9, 1.1], '#d8c898', 'cone4')],
+    })),
+    B([0, 7.1, 0], [2.6, 4.6, 2.4], '#e0d0a0', 'tier', { sides: 8, tex: 'stone' }),
+    B([0, 11.2, 0], [2.2, 3.6, 2.0], '#e4d4a4', 'tier', { sides: 8, tex: 'gothic' }),
+    B([0, 14.0, 0], [1.6, 2.0, 1.4], '#e8d8a8', 'tier', { sides: 8, tex: 'arch', tx: { n: 4 } }),
+    B([0, 15.6, 0], [1.6, 1.2, 0.2], '#8a8070', 'tier', { sides: 8 }),
+    B([0, 16.6, 0], [0.4, 0.8, 0.4], '#d8b04a', 'cone4', { metal: 1 }),
+  ],
+
+  // Buckingham Fountain: a wide pink-granite basin, three stepped basins
+  // rising from it like a wedding cake, water falling from each, and the
+  // great jet from the top. Street 2: about eighteen pieces.
+  buckingham: [
+    B([0, 0.2, 0], [28, 0.4, 28], '#a8a49c', 'box', { tex: 'stone' }),
+    B([0, 0.6, 0], [22, 0.4, 22], '#3a8ab0', 'water', { wet: 1, em: '#6ab4d4', emI: 0.4 }),   // the lower pool
+    B([0, 0.75, 0], [22.4, 0.5, 0.5], '#d8a8a0', 'torus', { rotX: Math.PI / 2, sortY: 0.8 }),   // its rim
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) => B([sx * 6.2, 1.4, sz * 6.2], [1.6, 1.6, 1.6], '#c8a098', 'box', { sortY: 0.9 })),   // empty pedestals
+    B([0, 1.6, 0], [12, 1.6, 11], '#d4aca4', 'tier', { tex: 'stone' }),                       // the first basin
+    B([0, 2.6, 0], [11.2, 0.4, 11.2], '#5ab0d4', 'water', { wet: 1, em: '#8ad0e8', emI: 0.4 }),
+    B([0, 3.6, 0], [7.4, 1.6, 6.6], '#d8b0a8', 'tier', { tex: 'stone' }),                     // the second
+    B([0, 4.6, 0], [6.6, 0.4, 6.6], '#5ab0d4', 'water', { wet: 1, em: '#8ad0e8', emI: 0.4 }),
+    B([0, 5.6, 0], [3.8, 1.6, 3.2], '#dcb4ac', 'tier', { tex: 'stone' }),                     // the third
+    B([0, 6.6, 0], [3.2, 0.4, 3.2], '#5ab0d4', 'water', { wet: 1, em: '#8ad0e8', emI: 0.4 }),
+    B([0, 7.4, 0], [1.2, 1.2, 1.2], '#dcb4ac', 'cyl'),
+    B([0, 11.6, 0], [0.6, 7.2, 0.6], '#b4ecfc', 'water', { wet: 1, em: '#d8faff', emI: 0.8 }),   // the great jet
+    B([0, 0.9, 11.5], [10, 0.2, 2], '#b8b4ac', 'box', { tex: 'stone' }),                       // the promenade
+    ...[[-1], [1]].map(([sx]) => B([sx * 12, 2.4, 11.5], [0.4, 4.4, 0.4], '#3a3a40', 'cyl', {
+      metal: 1, adorn: [B([0, 2.4, 0], [0.6, 0.6, 0.6], '#fff2c0', 'sphere', { em: '#ffe9a0', emI: 1.2 })],
+    })),
+  ],
+
+  // The Willis Tower: nine square tubes of black steel and dark glass
+  // bundled together, dropping away at different heights so the tower
+  // steps back as it rises, and two antennas on top. Street 3: about two
+  // dozen pieces.
+  willis: (() => {
+    const out = [B([0, 0.6, 0], [12, 1.2, 12], '#5a5c64', 'box', { tex: 'stone' })];
+    const tubes = [[-3, -3, 10], [3, 3, 10], [3, -3, 13], [-3, 3, 13], [-3, 0, 18], [3, 0, 18], [0, 3, 18], [0, 0, 22], [0, -3, 22]];
+    for (const [x, z, h] of tubes) {
+      for (let y = 0; y < h; y += 7) {
+        const seg = Math.min(7, h - y);
+        out.push(B([x, 1.2 + y + seg / 2, z], [2.9, seg, 2.9], '#2a2c32', 'box', {
+          tex: 'win', tx: { cols: 3, rows: Math.max(1, Math.round(seg * 1.6)), lit: '#e8c890' },
+        }));
+      }
+    }
+    out.push(
+      B([-0.5, 25.2, -1.5], [0.25, 6.0, 0.25], '#c8ccd4', 'cyl', { metal: 1 }),
+      B([0.5, 24.8, -1.5], [0.25, 5.2, 0.25], '#c8ccd4', 'cyl', { metal: 1 }),
+    );
+    return out;
+  })(),
+  // ================= BUENOS AIRES =================
+  // Argentina protects works for life + 70. The architects of all three
+  // died long ago: Francesco Tamburini 1891, Carl Kihlberg 1908, Henrik
+  // Åberg 1922 (Casa Rosada); Tamburini, Vittorio Meano 1904 and Jules
+  // Dormal 1924 (Teatro Colón, the Congress). Their sculptures are not
+  // modelled. The Obelisco (1936; its architect died 1970) is left out.
+
+  // The Casa Rosada: the pink presidential palace, two wings joined by a
+  // great arched gateway, mansard roofs, and the balcony over the square.
+  // Street 1: about a dozen pieces.
+  casarosada: [
+    B([0, 0.2, 0], [26, 0.4, 14], '#9a968e', 'box', { tex: 'stone' }),
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 7.2, 2.4, 0], [9, 4.0, 8], '#e0a8a0', 'box', { tex: 'arch', tx: { n: 5 } }),
+      B([sx * 7.2, 5.8, 0], [9, 2.8, 8], '#e4aca4', 'box', { tex: 'win', tx: { cols: 5, rows: 1 } }),
+      B([sx * 7.2, 7.9, 0], [9.2, 1.4, 8.2], '#4a5058', 'prism', { rotY: Math.PI / 2 }),   // mansard roof
+    ]),
+    B([0, 4.0, 0.5], [5.4, 7.2, 7], '#e8b0a8', 'extrude', {                               // the archway
+      outline: [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]],
+      holes: [{ x: 0, y: -0.15, w: 0.5, h: 0.62, arch: true }],
+    }),
+    B([0, 8.4, 0.5], [5.6, 2.0, 7.2], '#e8b0a8', 'prism'),                                // its pediment
+    B([0, 4.6, 4.3], [3.0, 0.3, 1.2], '#d8a098', 'box', {                                 // the balcony
+      adorn: [B([0, 0.4, 0.5], [3.0, 0.5, 0.1], '#d8a098')],
+    }),
+    B([0, 0.6, 5.6], [8, 0.4, 2.4], '#c8c0b4', 'box', { tex: 'stone' }),
+  ],
+
+  // The Teatro Colón: the great opera house, a stone front of arched doors
+  // and tall windows, a columned porch, corner pavilions and mansard roofs.
+  // Street 2: about eighteen pieces.
+  colon: [
+    B([0, 0.2, 0], [26, 0.4, 20], '#9a968e', 'box', { tex: 'stone' }),
+    B([0, 0.6, 7.2], [12, 0.4, 2.4], '#c8c0b4', 'box', { tex: 'stone' }),
+    ...[-1, 0, 1].flatMap((i) => [
+      B([i * 7, 2.6, 0], [7, 4.4, 12], '#e4dac4', 'box', { tex: 'arch', tx: { n: 3 } }),
+      B([i * 7, 6.4, 0], [7, 3.2, 12], '#e8dec8', 'box', { tex: 'win', tx: { cols: 3, rows: 1 } }),
+      B([i * 7, 8.7, 0], [7.2, 1.4, 12.2], '#4a5058', 'prism'),
+    ]),
+    B([0, 2.8, 6.6], [8, 4.8, 1.2], '#ece2cc', 'colonnade', { cols: 6 }),                // the porch
+    B([0, 5.4, 6.6], [8.4, 0.4, 1.6], '#ddd2bc', 'box', { sortY: 5.5 }),
+    B([0, 6.6, 6.4], [6, 2.0, 0.8], '#ece2cc', 'colonnade', { cols: 6, sortY: 6.7 }),     // the loggia above
+    ...[-1, 1].map((sx) => B([sx * 11.5, 5.0, 4.5], [3, 9.6, 3], '#e0d6c0', 'box', {     // corner pavilions
+      tex: 'win', tx: { cols: 1, rows: 3 },
+      adorn: [B([0, 5.4, 0], [3.2, 1.4, 3.2], '#4a5058', 'dome')],
+    })),
+  ],
+
+  // The Palace of the Congress: a long palace of grey stone with a deep
+  // columned portico and pediment at its centre, wings either side, and
+  // over it all the tall green copper dome on its drum.
+  // Street 3: about two dozen pieces.
+  congreso: [
+    B([0, 0.2, 0], [30, 0.4, 22], '#9a968e', 'box', { tex: 'stone' }),
+    B([0, 0.7, 7.5], [14, 0.6, 3], '#c8c0b4', 'box', { tex: 'stone' }),                   // the great stair
+    B([0, 1.3, 6.4], [10, 0.6, 2], '#ccc4b8', 'box', { tex: 'stone' }),
+    ...[-1, 1].flatMap((sx) => [
+      B([sx * 4.5, 3.0, 0], [9, 4.8, 12], '#d4cec2', 'box', { tex: 'arch', tx: { n: 4 } }),
+      B([sx * 4.5, 6.8, 0], [9, 2.8, 12], '#d8d2c6', 'box', { tex: 'win', tx: { cols: 4, rows: 1 } }),
+      B([sx * 11.5, 2.8, 0], [5, 4.4, 9], '#d0cabe', 'box', { tex: 'arch', tx: { n: 2 } }),   // wings
+      B([sx * 11.5, 5.6, 0], [5.2, 1.2, 9.2], '#c4beb2', 'box'),
+      B([sx * 8.6, 9.2, 4.6], [2.4, 1.6, 2.4], '#4a8a6a', 'dome', { metal: 1 }),             // corner domes
+      B([sx * 3.6, 2.2, 9.4], [0.4, 3.6, 0.4], '#3a3a40', 'cyl', { metal: 1,                // lamps on the stair
+        adorn: [B([0, 2.0, 0], [0.6, 0.6, 0.6], '#fff2c0', 'sphere', { em: '#ffe9a0', emI: 1.2 })] }),
+    ]),
+    B([0, 4.4, 6.6], [7.6, 6.4, 1.4], '#e0dacc', 'colonnade', { cols: 6 }),              // the portico
+    B([0, 8.6, 6.6], [8.2, 2.0, 1.8], '#d8d2c6', 'prism'),                                // its pediment
+    B([0, 8.4, 0], [18.4, 0.6, 12.4], '#c4beb2', 'box', { sortY: 8.5 }),                  // cornice and balustrade
+    B([0, 10.4, -0.5], [7.4, 3.4, 7.4], '#d4cec2', 'cyl', { tex: 'arch', tx: { n: 12 } }),   // the drum
+    B([0, 12.6, -0.5], [6.8, 1.0, 6.8], '#c4beb2', 'cyl'),
+    B([0, 16.3, -0.5], [7.0, 6.4, 7.0], '#4a8a6a', 'lathe', {                              // the green dome
+      metal: 1,
+      profile: [[1, 0], [0.98, 0.2], [0.88, 0.45], [0.66, 0.7], [0.36, 0.9], [0.12, 1]],
+    }),
+    B([0, 20.3, -0.5], [1.2, 1.6, 1.2], '#d4cec2', 'cyl', { tex: 'arch', tx: { n: 6 } }),    // the lantern
+    B([0, 21.8, -0.5], [0.3, 1.4, 0.3], '#d8b04a', 'cyl', { metal: 1 }),
+  ],
+  // Venice. The Rialto Bridge (1588-1591, Antonio da Ponte): one stone arch
+  // over the Grand Canal, two rows of shops climbing each ramp, and the
+  // arched portico at the top.
+  rialto: [
+    B([0, 0.15, 0], [30, 0.3, 12], '#3a7a78', 'box', { wet: 1, em: '#4a8a88', emI: 0.15 }),   // the Grand Canal
+    B([-13, 0.8, 0], [4, 1.0, 12], '#c8c0b0', 'box', { tex: 'stone' }),                     // the quays
+    B([13, 0.8, 0], [4, 1.0, 12], '#c8c0b0', 'box', { tex: 'stone' }),
+    B([0, 2.6, 0], [24, 4.4, 8], '#ece6d8', 'extrude', {                                   // the single arch
+      outline: [[-0.5, -0.5], [-0.36, -0.5], [-0.28, -0.2], [-0.15, -0.02], [0, 0.04], [0.15, -0.02],
+        [0.28, -0.2], [0.36, -0.5], [0.5, -0.5], [0.5, -0.12], [0.25, 0.3], [0, 0.5], [-0.25, 0.3], [-0.5, -0.12]],
+    }),
+    ...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => B([sx * 6.2, 5.0, sz * 2.4], [8.2, 2.2, 2.2], '#f0eadc', 'box', {   // the shops
+      tex: 'arch', tx: { n: 6 }, rotZ: -sx * 0.21,
+      adorn: [B([0, 1.0, 0], [8.4, 0.24, 2.4], '#a8543a')],
+    }))),
+    B([0, 6.7, 0], [3.4, 3.0, 7.0], '#f2ecde', 'box', {                                     // the portico at the top
+      tex: 'arch', tx: { n: 1 },
+      adorn: [B([0, 1.9, 0], [3.8, 0.8, 7.2], '#e8e0d0', 'prism')],
+    }),
+    ...[-1, 1].flatMap((sx) => [B([sx * 6.0, 4.5, 3.9], [11, 0.5, 0.3], '#e8e2d4', 'box', { rotZ: -sx * 0.21, sortY: 4.9 }),   // balustrades
+      B([sx * 6.0, 4.5, -3.9], [11, 0.5, 0.3], '#e8e2d4', 'box', { rotZ: -sx * 0.21, sortY: 4.9 })]),
+  ],
+  // Santa Maria della Salute (1631-1687, Baldassare Longhena): the octagonal
+  // church at the mouth of the Grand Canal, its great dome on a ring of
+  // scroll buttresses, a smaller dome and two bell towers behind.
+  salute: [
+    B([0, 0.15, 0], [32, 0.3, 30], '#3a7a78', 'box', { wet: 1, em: '#4a8a88', emI: 0.15 }),   // the water
+    B([0, 0.55, -2], [24, 0.5, 26], '#d8d2c6', 'box', { tex: 'stone' }),                    // the quay
+    B([0, 1.1, 0], [19, 0.6, 18.6], '#ece6da', 'tier', { sides: 8 }),                        // the platform
+    B([0, 1.0, 10.4], [9, 0.8, 3], '#e8e2d6', 'box', { tex: 'stone' }),                       // the steps up from the water
+    B([0, 4.6, 0], [15.6, 6.4, 15.6], '#f0ead8', 'tier', { sides: 8, tex: 'arch', tx: { n: 8 } }),   // the octagon
+    B([0, 5.2, 7.6], [6.4, 7.6, 1.4], '#f4eede', 'box', {                                   // the front, a triumphal arch
+      tex: 'arch', tx: { n: 1 },
+      adorn: [B([0, 4.4, 0], [6.8, 1.4, 1.6], '#ece6d6', 'prism')],
+    }),
+    ...[[-1, 0], [1, 0]].map(([sx]) => B([sx * 7.0, 4.0, 4.0], [3.4, 5.0, 2.6], '#ece6d6', 'box', {   // side chapels
+      tex: 'arch', tx: { n: 1 }, rotY: sx * Math.PI / 4,
+      adorn: [B([0, 3.0, 0], [3.6, 1.0, 2.8], '#e4ded0', 'prism')],
+    })),
+    B([0, 9.4, 0], [11.4, 3.0, 11.4], '#f2ecdc', 'cyl', {                                   // the drum, its scrolls
+      tex: 'arch', tx: { n: 16 },
+      adorn: Array.from({ length: 8 }, (_, i) => {
+        const a = (i / 8) * Math.PI * 2;
+        return B([Math.cos(a) * 5.1, -0.4, Math.sin(a) * 5.1], [1.4, 2.2, 1.0], '#e8e2d2', 'sphere', { rotY: -a });
+      }),
+    }),
+    B([0, 13.6, 0], [11.6, 5.6, 11.6], '#aeb4ba', 'lathe', {                                // the great dome, in lead
+      metal: 1,
+      profile: [[1, 0], [0.98, 0.2], [0.9, 0.42], [0.72, 0.66], [0.46, 0.86], [0.18, 1]],
+    }),
+    B([0, 17.6, 0], [2.4, 2.4, 2.4], '#f2ecdc', 'cyl', {                                    // the lantern
+      tex: 'arch', tx: { n: 6 },
+      adorn: [B([0, 1.6, 0], [1.4, 1.0, 1.4], '#aeb4ba', 'dome', { metal: 1 })],
+    }),
+    B([0, 6.2, -9.6], [9, 7.6, 6], '#ece6d6', 'box', { tex: 'win', tx: { cols: 3, rows: 2 } }),   // the chancel behind
+    B([0, 11.2, -9.6], [6.4, 3.6, 6.4], '#aeb4ba', 'dome', { metal: 1 }),                    // its smaller dome
+    ...[-1, 1].map((sx) => B([sx * 5.4, 8.0, -12.0], [1.8, 11, 1.8], '#ece6d6', 'box', {     // two bell towers
+      tex: 'arch', tx: { n: 2 },
+      adorn: [B([0, 5.9, 0], [1.6, 1.4, 1.6], '#aeb4ba', 'dome', { metal: 1 })],
+    })),
+  ],
+  // The Doge's Palace (mostly 1340-1440): an open arcade on the ground, a
+  // loggia of Gothic tracery above it, and above that a high wall of pink and
+  // white brick in a diamond pattern with a few great windows; the
+  // waterfront and Piazzetta fronts, the Bridge of Sighs (about 1600) on the
+  // canal beside it, and the two columns of the Piazzetta.
+  dogespalace: [
+    B([0, 0.15, -2], [40, 0.3, 34], '#cac4b8', 'box', { tex: 'stone' }),                    // the Molo and Piazzetta
+    B([0, 0.1, 14], [40, 0.2, 4], '#3a7a78', 'box', { wet: 1, em: '#4a8a88', emI: 0.15 }),   // the lagoon's edge
+    ...[-9.4, 0, 9.4].flatMap((x) => [
+      B([x, 2.6, 2], [9.4, 4.6, 8], '#f0ece2', 'box', { tex: 'arch', tx: { n: 3 } }),       // the ground-floor arcade
+      B([x, 6.7, 2], [9.4, 3.6, 8], '#f2eee4', 'box', { tex: 'gothic' }),                   // the loggia above
+      B([x, 11.7, 2], [9.4, 6.4, 8], '#e8b0a8', 'box', { tex: 'lozenge', tx: { n: 2 } }),   // the pink and white wall
+    ]),
+    ...[-13, -5].flatMap((z) => [
+      B([-10, 2.6, z], [8, 4.6, 8], '#f0ece2', 'box', { tex: 'arch', tx: { n: 3 }, rotY: Math.PI / 2 }),   // the Piazzetta wing
+      B([-10, 6.7, z], [8, 3.6, 8], '#f2eee4', 'box', { tex: 'gothic', rotY: Math.PI / 2 }),
+      B([-10, 11.7, z], [8, 6.4, 8], '#e8b0a8', 'box', { tex: 'lozenge', tx: { n: 2 }, rotY: Math.PI / 2 }),
+    ]),
+    B([0, 11.6, 6.4], [3.2, 5.6, 0.8], '#f4f0e6', 'box', { tex: 'gothic', sortY: 11.8 }),    // the great balcony window
+    B([2, 15.3, 2], [28.6, 1.0, 8.2], '#9aa0a6', 'box', {                                   // roof, and its cresting
+      metal: 1,
+      adorn: Array.from({ length: 14 }, (_, i) => B([-13.4 + i * 2.06, 0.3, 3.9], [0.5, 0.4, 0.3], '#f4f0e6')),
+    }),
+    B([-10, 15.3, -9], [8.2, 1.0, 16.2], '#9aa0a6', 'box', {
+      metal: 1,
+      adorn: Array.from({ length: 8 }, (_, i) => B([-3.9, 0.3, -7.2 + i * 2.06], [0.3, 0.4, 0.5], '#f4f0e6')),
+    }),
+    B([15.6, 0.12, 0], [3, 0.24, 28], '#3a7a78', 'box', { wet: 1, em: '#4a8a88', emI: 0.15 }),   // the canal beside it
+    B([15.6, 7.4, -1], [3.4, 2.6, 2.2], '#f2eee4', 'box', { tex: 'arch', tx: { n: 1 } }),    // the Bridge of Sighs
+    ...[-1, 1].map((s) => B([-17 + s * 3.2, 5.6, 9.5], [1.0, 11.2, 1.0], '#e8e2d6', 'cyl', {   // the Piazzetta's columns
+      adorn: [B([0, 5.9, 0], [1.4, 0.6, 1.4], '#e0d8c8', 'box'),
+        B([0, 6.8, 0], [1.2, 1.2, 1.2], s < 0 ? '#5a6a5a' : '#e8e2d6', 'statue', { figs: 1 })],
+    })),
+  ],
+  // New Orleans. The Cabildo (1795-1799): Spanish arches below, a French
+  // mansard roof with dormers above (added 1847), a pediment and cupola.
+  cabildo: [
+    B([0, 0.15, 0], [28, 0.3, 18], '#c8c0b0', 'box', { tex: 'stone' }),                    // Jackson Square's flagstones
+    ...[-7, 0, 7].map((x) => B([x, 2.4, 0], [7, 4.2, 9], '#ece4d4', 'box', { tex: 'arch', tx: { n: 3 } })),   // the arcade
+    ...[-7, 0, 7].map((x) => B([x, 6.2, 0], [7, 3.4, 9], '#f0e8d8', 'box', { tex: 'arch', tx: { n: 3 } })),   // the upper floor
+    B([0, 8.2, 0], [21.4, 0.6, 9.4], '#e0d8c8', 'box', { sortY: 8.3 }),                    // cornice and balustrade
+    ...[-7, 0, 7].map((x) => B([x, 9.8, 0], [7, 2.6, 8.6], '#5a5e66', 'box', {             // the mansard
+      adorn: [-2, 0, 2].map((dx) => B([dx, 0.2, 4.2], [1.0, 1.4, 0.4], '#f0e8d8', 'box', { tex: 'win', tx: { cols: 1, rows: 1 } })),
+    })),
+    B([0, 9.1, 4.9], [6, 1.8, 0.8], '#ece4d4', 'prism'),                                    // the pediment
+    B([0, 11.9, 0], [1.8, 1.6, 1.8], '#f0e8d8', 'cyl', {                                   // the cupola
+      tex: 'arch', tx: { n: 6 },
+      adorn: [B([0, 1.2, 0], [1.6, 0.9, 1.6], '#5a5e66', 'dome', { metal: 1 })],
+    }),
+  ],
+  // The Pontalba Buildings (1849-1851): a long red-brick row of four
+  // storeys, shops below, two tiers of cast-iron galleries along the front,
+  // facing the garden of Jackson Square.
+  pontalba: [
+    B([0, 0.15, 3], [44, 0.3, 24], '#c0b8a8', 'box', { tex: 'stone' }),
+    B([0, 0.4, 11], [24, 0.3, 8], '#5a8a4a', 'box'),                                        // the square's garden
+    B([0, 1.2, 7.2], [24, 1.2, 0.2], '#2a2e2a', 'box', { tex: 'lattice', metal: 1 }),       // its iron fence
+    ...[-1, 1].map((sx) => B([sx * 7, 0.6, 11], [1.2, 1.2, 1.2], '#6a5038', 'cyl', {         // two old trees
+      adorn: [B([0, 3.4, 0], [4.4, 3.0, 4.4], '#3a6a2a', 'sphere')],
+    })),
+    ...[-15, -5, 5, 15].flatMap((x) => [
+      B([x, 6.2, 0], [10, 12, 8], '#a8503a', 'box', { tex: 'win', tx: { cols: 4, rows: 4 } }),   // the brick row
+      B([x, 7.4, 4.7], [10, 7.6, 1.4], '#2a3430', 'box', { tex: 'lattice', metal: 1 }),        // two tiers of galleries
+      B([x, 12.9, 0], [8.4, 1.4, 10.4], '#5a5458', 'prism', { rotY: Math.PI / 2 }),            // the roof
+    ]),
+  ],
+  // St. Louis Cathedral (rebuilt in the 1850s): a white front of two
+  // storeys, three spires, the middle one tallest with the clock, and the
+  // long nave behind; Jackson Square's garden in front.
+  stlouis: [
+    B([0, 0.15, 2], [34, 0.3, 32], '#c8c2b4', 'box', { tex: 'stone' }),
+    B([0, 0.4, 13], [26, 0.3, 8], '#5a8a4a', 'box'),                                        // the square's garden
+    B([0, 1.2, 9.2], [26, 1.2, 0.2], '#2a2e2a', 'box', { tex: 'lattice', metal: 1 }),       // its fence
+    ...[-1, 1].map((sx) => B([sx * 9, 0.6, 13], [1.2, 1.2, 1.2], '#6a5038', 'cyl', {
+      adorn: [B([0, 3.2, 0], [4.0, 2.8, 4.0], '#3a6a2a', 'sphere')],
+    })),
+    B([0, 0.6, 6.0], [12, 0.6, 2.4], '#e8e4da', 'box', { tex: 'stone' }),                   // the steps
+    ...[[-4.8, 4], [0, 5.6], [4.8, 4]].map(([x, w]) => B([x, 3.3, 3.6], [w, 5.4, 2.4], '#f4f2ec', 'box', { tex: 'arch', tx: { n: 1 } })),   // the front, below
+    ...[[-4.8, 4], [0, 5.6], [4.8, 4]].map(([x, w]) => B([x, 8.0, 3.6], [w, 4.0, 2.4], '#f2f0ea', 'box', { tex: 'arch', tx: { n: 1 } })),   // and above
+    B([0, 11.2, 3.6], [3.6, 2.4, 2.4], '#f4f2ec', 'box', {                                   // the clock storey
+      adorn: [B([0, 0, 1.25], [1.6, 1.6, 0.12], '#2a2a30', 'cyl', { rotX: Math.PI / 2 })],
+    }),
+    B([0, 13.4, 3.6], [3.0, 2.0, 3.0], '#f2f0ea', 'tier', { sides: 6, d: 3.0, tex: 'arch', tx: { n: 6 } }),   // the belfry
+    B([0, 17.6, 3.6], [3.0, 6.4, 0.1], '#3a3c44', 'tier', { sides: 6, metal: 1 }),           // the middle spire
+    ...[-4.8, 4.8].flatMap((x) => [
+      B([x, 11.4, 3.6], [2.8, 2.8, 2.8], '#f2f0ea', 'tier', { sides: 6, tex: 'arch', tx: { n: 6 } }),   // the side towers
+      B([x, 14.6, 3.6], [2.8, 3.6, 0.1], '#3a3c44', 'tier', { sides: 6, metal: 1 }),
+    ]),
+    B([0, 5.6, -6.0], [13, 10.4, 16], '#ece8e0', 'box', { tex: 'win', tx: { cols: 4, rows: 2 } }),   // the nave
+    B([0, 11.6, -6.0], [13.4, 2.4, 16.4], '#5a5c64', 'prism', { metal: 1 }),                 // its roof
   ],
 };
 

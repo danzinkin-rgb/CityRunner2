@@ -28,14 +28,26 @@
  *   - Everything else is paid: the remaining city, all future cities, and any
  *     monument added to a free city beyond its first three.
  *
- * Two products, never on sale at the same time:
- *   FOUNDER — £1.99/$1.99, first ~3 months only. Grants everything, forever,
- *             including cities that do not exist yet. Early adopters who paid
- *             £1.99 are never asked for money again. That promise is the
- *             product; honour it (see GRANTS_EVERYTHING below — FOUNDER is
- *             deliberately not expressed as a list of city ids, because a list
- *             could not cover a city nobody has designed yet).
- *   UNLOCK  — replaces FOUNDER when the window closes, at a higher price.
+ * The products (revised October 2026, Dan):
+ *   FOUNDER — £1.99/$1.99, for the first ~250 buyers. Grants everything,
+ *             forever, including cities that do not exist yet. Early adopters
+ *             are never asked for money again. That promise is the product;
+ *             honour it (see GRANTS_EVERYTHING below — FOUNDER is deliberately
+ *             not expressed as a list of city ids, because a list could not
+ *             cover a city nobody has designed yet).
+ *   REGION PACKS — £0.99/$0.99 each, one per region (themes.js `region`),
+ *             about three cities each:
+ *             every city in that region, including ones added later. On sale
+ *             alongside FOUNDER, and the only way in once FOUNDER is gone.
+ *   UNLOCK  — the original "everything" product, kept so that anyone who
+ *             ever owns it keeps everything; not currently offered.
+ *
+ * The 250 is not counted by the app, and must never be shown to players:
+ * the app has no server and sends no purchase data anywhere, and "only N
+ * left" is the scarcity language the Children's Code rules out
+ * (docs/FREEMIUM-IAP.md §3). FOUNDER is withdrawn in App Store Connect when
+ * the weekly report shows ~250 sold, exactly as the time window was meant to
+ * close, and the paywall then simply offers the packs.
  *
  * WHY THERE IS NO LAUNCH DATE IN THIS FILE. The obvious implementation of "on
  * sale for three months" is a hardcoded cutoff date. Do not do that. The store
@@ -64,6 +76,7 @@
 
 import { isNative } from './native.js';
 import { STORAGE } from './storage-keys.js';
+import { ALL_CITIES } from '../cities/themes.js';
 
 // --------------------------------------------------------------- the policy
 
@@ -76,7 +89,11 @@ import { STORAGE } from './storage-keys.js';
  * its monuments are the largest puzzles in the game (25 pieces), which makes
  * it the most substantial thing GBP 1.99 can buy.
  */
-export const FREE_CITIES = ['nyc', 'paris', 'london'];
+// Jerusalem joined them on 17 October 2026 (Dan), before 1.2.0 shipped, so
+// nobody had paid for it. It opens after a street in London, like the paid
+// regions' first cities; London stays the gate for those (see chainPrev in
+// src/main.js), so a fourth free city adds no step in front of the paid ones.
+export const FREE_CITIES = ['nyc', 'paris', 'london', 'jerusalem'];
 
 /**
  * Free monuments per free city. Cities ship with exactly three today, so this
@@ -109,6 +126,37 @@ export const PRODUCTS = {
  * a founder would be asked to pay twice.
  */
 const GRANTS_EVERYTHING = new Set([PRODUCTS.FOUNDER, PRODUCTS.UNLOCK]);
+
+/**
+ * One pack per region. Like FOUNDER, a pack is a region, not a list of
+ * cities, so a city added to the region later is covered without anyone
+ * paying twice. Product ids are permanent (see PRODUCTS): a region can be
+ * renamed on screen but never re-keyed here. A pack only needs creating in
+ * App Store Connect once its region has a released paid city.
+ */
+export const REGION_PACKS = {
+  europe: 'uk.co.zinkin.cityrunner.pack.europe',
+  'north-america': 'uk.co.zinkin.cityrunner.pack.northamerica',
+  'latin-america': 'uk.co.zinkin.cityrunner.pack.latinamerica',
+  'mideast-africa': 'uk.co.zinkin.cityrunner.pack.mideastafrica',
+  'east-asia': 'uk.co.zinkin.cityrunner.pack.eastasia',
+  'south-asia': 'uk.co.zinkin.cityrunner.pack.southasia',
+};
+
+/** Every product the store is asked about, for registering and restoring. */
+export const ALL_PRODUCTS = [PRODUCTS.FOUNDER, PRODUCTS.UNLOCK, ...Object.values(REGION_PACKS)];
+
+const REGION_OF = Object.fromEntries(ALL_CITIES.map((c) => [c.id, c.region]));
+
+/** The region a city belongs to, or null. */
+export function regionOf(cityId) {
+  return REGION_OF[cityId] || null;
+}
+
+/** The pack that unlocks this city, or null for a city in no region. */
+export function packForCity(cityId) {
+  return REGION_PACKS[REGION_OF[cityId]] || null;
+}
 
 // -------------------------------------------------------------- the storage
 
@@ -176,14 +224,21 @@ export function isPaidLevel(cityId, level) {
   return isPaidCity(cityId) || level > FREE_LEVELS_PER_CITY;
 }
 
+/** Does the player own this city's pack (or everything)? */
+export function ownsCity(cityId) {
+  if (hasFullAccess()) return true;
+  const pack = packForCity(cityId);
+  return !!pack && owned.has(pack);
+}
+
 /** May the player enter this city? */
 export function isCityEntitled(cityId) {
-  return !isPaidCity(cityId) || hasFullAccess();
+  return !isPaidCity(cityId) || ownsCity(cityId);
 }
 
 /** May the player play this specific monument? */
 export function isLevelEntitled(cityId, level) {
-  return !isPaidLevel(cityId, level) || hasFullAccess();
+  return !isPaidLevel(cityId, level) || ownsCity(cityId);
 }
 
 /**

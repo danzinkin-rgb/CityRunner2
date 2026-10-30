@@ -87,8 +87,8 @@ jobs:
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
           # One pair per Mastodon account; every pair that is set is posted to.
-          MASTODON_SOCIAL_INSTANCE: ${{ secrets.MASTODON_SOCIAL_INSTANCE }}
-          MASTODON_SOCIAL_TOKEN: ${{ secrets.MASTODON_SOCIAL_TOKEN }}
+          # mastodon.social is paused (Dan, 28 October 2026: no followers there);
+          # posting resumes on mastodon.gamedev.place once its secrets exist.
           MASTODON_GAMEDEV_INSTANCE: ${{ secrets.MASTODON_GAMEDEV_INSTANCE }}
           MASTODON_GAMEDEV_TOKEN: ${{ secrets.MASTODON_GAMEDEV_TOKEN }}
           POST_ONLY: ${{ inputs.only }}

@@ -7,19 +7,22 @@ import { makeSky, disposeTree } from '../core/engine.js';
 // and are dropped when it changes. Bump it with ANY change to what a seed
 // generates; test/determinism.mjs fingerprints the courses to catch a change
 // made without a bump.
-export const COURSE_VERSION = 1;
+export const COURSE_VERSION = 2;   // 2: monument pieces placed in a lane clear of the rows either side
 import { resolveStreet } from '../cities/themes.js';
 import {
   roadTexture, sidewalkTexture, makeBuilding, makeProp, makeVehicle,
   makeBillboard, makeParkedCar, makeStreetSpan, makeGardenWall,
   makeArcade, makeGardenRail, makeWindmill, makeObeliskFountain,
   makeEquestrian, makeErosFountain, makeCurvedLED, makeZebra, makeCameo,
-  makeGardenParterre, makeStepStreet, makeArtistPitch, makeSquareStalls,
+  makeGardenParterre, makeStepStreet, makeArtistPitch, makeSquareStalls, makeWireTangle,
+  makeCanalSide, makeElevated,
   SHARED_GEO,
 } from '../cities/builders.js';
 import { makeCollectible } from '../cities/souvenirs.js';
 import { makeBlockMesh } from '../puzzle/puzzle.js';
-import { startRun, randomSeed, rand, randInt } from '../core/rng.js';
+import { startRun, randomSeed, rand, randInt, makeRng } from '../core/rng.js';
+import { MECHANICS } from './mechanics.js';
+import { HAZARDS, makeHazard, stepHazard, MARK_GEO } from './hazards.js';
 
 const CHUNK_LEN = 36;
 const CHUNKS = 7;          // visible chunks ahead
@@ -107,7 +110,7 @@ const BLINK_MAT = new THREE.MeshStandardMaterial({
 // rider says which way in a form a four-year-old can read.
 const BLINK_GEO = new THREE.BoxGeometry(0.34, 0.26, 0.2);
 const CHEVRON_GEO = new THREE.ConeGeometry(0.62, 1.15, 3);
-SHARED_GEO.add(BLINK_GEO); SHARED_GEO.add(CHEVRON_GEO);
+SHARED_GEO.add(BLINK_GEO); SHARED_GEO.add(CHEVRON_GEO); SHARED_GEO.add(MARK_GEO);
 
 // ---- the monument's pieces, laid along the street ------------------------------
 // Each piece the puzzle will leave loose appears on the run as a small,
@@ -140,8 +143,15 @@ SHARED_GEO.add(PIECE_RING_GEO); SHARED_GEO.add(PIECE_BEAM_GEO);
 //   'full' — vehicle, must change lane
 //   'coin' — collectible
 export class Track {
-  constructor(scene, theme, level, seed, pieceDefs = []) {
+  constructor(scene, theme, level, seed, pieceDefs = [], startSpeed = 0, hazardRate = 0, gamer = false) {
     this.scene = scene;
+    // Gamer mode: some city moves are harder (see PULLOUT in mechanics.js).
+    // Newbie and the daily draw exactly as before, so their courses are
+    // unchanged; a course is reproduced by its seed and mode.
+    this.gamer = gamer;
+    // The run's opening speed (it differs by game mode), so the souvenir arcs
+    // in the chunks built before the first update() are spaced for it.
+    this.speed = startSpeed;
     // Every draw THIS FILE makes — obstacle spacing/pattern/lane/kind, bus
     // chance, collectible placement, and also the chunk layout (building
     // size/height/position, props, parked cars, banners, festoons) — is
@@ -160,6 +170,12 @@ export class Track {
     this.baseTheme = theme;
     this.theme = resolveStreet(theme, level);
     this.level = level;            // 1..3, drives density + speed
+    // Moving hazards (src/run/hazards.js): their own stream, seeded from the
+    // course seed, so they never move an obstacle. The rate is per eligible
+    // gap and depends on street and mode.
+    this.hazardRate = hazardRate;
+    this.hazRng = makeRng((this.seed ^ 0x48415a44) >>> 0);
+    this.onHazard = null;
     this.group = new THREE.Group();
     scene.add(this.group);
     this.chunks = [];
@@ -271,6 +287,12 @@ export class Track {
           eq.rotation.y = side * Math.PI / 2.5;
           g.add(eq);
         }
+      } else if ((t.canal || t.lake) && side < 0) {
+        // Khlong Bang Luang's canal, or Hoan Kiem's lake, instead of a row
+        // of houses, beyond the pavement's far edge
+        const canal = makeCanalSide(t, CHUNK_LEN);
+        canal.position.x = -(ROAD_W / 2 + swW);
+        g.add(canal);
       } else {
         // buildings — packed shoulder to shoulder, varied heights
         let bz = 0;
@@ -413,6 +435,8 @@ export class Track {
 
     // ---- road-wide + one-off street set pieces ----
 
+    // Chicago's Loop: the elevated railway over the street, the whole way
+    if (t.elevated) g.add(makeElevated(CHUNK_LEN));
     // Abbey Road: THE zebra crossing, a recurring road set piece
     if (t.zebra && nChunk % 2 === 0) {
       const zb = makeZebra(t, ROAD_W);
@@ -513,22 +537,31 @@ export class Track {
     // 0.8 that made streets feel relentless.
     const density = [0.55, 0.8, 1.05][this.level - 1] ?? 0.8;
     const t = this.theme;
+    const mech = MECHANICS[t.mechanic];   // the city's own move, if it has one
     for (let zRow = 8; zRow < CHUNK_LEN - 4; zRow += 12 / density) {
       const worldZ = chunkZ - zRow;
       const pattern = rand();
       const usedLanes = new Set();
       let weaver = null, coinLane = -1;
 
-      const addObstacle = (lane, kind) => {
+      // `custom` ({ mesh, y0, y1, halfLen }) is a city move's own obstacle
+      // (src/run/mechanics.js): nothing is built or drawn for it here.
+      const addObstacle = (lane, kind, custom) => {
         usedLanes.add(lane);
         let mesh, y0 = 0, y1 = 0, halfLen = 0.35;
-        if (kind === 'full') {
+        let dz = 0;                 // a custom obstacle may sit behind its row
+        if (custom) {
+          ({ mesh, y0, y1, halfLen } = custom);
+          dz = custom.dz || 0;
+        } else if (kind === 'full') {
           // San Francisco decides cable car or car BEFORE building anything,
           // so the car lanes do not build a whole cable car and throw it away.
           const isCable = t.vehicle === 'cablecar' && rand() < (this.level === 1 ? 0.18 : 0.4);
-          // Jerusalem's city bus works the same way, for the same reason.
-          const isCityBus = t.vehicle === 'citybus' && rand() < (this.level === 1 ? 0.18 : 0.4);
-          const carInstead = (t.vehicle === 'cablecar' && !isCable) || (t.vehicle === 'citybus' && !isCityBus);
+          // Jerusalem's city bus works the same way, for the same reason, and
+          // so do Cape Town's minibus taxi and Seoul's green bus.
+          const busLike = t.vehicle === 'citybus' || t.vehicle === 'minibus' || t.vehicle === 'seoulbus' || t.vehicle === 'daladala' || t.vehicle === 'colectivo';
+          const isCityBus = busLike && rand() < (this.level === 1 ? 0.18 : 0.4);
+          const carInstead = (t.vehicle === 'cablecar' && !isCable) || (busLike && !isCityBus);
           mesh = carInstead ? makeParkedCar(t) : makeVehicle(t);
           // Honest hitboxes: buses are walls you must dodge; cars/taxis/vespas
           // are low enough that a well-timed jump clears them.
@@ -548,7 +581,7 @@ export class Track {
           // vehicle, so no other city's seeded stream moves.
           const tall = isBus || isCable || isCityBus;
           y0 = 0; y1 = tall ? 3.2 : 1.6;
-          halfLen = tall ? 2.6 : t.vehicle === 'vespa' ? 1.1 : 2.1;
+          halfLen = tall ? 2.6 : t.vehicle === 'vespa' || t.vehicle === 'motorbike' || t.vehicle === 'carrello' ? 1.1 : 2.1;
           if (mesh.userData.asCab) mesh.scale.set(0.82, 0.5, 0.86);
         } else if (kind === 'low') {
           mesh = new THREE.Group();
@@ -562,6 +595,10 @@ export class Track {
             leg.position.set(lx, 0.3, 0); mesh.add(leg);
           }
           y0 = 0; y1 = 1.2;
+        } else if (t.span === 'tangle') {
+          // Chandni Chowk: the roll-under is a sagging bundle of cables
+          mesh = makeWireTangle();
+          y0 = 1.3; y1 = 3.4;
         } else { // high
           mesh = new THREE.Group();
           const beam = new THREE.Mesh(OB_GEO.beam, this.accentMat);
@@ -578,14 +615,22 @@ export class Track {
           sign.position.y = 2.5; mesh.add(sign);
           y0 = 1.3; y1 = 3.4;   // gap below 1.3 → roll under
         }
-        mesh.position.set(LANES[lane], 0, -zRow);
+        mesh.position.set(LANES[lane], 0, -zRow - dz);
         chunkGroup.add(mesh);
-        this.obstacles.push({ mesh, lane, kind, y0, y1, halfLen, chunk: chunkGroup, localZ: -zRow });
+        const rec = { mesh, lane, kind, y0, y1, halfLen, chunk: chunkGroup, localZ: -zRow - dz };
+        this.obstacles.push(rec);
+        return rec;
       };
 
       // Level 1 sees fewer vehicles and more single jump/roll obstacles.
       const fullCut = this.level === 1 ? 0.18 : 0.3;
-      if (pattern < fullCut) {
+      const special = mech
+        ? mech.row({ level: this.level, rand, randInt, addObstacle, usedLanes, prev: this.prevRow,
+          zRow, chunkLen: CHUNK_LEN, track: this, chunk: chunkGroup })
+        : null;
+      if (special) {
+        // the city's move took this row
+      } else if (pattern < fullCut) {
         addObstacle(randInt(3), 'full');
         if (t.vehicle === 'vespa' && rand() < WEAVE_CHANCE[this.level - 1]) {
           weaver = this.obstacles[this.obstacles.length - 1];
@@ -633,6 +678,14 @@ export class Track {
           this.coins.push({ mesh: coin, chunk: chunkGroup, taken: false });
         }
       }
+      if (special) {
+        special.mech = mech;
+        mech.settle(special, { coinLane, usedLanes, rand, randInt });
+      }
+      // a move that holds a lane over the following rows (Hanoi's train)
+      // clears them out of it; removing draws nothing from the seeded stream
+      if (mech && mech.after) mech.after({ track: this, chunk: chunkGroup, zRow });
+      this.prevRow = { used: usedLanes, coin: coinLane };
       // Rome: now the row is complete, decide where (if anywhere) the Vespa
       // can go — see the fairness rules above WEAVE_CHANCE.
       if (weaver) {
@@ -660,23 +713,50 @@ export class Track {
       }
     }
 
-    // monument pieces falling in this chunk, placed between obstacle rows
+    // monument pieces falling in this chunk, placed between obstacle rows.
+    // Only gaps whose rows on BOTH sides already exist: this chunk's own, and
+    // the one back to the previous chunk's last row. The gap forward into the
+    // next chunk is not used, because that chunk's rows are not built yet and
+    // nothing could check them.
     const step = 12 / density;
     const rows = [];
     for (let zr = 8; zr < CHUNK_LEN - 4; zr += step) rows.push(zr);
     const mids = [];
     for (let r = 0; r + 1 < rows.length; r++) mids.push((rows[r] + rows[r + 1]) / 2);
-    if (rows.length) {
-      const last = rows[rows.length - 1];
-      mids.push((last + CHUNK_LEN + 8) / 2, (8 + last - CHUNK_LEN) / 2);
-    }
+    if (rows.length) mids.push((8 + rows[rows.length - 1] - CHUNK_LEN) / 2);
     const slots = mids.filter((m) => m > 1 && m < CHUNK_LEN - 1);
+    const piecesHere = [];
+    // The lanes taken in the rows either side of a slot, each obstacle in the
+    // lane it will be in when the player reaches it (laneAtArrival). Read
+    // from the course already built, so choosing a lane draws nothing from
+    // the seeded stream.
+    const zOf = (o) => o.chunk.position.z + o.localZ;
+    const takenBetween = (zHi, zLo) => {
+      const s = new Set();
+      for (const o of this.obstacles) {
+        const z = zOf(o);
+        if (z < zHi && z > zLo) s.add(this.laneAtArrival(o));
+      }
+      return s;
+    };
     for (let k = 0; k < this.pieceDefs.length; k++) {
       if (this.pieceSpawned[k]) continue;
       const zp = this.pieceDist[k] + chunkZ;          // distance into this chunk
       if (zp < 0 || zp >= CHUNK_LEN) continue;
       const zz = slots.length ? slots.reduce((a, b) => (Math.abs(b - zp) < Math.abs(a - zp) ? b : a)) : zp;
-      const lane = (k * 2 + 1) % 3;
+      // A lane the player can hold from the row before to the row after, so
+      // a piece is never boxed in. It used to be (k * 2 + 1) % 3 whatever the
+      // rows held, and about one piece in ten sat between two obstacles in
+      // its own lane: a vehicle each side, or a bar to roll under with a
+      // barrier to jump straight after (a roll lasts too long to jump out of
+      // in time). Failing a lane clear on both sides, one clear in the row
+      // after, so collecting it never runs you into something; every row
+      // leaves at least one lane open.
+      const pz = chunkZ - zz, reach = step / 2 + 1;
+      const before = takenBetween(pz + reach, pz), after = takenBetween(pz, pz - reach);
+      const pref = (k * 2 + 1) % 3;
+      const order = [pref, (pref + 1) % 3, (pref + 2) % 3];
+      const lane = order.find((l) => !before.has(l) && !after.has(l)) ?? order.find((l) => !after.has(l)) ?? pref;
       const d = this.pieceDefs[k];
       const piece = makeBlockMesh(d);
       piece.rotation.set(d.rotX || 0, d.rotY || 0, d.rotZ || 0);
@@ -710,7 +790,49 @@ export class Track {
       });
       this.pieces.push({ mesh: holder, chunk: chunkGroup, idx: k, taken: false });
       this.pieceSpawned[k] = true;
+      piecesHere.push(zz);
+    }
+
+    // Moving hazards, in the gaps between this chunk's own rows that hold no
+    // piece and leave at least two lanes clear in both rows. Three draws per
+    // gap, always, so whether one gap gets a hazard never shifts the next.
+    if (this.hazardRate > 0) {
+      const reach = step / 2 + 1;
+      for (let r = 0; r + 1 < rows.length; r++) {
+        const m = (rows[r] + rows[r + 1]) / 2;
+        const roll = this.hazRng(), kindRoll = this.hazRng(), laneRoll = this.hazRng();
+        if (roll >= this.hazardRate || piecesHere.some((z) => Math.abs(z - m) < 1)) continue;
+        const pz = chunkZ - m;
+        const before = takenBetween(pz + reach, pz), after = takenBetween(pz, pz - reach);
+        const clear = [0, 1, 2].filter((l) => !before.has(l) && !after.has(l));
+        if (clear.length < 2) continue;
+        const kinds = Object.keys(HAZARDS);
+        const kind = kinds[Math.floor(kindRoll * kinds.length)];
+        const lanes = HAZARDS[kind].outerOnly ? clear.filter((l) => l !== 1) : clear;
+        if (!lanes.length) continue;
+        this.addHazard(chunkGroup, kind, lanes[Math.floor(laneRoll * lanes.length)], m);
+      }
     }  }
+
+  addHazard(chunkGroup, kind, lane, m) {
+    const spec = HAZARDS[kind];
+    const { mesh, marker, from, to } = makeHazard(kind, this.theme, LANES[lane]);
+    mesh.position.z = -m;
+    marker.position.set(LANES[lane], 0.04, -m);
+    chunkGroup.add(mesh, marker);
+    this.obstacles.push({
+      mesh, lane, kind: spec.as, hazard: kind, y0: spec.y0, y1: spec.y1, halfLen: spec.halfLen,
+      chunk: chunkGroup, localZ: -m, x: from.x, haz: { marker, from, to },
+    });
+    // as for pieces: a souvenir line trailing into this gap in the same lane
+    // would lead the player straight into it, so those few are dropped
+    this.coins = this.coins.filter((c) => {
+      const clash = c.chunk === chunkGroup && Math.abs(c.mesh.position.x - LANES[lane]) < 0.1
+        && Math.abs(c.mesh.position.z + m) < 4;
+      if (clash) chunkGroup.remove(c.mesh);
+      return !clash;
+    });
+  }
 
   update(dt, speed, player, onCoin, onHit) {
     this.speed = speed;   // arcs spawned later match the ramped-up pace
@@ -744,6 +866,24 @@ export class Track {
           for (const b of o.blinkers) b.visible = false;
         }
       }
+    }
+
+    // the city's own move (src/run/mechanics.js), by distance ahead
+    for (const o of this.obstacles) {
+      if (!o.mech) continue;
+      const ahead = -(o.localZ + o.chunk.position.z + this.group.position.z);
+      const active = o.mech.move(o, ahead, dt, this, player);
+      if (active && ahead > 0 && !this.mechSeen) {
+        this.mechSeen = true;
+        if (this.onMechanic) this.onMechanic(o.mech.hint);
+      }
+    }
+
+    // moving hazards: warn, then move in (src/run/hazards.js)
+    for (const o of this.obstacles) {
+      if (!o.haz) continue;
+      const wz = o.localZ + o.chunk.position.z + this.group.position.z;
+      if (stepHazard(o, -wz / Math.max(1, speed), dt, this.clock) && this.onHazard) this.onHazard(o.hazard);
     }
 
     // recycle chunks that passed behind the camera
@@ -799,9 +939,19 @@ export class Track {
       const zw = (o.halfLen || 0.35) * 0.55 + 0.3;
       if (wz > -zw && wz < zw && Math.abs((o.x ?? LANES[o.lane]) - hb.x) < 1.15) {
         const overlap = hb.y0 < o.y1 && hb.y1 > o.y0;
-        if (overlap) { onHit(); return; }
+        if (overlap) { onHit(o); return; }
       }
     }
+  }
+
+  // The lane an obstacle is in when the player reaches it: a weaving Vespa
+  // in the lane it weaves into, a Bangkok tuk-tuk in the lane its U-turn
+  // ends in (src/run/mechanics.js), anything else where it stands. A Cape
+  // Town gust has no hitbox and is in no lane (-1).
+  laneAtArrival(o) {
+    if (o.y1 < 0) return -1;
+    if (o.weave) return o.lane + o.weave;
+    return o.uTo ?? o.lane;
   }
 
   progress() { return Math.min(1, this.distance / this.goal); }
@@ -819,6 +969,7 @@ export class Track {
       const wz = o.localZ + o.chunk.position.z + this.group.position.z;
       if (wz > -ahead && wz < behind) {
         o.chunk.remove(o.mesh);
+        if (o.haz) o.chunk.remove(o.haz.marker);
       } else {
         kept.push(o);
       }
@@ -835,6 +986,13 @@ export class Track {
       this.backdrop = null;
     }
     this.accentMat.dispose();
+    // The souvenir model's geometry is shared by every souvenir on the street,
+    // so it is in SHARED_GEO and chunk recycling keeps it. It goes with the
+    // street. It used to be kept for good: by the time disposeAll() freed the
+    // scene, this group (and every souvenir in it) had already left it, so
+    // each street left its souvenir model on the GPU, and in SHARED_GEO.
+    this.souvenirProto.traverse((n) => { if (n.geometry) SHARED_GEO.delete(n.geometry); });
+    disposeTree(this.souvenirProto);
     SHARED_GEO.delete(this.roadGeo); SHARED_GEO.delete(this.sidewalkGeo);
     this.roadGeo.dispose(); this.sidewalkGeo.dispose();
     this.roadMat.dispose(); this.sidewalkMat.dispose();

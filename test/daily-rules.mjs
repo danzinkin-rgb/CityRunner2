@@ -18,6 +18,7 @@
  * Usage: node test/daily-rules.mjs [baseUrl]
  */
 import { webkit } from 'playwright';
+import { readFileSync } from 'node:fs';
 import { resolveBase } from './serve.mjs';
 
 const { base: BASE, close } = await resolveBase(process.argv[2]);
@@ -29,18 +30,24 @@ const check = (ok, label, detail = '') => {
 };
 
 const browser = await webkit.launch();
+// Every city, so the one-time "drag to build" card can be marked as already
+// seen: on a day whose daily is street 1 of a dragged city it held the
+// puzzle, the celebration never ran, and this suite failed by date alone.
+const CITY_IDS = [...readFileSync(new URL('../src/cities/themes.js', import.meta.url), 'utf8')
+  .matchAll(/^\s{2}\{\s*$\n\s*id:\s*'([a-z]+)'/gm)].map((m) => m[1]);
 
 // ------------------------------------------------ a daily win, native, unpaid
 // Native, so the paywall is real. ?daily puts the run on today's course,
 // ?celebrate completes the monument, and finishPuzzle() runs for real.
 {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  await ctx.addInitScript(() => {
+  await ctx.addInitScript((ids) => {
     window.Capacitor = { isNativePlatform: () => true };
     if (localStorage.getItem('cityrunner2') == null) {
-      localStorage.setItem('cityrunner2', JSON.stringify({ stars: {}, coins: 0, best: 0 }));
+      const dragTold = Object.fromEntries(ids.map((id) => [id, true]));
+      localStorage.setItem('cityrunner2', JSON.stringify({ stars: {}, coins: 0, best: 0, dragTold, seenMissingHelp: true }));
     }
-  });
+  }, CITY_IDS);
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));

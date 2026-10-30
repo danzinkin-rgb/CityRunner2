@@ -32,7 +32,15 @@ export const LEADERBOARDS = {
   // Versioned with the daily itself (DAILY in rng.js): players on different
   // app versions must never share a daily board. v1 was `.leaderboard.daily`.
   DAILY: `${NS}.leaderboard.daily.v${DAILY.version}`,
+  // "Lifetime points" in App Store Connect: the sum of every run finished.
+  // It rewards time played, not skill; it was called "Overall" until
+  // October 2026, which read as a best score.
   OVERALL: `${NS}.leaderboard.overall`,
+  // "Best run": the highest single run on any street (not the daily, which
+  // has its own board). Game Center keeps each player's best, so every run
+  // is submitted. A new id because the old board's cumulative totals would
+  // otherwise outrank any single run for good.
+  BEST_RUN: `${NS}.leaderboard.bestrun`,
 };
 
 /** Per-city leaderboard id. Works for any cityId, present or future. */
@@ -65,6 +73,7 @@ function achievementForCity(cityId) {
 export function reportRun({ cityId, score, dailyMode, save }) {
   gkSubmitScore(leaderboardForCity(cityId), score);
   if (dailyMode) gkSubmitScore(LEADERBOARDS.DAILY, score);
+  else gkSubmitScore(LEADERBOARDS.BEST_RUN, score);
   gkSubmitScore(LEADERBOARDS.OVERALL, lifetimeScore());
 
   reportProgress(save);
