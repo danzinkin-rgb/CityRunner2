@@ -9,7 +9,7 @@ import { renderHero, renderCompact, paintScale, countUp } from './factviz.js';
 import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
 import { startSession, submit, top as topScores, personalBest, currentSession } from './core/scores.js';
 import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset, DAILY } from './core/rng.js';
-import { initNative, onAppPause, hapticLight, hapticMedium, hapticHeavy, hapticSuccess, canShare, shareText, requestReview } from './core/native.js';
+import { initNative, onAppPause, onBackButton, hapticLight, hapticMedium, hapticHeavy, hapticSuccess, canShare, shareText, requestReview, storeFacts } from './core/native.js';
 import { reportRun } from './core/gamecenter.js';
 import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild, ownsCity, regionOf } from './core/entitlements.js';
 import { REGIONS } from './cities/themes.js';
@@ -786,9 +786,9 @@ function finishPuzzle(won) {
       paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm], !!save.reducedMotion, md?.altitude, md?.note);
       showScreen('pwin');
       state = 'pwin';
-      // Apple's rating prompt, at a good moment: just after a win, on the
-      // 3rd, 10th and 30th monument. StoreKit decides whether it actually
-      // shows (at most three times a year), and it is native only.
+      // The store's rating prompt, at a good moment: just after a win, on the
+      // 3rd, 10th and 30th monument. StoreKit or Play decides whether it
+      // actually shows (both limit how often), and it is native only.
       if (REVIEW_AT.includes(save.monumentsWon)) setTimeout(requestReview, 1500);
     }, 4300);
     state = 'pwin-wait';
@@ -1149,7 +1149,7 @@ async function buyOffer(kind) {
   const offer = offers[kind];
   if (!offer) return;
   btn.disabled = true;
-  status.textContent = 'Opening the App Store…';
+  status.textContent = `Opening ${storeFacts().name}…`;
   const ok = await purchase(offer.productId);
   btn.disabled = false;
   if (!ok) {
@@ -1194,7 +1194,7 @@ onEntitlementGranted(() => {
 
 /** Shared by the paywall and the Settings row — Apple requires both to work. */
 async function doRestore(statusEl) {
-  statusEl.textContent = 'Checking with the App Store…';
+  statusEl.textContent = `Checking with ${storeFacts().name}…`;
   const found = await restore();
   if (found.length) buildCitySelect();
   if (hasFullAccess() || (statusEl.id === 'paywall-status' && paywallSatisfied())) {
@@ -1204,7 +1204,7 @@ async function doRestore(statusEl) {
   } else {
     statusEl.textContent = found.length
       ? 'Restored.'
-      : 'No previous purchase found on this Apple Account.';
+      : `No previous purchase found on this ${storeFacts().account}.`;
   }
 }
 
@@ -1477,6 +1477,27 @@ window.addEventListener('keydown', (e) => {
   if (e.code !== 'Escape' && e.code !== 'KeyP') return;
   if (state === 'paused') resumeGame(); else pauseGame();
 });
+// Android back button: does what the on-screen button for "go back" does on
+// whatever is showing. Returns false only at the menu, where native.js sends
+// the app to the background. The facts page and a run's own transitions have
+// no back step, so back does nothing there rather than throwing a run away.
+const BACK_BUTTONS = {
+  'ui-help': 'btn-help-close', 'ui-settings': 'btn-settings-close',
+  'ui-scores': 'btn-scores-close', 'ui-shop': 'btn-shop-close',
+  'ui-paywall': 'btn-paywall-close', paused: 'btn-resume',
+  'continue-offer': 'btn-continue-no', over: 'btn-menu', pwin: 'btn-menu2',
+  'puzzle-intro': ['dh-ok', 'mh-ok'],   // whichever card is up
+};
+function handleBack() {
+  // The What's new card sits over the menu without changing the state.
+  if ($('whats-new').classList.contains('on')) { $('wn-ok').click(); return true; }
+  if (state === 'menu') return false;
+  if (state === 'run' || state === 'puzzle') { pauseGame(); return true; }
+  const id = [].concat(BACK_BUTTONS[state] || []).find((i) => $(i).getClientRects().length);
+  if (id) $(id).click();   // only a button that is on screen
+  return true;
+}
+onBackButton(handleBack);
 // Auto-pause when the tab/app is backgrounded — expected behaviour on phones.
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
 $('btn-continue-pay').onclick = acceptContinue;
@@ -1484,30 +1505,31 @@ $('btn-continue-no').onclick = declineContinue;
 $('btn-retry').onclick = () => startRun();
 $('btn-menu').onclick = $('btn-menu2').onclick = () => doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; });
 
-// Sharing (1.2.2): a SHARE button on the result screens opens Apple's share
-// sheet with one line about the run and the App Store link. Native only (see
+// Sharing (1.2.2): a SHARE button on the result screens opens the share
+// sheet with one line about the run and the game's store link. Native only (see
 // canShare in src/core/native.js); nothing is sent anywhere unless the player
 // picks an app to share to. On a daily the line invites a friend to the same
 // course, which is the point of a daily.
-const APP_STORE_URL = 'https://apps.apple.com/app/id6806808248';
 const REVIEW_AT = [3, 10, 30];
 function shareWhere() {
   return `${city().streets[level - 1]}, ${titleCase(city().name)}`;
 }
-if (canShare()) {
+// After initNative(), so the buttons appear only if the plugin really loaded.
+initNative().then(() => {
+  if (!canShare()) return;
   $('btn-share-pw').style.display = '';
   $('btn-share-over').style.display = '';
-}
+});
 $('btn-share-pw').onclick = () => {
   const name = $('pw-name').textContent;
   shareText(dailyMode
     ? `I rebuilt the ${name} on today's CityRunner daily challenge (${shareWhere()}) and scored ${Math.round(score)}. Everyone gets the same course today. Can you beat it?`
-    : `I just rebuilt the ${name} in CityRunner with ${$('pw-time').textContent} seconds to spare.`, APP_STORE_URL);
+    : `I just rebuilt the ${name} in CityRunner with ${$('pw-time').textContent} seconds to spare.`, storeFacts().link);
 };
 $('btn-share-over').onclick = () => {
   shareText(dailyMode
     ? `I scored ${Math.round(score)} on today's CityRunner daily challenge: ${shareWhere()}. Everyone gets the same course today. Can you beat it?`
-    : `I scored ${Math.round(score)} running ${shareWhere()} in CityRunner.`, APP_STORE_URL);
+    : `I scored ${Math.round(score)} running ${shareWhere()} in CityRunner.`, storeFacts().link);
 };
 $('btn-next').onclick = () => {
   // Belt and braces: the button is hidden after a daily (finishPuzzle), but a
@@ -1769,6 +1791,7 @@ if (DEBUG_HOOKS && q.get('view')) {
     get puzzle() { return puzzle; },
     get camera() { return camera; },
     get state() { return state; },
+    back: () => handleBack(),
     get cam() { return cam; },
     get track() { return track; },
     get ghost() { return ghost; },

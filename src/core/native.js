@@ -1,8 +1,8 @@
 /**
  * Native bridge.
  *
- * The same code ships to two places: the web build on GitHub Pages, and the
- * Capacitor app on iOS. Everything here must therefore degrade silently when
+ * The same code ships to three places: the web build on GitHub Pages, and the
+ * Capacitor app on iOS and on Android. Everything here must therefore degrade silently when
  * no native runtime exists — the web build must never see an error, and a
  * missing plugin must never break gameplay.
  *
@@ -16,6 +16,14 @@ let ready = null;           // in-flight init promise
 export function isNative() {
   return !!(globalThis.Capacitor && globalThis.Capacitor.isNativePlatform
     && globalThis.Capacitor.isNativePlatform());
+}
+
+/**
+ * 'ios', 'android' or 'web'. A native runtime that cannot say is taken as
+ * iOS, the only native platform before Android, so nothing there changes.
+ */
+export function nativePlatform() {
+  return isNative() ? (globalThis.Capacitor.getPlatform?.() || 'ios') : 'web';
 }
 
 /**
@@ -50,15 +58,19 @@ export function initNative() {
       // version coupling to track — see docs/COMPLIANCE.md §4 on why this
       // project writes its own thin native wrappers instead of taking on a
       // third-party plugin for something Apple's own SDK already does.
-      const GameCenter = registerPlugin('GameCenter');
-      // Apple's share sheet and rating prompt, the same way: ios/App/App/GrowthPlugin.swift.
+      // Game Center is Swift only, so Android gets null and the gk* helpers
+      // below return early.
+      const GameCenter = nativePlatform() === 'ios' ? registerPlugin('GameCenter') : null;
+      // The share sheet and the store's rating prompt, the same way on both:
+      // ios/App/App/GrowthPlugin.swift and, on Android,
+      // android/app/src/main/java/uk/co/zinkin/cityrunner/GrowthPlugin.java.
       const Growth = registerPlugin('Growth');
 
       native = { Haptics, ImpactStyle, NotificationType, App, GameCenter, Growth };
 
       // Fire-and-forget: a signed-out Game Center account or a player who
       // declines the sign-in sheet must never block or interrupt the game.
-      fire(() => GameCenter.authenticate());
+      if (GameCenter) fire(() => GameCenter.authenticate());
 
       return native;
     } catch {
@@ -109,7 +121,7 @@ export function hapticSuccess() {
 
 /** Submit a score to one Game Center leaderboard. Fire-and-forget. */
 export function gkSubmitScore(leaderboardId, score) {
-  if (!native) return;
+  if (!native?.GameCenter) return;
   fire(() => native.GameCenter.submitScore({ leaderboardId, score: Math.round(score) }));
 }
 
@@ -119,7 +131,7 @@ export function gkSubmitScore(leaderboardId, score) {
  * for a given achievement id, so callers never need to track "already sent".
  */
 export function gkReportAchievement(achievementId, percentComplete) {
-  if (!native) return;
+  if (!native?.GameCenter) return;
   fire(() => native.GameCenter.reportAchievement({
     achievementId,
     percentComplete: Math.max(0, Math.min(100, percentComplete)),
@@ -142,22 +154,70 @@ export function onAppPause(cb) {
 // ---------------------------------------------------------------------------
 // Sharing and ratings (ios/App/App/GrowthPlugin.swift). Native only: the web
 // build has no share button, because the web version is not promoted and the
-// link shared is the App Store's.
+// link shared is the store's own (storeLink below).
 // ---------------------------------------------------------------------------
 
-/** True where the share button should show. */
+/**
+ * True where the share button should show: once initNative() has resolved
+ * with the Growth plugin in place, so a plugin that failed to load never
+ * leaves a button that does nothing.
+ */
 export function canShare() {
-  return isNative();
+  return !!native?.Growth;
+}
+
+/**
+ * Everything that differs by store, in one place: the name and account the
+ * paywall and Settings mention, and the link a share sends. `google` is
+ * what iap.js uses to pick the plugin's platform.
+ */
+const STORES = {
+  apple: {
+    google: false, name: 'the App Store', account: 'Apple Account',
+    link: 'https://apps.apple.com/app/id6806808248',
+  },
+  google: {
+    google: true, name: 'Google Play', account: 'Google Account',
+    link: 'https://play.google.com/store/apps/details?id=uk.co.zinkin.cityrunner',
+  },
+};
+
+/** The store this copy came from. The web build is treated as Apple's. */
+export function storeFacts() {
+  return nativePlatform() === 'android' ? STORES.google : STORES.apple;
 }
 
 /** Open the share sheet with a line of text and a link. Never throws. */
 export async function shareText(text, url) {
-  if (!native) return false;
+  if (!native?.Growth) return false;
   try { return !!(await native.Growth.share({ text, url })).shared; } catch { return false; }
 }
 
-/** Ask StoreKit for its rating prompt. StoreKit decides whether to show it. */
+/**
+ * Ask for the store's rating prompt: StoreKit on iOS, Play's in-app review on
+ * Android. The store decides whether to show it.
+ */
 export function requestReview() {
-  if (!native) return;
+  if (!native?.Growth) return;
   fire(() => native.Growth.requestReview());
+}
+
+/**
+ * Android's system back button and back gesture. iOS has neither, so this
+ * registers nothing there or on the web.
+ *
+ * `handle` returns true when it did something (closed an overlay, paused a
+ * run). When it returns false the player is at the menu, and the app goes to
+ * the background, which is what back does at the root of an Android app since
+ * Android 12. Once a listener exists Capacitor no longer does that itself.
+ */
+export function onBackButton(handle) {
+  initNative().then((n) => {
+    if (!n || nativePlatform() !== 'android') return;
+    try {
+      n.App.addListener('backButton', () => {
+        if (!handle()) fire(() => n.App.minimizeApp());
+      });
+    } catch { /* listener unavailable */ }
+  });
 }

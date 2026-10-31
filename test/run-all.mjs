@@ -54,6 +54,7 @@ const SUITES = [
   { file: 'test/releases.mjs' },
   { file: 'test/sign-text.mjs' },
   { file: 'test/release-build.mjs' },
+  { file: 'test/android.mjs' },
   { file: 'test/memory.mjs', solo: true },   // counts GPU resources
   { file: 'test/ghost.mjs', solo: true },    // timed waits on a live run
   { file: 'test/roll.mjs', solo: true },     // samples animation frames

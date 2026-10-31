@@ -13,7 +13,8 @@
  *
  *   PROGRESSION lock — earned. You reach Paris by starring New York. This is
  *                      the game's own pacing and it predates any purchase.
- *   ENTITLEMENT lock — bought. Applies only on iOS, never on the web build.
+ *   ENTITLEMENT lock — bought. Applies in the iOS and Android apps, never on
+ *                      the web build.
  *
  * A city is playable when BOTH are open. They are reported separately so the
  * UI can say the true thing: "keep playing to unlock" is a lie on a city that

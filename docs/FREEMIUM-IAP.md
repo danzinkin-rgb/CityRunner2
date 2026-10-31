@@ -236,6 +236,13 @@ Step 4's reinstall-then-restore is the one Apple's reviewer will try. It is also
 
 ---
 
+## 7a. Android
+
+The same two products and ids are sold through Google Play Billing on
+Android; `src/core/iap.js` picks the store by platform. Play Console entries
+are in `GOOGLE-PLAY-LISTING.md` §3, testing in `GOOGLE-PLAY.md` §4–5. Close
+the Founder window on both stores on the same day.
+
 ## 8. Documents this supersedes
 
 - `PROPOSALS.md` §4 (£4.99 city unlock, NY free only) — superseded on price, on the number of free cities, and on the founder window

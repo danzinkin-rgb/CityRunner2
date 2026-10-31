@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-An endless runner through twenty-two world cities (New York, Paris, London and Jerusalem free; the rest sold in region packs), built on Three.js. Each city has three streets; each street ends in a 60-second monument-rebuilding puzzle. All geometry, textures and audio are generated procedurally at runtime. The only image files are small PNGs for the menus and HUD (`assets/thumbs`, `monuments`, `souvenirs`, `characters`), rendered from the game itself by `test/capture-city-assets.mjs`. It runs as a web page and, via Capacitor, as an iOS app.
+An endless runner through twenty-two world cities (New York, Paris, London and Jerusalem free; the rest sold in region packs), built on Three.js. Each city has three streets; each street ends in a 60-second monument-rebuilding puzzle. All geometry, textures and audio are generated procedurally at runtime. The only image files are small PNGs for the menus and HUD (`assets/thumbs`, `monuments`, `souvenirs`, `characters`), rendered from the game itself by `test/capture-city-assets.mjs`. It runs as a web page and, via Capacitor, as an iOS app and an Android app (`android/`, preparing for Google Play: `docs/GOOGLE-PLAY.md`).
 
 ## Commands
 
@@ -15,6 +15,9 @@ npm run build         # vite build -> dist/
 npm run ios:sync      # vite build && cap sync ios   (Mac)
 npm run ios:open      # cap open ios                 (Mac)
 npm run ios:sync:tester  # tester build: Settings > Tester plays any street (Mac)
+npm run android:sync  # vite build && cap sync android   (Windows is fine)
+npm run android:open  # cap open android (Android Studio)
+npm run android:sync:tester  # tester build for Android
 npm run serve         # static server on :4173 for manual poking
 ```
 
@@ -24,9 +27,9 @@ Run one suite directly — every test file is standalone and starts its own serv
 node test/menu-fit.mjs
 ```
 
-The tester build (`vite build --mode tester`, `TESTER` in `src/core/debug.js`) adds a Tester section to Settings: play any street or monument past its locks, and run invincible without recording scores. It is for installing straight from Xcode to a device. Run plain `npm run ios:sync` again before archiving for the App Store; `test/release-build.mjs` checks a normal build carries none of it.
+The tester build (`vite build --mode tester`, `TESTER` in `src/core/debug.js`) adds a Tester section to Settings: play any street or monument past its locks, and run invincible without recording scores. It is for installing straight from Xcode to a device. Run plain `npm run ios:sync` (or `android:sync`) again before archiving for a store; `test/release-build.mjs` checks a normal build carries none of it, and `android/app/build.gradle` refuses to build a release from a tester build.
 
-Named shortcuts exist for a few: `test:ios`, `test:fit`, `test:determinism`, `test:coins`, `test:clearance`, `test:puzzle`.
+Named shortcuts exist for a few: `test:ios`, `test:android`, `test:fit`, `test:determinism`, `test:coins`, `test:clearance`, `test:puzzle`.
 
 Any suite accepts a base URL to run against something else: `node test/ios-ui.mjs http://host:1234`.
 
@@ -57,19 +60,20 @@ Two rules follow. Never replace the `?.` with a build-time define like `__DEBUG_
 
 **Cities are sold in region packs** (`docs/RELEASES.md`). Since 1.2.0 every finished city is released (Dan, 15 October 2026); paid cities open in a chain within their region (`chainPrev` in `src/main.js`: a region's first paid city plays once owned, each later one after a street in the one before it), and the free three keep their own chain. `src/cities/releases.js` holds `RELEASE_QUEUE`, now empty: a city still in development can wait there, merged into `main` but hidden from players. `themes.js` exports `ALL_CITIES` and imports nothing (`marketing/build-pages.mjs` loads it as text); `src/cities/offered.js` exports `CITIES`, which drops queued cities unless the build is a tester build or the page is on a test route (`?view=`, `?ui=` other than the menu, `?allcities=`). Everything player-facing reads `CITIES` from `offered.js`; the landmark pages publish released cities only. Releasing a city is removing it from the queue, plus its Game Center items; `test/releases.mjs` gates it.
 
-**`src/core/entitlements.js` is the single source of truth for what is locked.** Two independent locks: *progression* (earned by stars, predates any purchase) and *entitlement* (bought, iOS only, always open on the web build). They are reported separately so the UI can say the true thing — "keep playing to unlock" on a city no amount of playing will open is the kind of dark pattern the Children's Code targets. `GRANTS_EVERYTHING` is a product set, deliberately not a list of city ids, because the Founder promise covers cities nobody has designed yet. There is deliberately **no launch-date constant anywhere** — the sale window is closed by removing the product in App Store Connect, because a device clock is user-settable and a baked-in cutoff would eventually offer an unbuyable product with no fix short of an app update.
+**`src/core/entitlements.js` is the single source of truth for what is locked.** Two independent locks: *progression* (earned by stars, predates any purchase) and *entitlement* (bought in the iOS or Android app, always open on the web build). They are reported separately so the UI can say the true thing — "keep playing to unlock" on a city no amount of playing will open is the kind of dark pattern the Children's Code targets. `GRANTS_EVERYTHING` is a product set, deliberately not a list of city ids, because the Founder promise covers cities nobody has designed yet. There is deliberately **no launch-date constant anywhere** — the sale window is closed by removing the product in App Store Connect, because a device clock is user-settable and a baked-in cutoff would eventually offer an unbuyable product with no fix short of an app update.
 
 **`src/core/storage-keys.js` owns every `localStorage` key**, and each key must appear in exactly one of `ERASED_KEYS` or `KEPT_KEYS`. Adding a key without choosing fails `test/storage-keys.mjs`. The split is a product decision documented in that file: the entitlement cache and audio prefs deliberately survive "Erase my data".
 
 **Scores are untrustworthy by construction.** `src/core/scores.js` runs on the player's device; its bounds raise the cost of casual cheating and are not a control. A remote leaderboard is a new security boundary, not a storage driver — every check must be repeated server-side (`supabase/schema.sql`, `docs/COMPLIANCE.md` §4).
 
-**Native integration** goes through `src/core/native.js`, which no-ops when `isNative()` is false, so nothing in `src/` needs a platform branch. `ios/App/App/GameCenterPlugin.swift` is hand-rolled with no pod and is registered by hand in `BridgeViewController.swift` — Capacitor 7 only auto-registers plugins shipped as real npm packages. `src/core/iap.js` wraps `cordova-plugin-purchase`, which exists only inside the native WebView, so **nothing in that file is exercisable by `npm test`** — changes there are verified by reading and by sandbox testing on a device.
+**Native integration** goes through `src/core/native.js`, which no-ops when `isNative()` is false, so nothing in `src/` needs a platform branch. `ios/App/App/GameCenterPlugin.swift` is hand-rolled with no pod and is registered by hand in `BridgeViewController.swift` — Capacitor 7 only auto-registers plugins shipped as real npm packages. Game Center is iOS only: on Android `native.js` registers no plugin and the `gk*` calls return early. The Android back button is handled by `handleBack()` in `main.js` via `onBackButton()`. `src/core/iap.js` wraps `cordova-plugin-purchase` (App Store on iOS, Google Play Billing on Android, same product ids), which exists only inside the native WebView, so **nothing in that file is exercisable by `npm test`** — changes there are verified by reading and by sandbox testing on a device.
 
 ## Constraints that are not negotiable
 
 - **No third-party SDKs** (`docs/COMPLIANCE.md` §4). No analytics, crash reporting, ads or social login. This is what keeps the App Store "Data Not Collected" label true on a 4+ title. It is also why `iap.js` uses no receipt validator: configuring one would send purchase and device data to that validator's servers.
 - **The Supabase service-role key must never appear** in client code or any committed file. The anon key is public by design; security rests on RLS policies.
 - The web build (GitHub Pages) stays completely free and completely unlocked.
+- Android targets the API level Google Play requires (36 from 31 August 2026; `android/variables.gradle`, checked by `test/android.mjs`). Capacitor 7 and its Gradle 8.11 need JDK 21, not the newer JDK bundled with Android Studio.
 
 ## Testing philosophy
 
