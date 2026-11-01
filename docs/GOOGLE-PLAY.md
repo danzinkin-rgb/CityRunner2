@@ -1,8 +1,12 @@
 # Publishing to Google Play
 
-**Status, 11 October 2026: under way.** Taken off hold now that there are
-testers for the closed test. The Android project builds and the code work is
-done (§2). The next step is Dan's: the Play developer account (§4, step 1).
+**Status, 1 November 2026: closed test sent for review.** Version 2 (1.2.2)
+is on the "Closed testing - Alpha" track with the store listing, tags,
+178 countries and the Cityrunner Testers list (13 people, also licence
+testers, so test purchases are free). Google's review usually takes up to 7
+days; managed publishing is off, so testers get it as soon as it is
+approved. Then the 14 days start once 12 testers have opted in. Still to do:
+the seven in-app products (§4 step 6.4), then production access after day 14.
 
 Forms and listing text: `GOOGLE-PLAY-LISTING.md`.
 
