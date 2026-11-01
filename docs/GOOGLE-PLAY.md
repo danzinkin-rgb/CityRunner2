@@ -1,12 +1,13 @@
 # Publishing to Google Play
 
-**Status, 1 November 2026: closed test sent for review.** Version 2 (1.2.2)
-is on the "Closed testing - Alpha" track with the store listing, tags,
-178 countries and the Cityrunner Testers list (13 people, also licence
-testers, so test purchases are free). Google's review usually takes up to 7
-days; managed publishing is off, so testers get it as soon as it is
-approved. Then the 14 days start once 12 testers have opted in. Still to do:
-the seven in-app products (§4 step 6.4), then production access after day 14.
+**Status, 1 November 2026: closed test live.** Version 2 (1.2.2) is active
+on the "Closed testing - Alpha" track with 178 countries and the Cityrunner
+Testers list (14 people incl. Dan; also licence testers, so test purchases
+are free). Join link: https://play.google.com/apps/testing/uk.co.zinkin.cityrunner
+All seven one-time products are active (purchase option `buy`): Founder
+GBP 1.99 / USD 1.99, six region packs GBP 0.99 / USD 0.99. Play adds VAT on
+top of the price entered for the UK, so the UK base was set to 1.66 and 0.83.
+The 14 days start once 12 testers have opted in; then apply for production.
 
 Forms and listing text: `GOOGLE-PLAY-LISTING.md`.
 
