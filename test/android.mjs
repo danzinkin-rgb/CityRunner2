@@ -54,6 +54,8 @@ const vars = read('android', 'variables.gradle');
 const sdk = (k) => Number(vars.match(new RegExp(`${k}\\s*=\\s*(\\d+)`))?.[1]);
 check(sdk('targetSdkVersion') >= 36, 'android: targets API 36 or later (Play minimum from 31 Aug 2026)',
   `targetSdkVersion=${sdk('targetSdkVersion')}`);
+check(sdk('minSdkVersion') >= 24, 'android: minimum API 24, which Play automatic protection needs',
+  `minSdkVersion=${sdk('minSdkVersion')}`);
 check(sdk('compileSdkVersion') >= sdk('targetSdkVersion'), 'android: compiles against the target API',
   `compileSdkVersion=${sdk('compileSdkVersion')}`);
 

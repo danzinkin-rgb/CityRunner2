@@ -1,5 +1,7 @@
 ext {
-    minSdkVersion = 23
+    // 24 (Android 7.0): Play's automatic protection needs it. Capacitor 7's
+    // template says 23.
+    minSdkVersion = 24
     // Google Play requires API 36 for new apps and updates from 31 August 2026.
     // Capacitor 7's template says 35. See docs/GOOGLE-PLAY.md.
     compileSdkVersion = 36

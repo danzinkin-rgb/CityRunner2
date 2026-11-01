@@ -38,7 +38,9 @@ re-check before submitting.
 ## 2. What is done (Claude, 11 October 2026; brought up to 1.2.2 on 30 October)
 
 - `android/` project (Capacitor 7.6.8), app id `uk.co.zinkin.cityrunner`,
-  version name 1.2.2 (as iOS), version code 1. Target and compile SDK 36; Android
+  version name 1.2.2 (as iOS), version code 2 (the first upload, as 1, was
+  refused: Play's automatic protection needs minimum API 24, so the minimum
+  is now 24, Android 7.0). Target and compile SDK 36; Android
   Gradle plugin 8.10.1 (the first that supports 36); Gradle 8.11.1, which
   needs **JDK 21** (`android/gradle/gradle-daemon-jvm.properties`).
 - Scripts: `npm run android:sync`, `android:sync:tester`, `android:open`.
