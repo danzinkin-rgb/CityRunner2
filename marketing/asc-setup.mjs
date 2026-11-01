@@ -48,8 +48,8 @@ for (const c of released) if (!FREE.includes(c.id)) (paidByRegion[c.region] ||= 
 
 // short store copy per pack (display name max 30, description max 55)
 const PACK_COPY = {
-  europe: ['Europe Pack', 'Unlock Rome and every new city in Europe.'],
-  'north-america': ['North America Pack', 'San Francisco and every new North American city.'],
+  europe: ['Europe Pack', 'Rome, Istanbul and Venice, plus new cities in Europe.'],
+  'north-america': ['North America Pack', 'San Francisco, Chicago, New Orleans, plus new cities.'],
   'mideast-africa': ['Middle East & Africa Pack', 'Marrakech, Cape Town and Zanzibar, plus new cities.'],
   'latin-america': ['Latin America Pack', 'Mexico City, Havana and Buenos Aires, plus new cities.'],
   'east-asia': ['East Asia Pack', 'Beijing, Seoul and Hanoi, plus every new city there.'],
@@ -81,6 +81,7 @@ async function upload(reservation, buf) {
 const md5 = (buf) => createHash('md5').update(buf).digest('hex');
 
 const todo = [];
+const byHand = [];   // approved items Apple only lets you edit on the website
 
 // ---- leaderboards and achievements for every released city ---------------------
 for (const c of released) {
@@ -153,7 +154,12 @@ for (const [region, pid] of Object.entries(PACKS)) {
     // too (Jerusalem left the Middle East & Africa pack when it became free).
     const [displayName, description] = PACK_COPY[region];
     const l10n = (await asc(`/v2/inAppPurchases/${existing.id}/inAppPurchaseLocalizations`)).data.find((l) => l.attributes.locale === 'en-GB');
-    if (l10n && (l10n.attributes.description !== description || l10n.attributes.name !== displayName)) todo.push([`update store description of ${pid}`, () =>
+    const stale = l10n && (l10n.attributes.description !== description || l10n.attributes.name !== displayName);
+    // Apple locks the name and description of an approved product (HTTP 409
+    // UNMODIFIABLE): they can only be changed on the App Store Connect
+    // website, and then go to review with the next app version.
+    if (stale && existing.attributes.state === 'APPROVED') byHand.push(`${pid}: set the en-GB description to "${description}"`);
+    else if (stale) todo.push([`update store description of ${pid}`, () =>
       asc(`/v1/inAppPurchaseLocalizations/${l10n.id}`, { method: 'PATCH', body: { data: { type: 'inAppPurchaseLocalizations', id: l10n.id, attributes: { name: displayName, description } } } })]);
     continue;
   }
@@ -207,6 +213,10 @@ async function finishPack(id, region, pid) {
 
 // ---- report, and apply ------------------------------------------------------------
 console.log(`${released.length} released cities; daily v${DAILY_V}; ${Object.keys(paidByRegion).length} regions with paid cities.`);
+if (byHand.length) {
+  console.log(`Edit by hand in App Store Connect (${byHand.length}):`);
+  for (const l of byHand) console.log(`  - ${l}`);
+}
 if (!todo.length) { console.log('Nothing missing.'); process.exit(0); }
 console.log(`${APPLY ? 'Creating' : 'Missing'} (${todo.length}):`);
 let failed = 0;
