@@ -43,7 +43,44 @@ export function createRenderer(container) {
   renderer.toneMappingExposure = 1.22;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   container.appendChild(renderer.domElement);
+  watchGpu(renderer);
   return renderer;
+}
+
+// What the graphics chip reports, shown at the foot of Settings so a tester
+// can screenshot it. Added for a Pixel 10 Pro XL (November 2026) whose run
+// drew pure white with the HUD fine on top; nothing is sent anywhere.
+export const gpuLog = { lost: 0, shaderErrors: [], sample: null };
+
+function watchGpu(renderer) {
+  renderer.domElement.addEventListener('webglcontextlost', () => { gpuLog.lost++; });
+  renderer.debug.onShaderError = (gl, program, vs, fs) => {
+    const msg = (gl.getProgramInfoLog(program) || gl.getShaderInfoLog(fs) || gl.getShaderInfoLog(vs) || 'shader error').trim();
+    if (gpuLog.shaderErrors.length < 3) gpuLog.shaderErrors.push(msg.slice(0, 120));
+  };
+}
+
+// Reads the centre and lower-middle pixels of the last frame (the canvas keeps
+// its drawing buffer). A white or black run frame says the 3D drew wrong.
+export function sampleFrame(renderer) {
+  const gl = renderer.getContext();
+  const w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, px = new Uint8Array(4);
+  const at = (x, y) => { gl.readPixels(x | 0, y | 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); return [...px.slice(0, 3)].join(','); };
+  gpuLog.sample = `${at(w / 2, h / 2)} / ${at(w / 2, h / 4)}`;
+}
+
+export function gpuReport(renderer) {
+  const gl = renderer.getContext();
+  const ext = gl.getExtension('WEBGL_debug_renderer_info');
+  const chip = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+  const lines = [
+    `Graphics: ${chip}`,
+    `WebGL ${renderer.capabilities.isWebGL2 ? 2 : 1}, precision ${renderer.capabilities.precision}, max texture ${renderer.capabilities.maxTextureSize}`,
+    `Run frame: ${gpuLog.sample || 'no run yet'}`,
+  ];
+  if (gpuLog.lost) lines.push(`Context lost ${gpuLog.lost}×`);
+  for (const e of gpuLog.shaderErrors) lines.push(`Shader: ${e}`);
+  return lines;
 }
 
 export function makeCamera() {

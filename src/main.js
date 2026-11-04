@@ -1,5 +1,5 @@
 import * as THREE from '../vendor/three.module.js';
-import { createRenderer, makeCamera, handleResize, dressScene, disposeTree } from './core/engine.js';
+import { createRenderer, makeCamera, handleResize, dressScene, disposeTree, sampleFrame, gpuReport } from './core/engine.js';
 import { createInput } from './core/input.js';
 import { sfx, startMusic, stopMusic, fadeOutMusic, prefs as audioPrefs, saveAudioPrefs } from './core/audio.js';
 import { LANDMARK_NAMES } from './cities/themes.js';
@@ -126,6 +126,7 @@ const camera = makeCamera();
 handleResize(renderer, camera);
 
 // ---------- game state ----------
+let gpuSampleAt = 0;         // performance.now() at which the run frame is sampled for Settings
 let state = 'menu';         // menu | run | puzzle | over | pwin
 let cityIdx = 0, level = 1;
 let scene = null, player = null, track = null, puzzle = null;
@@ -368,6 +369,7 @@ function doFade(fn) {
 
 // ---------- run mode ----------
 function startRun() {
+  gpuSampleAt = performance.now() + 2000;
   // Entitlement backstop, and the only one that covers every caller.
   // buildCitySelect() already refuses to start an unpaid run, but it is not the
   // only way in: startDaily() takes its city from the daily seed, and the
@@ -1303,6 +1305,7 @@ function renderSettings() {
   $('set-vol').value = Math.round(audioPrefs.volume * 100);
   $('set-name').textContent = getIdentity().name;
   $('set-version').textContent = `v${VERSION}`;
+  $('set-gpu').textContent = gpuReport(renderer).join('\n');
   renderPurchaseRows();
   syncSheetScroll();   // a reroll or a restore message changes the height
 }
@@ -1652,6 +1655,8 @@ function frame() {
   }
 
   renderer.render(scene, camera);
+  // Two seconds into each run, note what the frame looks like for Settings.
+  if (state === 'run' && gpuSampleAt && performance.now() > gpuSampleAt) { gpuSampleAt = 0; sampleFrame(renderer); }
 }
 
 initNative();
