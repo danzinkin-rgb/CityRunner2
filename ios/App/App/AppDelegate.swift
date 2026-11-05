@@ -4,7 +4,9 @@ import Capacitor
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-    var window: UIWindow?
+    // The window belongs to SceneDelegate (see SceneDelegate.swift). With the
+    // scene life cycle the URL and activity methods below are no longer
+    // called by iOS; SceneDelegate forwards those to Capacitor instead.
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
