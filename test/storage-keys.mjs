@@ -53,7 +53,7 @@ const check = (ok, label, detail = '') => {
 // is meant to be edited by hand — that edit is the moment somebody has to
 // decide whether the key is personal data. Making it painless would defeat it.
 const EXPECT_ERASED = ['cityrunner2', 'cityrunner2.ghosts', 'cityrunner2.identity', 'cityrunner2.lifetime', 'cityrunner2.scores'];
-const EXPECT_KEPT = ['cityrunner2.audio', 'cityrunner2.ent'];
+const EXPECT_KEPT = ['cityrunner2.audio', 'cityrunner2.ent', 'cityrunner2.gfx'];
 
 // =============================================================================
 // PART A — no module may spell a storage key itself

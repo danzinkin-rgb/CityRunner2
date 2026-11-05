@@ -1,5 +1,5 @@
 import * as THREE from '../vendor/three.module.js';
-import { createRenderer, makeCamera, handleResize, dressScene, disposeTree, sampleFrame, gpuReport, gpuEvents } from './core/engine.js';
+import { createRenderer, makeCamera, handleResize, dressScene, disposeTree, sampleFrame, gpuReport, gpuEvents, gfxRunStarted, gfxRunOK } from './core/engine.js';
 import { createInput } from './core/input.js';
 import { sfx, startMusic, stopMusic, fadeOutMusic, prefs as audioPrefs, saveAudioPrefs } from './core/audio.js';
 import { LANDMARK_NAMES } from './cities/themes.js';
@@ -387,6 +387,7 @@ function startRun() {
   // hidden after a daily). One run a day in a locked city is a taster, and it
   // ends there.
   if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall('menu', city().id); return; }
+  gfxRunStarted();
   // Racing your best: a street you have finished before replays the course
   // of your best run on it, with that run beside you as a ghost. Never on the
   // daily (one course for everyone, and not yours to replay).
@@ -1669,7 +1670,7 @@ function frame() {
 
   renderer.render(scene, camera);
   // Two seconds into each run, note what the frame looks like for Settings.
-  if (state === 'run' && gpuSampleAt && performance.now() > gpuSampleAt) { gpuSampleAt = 0; sampleFrame(renderer); }
+  if (state === 'run' && gpuSampleAt && performance.now() > gpuSampleAt) { gpuSampleAt = 0; sampleFrame(renderer); gfxRunOK(); }
 }
 
 initNative();

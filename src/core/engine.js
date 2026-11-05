@@ -1,6 +1,7 @@
 import * as THREE from '../../vendor/three.module.js';
 import { DEBUG_HOOKS } from './debug.js';
 import { nativePlatform } from './native.js';
+import { STORAGE } from './storage-keys.js';
 
 // Graphics budget. The Android app gets a tighter graphics-memory allowance
 // than the Chrome browser on the same phone: a Pixel 10 Pro XL (November
@@ -11,8 +12,36 @@ import { nativePlatform } from './native.js';
 // A Galaxy A17 then stuttered and ran short of memory too, so lite also means
 // half-size facade textures, five chunks ahead instead of seven (track.js) and
 // shadows from large objects only. iOS and the web are unchanged.
-export const GFX = { lite: nativePlatform() === 'android' };
-const pixelRatio = () => Math.min(window.devicePixelRatio, GFX.lite ? 1.5 : 2);
+export const GFX = { lite: nativePlatform() === 'android', level: 0, why: '' };
+
+// Safe mode, a ladder saved per device. Even lite, the Pixel 10 Pro XL lost
+// its context at the start of every run, and sometimes the whole app closed
+// (November 2026); the game's own reload then went straight back into the
+// same crash. Each failure now steps the device down for good:
+//   level 1: no shadows       level 2: also drawn at 1x resolution
+// A failure is a lost context, or a run that started and never reached two
+// seconds of drawing (the app died, so nothing else could record it): see
+// gfxRunStarted / gfxRunOK, called by main.js.
+const GFX_MAX = 2;
+let gfxSaved = {};
+try { gfxSaved = JSON.parse(localStorage.getItem(STORAGE.GRAPHICS) || '{}') || {}; } catch { /* storage unavailable: full graphics */ }
+GFX.level = Math.min(GFX_MAX, gfxSaved.level | 0);
+GFX.why = gfxSaved.why || '';
+const saveGfx = (runOpen) => {
+  try { localStorage.setItem(STORAGE.GRAPHICS, JSON.stringify({ level: GFX.level, why: GFX.why, runOpen })); } catch { /* best effort */ }
+};
+const stepDown = (why) => {
+  if (GFX.level < GFX_MAX) GFX.level++;
+  GFX.why = why;
+  saveGfx(false);
+};
+// Only the native app: a page in a browser that is closed or navigated mid-run
+// (every test suite does it) is not a crash.
+if (gfxSaved.runOpen && nativePlatform() !== 'web') stepDown('the app closed during a run');
+export const gfxRunStarted = () => saveGfx(true);
+export const gfxRunOK = () => saveGfx(false);
+
+const pixelRatio = () => Math.min(window.devicePixelRatio, GFX.level >= 2 ? 1 : GFX.lite ? 1.5 : 2);
 
 // ---------- freeing GPU memory ----------
 // Every texture slot any material in the game uses. There is one list, and
@@ -53,7 +82,7 @@ export function createRenderer(container) {
   const renderer = new THREE.WebGLRenderer({ antialias: !GFX.lite, powerPreference: 'high-performance', preserveDrawingBuffer: DEBUG_HOOKS });
   renderer.setPixelRatio(pixelRatio());
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = GFX.level < 1;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.22;
@@ -74,7 +103,7 @@ export const gpuLog = { lost: 0, shaderErrors: [], sample: null };
 export const gpuEvents = { onLost: null, onRestored: null };
 
 function watchGpu(renderer) {
-  renderer.domElement.addEventListener('webglcontextlost', () => { gpuLog.lost++; GFX.lite = true; gpuEvents.onLost?.(); });
+  renderer.domElement.addEventListener('webglcontextlost', () => { gpuLog.lost++; GFX.lite = true; stepDown('graphics lost'); gpuEvents.onLost?.(); });
   renderer.domElement.addEventListener('webglcontextrestored', () => { gpuLog.restored = (gpuLog.restored || 0) + 1; gpuEvents.onRestored?.(); });
   renderer.debug.onShaderError = (gl, program, vs, fs) => {
     const msg = (gl.getProgramInfoLog(program) || gl.getShaderInfoLog(fs) || gl.getShaderInfoLog(vs) || 'shader error').trim();
@@ -100,6 +129,7 @@ export function gpuReport(renderer) {
     `WebGL ${renderer.capabilities.isWebGL2 ? 2 : 1}, precision ${renderer.capabilities.precision}, max texture ${renderer.capabilities.maxTextureSize}`,
     `Run frame: ${gpuLog.sample || 'no run yet'}`,
   ];
+  if (GFX.level) lines.push(`Safe mode ${GFX.level} (${GFX.level >= 2 ? 'no shadows, 1x' : 'no shadows'}): ${GFX.why}`);
   if (gpuLog.lost) lines.push(`Context lost ${gpuLog.lost}×, restored ${gpuLog.restored || 0}×`);
   for (const e of gpuLog.shaderErrors) lines.push(`Shader: ${e}`);
   return lines;
@@ -205,7 +235,7 @@ export function dressScene(scene, theme) {
 
   const sun = new THREE.DirectionalLight(theme.sun.color, theme.sun.intensity);
   sun.position.set(...theme.sun.pos);
-  sun.castShadow = true;
+  sun.castShadow = GFX.level < 1;
   sun.shadow.mapSize.setScalar(GFX.lite ? 1024 : 2048);
   sun.shadow.camera.near = 1; sun.shadow.camera.far = 220;
   const s = 40;

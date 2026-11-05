@@ -30,6 +30,10 @@
  *     personal data. They are not named in the confirmation text, they say
  *     nothing about who the player is, and silently un-muting the game for
  *     someone who muted it is a bug, not a privacy win.
+ *   - the graphics safe-mode level records that this phone's graphics failed
+ *     with shadows on (or at full resolution). It is about the device, not
+ *     the player, and erasing it would send the player straight back into
+ *     the crash it exists to avoid.
  *
  * If a key ever holds something a regulator would call personal data, it goes
  * in ERASED. The KEPT list is for device state, and it needs a reason in
@@ -49,6 +53,8 @@ export const STORAGE = {
   ENTITLEMENTS: 'cityrunner2.ent',
   /** Music/sfx/volume preferences. src/core/audio.js */
   AUDIO: 'cityrunner2.audio',
+  /** Graphics safe-mode level for this device, after a lost context or a crash mid-run. src/core/engine.js */
+  GRAPHICS: 'cityrunner2.gfx',
   /** Best run per street, replayed as a ghost: moves, scores, seed. src/run/ghost.js */
   GHOSTS: 'cityrunner2.ghosts',
 };
@@ -57,7 +63,7 @@ export const STORAGE = {
 export const ERASED_KEYS = [STORAGE.IDENTITY, STORAGE.SAVE, STORAGE.SCORES, STORAGE.LIFETIME_SCORE, STORAGE.GHOSTS];
 
 /** Deliberately survives eraseAllData(). Each entry is justified above. */
-export const KEPT_KEYS = [STORAGE.ENTITLEMENTS, STORAGE.AUDIO];
+export const KEPT_KEYS = [STORAGE.ENTITLEMENTS, STORAGE.AUDIO, STORAGE.GRAPHICS];
 
 /** Every key, for tests that need to assert the two lists are exhaustive. */
 export const ALL_KEYS = [...ERASED_KEYS, ...KEPT_KEYS];
