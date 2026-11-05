@@ -140,6 +140,11 @@ async function turnCheck(page) {
     }, { order: next[0] });
     await page.waitForTimeout(700);
   }
+  // Every piece sent home above must have landed: one still in the air lands
+  // during the drag below and raises placedCount, which reads as the turned
+  // piece being accepted. A fixed wait was enough until parked layouts changed
+  // (small pieces park larger, November 2026) and a flight ran longer.
+  await page.waitForFunction(() => !window.__cr.puzzle.flying.length, null, { timeout: 5000 });
   let turnRefused = null, turnedThenPlaced = null;
   for (const order of await candidates(page, 'p.pickable(it) && it.turns === 1')) {
     let loc = await page.evaluate(LOCATE, { order });

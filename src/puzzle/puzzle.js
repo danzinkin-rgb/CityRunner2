@@ -1810,9 +1810,16 @@ function vExtent(d) {
 // parkK shrinks every parked piece on a crowded build, so thirty-odd pieces
 // can lie round the plaza without stacking; set per puzzle (only one exists
 // at a time) from the number of loose pieces.
+//
+// Small pieces park LARGER, up to twice size, so none is under ~2.4 m across
+// while it waits (tester feedback, November 2026: spire tips were hard to
+// see). They are carried and placed at true size: see beginDrag.
+const TOUCH_SLOP = 22;   // px: with the piece itself, about a 44 pt touch target
 let parkK = 1;
 function parkScale(d) {
-  return Math.min(1, Math.max(0.4, 5.5 / Math.max(...effSize(d)))) * parkK;
+  const m = Math.max(...effSize(d));
+  const up = m < 2.4 ? Math.min(2, 2.4 / m) : 1;
+  return Math.min(up, Math.max(0.4, 5.5 / m)) * parkK;
 }
 
 // Can this piece look wrong when turned a quarter? Round and square-plan
@@ -2585,38 +2592,7 @@ export class Puzzle {
 
   tryPick(nx, ny) {
     if (this.done || this.failed) return;
-    this.raycaster.setFromCamera({ x: nx, y: ny }, this.camera);
-    // Missing pieces are hidden, and three's raycaster does not skip hidden
-    // meshes, so they have to be left out here explicitly.
-    const meshes = this.items.filter((it) => !it.placed && !it.missing && !this.flying.includes(it)).map((it) => it.mesh);
-    const hits = this.raycaster.intersectObjects(meshes, true);
-    if (!hits.length) return;
-
-    // Walk the whole ray and take the first PICKABLE piece, rather than
-    // whatever happens to be nearest.
-    //
-    // Scattering guards against the frame edges and the monument footprint,
-    // but never against other loose pieces, so a slab from an upper course can
-    // sit squarely in front of a small piece from the course below. Taking
-    // hits[0] made that piece untappable through every one of its pixels --
-    // and because pickable() is strict bottom-up, the only thing that could
-    // uncover it was the very piece you are not allowed to touch yet. That is
-    // a soft-lock, not an annoyance: the camera does not orbit during play and
-    // nothing reshuffles, so the board simply runs out the clock. Simulating
-    // every monument to completion found it on the Chrysler Building and the
-    // Trevi Fountain, under both greedy and optimal play.
-    //
-    // Reaching past a piece the player can see is safe here precisely because
-    // it is unpickable: tapping it could never have done anything but shake.
-    let item = null, front = null;
-    for (const hit of hits) {
-      let obj = hit.object;
-      while (obj && !meshes.includes(obj)) obj = obj.parent;
-      const cand = obj && this.items.find((it) => it.mesh === obj);
-      if (!cand) continue;
-      if (!front) front = cand;
-      if (this.pickable(cand)) { item = cand; break; }
-    }
+    const { item, front } = this.pieceAt(nx, ny);
     if (!item) {
       // nothing pickable anywhere along the ray -- keep the "not this course
       // yet" feedback on the piece the finger actually landed on
@@ -2636,18 +2612,65 @@ export class Puzzle {
   // the same ray walk as tryPick, so reachability is identical.
   hitTest(nx, ny) {
     if (this.done || this.failed) return null;
+    const { item, front } = this.pieceAt(nx, ny);
+    return item || front;
+  }
+
+  // The piece under the finger, for both tap and drag: `item` is the piece
+  // to move, `front` the nearest piece actually touched (for the "not yet"
+  // shake).
+  //
+  // First the ray, walked past unpickable pieces. Scattering guards against
+  // the frame edges and the monument footprint, but never against other
+  // loose pieces, so a slab from an upper course can sit squarely in front of
+  // a small piece from the course below. Taking the nearest hit made that
+  // piece untappable through every one of its pixels -- and because
+  // pickable() is strict bottom-up, the only thing that could uncover it was
+  // the very piece you are not allowed to touch yet. That is a soft-lock, not
+  // an annoyance: simulating every monument to completion found it on the
+  // Chrysler Building and the Trevi Fountain. Reaching past a piece the
+  // player can see is safe precisely because it is unpickable.
+  //
+  // Then, if the ray found nothing to move, the nearest pickable piece whose
+  // outline on screen contains the finger or lies within TOUCH_SLOP px of it.
+  // A spire tip is a few pixels wide and an arch is mostly hole, so an exact
+  // hit was hard or impossible (tester feedback, November 2026: bridge
+  // arches "very hard to pick up").
+  pieceAt(nx, ny) {
     this.raycaster.setFromCamera({ x: nx, y: ny }, this.camera);
-    const meshes = this.items.filter((it) => !it.placed && !it.missing && !this.flying.includes(it)).map((it) => it.mesh);
+    // Missing pieces are hidden, and three's raycaster does not skip hidden
+    // meshes, so they have to be left out here explicitly.
+    const loose = this.items.filter((it) => !it.placed && !it.missing && !this.flying.includes(it));
+    const meshes = loose.map((it) => it.mesh);
     let front = null;
     for (const hit of this.raycaster.intersectObjects(meshes, true)) {
       let obj = hit.object;
       while (obj && !meshes.includes(obj)) obj = obj.parent;
-      const cand = obj && this.items.find((it) => it.mesh === obj);
+      const cand = obj && loose.find((it) => it.mesh === obj);
       if (!cand) continue;
       if (!front) front = cand;
-      if (this.pickable(cand)) return cand;
+      if (this.pickable(cand)) return { item: cand, front };
     }
-    return front;
+    const W = window.innerWidth, H = window.innerHeight;
+    const fx = (nx + 1) / 2 * W, fy = (1 - ny) / 2 * H;
+    const box = new THREE.Box3(), v = new THREE.Vector3();
+    let item = null, bestD = TOUCH_SLOP, bestArea = Infinity;
+    for (const it of loose) {
+      if (!this.pickable(it)) continue;
+      box.setFromObject(it.mesh);
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (let k = 0; k < 8; k++) {
+        v.set(k & 1 ? box.max.x : box.min.x, k & 2 ? box.max.y : box.min.y, k & 4 ? box.max.z : box.min.z).project(this.camera);
+        const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H;
+        x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy);
+      }
+      const d = Math.hypot(Math.max(x0 - fx, 0, fx - x1), Math.max(y0 - fy, 0, fy - y1));
+      const area = (x1 - x0) * (y1 - y0);
+      // Inside two outlines (a small piece in front of a big one's box), the
+      // smaller is the one meant.
+      if (d < bestD || (d === bestD && area < bestArea)) { item = it; bestD = d; bestArea = area; }
+    }
+    return { item, front };
   }
 
   // Where the finger is, on a plane facing the camera through the piece's
@@ -2672,7 +2695,8 @@ export class Puzzle {
     }
     // A Louvre wing at full size, carried under the finger, covers the very
     // outline it is meant to be dropped on. Carried pieces are capped at 5m.
-    item.mesh.scale.setScalar(Math.min(parkScale(item.def), 5 / Math.max(...effSize(item.def))));
+    // A small piece parked large is carried at true size, to match its outline.
+    item.mesh.scale.setScalar(Math.min(parkScale(item.def), 5 / Math.max(...effSize(item.def)), 1));
     resaturate(item.mesh);
     forEachMat(item.mesh, (m) => { m.emissiveIntensity = Math.max(m.userData.baseEm || 0, 0.35); });
   }
