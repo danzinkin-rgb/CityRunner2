@@ -72,11 +72,34 @@ await ctx.addInitScript(() => {
   const realResume = Real.prototype.resume;
   Real.prototype.resume = function (...a) {
     window.__audioResumes.push(during());
-    return realResume.apply(this, a);
+    const r = realResume.apply(this, a);
+    // ?stuck with a REAL context (WebKit on the Mac): the stand-in above is
+    // not used there, so make the first context report 'interrupted' after
+    // resume() all the same. Without this the recovery check below depended
+    // on whether the Mac's audio happened to start, and failed when it did.
+    if (window.__stuckLeft > 0 && Real !== FakeAC) {
+      Object.defineProperty(this, 'state', { value: 'interrupted', configurable: true });
+    }
+    return r;
   };
+  if (Real !== FakeAC) {
+    const realClose = Real.prototype.close;
+    Real.prototype.close = function (...a) {
+      if (window.__stuckLeft > 0) window.__stuckLeft--;
+      Object.defineProperty(this, 'state', { value: 'closed', configurable: true });
+      return realClose.apply(this, a);
+    };
+  }
   function Wrapped(...args) {
     window.__audioBirths.push(during());
-    return new Real(...args);
+    const c = new Real(...args);
+    // ?stuck with a real context: start it 'suspended', as iOS does, so the
+    // game calls resume() and the wrapper above can leave it stuck. Chromium
+    // would otherwise start it running and skip resume() altogether.
+    if (window.__stuckLeft > 0 && Real !== FakeAC) {
+      Object.defineProperty(c, 'state', { value: 'suspended', configurable: true });
+    }
+    return c;
   }
   Wrapped.prototype = Real.prototype;
   window.AudioContext = Wrapped;
@@ -114,8 +137,8 @@ check(resumes.length > 0 && GESTURES.has(resumes[0]),
 check(!errors.length, 'no page errors', errors[0] || '');
 
 // ---- recovery: a context stuck after resume() is rebuilt on the next tap
-// (only meaningful with the stand-in: real WebKit here has no Web Audio to
-// get stuck, and on the Mac the real one is wrapped, not faked)
+// (the stand-in gets stuck by itself; a real context, on the Mac, is made to
+// report 'interrupted' by the wrapper above)
 {
   const p2 = await ctx.newPage();
   await p2.goto(`${BASE}/?stuck`, { waitUntil: 'load' });
