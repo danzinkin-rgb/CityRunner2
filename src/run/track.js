@@ -1,6 +1,6 @@
 import * as THREE from '../../vendor/three.module.js';
 import { LANES, JUMP_V, GRAVITY } from './player.js';
-import { makeSky, disposeTree } from '../core/engine.js';
+import { makeSky, disposeTree, GFX } from '../core/engine.js';
 
 // Which version of course generation this is. A seed builds the same street
 // only while this stays the same, so saved ghosts (src/run/ghost.js) carry it
@@ -25,7 +25,7 @@ import { MECHANICS } from './mechanics.js';
 import { HAZARDS, makeHazard, stepHazard, MARK_GEO } from './hazards.js';
 
 const CHUNK_LEN = 36;
-const CHUNKS = 7;          // visible chunks ahead
+const CHUNKS = GFX.lite ? 5 : 7;   // visible chunks ahead (fog is thicker on lite: see the constructor)
 const ROAD_W = 8.6;
 
 // ---- overhead dressing, tuned for a 9:19.5 portrait frame ----
@@ -179,6 +179,7 @@ export class Track {
     this.group = new THREE.Group();
     scene.add(this.group);
     this.chunks = [];
+    this.pending = [];             // chunks still being built, a few steps a frame
     this.obstacles = [];           // live obstacle records
     this.coins = [];
     this.distance = 0;
@@ -196,6 +197,10 @@ export class Track {
     this.lastBannerChunk = -99;    // spacing guard for road-spanning boards
 
     this.applyStreetMood(scene, theme);
+    // Five chunks instead of seven end the street 72 m sooner; thicker fog
+    // hides the end the same way. The scene is new for every street, so this
+    // never compounds.
+    if (GFX.lite && scene.fog) scene.fog.density *= 7 / 5;
     // one accent material for every barrier/beam on this street
     this.accentMat = new THREE.MeshStandardMaterial({ color: this.theme.accent, roughness: 0.52 });
 
@@ -246,11 +251,27 @@ export class Track {
     }
   }
 
+  // Builds a chunk all at once: the opening street, where nothing is moving
+  // yet. While running, update() builds through the same steps a few at a
+  // time instead (see buildPending).
   spawnChunk(z, safe) {
+    for (const _ of this.chunkSteps(z, safe));
+  }
+
+  // The chunk is built in steps, yielding after each building and each side
+  // of the street. A whole chunk in one frame took ~8 ms on a desktop and so
+  // several frames on a budget phone, every chunk, i.e. every ~2 s: the
+  // "consistent stutter every 2 seconds" a Galaxy A17 tester reported
+  // (November 2026). Chunks are built strictly one after another and nothing
+  // else draws from the seeded stream, so the course is the same as building
+  // each in one go.
+  *chunkSteps(z, safe) {
     const t = this.theme;
     const g = new THREE.Group();
     g.position.z = z;
     const nChunk = this.chunkCount++;
+    this.group.add(g);
+    this.chunks.push(g);
 
     // road
     const road = new THREE.Mesh(this.roadGeo, this.roadMat);
@@ -342,6 +363,7 @@ export class Track {
             g.add(b2);
           }
           bz += w + (t.facade === 'georgian' ? 2.5 : 0.5);
+          yield;
         }
       }
 
@@ -431,6 +453,7 @@ export class Track {
         if (kind === 'easel') p.rotation.y = rand() * Math.PI * 2;
         g.add(p);
       }
+      yield;
     }
 
     // ---- road-wide + one-off street set pieces ----
@@ -525,10 +548,31 @@ export class Track {
       g.add(span);
     }
 
+    yield;
+    // Lite: only large scenery casts a shadow. Lamps, signs, windows and
+    // props were several hundred casters a frame, each drawn again into the
+    // shadow map. Obstacles are added after this and keep theirs, since
+    // their shadows help judge where they are.
+    if (GFX.lite) {
+      const v = new THREE.Vector3();
+      g.updateMatrixWorld(true);
+      g.traverse((n) => {
+        if (!n.isMesh || !n.castShadow) return;
+        if (!n.geometry.boundingSphere) n.geometry.computeBoundingSphere();
+        if (n.geometry.boundingSphere.radius * n.getWorldScale(v).x < 2) n.castShadow = false;
+      });
+    }
     if (!safe) this.populateObstacles(g, z);
+  }
 
-    this.group.add(g);
-    this.chunks.push(g);
+  // Runs queued chunk steps for at most ~2 ms a frame, oldest chunk first.
+  // A queued chunk is five or more chunks ahead, deep in the fog, so it has
+  // seconds to finish; `all` finishes everything (a chunk about to be seen).
+  buildPending(all = false) {
+    const end = performance.now() + 2;
+    while (this.pending.length && (all || performance.now() < end)) {
+      if (this.pending[0].next().done) this.pending.shift();
+    }
   }
 
   populateObstacles(chunkGroup, chunkZ) {
@@ -895,8 +939,11 @@ export class Track {
       this.group.remove(old);
       disposeGroup(old);
       const lastZ = this.chunks[this.chunks.length - 1].position.z;
-      this.spawnChunk(lastZ - CHUNK_LEN, false);
+      const steps = this.chunkSteps(lastZ - CHUNK_LEN, false);
+      steps.next();                 // places the chunk, so the next lastZ is right
+      this.pending.push(steps);
     }
+    this.buildPending();
 
     const hb = player.hitbox();
 

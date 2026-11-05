@@ -7,9 +7,12 @@ import { nativePlatform } from './native.js';
 // 2026) lost its WebGL context at the start of every run, leaving the street
 // white, while the web build played fine in Chrome. So on Android the
 // renderer drops antialiasing (four samples a pixel, the largest single
-// buffer) and the sun's shadow map is halved. iOS and the web are unchanged.
+// buffer), draws at 1.5x rather than 2x, and the sun's shadow map is halved.
+// A Galaxy A17 then stuttered and ran short of memory too, so lite also means
+// half-size facade textures, five chunks ahead instead of seven (track.js) and
+// shadows from large objects only. iOS and the web are unchanged.
 export const GFX = { lite: nativePlatform() === 'android' };
-const pixelRatio = () => Math.min(window.devicePixelRatio, 2);
+const pixelRatio = () => Math.min(window.devicePixelRatio, GFX.lite ? 1.5 : 2);
 
 // ---------- freeing GPU memory ----------
 // Every texture slot any material in the game uses. There is one list, and
@@ -214,15 +217,20 @@ export function dressScene(scene, theme) {
   return { sun, hemi };
 }
 
-// Generic canvas-texture helper used by the city builders.
-export function canvasTexture(w, h, draw, repeatX = 1, repeatY = 1) {
+// Generic canvas-texture helper used by the city builders. `shrink` marks a
+// texture that may be drawn at half size on a lite device: the draw function
+// still sees the full w x h, scaled onto the smaller canvas.
+export function canvasTexture(w, h, draw, repeatX = 1, repeatY = 1, shrink = false) {
+  const k = shrink && GFX.lite ? 0.5 : 1;
   const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  draw(c.getContext('2d'), w, h);
+  c.width = w * k; c.height = h * k;
+  const ctx = c.getContext('2d');
+  ctx.scale(k, k);
+  draw(ctx, w, h);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(repeatX, repeatY);
-  tex.anisotropy = 8;
+  tex.anisotropy = GFX.lite ? 2 : 8;
   return tex;
 }

@@ -590,7 +590,7 @@ export function facadeTexture(theme, baseColor, floors = 10, cols = 6, variant =
 
       g.fillStyle = 'rgba(0,0,0,.3)';
       g.fillRect(0, H - 4, W, 4);
-    })
+    }, 1, 1, true)
   );
 }
 
@@ -1740,7 +1740,7 @@ function villaTexture(theme, color, brick) {
       g.beginPath(); g.arc(128, 150, 24, Math.PI, 0); g.fill();
       g.fillStyle = '#e8c878'; g.beginPath(); g.arc(146, 205, 3, 0, 7); g.fill();
       g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(94, 246, 68, 8);
-    })
+    }, 1, 1, true)
   );
 }
 
