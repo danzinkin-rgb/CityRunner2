@@ -1,5 +1,5 @@
 import * as THREE from '../vendor/three.module.js';
-import { createRenderer, makeCamera, handleResize, dressScene, disposeTree, sampleFrame, gpuReport } from './core/engine.js';
+import { createRenderer, makeCamera, handleResize, dressScene, disposeTree, sampleFrame, gpuReport, gpuEvents } from './core/engine.js';
 import { createInput } from './core/input.js';
 import { sfx, startMusic, stopMusic, fadeOutMusic, prefs as audioPrefs, saveAudioPrefs } from './core/audio.js';
 import { LANDMARK_NAMES } from './cities/themes.js';
@@ -1441,6 +1441,19 @@ applyTouchButtons();
 
 // ---------- pause ----------
 let pausedFrom = null;
+// The phone took the graphics away (see GFX in src/core/engine.js). Pause so
+// the run doesn't carry on behind a white screen; three.js rebuilds when the
+// browser restores the context, and the player resumes from the pause screen.
+// If it never comes back, reloading is the only way to draw again: the save is
+// already on disk, and only the run in progress is lost.
+let gpuReloadTimer = 0;
+gpuEvents.onLost = () => {
+  pauseGame();
+  clearTimeout(gpuReloadTimer);
+  gpuReloadTimer = setTimeout(() => location.reload(), 5000);
+};
+gpuEvents.onRestored = () => clearTimeout(gpuReloadTimer);
+
 function pauseGame() {
   if (state !== 'run' && state !== 'puzzle') return;
   pausedFrom = state;

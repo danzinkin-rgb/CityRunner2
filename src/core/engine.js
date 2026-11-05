@@ -1,4 +1,15 @@
 import * as THREE from '../../vendor/three.module.js';
+import { DEBUG_HOOKS } from './debug.js';
+import { nativePlatform } from './native.js';
+
+// Graphics budget. The Android app gets a tighter graphics-memory allowance
+// than the Chrome browser on the same phone: a Pixel 10 Pro XL (November
+// 2026) lost its WebGL context at the start of every run, leaving the street
+// white, while the web build played fine in Chrome. So on Android the
+// renderer drops antialiasing (four samples a pixel, the largest single
+// buffer) and the sun's shadow map is halved. iOS and the web are unchanged.
+export const GFX = { lite: nativePlatform() === 'android' };
+const pixelRatio = () => Math.min(window.devicePixelRatio, 2);
 
 // ---------- freeing GPU memory ----------
 // Every texture slot any material in the game uses. There is one list, and
@@ -34,8 +45,10 @@ export function disposeTree(root, { keepGeo, keepTex, materials = true } = {}) {
 
 // Renderer + per-city scene dressing (sky dome, fog, lights, ground haze).
 export function createRenderer(container) {
-  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  // preserveDrawingBuffer keeps a second copy of every frame; only the
+  // screenshot tools, which copy the canvas between frames, need it.
+  const renderer = new THREE.WebGLRenderer({ antialias: !GFX.lite, powerPreference: 'high-performance', preserveDrawingBuffer: DEBUG_HOOKS });
+  renderer.setPixelRatio(pixelRatio());
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -52,8 +65,14 @@ export function createRenderer(container) {
 // drew pure white with the HUD fine on top; nothing is sent anywhere.
 export const gpuLog = { lost: 0, shaderErrors: [], sample: null };
 
+// Three.js asks the browser to restore a lost context and rebuilds its own
+// state when it comes back; the game only has to pause meanwhile, and from
+// then on use the smaller shadow map for every street it builds.
+export const gpuEvents = { onLost: null, onRestored: null };
+
 function watchGpu(renderer) {
-  renderer.domElement.addEventListener('webglcontextlost', () => { gpuLog.lost++; });
+  renderer.domElement.addEventListener('webglcontextlost', () => { gpuLog.lost++; GFX.lite = true; gpuEvents.onLost?.(); });
+  renderer.domElement.addEventListener('webglcontextrestored', () => { gpuLog.restored = (gpuLog.restored || 0) + 1; gpuEvents.onRestored?.(); });
   renderer.debug.onShaderError = (gl, program, vs, fs) => {
     const msg = (gl.getProgramInfoLog(program) || gl.getShaderInfoLog(fs) || gl.getShaderInfoLog(vs) || 'shader error').trim();
     if (gpuLog.shaderErrors.length < 3) gpuLog.shaderErrors.push(msg.slice(0, 120));
@@ -74,11 +93,11 @@ export function gpuReport(renderer) {
   const ext = gl.getExtension('WEBGL_debug_renderer_info');
   const chip = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
   const lines = [
-    `Graphics: ${chip}`,
+    `Graphics: ${chip || 'unavailable (context lost)'}${GFX.lite ? ', lite' : ''}`,
     `WebGL ${renderer.capabilities.isWebGL2 ? 2 : 1}, precision ${renderer.capabilities.precision}, max texture ${renderer.capabilities.maxTextureSize}`,
     `Run frame: ${gpuLog.sample || 'no run yet'}`,
   ];
-  if (gpuLog.lost) lines.push(`Context lost ${gpuLog.lost}×`);
+  if (gpuLog.lost) lines.push(`Context lost ${gpuLog.lost}×, restored ${gpuLog.restored || 0}×`);
   for (const e of gpuLog.shaderErrors) lines.push(`Shader: ${e}`);
   return lines;
 }
@@ -94,7 +113,7 @@ export function handleResize(renderer, camera) {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     // Re-read DPR: it changes when a phone rotates or a window moves screens.
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(pixelRatio());
     renderer.setSize(window.innerWidth, window.innerHeight);
   };
   window.addEventListener('resize', apply);
@@ -184,7 +203,7 @@ export function dressScene(scene, theme) {
   const sun = new THREE.DirectionalLight(theme.sun.color, theme.sun.intensity);
   sun.position.set(...theme.sun.pos);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.setScalar(GFX.lite ? 1024 : 2048);
   sun.shadow.camera.near = 1; sun.shadow.camera.far = 220;
   const s = 40;
   sun.shadow.camera.left = -s; sun.shadow.camera.right = s;
