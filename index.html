@@ -107,6 +107,24 @@
   .wn-note{font-size:13px;opacity:.75}
   @media (max-height:640px){#whats-new .mh-card{padding:14px 16px}#whats-new .mh-card p{font-size:13.5px;line-height:1.35;margin:4px 0 6px}
     .wn-head{margin-top:10px}#whats-new .mode-pick{margin:6px 0 2px}}
+  /* RUN and BUILD side by side. Narrower padding than a lone .btn so the pair
+     fits a 320px screen. */
+  .play-row{display:flex;gap:12px;justify-content:center;flex-wrap:nowrap}
+  .play-row .btn{padding-left:36px;padding-right:36px}
+  @media (max-width:380px){.play-row .btn{padding-left:24px;padding-right:24px}}
+  /* Build mode's monument picker: a row per city, its three monuments as
+     tiles. A city not owned is dimmed and opens the purchase screen. */
+  .bm-group{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold);margin:16px 0 6px;text-align:left}
+  .bm-city{display:flex;align-items:center;gap:8px;margin:6px 0}
+  .bm-name{flex:0 0 74px;font-size:12px;font-weight:800;text-align:left;line-height:1.2}
+  .bm-tiles{display:flex;gap:6px;flex:1;min-width:0}
+  .bm-tile{flex:1 1 0;min-width:0;border:1px solid rgba(255,255,255,.16);border-radius:10px;background:rgba(255,255,255,.06);
+    padding:4px 2px 3px;cursor:pointer;font:inherit;color:inherit;text-align:center}
+  .bm-tile img{width:100%;height:44px;object-fit:contain;display:block}
+  .bm-tile .bm-t{font-size:10px;line-height:1.2;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bm-tile .bm-best{font-size:9px;opacity:.7}
+  .bm-city.locked{opacity:.4}
+  .bm-city.locked .bm-tile{cursor:pointer}
   .mode-pick{display:flex;gap:10px;justify-content:center;margin:10px 0 4px}
   .mode-pick .btn{font-size:14px;padding:10px 18px;min-height:44px;opacity:.55}
   .mode-pick .btn.on{opacity:1}
@@ -312,7 +330,7 @@
      cards use, and they come up to full strength as the menu goes live.
      Opacity only, so nothing here can move the layout the rest of this works
      to keep still. */
-  #city-select[aria-busy] ~ #btn-play,
+  #city-select[aria-busy] ~ .play-row .btn,
   #city-select[aria-busy] ~ #daily-card{opacity:.45;pointer-events:none}
   /* Locked by PURCHASE, not by progression — deliberately not dimmed like
      .locked above. A city you could buy is merchandise and should look
@@ -1061,7 +1079,12 @@
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
     <div class="city-card skel" aria-hidden="true"><div class="thumb"></div><div class="name">&nbsp;</div><div class="stars">&nbsp;</div></div>
   </div>
-  <button class="btn" id="btn-play">RUN</button>
+  <!-- BUILD sits beside RUN, not under it: the menu's height is budgeted to
+       the pixel on small iPhones (test/menu-fit.mjs). -->
+  <div class="play-row">
+    <button class="btn" id="btn-play">RUN</button>
+    <button class="btn" id="btn-buildmode" aria-label="Build mode: build any monument">BUILD</button>
+  </div>
   <button id="daily-card" class="daily-card">
     <div class="dc-row">
       <div class="dc-left">
@@ -1186,6 +1209,10 @@
     <div class="row"><span>Bought on another device?</span>
       <button class="linkbtn" id="set-restore" aria-label="Restore purchases">Restore</button></div>
     <div class="row muted" id="set-restore-status" style="font-size:12px"></div>
+    <h3>Your play (this device only)</h3>
+    <div class="row"><span>Runs played</span><span id="set-play-runs">0</span></div>
+    <div class="row"><span>Monuments built</span><span id="set-play-built">0</span></div>
+    <div class="row muted" style="font-size:12px"><span id="set-play-build">Build mode: 0</span></div>
     <h3>Privacy</h3>
     <div class="row"><span>Privacy policy</span><a class="linkbtn" href="privacy.html">Read</a></div>
     <div class="row"><span>Erase my data</span>
@@ -1194,6 +1221,14 @@
     <div class="row muted" id="set-gpu" style="font-size:11px;white-space:pre-wrap;user-select:text;-webkit-user-select:text;text-align:left"></div>
   </div>
   <button class="btn" id="btn-settings-close">DONE</button>
+</div>
+
+<!-- Build mode: pick any monument you own and build it, with every piece
+     there. No score, no stars; a best time per monument. docs/BUILD-MODE-PROPOSAL.md -->
+<div id="screen-build" class="screen">
+  <div class="title" style="font-size:clamp(26px,7vmin,48px)">BUILD</div>
+  <div class="sheet" id="build-body"></div>
+  <button class="btn" id="btn-build-close">BACK</button>
 </div>
 
 <div id="screen-scores" class="screen">
@@ -1285,8 +1320,9 @@
   <div class="label" id="over-title">Run over</div>
   <div class="continue-note" id="over-note"></div>
   <div class="big-num" id="over-score">0</div>
-  <div class="label" style="margin:10px 0 30px"><span id="over-coins">0</span> souvenirs collected</div>
+  <div class="label" id="over-coins-row" style="margin:10px 0 30px"><span id="over-coins">0</span> souvenirs collected</div>
   <button class="btn" id="btn-retry">RUN AGAIN</button>
+  <button class="btn ghost" id="btn-over-build" style="display:none">BUILD ANOTHER</button>
   <button class="btn ghost" id="btn-share-over" style="display:none">SHARE</button>
   <button class="btn ghost" id="btn-menu">CITY SELECT</button>
 </div>
@@ -1294,12 +1330,13 @@
 <div id="screen-puzzle-win" class="screen">
   <div class="label">Monument complete</div>
   <div class="big-num" id="pw-name">—</div>
-  <div class="label pw-sub"><span id="pw-bonus">0</span> bonus · <span id="pw-time">0</span>s left</div>
+  <div class="label pw-sub" id="pw-sub"><span id="pw-bonus">0</span> bonus · <span id="pw-time">0</span>s left</div>
   <div class="fp-wrap fp-compact">
     <div class="fp-scale" id="pw-scale"></div>
     <div class="fp-cards" id="pw-facts"></div>
   </div>
   <button class="btn" id="btn-next">NEXT LEVEL</button>
+  <button class="btn" id="btn-build-another" style="display:none">BUILD ANOTHER</button>
   <button class="btn ghost" id="btn-share-pw" style="display:none">SHARE</button>
   <button class="btn ghost" id="btn-menu2">CITY SELECT</button>
 </div>

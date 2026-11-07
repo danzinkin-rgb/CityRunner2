@@ -21,6 +21,7 @@ public class GameCenterPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "submitScore", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "reportAchievement", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "showDashboard", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "loadPlayerCount", returnType: CAPPluginReturnPromise),
     ]
 
     @objc func authenticate(_ call: CAPPluginCall) {
@@ -83,6 +84,39 @@ public class GameCenterPlugin: CAPPlugin, CAPBridgedPlugin {
             self.bridge?.viewController?.present(gc, animated: true)
         }
         call.resolve(["shown": true])
+    }
+}
+
+extension GameCenterPlugin {
+    /// Tester build only: the usage readout in Settings (src/main.js). How
+    /// many players have a score on a board: GameKit's totalPlayerCount, for
+    /// this occurrence of a recurring board and the one before it. Only the
+    /// count is read, never any player's entry. -1 for anything unavailable.
+    @objc func loadPlayerCount(_ call: CAPPluginCall) {
+        guard GKLocalPlayer.local.isAuthenticated,
+              let leaderboardId = call.getString("leaderboardId") else {
+            call.resolve(["count": -1, "previous": -1])
+            return
+        }
+        let one = NSRange(location: 1, length: 1)
+        GKLeaderboard.loadLeaderboards(IDs: [leaderboardId]) { boards, error in
+            guard error == nil, let board = boards?.first else {
+                call.resolve(["count": -1, "previous": -1])
+                return
+            }
+            board.loadEntries(for: .global, timeScope: .allTime, range: one) { _, _, total, err in
+                let count = err == nil ? total : -1
+                board.loadPreviousOccurrence { prev, perr in
+                    guard perr == nil, let prev = prev else {
+                        call.resolve(["count": count, "previous": -1])
+                        return
+                    }
+                    prev.loadEntries(for: .global, timeScope: .allTime, range: one) { _, _, ptotal, pe in
+                        call.resolve(["count": count, "previous": pe == nil ? ptotal : -1])
+                    }
+                }
+            }
+        }
     }
 }
 

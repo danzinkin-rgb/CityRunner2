@@ -51,10 +51,14 @@ export const STORAGE = {
   AUDIO: 'cityrunner2.audio',
   /** Best run per street, replayed as a ghost: moves, scores, seed. src/run/ghost.js */
   GHOSTS: 'cityrunner2.ghosts',
+  /** Play summary shown in Settings (runs, monuments, minutes), best Build
+   *  mode time per monument, and this week's counts for the hidden Game
+   *  Center usage boards. About the player, so erased. src/core/playstats.js */
+  PLAYSTATS: 'cityrunner2.playstats',
 };
 
 /** Removed by eraseAllData(). See the split rationale above. */
-export const ERASED_KEYS = [STORAGE.IDENTITY, STORAGE.SAVE, STORAGE.SCORES, STORAGE.LIFETIME_SCORE, STORAGE.GHOSTS];
+export const ERASED_KEYS = [STORAGE.IDENTITY, STORAGE.SAVE, STORAGE.SCORES, STORAGE.LIFETIME_SCORE, STORAGE.GHOSTS, STORAGE.PLAYSTATS];
 
 /** Deliberately survives eraseAllData(). Each entry is justified above. */
 export const KEPT_KEYS = [STORAGE.ENTITLEMENTS, STORAGE.AUDIO];

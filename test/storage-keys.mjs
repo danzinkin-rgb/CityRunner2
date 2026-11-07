@@ -52,7 +52,9 @@ const check = (ok, label, detail = '') => {
 // The expected sets, spelled out. If a legitimate new key is added, this list
 // is meant to be edited by hand — that edit is the moment somebody has to
 // decide whether the key is personal data. Making it painless would defeat it.
-const EXPECT_ERASED = ['cityrunner2', 'cityrunner2.ghosts', 'cityrunner2.identity', 'cityrunner2.lifetime', 'cityrunner2.scores'];
+// cityrunner2.playstats (November 2026): the Settings play summary and Build
+// mode best times. About the player, so erased.
+const EXPECT_ERASED = ['cityrunner2', 'cityrunner2.ghosts', 'cityrunner2.identity', 'cityrunner2.lifetime', 'cityrunner2.playstats', 'cityrunner2.scores'];
 const EXPECT_KEPT = ['cityrunner2.audio', 'cityrunner2.ent'];
 
 // =============================================================================
