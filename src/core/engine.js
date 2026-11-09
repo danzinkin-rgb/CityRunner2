@@ -27,9 +27,35 @@ let gfxSaved = {};
 try { gfxSaved = JSON.parse(localStorage.getItem(STORAGE.GRAPHICS) || '{}') || {}; } catch { /* storage unavailable: full graphics */ }
 GFX.level = Math.min(GFX_MAX, gfxSaved.level | 0);
 GFX.why = gfxSaved.why || '';
+// Manual choices from Settings > Graphics, each 'auto' when absent. They let
+// a tester who cannot connect the phone to a computer switch one thing at a
+// time and report which one stops the failure (Pixel 10 Pro XL, Android 17,
+// November 2026: fine in Chrome, context lost in the app). A choice other
+// than 'auto' wins over the safe-mode level.
+GFX.manual = { ...(gfxSaved.manual || {}) };
 const saveGfx = (runOpen) => {
-  try { localStorage.setItem(STORAGE.GRAPHICS, JSON.stringify({ level: GFX.level, why: GFX.why, runOpen })); } catch { /* best effort */ }
+  try { localStorage.setItem(STORAGE.GRAPHICS, JSON.stringify({ level: GFX.level, why: GFX.why, runOpen, manual: GFX.manual })); } catch { /* best effort */ }
 };
+export const GFX_CHOICES = {
+  shadows: ['auto', 'on', 'off'],
+  res: ['auto', 'high', 'medium', 'low'],
+  aa: ['auto', 'on', 'off'],
+  power: ['auto', 'standard'],
+};
+// Saved now, used from the next start: antialiasing and the power mode are
+// fixed when the WebGL context is made, so main.js reloads to apply them.
+export function setGfxChoice(key, value) {
+  if (value === 'auto') delete GFX.manual[key]; else GFX.manual[key] = value;
+  saveGfx(false);
+}
+export function resetGfx() {
+  GFX.manual = {}; GFX.level = 0; GFX.why = '';
+  saveGfx(false);
+}
+const gfxShadows = () => (GFX.manual.shadows ? GFX.manual.shadows === 'on' : GFX.level < 1);
+const gfxAA = () => (GFX.manual.aa ? GFX.manual.aa === 'on' : !GFX.lite);
+const gfxPower = () => (GFX.manual.power === 'standard' ? 'default' : 'high-performance');
+const gfxResCap = () => ({ high: 2, medium: 1.5, low: 1 }[GFX.manual.res] ?? (GFX.level >= 2 ? 1 : GFX.lite ? 1.5 : 2));
 const stepDown = (why) => {
   if (GFX.level < GFX_MAX) GFX.level++;
   GFX.why = why;
@@ -41,7 +67,7 @@ if (gfxSaved.runOpen && nativePlatform() !== 'web') stepDown('the app closed dur
 export const gfxRunStarted = () => saveGfx(true);
 export const gfxRunOK = () => saveGfx(false);
 
-const pixelRatio = () => Math.min(window.devicePixelRatio, GFX.level >= 2 ? 1 : GFX.lite ? 1.5 : 2);
+const pixelRatio = () => Math.min(window.devicePixelRatio, gfxResCap());
 
 // ---------- freeing GPU memory ----------
 // Every texture slot any material in the game uses. There is one list, and
@@ -79,10 +105,10 @@ export function disposeTree(root, { keepGeo, keepTex, materials = true } = {}) {
 export function createRenderer(container) {
   // preserveDrawingBuffer keeps a second copy of every frame; only the
   // screenshot tools, which copy the canvas between frames, need it.
-  const renderer = new THREE.WebGLRenderer({ antialias: !GFX.lite, powerPreference: 'high-performance', preserveDrawingBuffer: DEBUG_HOOKS });
+  const renderer = new THREE.WebGLRenderer({ antialias: gfxAA(), powerPreference: gfxPower(), preserveDrawingBuffer: DEBUG_HOOKS });
   renderer.setPixelRatio(pixelRatio());
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.shadowMap.enabled = GFX.level < 1;
+  renderer.shadowMap.enabled = gfxShadows();
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.22;
@@ -129,6 +155,7 @@ export function gpuReport(renderer) {
     `WebGL ${renderer.capabilities.isWebGL2 ? 2 : 1}, precision ${renderer.capabilities.precision}, max texture ${renderer.capabilities.maxTextureSize}`,
     `Run frame: ${gpuLog.sample || 'no run yet'}`,
   ];
+  lines.push(`In use: shadows ${gfxShadows() ? 'on' : 'off'}, sharpness ${gfxResCap()}x, smooth edges ${gfxAA() ? 'on' : 'off'}, mode ${gfxPower()}`);
   if (GFX.level) lines.push(`Safe mode ${GFX.level} (${GFX.level >= 2 ? 'no shadows, 1x' : 'no shadows'}): ${GFX.why}`);
   if (gpuLog.lost) lines.push(`Context lost ${gpuLog.lost}×, restored ${gpuLog.restored || 0}×`);
   for (const e of gpuLog.shaderErrors) lines.push(`Shader: ${e}`);
@@ -235,7 +262,7 @@ export function dressScene(scene, theme) {
 
   const sun = new THREE.DirectionalLight(theme.sun.color, theme.sun.intensity);
   sun.position.set(...theme.sun.pos);
-  sun.castShadow = GFX.level < 1;
+  sun.castShadow = gfxShadows();
   sun.shadow.mapSize.setScalar(GFX.lite ? 1024 : 2048);
   sun.shadow.camera.near = 1; sun.shadow.camera.far = 220;
   const s = 40;

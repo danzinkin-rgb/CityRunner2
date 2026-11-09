@@ -1,5 +1,5 @@
 import * as THREE from '../vendor/three.module.js';
-import { createRenderer, makeCamera, handleResize, dressScene, disposeTree, sampleFrame, gpuReport, gpuEvents, gfxRunStarted, gfxRunOK } from './core/engine.js';
+import { createRenderer, makeCamera, handleResize, dressScene, disposeTree, sampleFrame, gpuReport, gpuEvents, gfxRunStarted, gfxRunOK, GFX, GFX_CHOICES, setGfxChoice, resetGfx } from './core/engine.js';
 import { createInput } from './core/input.js';
 import { sfx, startMusic, stopMusic, fadeOutMusic, prefs as audioPrefs, saveAudioPrefs } from './core/audio.js';
 import { LANDMARK_NAMES } from './cities/themes.js';
@@ -1433,6 +1433,7 @@ function renderSettings() {
   $('set-play-built').textContent = `${ps.built} · ${formatMinutes(ps.builtMs)}`;
   $('set-play-build').textContent = `Build mode: ${ps.buildWins} · ${formatMinutes(ps.buildMs)}`;
   $('set-gpu').textContent = gpuReport(renderer).join('\n');
+  renderGfxRows();
   renderPurchaseRows();
   syncSheetScroll();   // a reroll or a restore message changes the height
 }
@@ -1442,6 +1443,35 @@ function renderSettings() {
  * quiet entry point to the offer (Settings, Shop). Never shows urgency
  * language or a price here — just whether there is something to view.
  */
+// Settings > Graphics (see GFX in src/core/engine.js). Each button steps
+// through its choices; a changed choice is saved straight away and applies
+// after a restart, because antialiasing and the power mode are fixed when the
+// WebGL context is made. The link reads Restart while a change is pending,
+// Reset otherwise (all back to automatic, safe mode included).
+const GFX_ROWS = { shadows: 'set-gfx-shadows', res: 'set-gfx-res', aa: 'set-gfx-aa', power: 'set-gfx-power' };
+let gfxPending = false;
+function renderGfxRows() {
+  for (const [key, id] of Object.entries(GFX_ROWS)) {
+    const v = GFX.manual[key] || 'auto';
+    $(id).textContent = v.toUpperCase();
+    $(id).classList.toggle('on', v !== 'auto');
+  }
+  $('set-gfx-note').textContent = gfxPending ? 'Changes apply after a restart' : 'Back to automatic';
+  $('set-gfx-apply').textContent = gfxPending ? 'Restart' : 'Reset';
+}
+for (const [key, id] of Object.entries(GFX_ROWS)) {
+  $(id).onclick = () => {
+    const list = GFX_CHOICES[key];
+    setGfxChoice(key, list[(list.indexOf(GFX.manual[key] || 'auto') + 1) % list.length]);
+    gfxPending = true;
+    renderGfxRows();
+  };
+}
+$('set-gfx-apply').onclick = () => {
+  if (!gfxPending) resetGfx();
+  location.reload();
+};
+
 function setPurchaseRowState(label, view) {
   if (isFounder()) {
     // Founders paid early and were promised everything, forever. Say thank
