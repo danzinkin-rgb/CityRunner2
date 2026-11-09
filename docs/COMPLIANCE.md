@@ -103,6 +103,21 @@ If online leaderboards ship, this changes to:
 - Tracking: **No** — data is never combined with third-party data for advertising
 - **App Tracking Transparency prompt: not required**, since no tracking occurs
 
+**The play summary and the usage boards (November 2026, docs/BUILD-MODE-PROPOSAL.md).** Two things count play, and neither changes the label, for the reasons below. They were decided together, so they are written down together.
+
+- *The play summary in Settings* (runs, monuments built, minutes; `src/core/playstats.js`, key `cityrunner2.playstats`, erased with "Erase my data"). It never leaves the device: no network call, no identifier. Data that stays on the device is not "collected" under Apple's or Google's definitions, the same footing as the local scores and ghosts.
+- *Two hidden weekly Game Center leaderboards*, `leaderboard.week.runs` and `leaderboard.week.build`: each player's count of runs, and of monuments built in Build mode, this week (`reportUsage()` in `src/core/gamecenter.js`). iOS only, and only for a player signed in to Game Center; Android has no Game Center. Apple holds the scores, as it does for every other board; Apple's guidance is that "You are not responsible for disclosing data collected by Apple."
+
+  The boards exist to measure usage, which is Analytics in Apple's terms, so the strict reading taken above for online leaderboards ("analytics whether or not an SDK is involved") has to be answered here, not assumed. The label stays **Data Not Collected** only while all of these hold:
+  1. The app reads back **only** GameKit's `totalPlayerCount` for each board (the number of players with a score this week and last), never any player's entry, name or score (`loadPlayerCount` in `ios/App/App/GameCenterPlugin.swift`).
+  2. It reads them **only in the tester build**, on Dan's own device, for Dan to look at (Settings → Tester → "Players this week"). A store build never calls it.
+  3. The counts are **not stored, sent or combined** anywhere: not written to the device, not posted to any server, not joined with sales or any other data.
+  4. The boards are **hidden from players** (`visibility: HIDE_FOR_ALL` in App Store Connect). A board ranking players by how much they play is an engagement nudge, which the Children's Code steers away from (§1.5, PROPOSALS.md §4); hidden, nobody sees a ranking.
+
+  If any of these stops being true, for example a store build shows the counts, or they are logged somewhere, the label becomes **Data Not Linked to You → Usage Data → Analytics**, which ends "Data Not Collected". Change the label before shipping such a change, not after.
+
+  Known limits: iOS players signed in to Game Center only, so children (whose Game Center may be limited by Screen Time) are under-counted; it counts players, not sessions or minutes. Whether a recurring board's `totalPlayerCount` covers only the current week is not stated in Apple's documentation and is to be checked on a device before the numbers are relied on.
+
 ### 2.2 Age rating
 
 Expected **4+**. No violence, no profanity, no gambling simulation, no horror, no mature themes, no unrestricted web access, no user-generated content.

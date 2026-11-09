@@ -126,6 +126,16 @@ export function gkSubmitScore(leaderboardId, score) {
 }
 
 /**
+ * Players with a score on a Game Center board, this occurrence and the last
+ * (recurring boards). Tester build only: the usage readout. Resolves null
+ * where there is no Game Center (web, Android) or on any failure.
+ */
+export async function gkPlayerCount(leaderboardId) {
+  if (!native?.GameCenter?.loadPlayerCount) return null;
+  try { return await native.GameCenter.loadPlayerCount({ leaderboardId }); } catch { return null; }
+}
+
+/**
  * Report progress on an achievement, 0-100. Safe to call repeatedly with the
  * same or a lower value — GameKit keeps the highest percent it has ever seen
  * for a given achievement id, so callers never need to track "already sent".

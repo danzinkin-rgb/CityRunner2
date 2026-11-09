@@ -79,6 +79,15 @@ Kyoto is parked (`docs/CITY-ROADMAP.md`).
 
 ## Next release: what is waiting
 
+Next (1.3.0): Build mode, a monuments-only mode from a BUILD button beside
+RUN: any owned monument, every piece provided, no score or stars, a best time
+per monument (docs/BUILD-MODE-PROPOSAL.md). A play summary at the foot of
+Settings, kept on the device. Two hidden weekly Game Center usage boards,
+`…leaderboard.week.runs` and `…leaderboard.week.build` (created in App Store
+Connect on 7 November 2026; add both to the version for review), read only by
+the tester build (docs/COMPLIANCE.md §2.1). The iOS app gains a Game Center
+method (`loadPlayerCount`), so it needs a full Xcode build, not just a sync.
+
 1.2.1, build 15 (23 October 2026). Since 1.2.0: every city added in 1.2.0 has its
 own painted skyline behind its monuments (src/puzzle/skylines.js), where
 they had all shared the generic towers. Nothing else in the game changed.

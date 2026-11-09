@@ -41,6 +41,14 @@ export const LEADERBOARDS = {
   // is submitted. A new id because the old board's cumulative totals would
   // otherwise outrank any single run for good.
   BEST_RUN: `${NS}.leaderboard.bestrun`,
+  // Usage boards (docs/BUILD-MODE-PROPOSAL.md §2, Dan, November 2026): each
+  // player's count of runs, and of monuments built in Build mode, this week.
+  // Recurring weekly from USAGE_WEEK0 (src/core/playstats.js) and HIDDEN from
+  // players in App Store Connect: ranking players by how much they play is an
+  // engagement nudge (Children's Code). Read only by the tester build's usage
+  // readout, for the number of players on each. docs/COMPLIANCE.md §2.1.
+  WEEK_RUNS: `${NS}.leaderboard.week.runs`,
+  WEEK_BUILD: `${NS}.leaderboard.week.build`,
 };
 
 /** Per-city leaderboard id. Works for any cityId, present or future. */
@@ -77,6 +85,11 @@ export function reportRun({ cityId, score, dailyMode, save }) {
   gkSubmitScore(LEADERBOARDS.OVERALL, lifetimeScore());
 
   reportProgress(save);
+}
+
+/** This week's run or Build mode count, to its hidden usage board. */
+export function reportUsage(kind, weekCount) {
+  gkSubmitScore(kind === 'build' ? LEADERBOARDS.WEEK_BUILD : LEADERBOARDS.WEEK_RUNS, weekCount);
 }
 
 /** Re-check every save-derived achievement. Cheap and safe to call often. */

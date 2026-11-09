@@ -141,6 +141,33 @@ if (!hasLb(daily)) todo.push([`leaderboard ${daily} (recurring daily)`, async ()
   });
 }]);
 
+// ---- the two hidden weekly usage boards (src/core/gamecenter.js) -------------------
+// Recurring every 7 days from USAGE_WEEK0 in src/core/playstats.js, which is
+// when the app's own weekly counts turn over, and hidden from players: a
+// board ranking players by how much they play is an engagement nudge
+// (Children's Code). Only the tester build reads them. docs/COMPLIANCE.md §2.1.
+const week0 = new Date(Date.UTC(...readFileSync(join(ROOT, 'src/core/playstats.js'), 'utf8')
+  .match(/USAGE_WEEK0 = Date\.UTC\((\d+), (\d+), (\d+)\)/).slice(1).map(Number)));
+for (const [id, name] of [['week.runs', 'Runs this week'], ['week.build', 'Build mode monuments this week']]) {
+  const vid = `${NS}.leaderboard.${id}`;
+  if (hasLb(vid)) continue;
+  todo.push([`leaderboard ${vid} (recurring weekly, hidden)`, async () => {
+    const r = await post('/v1/gameCenterLeaderboards', {
+      type: 'gameCenterLeaderboards',
+      attributes: {
+        referenceName: `Usage: ${name}`, vendorIdentifier: vid, defaultFormatter: 'INTEGER',
+        submissionType: 'BEST_SCORE', scoreSortType: 'DESC', visibility: 'HIDE_FOR_ALL',
+        recurrenceStartDate: week0.toISOString().replace('.000', ''), recurrenceDuration: 'PT168H', recurrenceRule: 'FREQ=DAILY;INTERVAL=7',
+      },
+      relationships: { gameCenterDetail: rel('gameCenterDetails', gc) },
+    });
+    await post('/v1/gameCenterLeaderboardLocalizations', {
+      type: 'gameCenterLeaderboardLocalizations', attributes: { locale: 'en-US', name },
+      relationships: { gameCenterLeaderboard: rel('gameCenterLeaderboards', r.data.id) },
+    });
+  }]);
+}
+
 // ---- region packs ---------------------------------------------------------------------
 const territories = (await asc('/v1/territories?limit=200')).data.map((t) => ({ type: 'territories', id: t.id }));
 for (const [region, pid] of Object.entries(PACKS)) {

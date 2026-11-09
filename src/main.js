@@ -9,8 +9,9 @@ import { renderHero, renderCompact, paintScale, countUp } from './factviz.js';
 import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
 import { startSession, submit, top as topScores, personalBest, currentSession } from './core/scores.js';
 import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset, DAILY } from './core/rng.js';
-import { initNative, onAppPause, onBackButton, hapticLight, hapticMedium, hapticHeavy, hapticSuccess, canShare, shareText, requestReview, storeFacts } from './core/native.js';
-import { reportRun } from './core/gamecenter.js';
+import { initNative, onAppPause, onBackButton, hapticLight, hapticMedium, hapticHeavy, hapticSuccess, canShare, shareText, requestReview, storeFacts, gkPlayerCount } from './core/native.js';
+import { reportRun, reportUsage, LEADERBOARDS } from './core/gamecenter.js';
+import { countRun, countMonument, countBuild, bestBuildTime, addPlayTime, savePlayStats, resetPlayStats, playSummary, formatMinutes } from './core/playstats.js';
 import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild, ownsCity, regionOf } from './core/entitlements.js';
 import { REGIONS } from './cities/themes.js';
 import { initIAP, getOffers, purchase, restore, onEntitlementGranted } from './core/iap.js';
@@ -75,7 +76,7 @@ const screens = {
   facts: $('screen-facts'), paused: $('screen-paused'),
   help: $('screen-help'), settings: $('screen-settings'), scores: $('screen-scores'),
   shop: $('screen-shop'), continue: $('screen-continue'),
-  paywall: $('screen-paywall'),
+  paywall: $('screen-paywall'), build: $('screen-build'),
 };
 function showScreen(name) {
   if (name !== 'menu') stopDailyTimer();   // never leak the countdown interval
@@ -176,6 +177,12 @@ const addScore = (n) => { score += n * rules.scoreMul; };
 // One course a day, identical for every player worldwide, rotating city.
 // Unlimited attempts; the best score of the day is the one that counts.
 let dailyMode = false;
+// Build mode (docs/BUILD-MODE-PROPOSAL.md, Dan, November 2026): a monument
+// built straight from the picker, every piece provided. It awards nothing:
+// no score, no stars, no souvenirs, no ghost, no Game Center score. Only a
+// best time per monument is kept (src/core/playstats.js). Cleared wherever a
+// run starts or the player goes back to the menu.
+let buildMode = false;
 let runSeed = null;          // null => a fresh random course
 
 function todaysDaily(date = new Date()) {
@@ -388,6 +395,8 @@ function startRun() {
   // ends there.
   if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall('menu', city().id); return; }
   gfxRunStarted();
+  buildMode = false;
+  reportUsage('runs', countRun());
   // Racing your best: a street you have finished before replays the course
   // of your best run on it, with that run beside you as a ghost. Never on the
   // daily (one course for everyone, and not yours to replay).
@@ -758,6 +767,8 @@ function startPuzzle() {
 
 function finishPuzzle(won) {
   const lm = city().landmarks[level - 1];
+  if (buildMode) { finishBuild(won, lm); return; }
+  if (won) countMonument();
   if (won) {
     hapticSuccess();
     // A share of the clock rather than raw seconds: the total now scales with
@@ -813,6 +824,113 @@ function finishPuzzle(won) {
       state = 'over';
     }, 1800);
   }
+}
+
+// A Build mode monument ends here, not in the run's path above: nothing is
+// scored, starred, settled or reported. A win still counts towards the store
+// rating prompt (Dan: someone enjoying building is fair to ask).
+const PW_SUB = $('pw-sub').innerHTML;
+function finishBuild(won, lm) {
+  if (won) {
+    hapticSuccess();
+    const taken = Math.max(1, Math.round(puzzle.timeTotal - puzzle.time));
+    const { best, improved, weekCount } = countBuild(lm, taken);
+    reportUsage('build', weekCount);
+    save.monumentsWon = (save.monumentsWon || 0) + 1;
+    persist();
+    $('btn-next').style.display = 'none';
+    $('btn-build-another').style.display = '';
+    setTimeout(() => {
+      $('pw-name').textContent = LANDMARK_NAMES[lm];
+      $('pw-sub').innerHTML = `built in ${taken}s · ${improved ? 'your best yet' : `best ${best}s`}`
+        + `<span id="pw-bonus" hidden>0</span><span id="pw-time" hidden>${Math.round(puzzle.time)}</span>`;
+      applyCityPalette();
+      const md = MONUMENT_FACTS[lm];
+      paintFacts($('pw-facts'), md?.facts || [], 'm:' + lm);
+      paintScale($('pw-scale'), md?.scale, md?.compare, LANDMARK_NAMES[lm], !!save.reducedMotion, md?.altitude, md?.note);
+      showScreen('pwin');
+      state = 'pwin';
+      if (REVIEW_AT.includes(save.monumentsWon)) setTimeout(requestReview, 1500);
+    }, 4300);
+    state = 'pwin-wait';
+    return;
+  }
+  const placed = puzzle.placedCount, total = puzzle.items.length;
+  hint("TIME'S UP");
+  state = 'pfail-wait';
+  setTimeout(() => {
+    if (state !== 'pfail-wait') return;
+    $('over-title').textContent = 'Out of time';
+    $('over-note').textContent = `${LANDMARK_NAMES[lm]}: ${placed} of ${total} pieces placed.`;
+    $('over-score').style.display = 'none';
+    $('over-coins-row').style.display = 'none';
+    $('btn-retry').textContent = 'TRY AGAIN';
+    $('btn-over-build').style.display = '';
+    showScreen('over');
+    state = 'over';
+  }, 1800);
+}
+// The run's own result screens, put back after a Build mode one.
+function resetResultScreens() {
+  $('pw-sub').innerHTML = PW_SUB;
+  $('btn-build-another').style.display = 'none';
+  $('over-score').style.display = '';
+  $('over-coins-row').style.display = '';
+  $('btn-retry').textContent = 'RUN AGAIN';
+  $('btn-over-build').style.display = 'none';
+}
+
+// ---------- Build mode: the monument picker ----------
+// Every monument in every city the player owns (free cities always, paid
+// ones once bought, everything on the web), from the start: Build mode
+// awards nothing, so it cannot skip the runner's progression (Dan, decision
+// 1a). A city not owned is dimmed and opens the purchase screen, the same
+// quiet route the menu uses.
+function renderBuildPicker() {
+  const body = $('build-body');
+  const regionOrder = [];
+  for (const c of CITIES) if (isPaidCity(c.id) && !regionOrder.includes(c.region)) regionOrder.push(c.region);
+  const groups = [['FREE', CITIES.filter((c) => !isPaidCity(c.id))],
+    ...regionOrder.map((r) => [REGIONS[r].replace(' and ', ' & ').toUpperCase(), CITIES.filter((c) => isPaidCity(c.id) && c.region === r)])];
+  body.innerHTML = '';
+  for (const [label, list] of groups) {
+    const h = document.createElement('div');
+    h.className = 'bm-group'; h.textContent = label;
+    body.appendChild(h);
+    for (const c of list) {
+      const owned = isCityEntitled(c.id);
+      const row = document.createElement('div');
+      row.className = 'bm-city' + (owned ? '' : ' locked');
+      row.innerHTML = `<div class="bm-name">${titleCase(c.name)}${owned ? '' : ' 🔒'}</div><div class="bm-tiles"></div>`;
+      c.landmarks.forEach((lm, k) => {
+        const best = bestBuildTime(lm);
+        const t = document.createElement('button');
+        t.className = 'bm-tile';
+        t.setAttribute('aria-label', `${LANDMARK_NAMES[lm]}${owned ? '' : ', not unlocked'}`);
+        t.innerHTML = `<img src="assets/monuments/${lm}.png" alt=""><div class="bm-t">${LANDMARK_NAMES[lm]}</div>`
+          + `<div class="bm-best">${best != null ? `best ${best}s` : '&nbsp;'}</div>`;
+        t.onclick = () => (owned ? startBuild(CITIES.indexOf(c), k + 1) : openPaywall('build', c.id));
+        row.querySelector('.bm-tiles').appendChild(t);
+      });
+      body.appendChild(row);
+    }
+  }
+}
+function startBuild(ci, lv) {
+  cityIdx = ci; level = lv;
+  dailyMode = false; runSeed = null; lastRunPieces = null; pausedFrom = null;
+  score = 0; coins = 0;
+  buildMode = true;
+  resetResultScreens();
+  startPuzzle();
+}
+function openBuildPicker() {
+  buildMode = false;
+  resetResultScreens();
+  renderBuildPicker();
+  overlayFrom = 'menu';
+  state = 'ui-build';
+  showScreen('build');
 }
 
 // ---------- missed pieces: bring them now, for souvenirs ----------
@@ -1024,6 +1142,9 @@ $('btn-play').onclick = () => {
   startRun();
 };
 $('daily-card').onclick = () => startDaily();
+$('btn-buildmode').onclick = () => doFade(() => { disposeAll(); openBuildPicker(); });
+$('btn-build-close').onclick = () => { buildMode = false; closeOverlay(); };
+$('btn-build-another').onclick = $('btn-over-build').onclick = () => doFade(() => { disposeAll(); openBuildPicker(); });
 $('btn-build').onclick = () => startPuzzle();
 
 // ---------- menu shell: help, settings, scoreboard ----------
@@ -1081,7 +1202,7 @@ const regionCityNames = (region) => CITIES
 const titleCase = (s) => s.toLowerCase().replace(/(^|[\s-])\S/g, (m) => m.toUpperCase());
 
 async function openPaywall(from, cityId = null) {
-  paywallFrom = from === 'settings' || from === 'shop' ? from : 'menu';
+  paywallFrom = from === 'settings' || from === 'shop' || from === 'build' ? from : 'menu';
   paywallCity = cityId;
   const buy = $('btn-paywall-buy'), pack = $('btn-paywall-pack');
   const status = $('paywall-status');
@@ -1142,6 +1263,7 @@ async function openPaywall(from, cityId = null) {
 $('btn-paywall-close').onclick = () => {
   if (paywallFrom === 'settings') { renderSettings(); openOverlay('settings'); return; }
   if (paywallFrom === 'shop') { renderShop(); openOverlay('shop'); return; }
+  if (paywallFrom === 'build') { openBuildPicker(); return; }
   closeOverlay();
 };
 
@@ -1306,6 +1428,10 @@ function renderSettings() {
   $('set-vol').value = Math.round(audioPrefs.volume * 100);
   $('set-name').textContent = getIdentity().name;
   $('set-version').textContent = `v${VERSION}`;
+  const ps = playSummary();
+  $('set-play-runs').textContent = `${ps.runs} · ${formatMinutes(ps.runMs)}`;
+  $('set-play-built').textContent = `${ps.built} · ${formatMinutes(ps.builtMs)}`;
+  $('set-play-build').textContent = `Build mode: ${ps.buildWins} · ${formatMinutes(ps.buildMs)}`;
   $('set-gpu').textContent = gpuReport(renderer).join('\n');
   renderPurchaseRows();
   syncSheetScroll();   // a reroll or a restore message changes the height
@@ -1423,6 +1549,7 @@ $('set-erase').onclick = () => {
   for (const k of Object.keys(save)) delete save[k];
   Object.assign(save, { stars: {}, coins: 0, best: 0, characters: ['runner'], equipped: 'runner' }, keep);
   sampleSave = false;   // nothing made-up is left in it to protect
+  resetPlayStats();
   persist();
   buildCitySelect();
   renderSettings();
@@ -1459,6 +1586,7 @@ function pauseGame() {
   if (state !== 'run' && state !== 'puzzle') return;
   pausedFrom = state;
   state = 'paused';
+  savePlayStats();
   stopMusic();
   $('btn-pause-ghost').textContent = `Race your best run: ${save.raceBest !== false ? 'ON' : 'OFF'}`;
   showScreen('paused');
@@ -1486,6 +1614,7 @@ $('btn-resume').onclick = resumeGame;
 $('btn-quit').onclick = () => {
   // Quitting a paused PUZZLE still banks the run: the street is already
   // finished, so its souvenirs were earned. Quitting mid-street abandons it.
+  if (buildMode) { pausedFrom = null; doFade(() => { disposeAll(); openBuildPicker(); }); return; }
   if (pausedFrom === 'puzzle') settleRun();
   pausedFrom = null;
   doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; });
@@ -1502,7 +1631,8 @@ const BACK_BUTTONS = {
   'ui-help': 'btn-help-close', 'ui-settings': 'btn-settings-close',
   'ui-scores': 'btn-scores-close', 'ui-shop': 'btn-shop-close',
   'ui-paywall': 'btn-paywall-close', paused: 'btn-resume',
-  'continue-offer': 'btn-continue-no', over: 'btn-menu', pwin: 'btn-menu2',
+  'continue-offer': 'btn-continue-no', over: ['btn-over-build', 'btn-menu'], pwin: ['btn-build-another', 'btn-menu2'],
+  'ui-build': 'btn-build-close',
   'puzzle-intro': ['dh-ok', 'mh-ok'],   // whichever card is up
 };
 function handleBack() {
@@ -1519,8 +1649,11 @@ onBackButton(handleBack);
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
 $('btn-continue-pay').onclick = acceptContinue;
 $('btn-continue-no').onclick = declineContinue;
-$('btn-retry').onclick = () => startRun();
-$('btn-menu').onclick = $('btn-menu2').onclick = () => doFade(() => { disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu'; });
+$('btn-retry').onclick = () => (buildMode ? startBuild(cityIdx, level) : startRun());
+$('btn-menu').onclick = $('btn-menu2').onclick = () => doFade(() => {
+  buildMode = false; resetResultScreens();
+  disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu';
+});
 
 // Sharing (1.2.2): a SHARE button on the result screens opens the share
 // sheet with one line about the run and the game's store link. Native only (see
@@ -1590,6 +1723,8 @@ function frame() {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, clock.getDelta());
   if (!scene) return;
+  if (state === 'run') addPlayTime('run', dt);
+  else if (state === 'puzzle') addPlayTime(buildMode ? 'build' : 'puzzle', dt);
 
   if (state === 'run' || state === 'dead') {
     if (state === 'run') {
@@ -1745,7 +1880,9 @@ if (TESTER) {
       <select id="tst-street" aria-label="Street" ${sel}></select></div>
     <div class="row"><button class="linkbtn" id="tst-run">Run the street</button>
       <button class="linkbtn" id="tst-build">Build the monument</button></div>
-    <div class="row"><span>Invincible (no scores)</span><button class="toggle" id="tst-god" aria-label="Invincible">OFF</button></div>`;
+    <div class="row"><span>Invincible (no scores)</span><button class="toggle" id="tst-god" aria-label="Invincible">OFF</button></div>
+    <div class="row"><button class="linkbtn" id="tst-usage">Players this week (Game Center)</button></div>
+    <div class="row muted" id="tst-usage-out" style="font-size:12px;white-space:pre-line"></div>`;
   const sheet = $('screen-settings').querySelector('.sheet');
   sheet.insertBefore(box, [...sheet.querySelectorAll('h3')].find((h) => h.textContent === 'Privacy'));
 
@@ -1763,6 +1900,17 @@ if (TESTER) {
   };
   $('tst-run').onclick = () => play(false);
   $('tst-build').onclick = () => play(true);
+  // The hidden usage boards (src/core/gamecenter.js): how many players have a
+  // count on each, this week and last. iOS with Game Center only; read here
+  // and never stored or sent on (docs/COMPLIANCE.md §2.1).
+  $('tst-usage').onclick = async () => {
+    const out = $('tst-usage-out');
+    out.textContent = 'Asking Game Center…';
+    const [b, r] = await Promise.all([gkPlayerCount(LEADERBOARDS.WEEK_BUILD), gkPlayerCount(LEADERBOARDS.WEEK_RUNS)]);
+    const n = (v) => (v == null || v < 0 ? '—' : v);
+    out.textContent = !b && !r ? 'Game Center is not available here.'
+      : `Built in Build mode: ${n(b?.count)} this week, ${n(b?.previous)} last week\nRan: ${n(r?.count)} this week, ${n(r?.previous)} last week`;
+  };
   $('tst-god').onclick = () => {
     testerInvincible = !testerInvincible;
     const el = $('tst-god');
@@ -1826,8 +1974,10 @@ if (DEBUG_HOOKS && q.get('view')) {
   };
   if (q.get('seed')) runSeed = +q.get('seed') >>> 0;
   if (q.has('daily')) { const d = todaysDaily(); cityIdx = d.cityIdx; level = d.level; dailyMode = true; runSeed = d.seed; }
+  // ?view=menu stays on the menu with the handle above, so a suite can drive
+  // the menu's own buttons (test/build-mode.mjs).
   if (q.get('view') === 'puzzle') startPuzzle();
-  else startRun();
+  else if (q.get('view') !== 'menu') startRun();
   // &goal=120 shortens the run for automated review of the facts screen
   const tg = +(q.get('goal') || 0);
   if (tg) setTimeout(() => { if (track) track.goal = tg; }, 900);
