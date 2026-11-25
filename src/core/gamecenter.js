@@ -47,6 +47,10 @@ export const LEADERBOARDS = {
   // players in App Store Connect: ranking players by how much they play is an
   // engagement nudge (Children's Code). Read only by the tester build's usage
   // readout, for the number of players on each. docs/COMPLIANCE.md §2.1.
+  // The daily build (Dan, 25 November 2026): the fastest time on today's
+  // monument, in hundredths of a second, lowest first. Visible, like the run
+  // daily's board. Versioned with DAILY, whose city pool it draws from.
+  DAILY_BUILD: `${NS}.leaderboard.dailybuild.v${DAILY.version}`,
   WEEK_RUNS: `${NS}.leaderboard.week.runs`,
   WEEK_BUILD: `${NS}.leaderboard.week.build`,
 };
@@ -86,6 +90,9 @@ export function reportRun({ cityId, score, dailyMode, save }) {
 
   reportProgress(save);
 }
+
+/** A finished daily build, in hundredths of a second (lower is better). */
+export function reportDailyBuild(centis) { gkSubmitScore(LEADERBOARDS.DAILY_BUILD, centis); }
 
 /** This week's run or Build mode count, to its hidden usage board. */
 export function reportUsage(kind, weekCount) {

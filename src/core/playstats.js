@@ -72,6 +72,24 @@ export function countBuild(landmarkId, seconds) {
   return { best: stats.best[landmarkId], improved, weekCount: w.build };
 }
 
+/**
+ * Today's build, finished in `centis` hundredths of a second. Counts as a
+ * Build mode win; keeps the player's best of the day (a new day starts
+ * fresh). Returns { best, improved, weekCount }, best in hundredths.
+ */
+export function countDailyBuild(day, centis) {
+  stats.buildWins++;
+  if (stats.dailyBuild?.day !== day) stats.dailyBuild = { day, best: null };
+  const improved = stats.dailyBuild.best == null || centis < stats.dailyBuild.best;
+  if (improved) stats.dailyBuild.best = centis;
+  const w = thisWeek(); w.build++;
+  savePlayStats();
+  return { best: stats.dailyBuild.best, improved, weekCount: w.build };
+}
+
+/** The player's best time on today's build, in hundredths, or null. */
+export const dailyBuildBest = (day) => (stats.dailyBuild?.day === day ? stats.dailyBuild.best : null);
+
 /** Best Build mode time for a monument, in seconds, or null. */
 export const bestBuildTime = (landmarkId) => stats.best[landmarkId] ?? null;
 

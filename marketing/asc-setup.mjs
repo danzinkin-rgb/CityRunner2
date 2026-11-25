@@ -141,6 +141,27 @@ if (!hasLb(daily)) todo.push([`leaderboard ${daily} (recurring daily)`, async ()
   });
 }]);
 
+// ---- the daily build board for this DAILY.version (src/core/gamecenter.js) ----------
+// Fastest time on today's monument, in hundredths of a second, lowest first.
+// Recurring daily from the next UTC midnight, like the run daily. Visible.
+const dailyBuild = `${NS}.leaderboard.dailybuild.v${DAILY_V}`;
+if (!hasLb(dailyBuild)) todo.push([`leaderboard ${dailyBuild} (recurring daily, fastest time)`, async () => {
+  const d = new Date(); d.setUTCHours(24, 0, 0, 0);
+  const r = await post('/v1/gameCenterLeaderboards', {
+    type: 'gameCenterLeaderboards',
+    attributes: {
+      referenceName: `Daily Build Fastest Time v${DAILY_V}`, vendorIdentifier: dailyBuild, defaultFormatter: 'ELAPSED_TIME_CENTISECOND',
+      submissionType: 'BEST_SCORE', scoreSortType: 'ASC',
+      recurrenceStartDate: d.toISOString().replace('.000', ''), recurrenceDuration: 'PT24H', recurrenceRule: 'FREQ=DAILY;INTERVAL=1',
+    },
+    relationships: { gameCenterDetail: rel('gameCenterDetails', gc) },
+  });
+  await post('/v1/gameCenterLeaderboardLocalizations', {
+    type: 'gameCenterLeaderboardLocalizations', attributes: { locale: 'en-US', name: "Today's Build" },
+    relationships: { gameCenterLeaderboard: rel('gameCenterLeaderboards', r.data.id) },
+  });
+}]);
+
 // ---- the two hidden weekly usage boards (src/core/gamecenter.js) -------------------
 // Recurring every 7 days from USAGE_WEEK0 in src/core/playstats.js, which is
 // when the app's own weekly counts turn over, and hidden from players: a

@@ -115,6 +115,14 @@
   /* Build mode's monument picker: a row per city, its three monuments as
      tiles. A city not owned is dimmed and opens the purchase screen. */
   .bm-group{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold);margin:16px 0 6px;text-align:left}
+  /* Today's build, at the top of the picker: one monument a day for everyone. */
+  .bm-daily{display:flex;align-items:center;gap:12px;width:100%;margin:4px 0 6px;padding:10px 12px;border-radius:14px;cursor:pointer;
+    font:inherit;color:inherit;text-align:left;background:rgba(255,209,102,.12);border:1px solid rgba(255,209,102,.45)}
+  .bm-daily img{width:64px;height:64px;object-fit:contain;flex:0 0 64px}
+  .bm-daily-text{min-width:0}
+  .bm-daily-kicker{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold)}
+  .bm-daily-name{font-size:17px;font-weight:900;margin:2px 0}
+  .bm-daily-sub{font-size:12px;opacity:.8;line-height:1.35}
   .bm-city{display:flex;align-items:center;gap:8px;margin:6px 0}
   .bm-name{flex:0 0 74px;font-size:12px;font-weight:800;text-align:left;line-height:1.2}
   .bm-tiles{display:flex;gap:6px;flex:1;min-width:0}

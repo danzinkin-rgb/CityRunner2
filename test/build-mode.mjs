@@ -18,6 +18,7 @@
  */
 import { webkit } from 'playwright';
 import { resolveBase } from './serve.mjs';
+import { readFileSync } from 'node:fs';
 
 const { base: BASE, close } = await resolveBase(process.argv[2]);
 let failures = 0;
@@ -26,18 +27,22 @@ const check = (ok, label, detail = '') => {
   if (!ok) failures++;
 };
 const browser = await webkit.launch();
+// Every city id, so the one-time "drag to build" card can be marked as seen
+// in the save (it would otherwise hold the first dragged build of each city).
+const CITY_IDS = [...readFileSync(new URL('../src/cities/themes.js', import.meta.url), 'utf8')
+  .matchAll(/^\s{2}\{\s*$\n\s*id:\s*'([a-z]+)'/gm)].map((m) => m[1]);
 const errors = [];
 
 async function open({ native = false, owned = [] } = {}) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  await ctx.addInitScript(([nat, own]) => {
+  await ctx.addInitScript(([nat, own, ids]) => {
     if (nat) window.Capacitor = { isNativePlatform: () => true };
     if (sessionStorage.getItem('seeded')) return;
     sessionStorage.setItem('seeded', '1');
     localStorage.setItem('cityrunner2.ent', JSON.stringify(own));
     localStorage.setItem('cityrunner2', JSON.stringify({ stars: { nyc: 1 }, coins: 40, best: 1234, newsSeen: '1.2.0',
-      dragTold: new Proxy({}, { get: () => true }), seenMissingHelp: true }));
-  }, [native, owned]);
+      dragTold: Object.fromEntries(ids.map((id) => [id, true])), seenMissingHelp: true }));
+  }, [native, owned, CITY_IDS]);
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto(`${BASE}/?view=menu`, { waitUntil: 'load' });
@@ -157,6 +162,98 @@ const openPicker = async (page) => {
   const stats = await page.evaluate(() => JSON.parse(localStorage.getItem('cityrunner2.playstats')));
   check(stats.buildWins === 3 && stats.runs === 0 && stats.buildMs > 0, 'the play summary counts the builds and their time, and no runs',
     JSON.stringify({ buildWins: stats.buildWins, runs: stats.runs, buildMs: Math.round(stats.buildMs) }));
+  await ctx.close();
+}
+
+// ---- the daily build ------------------------------------------------------------
+const KNOWN_BUILD_WEEK = {
+  3: 'castillo,domerock,coit,geunjeongjeon,giantswing,bluemosque,qiniandian',
+};
+// One monument a day, the same for everyone. Its schedule is pinned per daily
+// version, as the run daily's pool is (test/determinism.mjs): players on
+// different app versions must never build different monuments for one board.
+{
+  const { page, ctx } = await open();
+  const sched = await page.evaluate(() => {
+    const t = window.__cr.todaysBuild, d = window.__cr.todaysDaily;
+    const at = (h, day = 2) => t(new Date(Date.UTC(2026, 11, day, h)));
+    const week = [];
+    let clash = 0;
+    for (let k = 0; k < 60; k++) {
+      const date = new Date(Date.UTC(2026, 11, 1 + k, 12));
+      const b = t(date), r = d(date);
+      if (b.cityIdx === r.cityIdx && b.level === r.level) clash++;
+      if (k < 7) week.push(b.landmark);
+    }
+    return { morning: at(1).landmark, night: at(23).landmark, next: at(12, 3).landmark, week: week.join(','), clash,
+      valid: week.every(Boolean) };
+  });
+  check(sched.morning === sched.night, 'the daily build is the same monument all day (UTC)', `${sched.morning} / ${sched.night}`);
+  check(sched.valid && sched.clash === 0, 'it is always a real monument, never the run daily\'s street', `clashes in 60 days: ${sched.clash}`);
+  const v = await page.evaluate(async () => (await import('/src/core/rng.js')).DAILY.version);
+  console.log(`   daily build, 1-7 December 2026, daily v${v}: ${sched.week}`);
+  check(KNOWN_BUILD_WEEK[v] === sched.week, 'the daily build schedule matches the one recorded for this daily version',
+    `recorded: ${KNOWN_BUILD_WEEK[v] || 'none'} — a changed schedule needs a new DAILY.version and board`);
+
+  // the card, the rules, and the day's best
+  await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('cityrunner2')); s.mode = 'gamer'; localStorage.setItem('cityrunner2', JSON.stringify(s)); });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => window.__cr && document.querySelectorAll('#city-select .city-card:not(.skel)').length);
+  await openPicker(page);
+  const card = await page.evaluate(() => document.getElementById('bm-daily')?.textContent || '');
+  check(/TODAY'S BUILD/.test(card), "the picker leads with today's build", card.slice(0, 80));
+  const daily = async (taken) => {
+    await page.click('#bm-daily');
+    await page.waitForFunction(() => window.__cr.state === 'puzzle' && window.__cr.puzzle, null, { timeout: 20000 });
+    const r = await page.evaluate((t) => {
+      const p = window.__cr.puzzle; const rules = window.__cr.rules.name;
+      const hud = document.getElementById('hud-city').textContent;
+      p.time = p.timeTotal - t; p.done = true;
+      return { rules, hud };
+    }, taken);
+    await page.waitForFunction(() => window.__cr.state === 'pwin', null, { timeout: 15000 });
+    return { ...r, sub: await page.evaluate(() => document.getElementById('pw-sub').textContent),
+      best: await page.evaluate(() => JSON.parse(localStorage.getItem('cityrunner2.playstats')).dailyBuild) };
+  };
+  const a = await daily(25.5);
+  check(a.rules === 'newbie' && /^TODAY'S BUILD/.test(a.hud), 'it plays Newbie rules for a Gamer player too, labelled TODAY\'S BUILD',
+    JSON.stringify({ rules: a.rules, hud: a.hud }));
+  check(a.best?.best === 2550 && /25\.5s/.test(a.sub), 'a win records the time in hundredths', JSON.stringify({ best: a.best, sub: a.sub }));
+  await page.click('#btn-build-another');
+  await page.waitForFunction(() => window.__cr.state === 'ui-build', null, { timeout: 10000 });
+  const b = await daily(30);
+  check(b.best.best === 2550 && /best today 25\.5s/.test(b.sub), 'a slower go keeps the best of the day', JSON.stringify({ best: b.best, sub: b.sub }));
+  await ctx.close();
+}
+// Open to everyone, as the run daily is: an unpaid phone can build today's
+// monument even in a paid city. The clock is set to a day whose build is in
+// one, found from the schedule.
+{
+  const { page, ctx } = await open({ native: true });
+  const day = await page.evaluate(async () => {
+    const { CITIES } = await import('/src/cities/offered.js');
+    const { isPaidCity } = await import('/src/core/entitlements.js');
+    for (let k = 0; k < 60; k++) {
+      const date = new Date(Date.UTC(2026, 11, 1 + k, 12));
+      const b = window.__cr.todaysBuild(date);
+      if (isPaidCity(CITIES[b.cityIdx].id)) return date.getTime();
+    }
+    return null;
+  });
+  await page.clock.setFixedTime(day);
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => window.__cr && document.querySelectorAll('#city-select .city-card:not(.skel)').length);
+  const paid = await page.evaluate(() => ({ landmark: window.__cr.todaysBuild().landmark }));
+  await openPicker(page);
+  const lockedRow = await page.evaluate((lm) => {
+    const img = [...document.querySelectorAll('#build-body .bm-city img')].find((i) => i.src.endsWith(`/${lm}.png`));
+    return img?.closest('.bm-city')?.classList.contains('locked') ?? null;
+  }, paid.landmark);
+  await page.click('#bm-daily');
+  await page.waitForFunction(() => ['puzzle', 'ui-paywall'].includes(window.__cr.state), null, { timeout: 20000 }).catch(() => {});
+  const st = await page.evaluate(() => window.__cr.state);
+  check(lockedRow === true && st === 'puzzle', "an unpaid phone can build today's monument in a city it has not bought",
+    JSON.stringify({ landmark: paid.landmark, lockedInPicker: lockedRow, state: st }));
   await ctx.close();
 }
 

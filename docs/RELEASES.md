@@ -85,7 +85,11 @@ per monument (docs/BUILD-MODE-PROPOSAL.md). A play summary at the foot of
 Settings, kept on the device. Two hidden weekly Game Center usage boards,
 `…leaderboard.week.runs` and `…leaderboard.week.build` (created in App Store
 Connect on 7 November 2026; add both to the version for review), read only by
-the tester build (docs/COMPLIANCE.md §2.1). The iOS app gains a Game Center
+the tester build (docs/COMPLIANCE.md §2.1). A daily build (Dan, 25 November
+2026): one monument a day for everyone, at the top of the Build picker, open
+whatever the player owns, Newbie rules for all, fastest time to a visible
+Game Center board, `…leaderboard.dailybuild.v3` (created 25 November 2026;
+add it to the version for review). The iOS app gains a Game Center
 method (`loadPlayerCount`), so it needs a full Xcode build, not just a sync.
 
 1.2.1, build 15 (23 October 2026). Since 1.2.0: every city added in 1.2.0 has its

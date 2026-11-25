@@ -8,10 +8,10 @@ import { STREET_FACTS, MONUMENT_FACTS } from './facts.js';
 import { renderHero, renderCompact, paintScale, countUp } from './factviz.js';
 import { getIdentity, rerollName, eraseAllData } from './core/identity.js';
 import { startSession, submit, top as topScores, personalBest, currentSession } from './core/scores.js';
-import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset, DAILY } from './core/rng.js';
+import { makeRng, dailySeedFor, dailyKey, secondsUntilDailyReset, DAILY, hashString } from './core/rng.js';
 import { initNative, onAppPause, onBackButton, hapticLight, hapticMedium, hapticHeavy, hapticSuccess, canShare, shareText, requestReview, storeFacts, gkPlayerCount } from './core/native.js';
-import { reportRun, reportUsage, LEADERBOARDS } from './core/gamecenter.js';
-import { countRun, countMonument, countBuild, bestBuildTime, addPlayTime, savePlayStats, resetPlayStats, playSummary, formatMinutes } from './core/playstats.js';
+import { reportRun, reportUsage, reportDailyBuild, LEADERBOARDS } from './core/gamecenter.js';
+import { countRun, countMonument, countBuild, countDailyBuild, dailyBuildBest, bestBuildTime, addPlayTime, savePlayStats, resetPlayStats, playSummary, formatMinutes } from './core/playstats.js';
 import { isCityEntitled, isLevelEntitled, isPaidCity, hasFullAccess, isFounder, isFreeBuild, ownsCity, regionOf } from './core/entitlements.js';
 import { REGIONS } from './cities/themes.js';
 import { initIAP, getOffers, purchase, restore, onEntitlementGranted } from './core/iap.js';
@@ -165,7 +165,7 @@ const puzzleTimeScale = () => (rules.name === 'gamer' ? 0.85 : 1) * (1 - Math.mi
 // course for everyone, so it ignores the chosen mode: Newbie pace and puzzle
 // rules, at full score, as every daily before modes existed was.
 function playRules() {
-  const name = dailyMode ? 'newbie' : gameMode();
+  const name = dailyMode || buildDaily ? 'newbie' : gameMode();
   return { name, ...MODES[name], scoreMul: dailyMode ? 1 : MODES[name].scoreMul };
 }
 // set again by startRun() and startPuzzle(); dailyMode is not declared yet here
@@ -183,6 +183,12 @@ let dailyMode = false;
 // best time per monument is kept (src/core/playstats.js). Cleared wherever a
 // run starts or the player goes back to the menu.
 let buildMode = false;
+// The daily build: one monument a day, the same for every player, built in
+// Build mode to the fastest time (Dan, 25 November 2026). Like the run daily
+// it is open to everyone whatever they own, plays Newbie puzzle rules
+// whatever the chosen mode (one board, one set of rules), and awards nothing
+// but a time. Set only together with buildMode.
+let buildDaily = false;
 let runSeed = null;          // null => a fresh random course
 
 function todaysDaily(date = new Date()) {
@@ -197,6 +203,22 @@ function todaysDaily(date = new Date()) {
   const lv = 1 + (Math.floor(pick() * 3) % 3);
   return { seed, cityIdx: ci, level: lv, day: dailyKey(date) };
 }
+
+// Today's build: a monument from the run daily's city pool (DAILY in
+// src/core/rng.js), chosen from the date with its own salt so it is not
+// simply the run daily's street. If the two would coincide, the next street
+// in that city is taken instead.
+function todaysBuild(date = new Date()) {
+  const day = dailyKey(date);
+  const pick = makeRng(hashString(`cityrunner-dailybuild-${day}`));
+  const id = DAILY.cities[Math.floor(pick() * DAILY.cities.length) % DAILY.cities.length];
+  const ci = CITIES.findIndex((c) => c.id === id);
+  let lv = 1 + (Math.floor(pick() * 3) % 3);
+  const run = todaysDaily(date);
+  if (run.cityIdx === ci && run.level === lv) lv = (lv % 3) + 1;
+  return { cityIdx: ci, level: lv, day, landmark: CITIES[ci]?.landmarks[lv - 1] };
+}
+const fmtCentis = (c) => `${(c / 100).toFixed(1)}s`;
 
 function fmtCountdown(sec) {
   const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
@@ -395,7 +417,7 @@ function startRun() {
   // ends there.
   if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall('menu', city().id); return; }
   gfxRunStarted();
-  buildMode = false;
+  buildMode = false; buildDaily = false;
   reportUsage('runs', countRun());
   // Racing your best: a street you have finished before replays the course
   // of your best run on it, with that run beside you as a ghost. Never on the
@@ -726,7 +748,7 @@ function startPuzzle() {
   // parameter reaches this directly. The normal path (the BUILD button after a
   // run) is already entitled, so this only ever fires on a debug URL — but a
   // debug URL that survives into a shipped build is a one-tap bypass.
-  if (!dailyMode && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall('menu', city().id); return; }
+  if (!dailyMode && !buildDaily && !TESTER && !isLevelEntitled(city().id, level)) { openPaywall('menu', city().id); return; }
   stopMusic();
   hideGoal();
   doFade(() => {
@@ -746,7 +768,7 @@ function startPuzzle() {
     camera.position.set(0, d0 * 0.45, d0);
     camera.lookAt(0, cam.lookY, 0);
     $('hud-timer').style.display = 'block';
-    $('hud-city').textContent = `BUILD: ${LANDMARK_NAMES[lm].toUpperCase()}`;
+    $('hud-city').textContent = `${buildDaily ? "TODAY'S BUILD" : 'BUILD'}: ${LANDMARK_NAMES[lm].toUpperCase()}`;
     $('hud-coin-icon').src = `assets/souvenirs/${city().id}.png`;
     state = 'puzzle';
     showScreen(null);
@@ -833,16 +855,27 @@ const PW_SUB = $('pw-sub').innerHTML;
 function finishBuild(won, lm) {
   if (won) {
     hapticSuccess();
-    const taken = Math.max(1, Math.round(puzzle.timeTotal - puzzle.time));
-    const { best, improved, weekCount } = countBuild(lm, taken);
-    reportUsage('build', weekCount);
+    const takenS = Math.max(0.01, puzzle.timeTotal - puzzle.time);
+    const taken = Math.max(1, Math.round(takenS));
+    let subLine;
+    if (buildDaily) {
+      const centis = Math.round(takenS * 100);
+      const { best, improved, weekCount } = countDailyBuild(todaysBuild().day, centis);
+      reportUsage('build', weekCount);
+      reportDailyBuild(centis);
+      subLine = `today's build in ${fmtCentis(centis)} · ${improved ? 'your best today' : `best today ${fmtCentis(best)}`}`;
+    } else {
+      const { best, improved, weekCount } = countBuild(lm, taken);
+      reportUsage('build', weekCount);
+      subLine = `built in ${taken}s · ${improved ? 'your best yet' : `best ${best}s`}`;
+    }
     save.monumentsWon = (save.monumentsWon || 0) + 1;
     persist();
     $('btn-next').style.display = 'none';
     $('btn-build-another').style.display = '';
     setTimeout(() => {
       $('pw-name').textContent = LANDMARK_NAMES[lm];
-      $('pw-sub').innerHTML = `built in ${taken}s · ${improved ? 'your best yet' : `best ${best}s`}`
+      $('pw-sub').innerHTML = subLine
         + `<span id="pw-bonus" hidden>0</span><span id="pw-time" hidden>${Math.round(puzzle.time)}</span>`;
       applyCityPalette();
       const md = MONUMENT_FACTS[lm];
@@ -893,6 +926,20 @@ function renderBuildPicker() {
   const groups = [['FREE', CITIES.filter((c) => !isPaidCity(c.id))],
     ...regionOrder.map((r) => [REGIONS[r].replace(' and ', ' & ').toUpperCase(), CITIES.filter((c) => isPaidCity(c.id) && c.region === r)])];
   body.innerHTML = '';
+  const tb = todaysBuild();
+  if (tb.landmark) {
+    const best = dailyBuildBest(tb.day);
+    const card = document.createElement('button');
+    card.className = 'bm-daily';
+    card.id = 'bm-daily';
+    card.innerHTML = `<img src="assets/monuments/${tb.landmark}.png" alt="">`
+      + `<div class="bm-daily-text"><div class="bm-daily-kicker">TODAY'S BUILD</div>`
+      + `<div class="bm-daily-name">${LANDMARK_NAMES[tb.landmark]}</div>`
+      + `<div class="bm-daily-sub">${titleCase(CITIES[tb.cityIdx].name)} · the same for everyone today`
+      + `${best != null ? ` · your best ${fmtCentis(best)}` : ''}</div></div>`;
+    card.onclick = startDailyBuild;
+    body.appendChild(card);
+  }
   for (const [label, list] of groups) {
     const h = document.createElement('div');
     h.className = 'bm-group'; h.textContent = label;
@@ -916,16 +963,21 @@ function renderBuildPicker() {
     }
   }
 }
-function startBuild(ci, lv) {
+function startBuild(ci, lv, daily = false) {
   cityIdx = ci; level = lv;
   dailyMode = false; runSeed = null; lastRunPieces = null; pausedFrom = null;
   score = 0; coins = 0;
   buildMode = true;
+  buildDaily = daily;
   resetResultScreens();
   startPuzzle();
 }
+function startDailyBuild() {
+  const tb = todaysBuild();
+  startBuild(tb.cityIdx, tb.level, true);
+}
 function openBuildPicker() {
-  buildMode = false;
+  buildMode = false; buildDaily = false;
   resetResultScreens();
   renderBuildPicker();
   overlayFrom = 'menu';
@@ -1143,7 +1195,7 @@ $('btn-play').onclick = () => {
 };
 $('daily-card').onclick = () => startDaily();
 $('btn-buildmode').onclick = () => doFade(() => { disposeAll(); openBuildPicker(); });
-$('btn-build-close').onclick = () => { buildMode = false; closeOverlay(); };
+$('btn-build-close').onclick = () => { buildMode = false; buildDaily = false; closeOverlay(); };
 $('btn-build-another').onclick = $('btn-over-build').onclick = () => doFade(() => { disposeAll(); openBuildPicker(); });
 $('btn-build').onclick = () => startPuzzle();
 
@@ -1679,9 +1731,9 @@ onBackButton(handleBack);
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
 $('btn-continue-pay').onclick = acceptContinue;
 $('btn-continue-no').onclick = declineContinue;
-$('btn-retry').onclick = () => (buildMode ? startBuild(cityIdx, level) : startRun());
+$('btn-retry').onclick = () => (buildDaily ? startDailyBuild() : buildMode ? startBuild(cityIdx, level) : startRun());
 $('btn-menu').onclick = $('btn-menu2').onclick = () => doFade(() => {
-  buildMode = false; resetResultScreens();
+  buildMode = false; buildDaily = false; resetResultScreens();
   disposeAll(); buildCitySelect(); showScreen('menu'); state = 'menu';
 });
 
@@ -1704,7 +1756,9 @@ $('btn-share-pw').onclick = () => {
   const name = $('pw-name').textContent;
   shareText(dailyMode
     ? `I rebuilt the ${name} on today's CityRunner daily challenge (${shareWhere()}) and scored ${Math.round(score)}. Everyone gets the same course today. Can you beat it?`
-    : `I just rebuilt the ${name} in CityRunner with ${$('pw-time').textContent} seconds to spare.`, storeFacts().link);
+    : buildDaily
+      ? `I built today's CityRunner monument, the ${name}, in ${fmtCentis(dailyBuildBest(todaysBuild().day) ?? 0)}. Everyone builds the same one today. Can you beat it?`
+      : `I just rebuilt the ${name} in CityRunner with ${$('pw-time').textContent} seconds to spare.`, storeFacts().link);
 };
 $('btn-share-over').onclick = () => {
   shareText(dailyMode
@@ -2000,7 +2054,7 @@ if (DEBUG_HOOKS && q.get('view')) {
     get continuesUsed() { return continuesUsed; },
     get session() { return currentSession(); },
     crash, acceptContinue, declineContinue,   // test-only: drive the continue flow without a real collision
-    todaysDaily,
+    todaysDaily, todaysBuild,
   };
   if (q.get('seed')) runSeed = +q.get('seed') >>> 0;
   if (q.has('daily')) { const d = todaysDaily(); cityIdx = d.cityIdx; level = d.level; dailyMode = true; runSeed = d.seed; }
